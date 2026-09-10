@@ -1219,20 +1219,22 @@ scope Character {
         scope move_action_array_table_: {
             origin  0x62BD0
             base    0x800E73D0
-            // because the lw instruction uses a signed integer for calculating the address, we
-            // must add 0x1 to the upper half of ACTION_ARRAY_TABLE if the lower half is greater
-            // than 0x7FFF
-            constant UPPER(ACTION_ARRAY_TABLE >> 16)
-            constant LOWER(ACTION_ARRAY_TABLE & 0xFFFF)
-            if LOWER > 0x7FFF {
-                lui     t9, (UPPER + 0x1)
-            } else {
-                lui     t9, UPPER
-            }
-            addiu   t0, v0, 0xFF24
-            sll     t8, t7, 0x2
-            addu    t9, t9, t8
-            lw      t9, LOWER(t9)
+            j       CharCreator.action_array_hook_
+            nop
+            nop
+            nop
+            nop
+            nop
+        }
+
+        // @ Description
+        // Lets Character Creator substitute the character parameter base while
+        // a borrowed special action is active.
+        scope move_parameter_base_: {
+            origin  0x62CFC
+            base    0x800E74FC
+            j       CharCreator.parameter_base_hook_
+            nop
         }
 
         // @ Description
@@ -1422,57 +1424,39 @@ scope Character {
         // modifies a hard-coded routine which runs when a character uses their neutral special in
         // the air, and is used to load an initial subroutine for that special.
         scope get_air_nsp_: {
-            constant UPPER(air_nsp.table >> 16)
-            constant LOWER(air_nsp.table & 0xFFFF)
             origin  0xCBA64
             base    0x80151024
-            if LOWER > 0x7FFF {
-                lui     t9, (UPPER + 0x1)   // original line 1 (modified)
-            } else {
-                lui     t9, UPPER           // original line 1 (modified)
-            }
-            or      a0, a2, r0              // original line 2
-            sll     t6, t5, 0x2             // original line 3
-            addu    t9, t9, t6              // original line 4
-            lw      t9, LOWER(t9)           // original line 5 (modified)
+            or      a0, a2, r0
+            lli     a1, CharCreator.FIELD_NSP
+            li      a2, air_nsp.table
+            jal     CharCreator.get_special_routine_
+            nop
         }
 
         // @ Description
         // modifies a hard-coded routine which runs when a character uses their up special in
         // the air, and is used to load an initial subroutine for that special.
         scope get_air_usp_: {
-            constant UPPER(air_usp.table >> 16)
-            constant LOWER(air_usp.table & 0xFFFF)
             origin  0xCB9B4
             base    0x80150F74
-            if LOWER > 0x7FFF {
-                lui     t9, (UPPER + 0x1)   // original line 1 (modified)
-            } else {
-                lui     t9, UPPER           // original line 1 (modified)
-            }
-            or      a0, a2, r0              // original line 2
-            sll     t3, t2, 0x2             // original line 3
-            addu    t9, t9, t3              // original line 4
-            lw      t9, LOWER(t9)           // original line 5 (modified)
+            or      a0, a2, r0
+            lli     a1, CharCreator.FIELD_USP
+            li      a2, air_usp.table
+            jal     CharCreator.get_special_routine_
+            nop
         }
 
         // @ Description
         // modifies a hard-coded routine which runs when a character uses their down special in
         // the air, and is used to load an initial subroutine for that special.
         scope get_air_dsp_: {
-            constant UPPER(air_dsp.table >> 16)
-            constant LOWER(air_dsp.table & 0xFFFF)
             origin  0xCB9F8
             base    0x80150FB8
-            if LOWER > 0x7FFF {
-                lui     t9, (UPPER + 0x1)   // original line 1 (modified)
-            } else {
-                lui     t9, UPPER           // original line 1 (modified)
-            }
-            or      a0, a2, r0              // original line 2
-            sll     t8, t7, 0x2             // original line 3
-            addu    t9, t9, t8              // original line 4
-            lw      t9, LOWER(t9)           // original line 5 (modified)
+            or      a0, a2, r0
+            lli     a1, CharCreator.FIELD_DSP
+            li      a2, air_dsp.table
+            jal     CharCreator.get_special_routine_
+            nop
         }
 
         // @ Description
@@ -1498,55 +1482,37 @@ scope Character {
         // modifies a hard-coded routine which runs when a character uses their neutral special on
         // the ground, and is used to load an initial subroutine for that special.
         scope get_ground_nsp_: {
-            constant UPPER(ground_nsp.table >> 16)
-            constant LOWER(ground_nsp.table & 0xFFFF)
             origin  0xCBB60
             base    0x80151120
-            if LOWER > 0x7FFF {
-                lui     t9, (UPPER + 0x1)   // original line 1 (modified)
-            } else {
-                lui     t9, UPPER           // original line 1 (modified)
-            }
-            or      a0, a2, r0              // original line 2
-            sll     t6, t5, 0x2             // original line 3
-            addu    t9, t9, t6              // original line 4
-            lw      t9, LOWER(t9)           // original line 5 (modified)
+            or      a0, a2, r0
+            lli     a1, CharCreator.FIELD_NSP
+            li      a2, ground_nsp.table
+            jal     CharCreator.get_special_routine_
+            nop
         }
 
         // @ Description
         // modifies a hard-coded routine which runs when a character uses their up special on
         // the ground, and is used to load an initial subroutine for that special.
         scope get_ground_usp_: {
-            constant UPPER(ground_usp.table >> 16)
-            constant LOWER(ground_usp.table & 0xFFFF)
             origin  0xCBBE4
             base    0x801511A4
-            if LOWER > 0x7FFF {
-                lui     t9, (UPPER + 0x1)   // original line 1 (modified)
-            } else {
-                lui     t9, UPPER           // original line 1 (modified)
-            }
-            sll     t3, t2, 0x2             // original line 2
-            addu    t9, t9, t3              // original line 3
-            lw      t9, LOWER(t9)           // original line 4 (modified)
+            lli     a1, CharCreator.FIELD_USP
+            li      a2, ground_usp.table
+            jal     CharCreator.get_special_routine_
+            nop
         }
 
         // @ Description
         // modifies a hard-coded routine which runs when a character uses their down special on
         // the ground, and is used to load an initial subroutine for that special.
         scope get_ground_dsp_: {
-            constant UPPER(ground_dsp.table >> 16)
-            constant LOWER(ground_dsp.table & 0xFFFF)
             origin  0xCBC68
             base    0x80151228
-            if LOWER > 0x7FFF {
-                lui     t9, (UPPER + 0x1)   // original line 1 (modified)
-            } else {
-                lui     t9, UPPER           // original line 1 (modified)
-            }
-            sll     t4, t3, 0x2             // original line 2
-            addu    t9, t9, t4              // original line 3
-            lw      t9, LOWER(t9)           // original line 4 (modified)
+            lli     a1, CharCreator.FIELD_DSP
+            li      a2, ground_dsp.table
+            jal     CharCreator.get_special_routine_
+            nop
         }
 
         // @ Description
@@ -3033,6 +2999,10 @@ scope Character {
 
             // 0x94(sp) = action to change to
             // s1 = player struct
+
+            or a0, s1, r0 // argument 0 = character struct
+            jal CharCreator.on_action_changed_
+            lw a1, 0x94(sp) // argument 1 = new action id
 
             lw t0, 0x0008(s1) // t0 = character id
 

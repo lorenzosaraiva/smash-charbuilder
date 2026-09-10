@@ -41,6 +41,7 @@ The build consists of two parts:
 - [Moveset Editor](https://github.com/joaorb64/ssb64-moveset-file-editor)
 - [Scripts](https://github.com/joaorb64/smashremix-plus-extra/tree/main/scripts) for extracting characters/stages from ROM, fixing normals from Blender, projectile creation, etc. are included with +EXTRA's source.
 - [Templates](https://github.com/joaorb64/smashremix-plus-extra/tree/main/templates) for various assets are included with +EXTRA's source.  
+- [In-game Character Creator](character_creator_guide.md) for creating, saving, and testing mixed movesets from the compiled roster.
 
 ## FAQ
 - **"Where do I download this MOD?"**  

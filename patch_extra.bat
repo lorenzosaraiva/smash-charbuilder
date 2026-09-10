@@ -4,6 +4,8 @@ setlocal EnableDelayedExpansion
 set ROM=ssb64asm_extra.z64
 set LOG=output.log
 set ASM=%~dp0smashremix\assembler
+if not defined SMASH_EXTRA_ROM_DIR set "SMASH_EXTRA_ROM_DIR=C:\Users\Lorenzo\Desktop\Smash 64\roms"
+set "DEPLOY_ROM=%SMASH_EXTRA_ROM_DIR%\%ROM%"
 
 echo. > "%ROM%"
 echo Building "%ROM%"...
@@ -36,5 +38,20 @@ if errorlevel 1 (
     exit /b 1
 )
 
+if not exist "%SMASH_EXTRA_ROM_DIR%\" (
+    mkdir "%SMASH_EXTRA_ROM_DIR%"
+    if errorlevel 1 (
+        echo ROM DEPLOY DIRECTORY CREATION FAILED: "%SMASH_EXTRA_ROM_DIR%"
+        exit /b 1
+    )
+)
+
+copy /Y "%ROM%" "%DEPLOY_ROM%" >nul
+if errorlevel 1 (
+    echo ROM DEPLOY FAILED: "%DEPLOY_ROM%"
+    exit /b 1
+)
+
 echo Build log exported to "%LOG%"
+echo ROM copied to "%DEPLOY_ROM%"
 exit /b 0

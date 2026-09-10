@@ -273,6 +273,26 @@ scope Command {
 
         lw      v0, 0x0084(a0)              // original line 1 (v0 = player struct)
         sll     t8, a1, 0x2                 // original line 2
+        // Donor texture/form IDs are scoped to the donor model. Applying one
+        // to a different Character Creator body can index an unrelated table.
+        beqz    v0, _normal
+        nop
+        lbu     t0, 0x000D(v0)
+        sll     t0, t0, 0x0002
+        li      t1, CharCreator.body_character_data
+        addu    t1, t1, t0
+        lw      t2, 0x0000(t1)
+        bnez    t2, _metal                  // borrowed special: suppress
+        nop
+        li      t1, CharCreator.active_normal_donor
+        addu    t1, t1, t0
+        lw      t2, 0x0000(t1)
+        bltz    t2, _normal
+        lw      t0, 0x0008(v0)
+        bne     t2, t0, _metal              // cross-character normal: suppress
+        nop
+
+        _normal:
         lw      t6, 0x0008(v0)              // t6 = character id
         ori     t9, r0, Character.id.METAL  // t9 = id.METAL
         beq     t6, t9, _metal              // branch if id = METAL
@@ -1407,9 +1427,20 @@ scope Command {
     // XXXX = offset
     scope jump_to_moveset_file_: {
         constant COMMAND_LENGTH(0x0)
+        // Character Creator can execute a command stream borrowed from a
+        // different fighter. Prefer the per-port donor base while one is
+        // active; otherwise preserve the original body-file behavior.
+        li      t0, CharCreator.active_moveset_base
+        lbu     t1, 0x000D(s2)              // t1 = port
+        sll     t1, t1, 0x0002
+        addu    t0, t0, t1
+        lw      t0, 0x0000(t0)              // t0 = donor moveset base, or 0
+        bnez    t0, _apply
+        nop
         lw      t0, 0x09C4(s2)              // t0 = character struct
         lw      t0, 0x002C(t0)              // t0 = character file 2(moveset) pointer
         lw      t0, 0x0000(t0)              // t0 = moveset file address
+        _apply:
         lhu     t1, 0x0002(v0)              // t1 = offset
         addu    v0, t0, t1                  // command address = moveset file address + offset
         sw      v0, 0x0008(sp)              // store next command in stack
