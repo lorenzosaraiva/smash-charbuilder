@@ -1427,9 +1427,9 @@ scope Character {
             origin  0xCBA64
             base    0x80151024
             or      a0, a2, r0
-            lli     a1, CharCreator.FIELD_NSP
-            li      a2, air_nsp.table
-            jal     CharCreator.get_special_routine_
+            jal     CharCreator.get_air_nsp_routine_
+            nop
+            nop
             nop
         }
 
@@ -1440,9 +1440,9 @@ scope Character {
             origin  0xCB9B4
             base    0x80150F74
             or      a0, a2, r0
-            lli     a1, CharCreator.FIELD_USP
-            li      a2, air_usp.table
-            jal     CharCreator.get_special_routine_
+            jal     CharCreator.get_air_usp_routine_
+            nop
+            nop
             nop
         }
 
@@ -1453,9 +1453,9 @@ scope Character {
             origin  0xCB9F8
             base    0x80150FB8
             or      a0, a2, r0
-            lli     a1, CharCreator.FIELD_DSP
-            li      a2, air_dsp.table
-            jal     CharCreator.get_special_routine_
+            jal     CharCreator.get_air_dsp_routine_
+            nop
+            nop
             nop
         }
 
@@ -1485,9 +1485,9 @@ scope Character {
             origin  0xCBB60
             base    0x80151120
             or      a0, a2, r0
-            lli     a1, CharCreator.FIELD_NSP
-            li      a2, ground_nsp.table
-            jal     CharCreator.get_special_routine_
+            jal     CharCreator.get_ground_nsp_routine_
+            nop
+            nop
             nop
         }
 
@@ -1497,9 +1497,10 @@ scope Character {
         scope get_ground_usp_: {
             origin  0xCBBE4
             base    0x801511A4
-            lli     a1, CharCreator.FIELD_USP
-            li      a2, ground_usp.table
-            jal     CharCreator.get_special_routine_
+            jal     CharCreator.get_ground_usp_routine_
+            nop
+            nop
+            nop
             nop
         }
 
@@ -1509,9 +1510,10 @@ scope Character {
         scope get_ground_dsp_: {
             origin  0xCBC68
             base    0x80151228
-            lli     a1, CharCreator.FIELD_DSP
-            li      a2, ground_dsp.table
-            jal     CharCreator.get_special_routine_
+            jal     CharCreator.get_ground_dsp_routine_
+            nop
+            nop
+            nop
             nop
         }
 

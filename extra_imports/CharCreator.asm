@@ -8,6 +8,10 @@ scope CharCreator {
     constant SLOT_COUNT(4)
     constant CACHE_SLOTS(8)
     constant NO_DONOR(0xFFFFFFFF)
+    // Largest current catalog FTData.file_anim_size is 0xCB10. Keep one
+    // aligned buffer per port outside the match task heap, whose late-stage
+    // allocator cannot reliably satisfy these reservations in Training.
+    constant SPECIAL_ANIMATION_CAPACITY(0xCC00)
 
     // Per-port CSS selection. 0 = off, 1-4 = saved build.
     selected_builds:
@@ -41,6 +45,17 @@ scope CharCreator {
     special_animation_heap_size:
     dw 0, 0, 0, 0
 
+    OS.align(16)
+    special_animation_storage:
+    fill SLOT_COUNT * SPECIAL_ANIMATION_CAPACITY
+
+    // Donor animations are authored for the donor's joint tree and cannot be
+    // installed on an unrelated body safely. During borrowed specials, the
+    // parameter-record hook below substitutes a finite, body-owned animation
+    // while retaining the donor's command stream and action flags.
+    special_parameter_records:
+    fill SLOT_COUNT * 0x000C
+
     // Donor callbacks can index fp->joints directly, bypassing command guards.
     // Back up all 37 engine slots while a borrowed special is active; missing
     // donor joints temporarily resolve to the body's top joint.
@@ -59,6 +74,10 @@ scope CharCreator {
     // declared special/projectile dependencies during the same screen.
     preloaded_specials:; fill 16
     loaded_main_files:; fill 16
+    // The fighter loader clears FTData.p_file_main globals after this
+    // preloader runs. Retain the heap-owned file bases so ensure_main_file_
+    // can republish them at dispatch time without an unsafe mid-action load.
+    main_file_pointers:; fill 0x80 * 4
     // Tracks donor FTData special1-special4 files loaded into their real
     // destination globals (for example gFTDataFoxSpecial1). Tag Team's generic
     // preload list deliberately discards those pointers, which is insufficient
@@ -66,6 +85,18 @@ scope CharCreator {
     loaded_special_files:; fill 16
     preload_pointer:; dw 0
     catalog_mode_last:; dw 0xFFFFFFFF
+
+    // Runtime breadcrumbs used to verify that the pre-match loader runs after
+    // the final cache reset. They are intentionally outside recipe SRAM.
+    diagnostic_reset_calls:; dw 0
+    diagnostic_reset_last_ra:; dw 0
+    diagnostic_preload_calls:; dw 0
+    diagnostic_preload_selected:; dw 0
+    diagnostic_preload_heap:; dw 0
+    diagnostic_action_array:; dw 0
+    diagnostic_action_index:; dw 0
+    diagnostic_parameter_array:; dw 0
+    diagnostic_parameter_index:; dw 0
 
     // Fields in each slot's entry-pointer table.
     constant FIELD_ENABLED(0)
@@ -122,6 +153,13 @@ scope CharCreator {
     // Clears the donor file cache. Loaded files are owned by the game's heap;
     // this only forgets pointers when moving between screens/builds.
     scope reset_cache_: {
+        li      t0, diagnostic_reset_calls
+        lw      t1, 0x0000(t0)
+        addiu   t1, t1, 0x0001
+        sw      t1, 0x0000(t0)
+        li      t0, diagnostic_reset_last_ra
+        sw      ra, 0x0000(t0)
+
         li      t0, cache_ids
         lli     t1, SLOT_COUNT * CACHE_SLOTS
         addiu   t2, r0, -0x0001
@@ -176,15 +214,24 @@ scope CharCreator {
         sw      r0, 0x0008(t0)
         sw      r0, 0x000C(t0)
         li      t0, special_animation_heap
-        sw      r0, 0x0000(t0)
-        sw      r0, 0x0004(t0)
-        sw      r0, 0x0008(t0)
-        sw      r0, 0x000C(t0)
+        li      t1, special_animation_storage
+        li      t2, SPECIAL_ANIMATION_CAPACITY
+        lli     t3, SLOT_COUNT
+        _special_heap_pointer_loop:
+        sw      t1, 0x0000(t0)
+        addiu   t0, t0, 0x0004
+        addu    t1, t1, t2
+        addiu   t3, t3, -0x0001
+        bnez    t3, _special_heap_pointer_loop
+        nop
         li      t0, special_animation_heap_size
-        sw      r0, 0x0000(t0)
-        sw      r0, 0x0004(t0)
-        sw      r0, 0x0008(t0)
-        sw      r0, 0x000C(t0)
+        lli     t3, SLOT_COUNT
+        _special_heap_size_loop:
+        sw      t2, 0x0000(t0)
+        addiu   t0, t0, 0x0004
+        addiu   t3, t3, -0x0001
+        bnez    t3, _special_heap_size_loop
+        nop
 
         li      t0, preloaded_specials
         sw      r0, 0x0000(t0)
@@ -196,6 +243,14 @@ scope CharCreator {
         sw      r0, 0x0004(t0)
         sw      r0, 0x0008(t0)
         sw      r0, 0x000C(t0)
+        li      t0, main_file_pointers
+        lli     t1, 0x0080
+        _main_pointer_loop:
+        sw      r0, 0x0000(t0)
+        addiu   t0, t0, 0x0004
+        addiu   t1, t1, -0x0001
+        bnez    t1, _main_pointer_loop
+        nop
         li      t0, loaded_special_files
         sw      r0, 0x0000(t0)
         sw      r0, 0x0004(t0)
@@ -482,6 +537,15 @@ scope CharCreator {
         sw      s4, 0x0018(sp)
         sw      s5, 0x001C(sp)
 
+        li      t0, diagnostic_preload_calls
+        lw      t1, 0x0000(t0)
+        addiu   t1, t1, 0x0001
+        sw      t1, 0x0000(t0)
+        li      t0, selected_builds
+        lw      t1, 0x0000(t0)
+        li      t0, diagnostic_preload_selected
+        sw      t1, 0x0000(t0)
+
         jal     reset_cache_
         nop
         or      s0, r0, r0                 // port
@@ -541,8 +605,12 @@ scope CharCreator {
         or      a0, s0, r0
         jal     ensure_special_animation_heap_
         or      a1, s5, r0
-        beqz    v0, _next_field
-        nop
+        li      t0, diagnostic_preload_heap
+        sw      v0, 0x0000(t0)
+        // Projectile/effect dependencies are independent of the animation
+        // buffer. Keep preloading them when a separate buffer cannot be
+        // reserved; the dispatcher can safely reuse the body's heap whenever
+        // it is large enough for this donor.
         jal     ensure_special_preloads_
         or      a0, s4, r0
 
@@ -837,28 +905,93 @@ scope CharCreator {
         lw      t0, 0x0028(a1)
         beqz    t0, _fail
         sw      t0, 0x0018(sp)
-        bnez    t5, _cached
+        bnez    t5, _publish_cached
         nop
         lw      a0, 0x0000(a1)
         beqz    a0, _fail
         or      a1, t0, r0
         jal     Render.load_file_
         nop
+        lw      t0, 0x0018(sp)
+        lw      v0, 0x0000(t0)
+        beqz    v0, _fail
+        lw      t6, 0x0008(sp)
+        sll     t6, t6, 0x0002
+        li      t7, main_file_pointers
+        addu    t7, t7, t6
+        sw      v0, 0x0000(t7)
         lw      t1, 0x0010(sp)
         lw      t2, 0x0000(t1)
         lw      t4, 0x0014(sp)
         or      t2, t2, t4
         sw      t2, 0x0000(t1)
-        _cached:
-        lw      t0, 0x0018(sp)
+
         b       _end
-        lw      v0, 0x0000(t0)
+        nop
+
+        _publish_cached:
+        lw      t6, 0x0008(sp)
+        sll     t6, t6, 0x0002
+        li      t7, main_file_pointers
+        addu    t7, t7, t6
+        lw      v0, 0x0000(t7)
+        beqz    v0, _fail
+        lw      t0, 0x0018(sp)
+        sw      v0, 0x0000(t0)
+        b       _end
+        nop
         _fail:
         or      v0, r0, r0
         _end:
         lw      ra, 0x0004(sp)
         addiu   sp, sp, 0x0020
         jr      ra
+        nop
+    }
+
+    // The six engine hooks have five instructions available before VsStats
+    // patches the following instruction. Keep the hooks compact and finish
+    // loading the field/table arguments here so no JAL lands in another JAL's
+    // delay slot.
+    scope get_air_nsp_routine_: {
+        lli     a1, FIELD_NSP
+        li      a2, Character.air_nsp.table
+        j       get_special_routine_
+        nop
+    }
+
+    scope get_air_usp_routine_: {
+        lli     a1, FIELD_USP
+        li      a2, Character.air_usp.table
+        j       get_special_routine_
+        nop
+    }
+
+    scope get_air_dsp_routine_: {
+        lli     a1, FIELD_DSP
+        li      a2, Character.air_dsp.table
+        j       get_special_routine_
+        nop
+    }
+
+    scope get_ground_nsp_routine_: {
+        lli     a1, FIELD_NSP
+        li      a2, Character.ground_nsp.table
+        j       get_special_routine_
+        nop
+    }
+
+    scope get_ground_usp_routine_: {
+        lli     a1, FIELD_USP
+        li      a2, Character.ground_usp.table
+        j       get_special_routine_
+        nop
+    }
+
+    scope get_ground_dsp_routine_: {
+        lli     a1, FIELD_DSP
+        li      a2, Character.ground_dsp.table
+        j       get_special_routine_
         nop
     }
 
@@ -938,7 +1071,31 @@ scope CharCreator {
         li      t1, special_animation_heap
         addu    t1, t1, t0
         lw      t1, 0x0000(t1)
-        beqz    t1, _body                  // pre-match preparation did not finish
+        bnez    t1, _animation_heap_ready
+        sw      t1, 0x002C(sp)
+
+        // A separate pre-match animation allocation can fail when Training's
+        // task heap is already committed to fighter files. Reuse the body's
+        // existing figatree heap only when its declared capacity is at least
+        // as large as the donor's. This is safe for combinations such as
+        // Mario body + Fox special (0x1850 >= 0x1320); larger donors continue
+        // to fail closed to the body routine.
+        lw      t2, 0x0028(sp)             // donor FTData
+        lw      t3, 0x0074(t2)             // donor file_anim_size
+        beqz    t3, _body
+        lw      t0, 0x0014(sp)             // player struct
+        lw      t2, 0x09C4(t0)             // body FTData
+        beqz    t2, _body
+        nop
+        lw      t2, 0x0074(t2)             // body file_anim_size
+        sltu    t3, t2, t3                 // body capacity < donor requirement
+        bnez    t3, _body
+        nop
+        lw      t1, 0x09D0(t0)             // body's figatree heap
+        beqz    t1, _body
+        sw      t1, 0x002C(sp)
+
+        _animation_heap_ready:
         nop
         jal     ensure_special_preloads_
         lw      a0, 0x0024(sp)
@@ -981,9 +1138,7 @@ scope CharCreator {
         sw      t4, 0x09C4(t0)
         lw      t4, 0x0024(sp)             // donor Character.id / fkind
         sw      t4, 0x0008(t0)
-        li      t3, special_animation_heap
-        addu    t3, t3, t1
-        lw      t4, 0x0000(t3)
+        lw      t4, 0x002C(sp)             // dedicated or compatible body heap
         sw      t4, 0x09D0(t0)
         b       _lookup
         nop
@@ -1101,6 +1256,10 @@ scope CharCreator {
         sll     t8, t7, 0x0002
         addu    t9, t9, t8
         lw      t9, 0x0000(t9)
+        li      at, diagnostic_action_array
+        sw      t9, 0x0000(at)
+        sw      t0, 0x0004(at)
+        sw      t0, 0x0074(sp)             // original: unique action index
         j       0x800E73E8
         nop
     }
@@ -1243,6 +1402,132 @@ scope CharCreator {
         _end:
         sra     v0, v0, 0x0016             // original instruction
         j       0x800E7504
+        nop
+    }
+
+    // ftMainSetStatus has resolved the selected action parameter record here.
+    // For a borrowed special, independently resolve the donor record from the
+    // current action. Other status hooks can replace the record between the
+    // unique-action lookup and this point, and an out-of-range parameter index
+    // would otherwise select unrelated data. Copy the donor record to per-port
+    // scratch space and replace only its animation with the body's Taunt
+    // animation. Taunt is a shared, finite action available to every supported
+    // body, so donor command timing can advance without applying a donor
+    // figatree to an incompatible skeleton. The donor command pointer and
+    // non-animation flags stay intact.
+    scope parameter_record_hook_: {
+        OS.patch_start(0x62D54, 0x800E7554)
+        j       parameter_record_hook_
+        nop
+        OS.patch_end()
+
+        addu    t3, a0, t2                  // original: selected param record
+
+        // TwelveCharBattle normally owns the following two instructions. Our
+        // earlier jump supersedes its hook, so call it explicitly before the
+        // Character Creator override and preserve ftMainSetStatus's return RA.
+        sw      ra, 0x0010(sp)
+        jal     TwelveCharBattle.defeated_action_override_
+        nop
+        lw      ra, 0x0010(sp)
+
+        li      t4, diagnostic_parameter_array
+        lw      t5, 0x0080(sp)
+        sw      t5, 0x0000(t4)
+        lw      t5, 0x0074(sp)
+        sw      t5, 0x0004(t4)
+
+        lbu     t0, 0x000D(s1)              // port
+        sll     t1, t0, 0x0002
+        li      t4, body_character_data
+        addu    t4, t4, t1
+        lw      t5, 0x0000(t4)              // saved body FTData
+        beqz    t5, _return                  // ordinary body-owned action
+        nop
+
+        // Resolve the donor's unique action parameter record directly. The
+        // selected donor FTData is installed on the fighter for the duration
+        // of the borrowed special.
+        li      t6, active_special_donor
+        addu    t6, t6, t1
+        lw      t6, 0x0000(t6)              // donor ID
+        bltz    t6, _return
+        nop
+        li      t7, Character.ACTION_ARRAY_TABLE
+        sll     t8, t6, 0x0002
+        addu    t7, t7, t8
+        lw      t7, 0x0000(t7)              // donor unique action array
+        beqz    t7, _return
+        nop
+        lw      t6, 0x0024(s1)              // current action
+        addiu   t6, t6, -0x00DC
+        bltz    t6, _return                  // only unique actions are adapted
+        nop
+        sll     t8, t6, 0x0002
+        addu    t8, t8, t6                  // unique index * 5
+        sll     t8, t8, 0x0002              // unique index * 20
+        addu    t7, t7, t8
+        lw      t6, 0x0000(t7)
+        srl     t6, t6, 0x0016              // donor parameter index
+        sltiu   t7, t6, 0x03FE
+        beqz    t7, _return
+        nop
+        sw      t6, 0x0028(s1)              // repair ftMainSetStatus's index
+        sll     t7, t6, 0x0001
+        addu    t7, t7, t6                  // parameter index * 3
+        sll     t7, t7, 0x0002              // parameter index * 12
+        lw      t3, 0x09C4(s1)              // donor FTData
+        lw      t3, 0x0064(t3)              // donor parameter array
+        addu    t3, t3, t7
+
+        // t4 = this port's 12-byte synthetic parameter record.
+        sll     t4, t0, 0x0003              // port * 8
+        addu    t4, t4, t1                  // port * 12
+        li      t6, special_parameter_records
+        addu    t4, t4, t6
+        lw      t6, 0x0000(t3)
+        lw      t7, 0x0004(t3)
+        lw      t8, 0x0008(t3)
+        sw      t6, 0x0000(t4)
+        sw      t7, 0x0004(t4)
+        sw      t8, 0x0008(t4)
+
+        // Resolve the body's shared Taunt parameter index and animation ID.
+        // Character.SHARED_ACTION_ARRAY is a ROM offset; this routine needs
+        // the stock array's runtime address.
+        li      t6, 0x80128DD8
+        lli     t7, 0x00BD                  // Action.Taunt
+        sll     t8, t7, 0x0002
+        addu    t8, t8, t7                  // action * 5
+        sll     t8, t8, 0x0002              // action * 20
+        addu    t6, t6, t8
+        lw      t6, 0x0000(t6)
+        srl     t6, t6, 0x0016              // body param index
+        sll     t7, t6, 0x0001
+        addu    t7, t7, t6                  // index * 3
+        sll     t7, t7, 0x0002              // index * 12
+        lw      t6, 0x0064(t5)              // body parameter array
+        addu    t6, t6, t7
+        lw      t7, 0x0000(t6)              // body-safe animation ID
+        sw      t7, 0x0000(t4)
+
+        // Animation flags are meaningful only together with their animation.
+        // In particular, Fox's aerial Up-B uses 0x40000000; retaining that
+        // flag with Mario's Taunt makes the animation walker treat figatree
+        // data as a node pointer. Use the complete body flag word.
+        lw      t6, 0x0008(t6)
+        sw      t6, 0x0008(t4)
+        // ftMainSetStatus resolves the animation file base through v1 at
+        // 0x800E7574. The synthetic animation ID belongs to the body, so use
+        // the saved body FTData for that lookup. Command resolution later
+        // reloads fp->data and is independently redirected to the donor.
+        or      v1, t5, r0
+        or      t3, t4, r0
+
+        _return:
+        sw      t3, 0x0024(sp)              // selected parameter record
+        lw      t4, 0x0008(t3)              // original flag load
+        j       0x800E7560
         nop
     }
 

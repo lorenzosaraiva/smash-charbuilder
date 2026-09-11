@@ -528,6 +528,31 @@ class CharacterAppender:
         )
         tag_team_path.write_text(tag_team_source, encoding="utf-8")
 
+        # Training uses its own screen loader and never enters the stock-battle
+        # character-queue hook above. Preload creator donors after Training has
+        # finished its normal file-manager setup, before fighters are created.
+        training_path = Path("src/Training.asm")
+        training_source = training_path.read_text(encoding="utf-8")
+        training_load_tail = (
+            "        jal     0x801906D0                  // original line 1\n"
+            "        nop                                 // original line 2"
+        )
+        if training_load_tail not in training_source:
+            raise RuntimeError(
+                "Could not locate the Training character-load path for "
+                "Character Creator"
+            )
+        training_source = training_source.replace(
+            training_load_tail,
+            training_load_tail
+            + "\n        OS.save_registers()\n"
+            "        jal     CharCreator.preload_selected_builds_\n"
+            "        nop\n"
+            "        OS.restore_registers()",
+            1,
+        )
+        training_path.write_text(training_source, encoding="utf-8")
+
         # The creator blocks shift every SRAM allocation that follows Toggles, so
         # old saves must not be interpreted using the new layout.
         sram_path = Path("src/SRAM.asm")
