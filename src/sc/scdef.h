@@ -468,6 +468,7 @@ typedef enum SC1PTrainingModeView
 	nSC1PTrainingModeMenuViewEnumStart,
 	nSC1PTrainingModeMenuViewCloseUp = nSC1PTrainingModeMenuViewEnumStart,
 	nSC1PTrainingModeMenuViewNormal,
+	nSC1PTrainingModeMenuViewHitbox,
 	nSC1PTrainingModeMenuViewEnumCount
 
 } SC1PTrainingModeView;

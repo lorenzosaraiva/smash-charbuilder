@@ -14,6 +14,7 @@
 
 extern void mnVSModeStartScene();
 
+s8 gSCManagerCharBuilderPlayerSlots[4] = { -1, -1, -1, -1 };
 SCCharBuilderSlot gSCManagerCharBuilderSlots[SCCHARBUILDER_SLOTS_COUNT] =
 {
     { TRUE, nFTKindMario, { nFTKindFox, nFTKindCaptain, nFTKindLink, nFTKindPikachu, nFTKindNess, nFTKindDonkey, nFTKindKirby, nFTKindSamus, nFTKindYoshi, nFTKindFox, nFTKindLink, nFTKindPurin, nFTKindCaptain }, nFTKindPikachu, nFTKindFox },
@@ -318,8 +319,8 @@ LBBackupData dSCManagerDefaultBackupData =
 	0,												// Vertical screen adjust offset
 	0,												// Horizontal screen adjust offset
 	nFTKindMario,									// Last character viewed on Character Data menu
-	0,												// Mask of unlocked features
-	0,												// Mask of available characters
+	LBBACKUP_UNLOCK_MASK_NEWCOMERS | LBBACKUP_UNLOCK_MASK_ITEMSWITCH, // Unlocked features
+	LBBACKUP_CHARACTER_MASK_ALL, // All twelve fighters
 	nSC1PGameDifficultyEasy,						// Last 1P Game difficulty setting
 	2,												// Last 1P Game stocks setting
 
@@ -858,6 +859,15 @@ void scManagerRunLoop(sb32 arg)
 		continue;
 	}
 	lbBackupIsSramValid();
+    /* Upgrade existing SRAM without clearing scores, records or settings. */
+    if (((gSCManagerBackupData.fighter_mask & LBBACKUP_CHARACTER_MASK_ALL) != LBBACKUP_CHARACTER_MASK_ALL) ||
+        ((gSCManagerBackupData.unlock_mask & (LBBACKUP_UNLOCK_MASK_NEWCOMERS | LBBACKUP_UNLOCK_MASK_ITEMSWITCH)) !=
+         (LBBACKUP_UNLOCK_MASK_NEWCOMERS | LBBACKUP_UNLOCK_MASK_ITEMSWITCH)))
+    {
+        gSCManagerBackupData.fighter_mask |= LBBACKUP_CHARACTER_MASK_ALL;
+        gSCManagerBackupData.unlock_mask |= LBBACKUP_UNLOCK_MASK_NEWCOMERS | LBBACKUP_UNLOCK_MASK_ITEMSWITCH;
+        lbBackupWrite();
+    }
 	lbBackupApplyOptions();
 
 	framebuffer = (u16*) gSYFramebufferSets;

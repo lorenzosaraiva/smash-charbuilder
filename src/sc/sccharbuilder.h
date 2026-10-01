@@ -35,5 +35,7 @@ typedef struct SCCharBuilderSlot
 } SCCharBuilderSlot;
 
 extern SCCharBuilderSlot gSCManagerCharBuilderSlots[SCCHARBUILDER_SLOTS_COUNT];
+/* -1 is vanilla; 0..3 selects a preset independently for each controller/CPU. */
+extern s8 gSCManagerCharBuilderPlayerSlots[4];
 
 #endif

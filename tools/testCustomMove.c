@@ -20,111 +20,114 @@ struct FTStruct
     s32 status_id, motion_id;
     DObj *joints[FTPARTS_JOINT_NUM_MAX];
     s32 attack_colls[4];
-    FTMotionScript motion_scripts[2][2];
+    FTMotionScript motion_scripts[2][3];
 };
+#include <sc/scdef.h>
+#include <sc/sccharbuilder.h>
+SCCharBuilderSlot gSCManagerCharBuilderSlots[4];
+s8 gSCManagerCharBuilderPlayerSlots[4] = { 0, 1, 2, 3 };
+static struct { s32 scene_curr; } gSCManagerSceneData;
 #include "../src/ft/ftcustommove.c.inc"
 
 #define CHECK(expr) do { if (!(expr)) return __LINE__; } while (0)
-
 static s32 testCustomMove(void)
 {
     FTStruct fp = { 0 }, other = { 0 };
     DObj joint;
-    FTCustomMoveDefinition move = sFTCustomMarioAttackAirLw;
     ftMotionCommand *script, *second;
-    ftMotionCommand native[8];
-    u32 saved;
-    s32 i;
-
-    fp.fkind = nFTKindMario;
+    ftMotionCommand native[8], invalid[6];
+    FTCustomMoveDefinition bad;
+    const FTCustomMoveDefinition *move;
+    s32 body, donor, i, j, cursor, count;
+    u32 word, opcode, saved, failures;
+    gSCManagerSceneData.scene_curr = nSCKindVSBattle;
     fp.pkind = nFTPlayerKindMan;
-    fp.status_id = nFTCommonStatusAttackAirLw;
-    fp.motion_id = nFTCommonMotionAttackAirLw;
     for (i = 0; i < ARRAY_COUNT(fp.joints); i++) fp.joints[i] = &joint;
-    CHECK(ftCustomMoveGetDefinition(&fp) != NULL);
-    CHECK(ftCustomJointResolve(&fp, nFTCustomJointKneeR) == 25);
-    CHECK(ftCustomJointResolve(&fp, nFTCustomJointFootR) == 27);
-    CHECK(ftCustomJointResolve(&fp, -1) == -1);
-    CHECK(ftCustomJointResolve(&fp, nFTCustomJointEnumCount) == -1);
-    CHECK(ftCustomJointResolve(NULL, nFTCustomJointRoot) == -1);
-    script = ftCustomMoveBuildScript(&fp, &move);
-    CHECK((script[0] >> 26) == nFTMotionEventAsyncWait);
+    for (body = 0; body < 12; body++)
+    {
+        fp.fkind = body;
+        gSCManagerCharBuilderSlots[0].is_enabled = TRUE;
+        gSCManagerCharBuilderSlots[0].body = body;
+        for (donor = 0; donor < 12; donor++)
+        {
+            for (j = 0; j < 13; j++) gSCManagerCharBuilderSlots[0].attacks[j] = donor;
+            for (i = 0; i < 33; i++)
+            {
+                fp.motion_id = (i < 29) ? sFTCustomMotionIDs[i] : sFTCustomBodyExtraMotionIDs[body][i - 29];
+                move = ftCustomMoveGetDefinition(&fp);
+                if ((body == donor) || (fp.motion_id < 0)) CHECK(move == NULL);
+                else CHECK(move == &sFTCustomMoves[donor][i]);
+                failures = gFTCustomMoveValidationFailures;
+                script = ftCustomMoveBuildScript(&fp, &sFTCustomMoves[donor][i]);
+                CHECK(script != NULL);
+                CHECK(gFTCustomMoveValidationFailures == failures);
+                cursor = 0;
+                while (cursor < sFTCustomMoves[donor][i].word_count)
+                {
+                    word = script[cursor]; opcode = word >> 26;
+                    count = 1;
+                    if ((opcode == nFTMotionEventMakeAttackColl) || (opcode == nFTMotionEventMakeAttackCollScaled))
+                    {
+                        count = 5;
+                        CHECK(((word >> 23) & 7) < 4);
+                        CHECK(((word >> 13) & 127) < FTPARTS_JOINT_NUM_MAX);
+                        CHECK(fp.joints[(word >> 13) & 127] != NULL);
+                    }
+                    else if (opcode == nFTMotionEventSetAttackCollOffset) count = 2;
+                    else if (opcode == nFTMotionEventGoto)
+                    {
+                        count = 2; CHECK(script[cursor + 1] == (uintptr_t)script);
+                    }
+                    else CHECK(opcode == nFTMotionEventEnd || opcode == nFTMotionEventSyncWait || opcode == nFTMotionEventAsyncWait || opcode == nFTMotionEventPauseScript || opcode == nFTMotionEventClearAttackCollAll || opcode == nFTMotionEventClearAttackCollID || opcode == nFTMotionEventRefreshAttackCollID || opcode == nFTMotionEventSetAttackCollDamage || opcode == nFTMotionEventSetAttackCollSize || opcode == nFTMotionEventSetAttackCollSoundLevel);
+                    cursor += count;
+                }
+                CHECK(cursor == sFTCustomMoves[donor][i].word_count);
+                CHECK((script[cursor - 1] >> 26) == nFTMotionEventEnd);
+            }
+        }
+    }
+    fp.fkind = nFTKindMario; fp.motion_id = nFTCommonMotionAttackAirLw;
+    gSCManagerCharBuilderSlots[0].body = nFTKindMario;
+    gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackDAir] = nFTKindCaptain;
+    CHECK(ftCustomJointResolve(&fp,nFTCustomJointKneeR) == 25);
+    script = ftCustomMoveBuildScript(&fp,ftCustomMoveGetDefinition(&fp));
     CHECK((script[0] & 0x03FFFFFF) == 7);
-    CHECK(((script[1] >> 13) & 0x7F) == 25);
+    CHECK(((script[1] >> 13) & 127) == 25);
     CHECK(((script[1] >> 5) & 255) == 14);
-    CHECK((script[2] >> 16) == 330);
     CHECK((script[3] >> 16) == 45);
-    CHECK(((script[4] >> 22) & 1023) == ((u32)-80 & 1023));
-    CHECK(((script[4] >> 12) & 1023) == 100);
-    CHECK(((script[6] >> 13) & 0x7F) == 5);
-    CHECK((script[7] >> 16) == 190);
-    CHECK((script[11] >> 26) == nFTMotionEventSyncWait);
-    CHECK((script[11] & 0x03FFFFFF) == 18);
-    CHECK((script[12] >> 26) == nFTMotionEventClearAttackCollAll);
-    CHECK((script[13] >> 26) == nFTMotionEventEnd);
-    move.hitbox_count = 4;
-    move.hitboxes[2] = move.hitboxes[0];
-    move.hitboxes[3] = move.hitboxes[1];
-    script = ftCustomMoveBuildScript(&fp, &move);
-    CHECK(((script[16] >> 23) & 7) == 3);
-    CHECK((script[23] >> 26) == nFTMotionEventEnd);
-    move = sFTCustomMarioAttackAirLw;
-    script = ftCustomMoveBuildScript(&fp, &move);
-    /* Separate fighter storage; rebuilding one cannot corrupt another. */
-    other = fp;
-    other.player = 1;
-    saved = script[1];
-    second = ftCustomMoveBuildScript(&other, &move);
-    CHECK(second != script);
-    move.hitboxes[0].damage = 19;
-    ftCustomMoveBuildScript(&other, &move);
-    CHECK(script[1] == saved);
-    /* Invalid skeleton joint skips only its box. */
-    fp.joints[25] = NULL;
-    script = ftCustomMoveBuildScript(&fp, &move);
-    CHECK(((script[1] >> 23) & 7) == 1);
-    CHECK(((script[1] >> 13) & 0x7F) == 5);
-    CHECK((script[6] >> 26) == nFTMotionEventSyncWait);
-    fp.joints[25] = &joint;
-    move.hitboxes[0].damage = 256;
-    script = ftCustomMoveBuildScript(&fp, &move);
-    CHECK(((script[1] >> 23) & 7) == 1);
-    move = sFTCustomMarioAttackAirLw;
-    move.hitbox_count = 5;
-    CHECK(ftCustomMoveBuildScript(&fp, &move)[0] == ftMotionCommandEnd());
-    move.hitbox_count = -1;
-    CHECK(ftCustomMoveBuildScript(&fp, &move)[0] == ftMotionCommandEnd());
-    move = sFTCustomMarioAttackAirLw;
-    move.active_frames = 0;
-    CHECK(ftCustomMoveBuildScript(&fp, &move)[0] == ftMotionCommandEnd());
-    CHECK(ftCustomMoveBuildScript(&fp, NULL)[0] == ftMotionCommandEnd());
-    fp.player = GMCOMMON_PLAYERS_MAX;
-    CHECK(ftCustomMoveBuildScript(&fp, &move) == NULL);
-    CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
-    fp.player = 0;
-    /* Mario's native refresh/clear cannot make the new move multihit. */
-    fp.motion_scripts[0][0].p_script = native;
-    CHECK(ftCustomMoveSkipNativeCollision(&fp, &fp.motion_scripts[0][0], nFTMotionEventMakeAttackColl));
-    CHECK(fp.motion_scripts[0][0].p_script == native + 5);
-    fp.motion_scripts[1][0].p_script = native;
-    CHECK(ftCustomMoveSkipNativeCollision(&fp, &fp.motion_scripts[1][0], nFTMotionEventRefreshAttackCollID));
-    CHECK(fp.motion_scripts[1][0].p_script == native + 1);
-    CHECK(!ftCustomMoveSkipNativeCollision(&fp, &fp.motion_scripts[0][0], nFTMotionEventSetFlag1));
-    CHECK(!ftCustomMoveSkipNativeCollision(&fp, &fp.motion_scripts[0][1], nFTMotionEventClearAttackCollAll));
-    fp.status_id = nFTCommonStatusAttackAirF;
-    CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
-    CHECK(!ftCustomMoveSkipNativeCollision(&fp, &fp.motion_scripts[0][0], nFTMotionEventClearAttackCollAll));
-    fp.status_id = nFTCommonStatusAttackAirLw;
-    fp.pkind = nFTPlayerKindDemo;
-    CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
+    CHECK((script[8] >> 16) == 0);
+    saved = script[1]; other = fp; other.player = 1;
+    second = ftCustomMoveBuildScript(&other,&sFTCustomMoves[nFTKindFox][23]);
+    CHECK(second != script && script[1] == saved);
+    fp.pkind = nFTPlayerKindCom; CHECK(ftCustomMoveGetDefinition(&fp) != NULL);
+    fp.pkind = nFTPlayerKindDemo; CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
     fp.pkind = nFTPlayerKindMan;
-    fp.fkind = nFTKindFox;
+    fp.motion_scripts[0][0].p_script = native;
+    CHECK(ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][0],nFTMotionEventMakeAttackColl));
+    CHECK(fp.motion_scripts[0][0].p_script == native + 5);
+    fp.motion_scripts[0][1].p_script = native;
+    CHECK(ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][1],nFTMotionEventClearAttackCollAll));
+    CHECK(!ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][2],nFTMotionEventClearAttackCollAll));
+    CHECK(!ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][0],nFTMotionEventSetFlag1));
+    gSCManagerCharBuilderPlayerSlots[0] = -1; CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
+    gSCManagerCharBuilderPlayerSlots[0] = 0;
+    gSCManagerSceneData.scene_curr = nSCKindTitle; CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
+    gSCManagerSceneData.scene_curr = nSCKind1PTrainingMode;
+    CHECK(ftCustomMoveGetDefinition(&fp) != NULL);
+    invalid[0] = ftMotionCommandMakeAttackCollS1(4,0,nFTCustomJointTorso,1,1,0);
+    bad.events = invalid; bad.word_count = 6;
+    CHECK(ftCustomMoveBuildScript(&fp,&bad)[0] == ftMotionCommandEnd());
+    bad.word_count = FTCUSTOMMOVE_SCRIPT_WORDS + 1;
+    CHECK(ftCustomMoveBuildScript(&fp,&bad)[0] == ftMotionCommandEnd());
+    bad.events = NULL; bad.word_count = 1;
+    CHECK(ftCustomMoveBuildScript(&fp,&bad)[0] == ftMotionCommandEnd());
+    CHECK(ftCustomJointResolve(NULL,nFTCustomJointRoot) == -1);
+    fp.joints[25] = NULL;
+    CHECK(ftCustomMoveBuildScript(&fp,&sFTCustomMoves[nFTKindCaptain][23])[0] == ftMotionCommandEnd());
+    fp.player = 4; CHECK(ftCustomMoveBuildScript(&fp,&bad) == NULL);
     CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
-    CHECK(ftCustomJointResolve(&fp, nFTCustomJointKneeR) == -1);
-    CHECK(gFTCustomMoveValidationFailures == 8);
     return 0;
 }
-
 void _start(void)
 {
     s32 result = testCustomMove();

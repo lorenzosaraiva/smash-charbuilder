@@ -4586,6 +4586,13 @@ void mnPlayersVSInitPlayer(s32 player)
 	sMNPlayersVSSlots[player].p_sfx = NULL;
 	sMNPlayersVSSlots[player].sfx_id = 0;
 	sMNPlayersVSSlots[player].player = NULL;
+    if ((gSCManagerCharBuilderPlayerSlots[player] >= 0) &&
+        (gSCManagerCharBuilderPlayerSlots[player] < SCCHARBUILDER_SLOTS_COUNT) &&
+        gSCManagerCharBuilderSlots[gSCManagerCharBuilderPlayerSlots[player]].is_enabled)
+    {
+        gSCManagerTransferBattleState.players[player].fkind = gSCManagerCharBuilderSlots[gSCManagerCharBuilderPlayerSlots[player]].body;
+        gSCManagerTransferBattleState.players[player].costume = 0;
+    }
 	sMNPlayersVSSlots[player].fkind = gSCManagerTransferBattleState.players[player].fkind;
 
 	if ((gSCManagerTransferBattleState.players[player].pkind == nFTPlayerKindMan) && (sMNPlayersVSControllerOrders[player] == -1))

@@ -45,10 +45,8 @@ typedef struct FTCustomHitboxDefinition
 
 typedef struct FTCustomMoveDefinition
 {
-    s32 startup_frames;         /* Absolute animation frame for activation. */
-    s32 active_frames;          /* One continuous phase; no late-hit mutations. */
-    s32 hitbox_count;
-    FTCustomHitboxDefinition hitboxes[FTCUSTOMMOVE_HITBOX_COUNT_MAX];
+    const ftMotionCommand *events; /* Collision-only events with semantic joints. */
+    s32 word_count;
 } FTCustomMoveDefinition;
 
 #endif

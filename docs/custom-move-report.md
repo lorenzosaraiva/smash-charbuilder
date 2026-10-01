@@ -1,5 +1,7 @@
 # Mario custom normal-attack foundation
 
+Historical report for checkpoint `f0d2e1a6c`. The current ROM uses explicit player presets and the expanded system described in [custom-move-roster.md](custom-move-roster.md).
+
 The US N64 ROM builds successfully at `build/smashbrothers.us.z64`, in the existing output directory. Mario's down-air now has one continuous Falcon-inspired hitbox phase while retaining Mario's down-air animation, normal aerial status, skeleton, sounds, recovery and landing policy. No donor motion script or status implementation is executed by this proof.
 
 Select ordinary Mario and use down-air (jump, then down + A). The experiment applies to ordinary Mario, including CPU Mario, independently of the earlier character-builder settings. Demo fighters, Metal Mario, polygon Mario and all other fighters are excluded.

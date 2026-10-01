@@ -5,6 +5,10 @@
 #include <sc/scene.h>
 #include <sys/video.h>
 #include <reloc_data.h>
+#include <sys/develop.h>
+#include "sc1ptraininghitbox.inc"
+
+static Sprite *sSC1PTrainingViewSprites[32];
 
 extern void syAudioSetBGMVolume(s32 playerID, u32 vol);
 
@@ -429,12 +433,18 @@ sb32 sc1PTrainingModeUpdateSpeedOption(void)
 	return FALSE;
 }
 
+static s32 sc1PTrainingModeGetViewSpriteID(void)
+{
+    return (sSC1PTrainingModeMenu.view_menu_option == nSC1PTrainingModeMenuViewHitbox) ?
+        31 : sSC1PTrainingModeMenu.view_menu_option + nSC1PTrainingModeMenuOptionSpriteViewStart;
+}
+
 // 0x8018D6DC
 sb32 sc1PTrainingModeUpdateViewOption(void)
 {
 	if (sc1PTrainingModeCheckUpdateOptionID(&sSC1PTrainingModeMenu.view_menu_option, nSC1PTrainingModeMenuViewEnumStart, nSC1PTrainingModeMenuViewEnumCount) != FALSE)
 	{
-		if (sSC1PTrainingModeMenu.view_menu_option == nSC1PTrainingModeMenuViewNormal)
+		if (sSC1PTrainingModeMenu.view_menu_option != nSC1PTrainingModeMenuViewCloseUp)
 		{
 			gmCameraSetStatusDefault();
 			sSC1PTrainingModeMenu.magnify_wait = 180;
@@ -448,6 +458,16 @@ sb32 sc1PTrainingModeUpdateViewOption(void)
 			gIFCommonPlayerInterface.is_magnify_display = FALSE;
 			sSC1PTrainingModeMenu.magnify_wait = 0;
 		}
+        {
+            s32 player;
+            for (player = 0; player < ARRAY_COUNT(gSCManagerBattleState->players); player++)
+            {
+                GObj *fighter = gSCManagerBattleState->players[player].fighter_gobj;
+                if (fighter != NULL) ftGetStruct(fighter)->display_mode =
+                    (sSC1PTrainingModeMenu.view_menu_option == nSC1PTrainingModeMenuViewHitbox) ?
+                    nDBDisplayModeHitAttackOutline : nDBDisplayModeMaster;
+            }
+        }
 		sc1PTrainingModeUpdateViewOptionSprite();
 		sc1PTrainingModeUpdateScroll();
 #if defined(REGION_JP)
@@ -644,6 +664,12 @@ void sc1PTrainingModeLoadSprites(void)
 	sSC1PTrainingModeMenu.display_option_sprites = lbRelocGetFileData(Sprite**, file, &llSC1PTrainingModeDisplayOptionSpriteArray);
 	sSC1PTrainingModeMenu.menu_label_sprites = lbRelocGetFileData(SC1PTrainingModeSprites*, file, &llSC1PTrainingModeMenuLabelPosSpriteArray);
 	sSC1PTrainingModeMenu.menu_option_sprites = lbRelocGetFileData(Sprite**, file, &llSC1PTrainingModeMenuOptionSpriteArray);
+    {
+        s32 i;
+        for (i = 0; i < 31; i++) sSC1PTrainingViewSprites[i] = sSC1PTrainingModeMenu.menu_option_sprites[i];
+        sSC1PTrainingViewSprites[31] = &sSC1PTrainingHitboxSprite;
+        sSC1PTrainingModeMenu.menu_option_sprites = sSC1PTrainingViewSprites;
+    }
 	sSC1PTrainingModeMenu.unk_trainmenu_0x34 = lbRelocGetFileData(SC1PTrainingModeSprites*, file, &llSC1PTrainingMode0x10CPosSpriteArray);
 	sSC1PTrainingModeMenu.unk_trainmenu_0x38 = lbRelocGetFileData(SC1PTrainingModeSprites*, file, &llSC1PTrainingMode0x1B8PosSpriteArray);
 }
@@ -1311,7 +1337,7 @@ void sc1PTrainingModeUpdateViewOptionSprite(void)
 {
 	SObj *sobj = SObjGetStruct(sSC1PTrainingModeMenu.view_option_gobj);
 
-	sobj->sprite = *sSC1PTrainingModeMenu.menu_option_sprites[sSC1PTrainingModeMenu.view_menu_option + nSC1PTrainingModeMenuOptionSpriteViewStart];
+	sobj->sprite = *sSC1PTrainingModeMenu.menu_option_sprites[sc1PTrainingModeGetViewSpriteID()];
 #if defined(REGION_US)
 	sobj->pos.x = 191 - (sobj->sprite.width / 2);
 #endif
@@ -1349,7 +1375,7 @@ void sc1PTrainingModeMakeViewOption(void)
 	sobj = lbCommonMakeSObjForGObj
 	(
 		interface_gobj,
-		sSC1PTrainingModeMenu.menu_option_sprites[sSC1PTrainingModeMenu.view_menu_option + nSC1PTrainingModeMenuOptionSpriteViewStart]
+		sSC1PTrainingModeMenu.menu_option_sprites[sc1PTrainingModeGetViewSpriteID()]
 	);
 
 #if defined(REGION_US)
@@ -1526,7 +1552,7 @@ s32 sc1PTrainingModeGetOptionSpriteID(void)
 		return sSC1PTrainingModeMenu.speed_menu_option + nSC1PTrainingModeMenuOptionSpriteSpeedStart;
 
 	case nSC1PTrainingModeMenuMainView:
-		return sSC1PTrainingModeMenu.view_menu_option + nSC1PTrainingModeMenuOptionSpriteViewStart;
+		return sc1PTrainingModeGetViewSpriteID();
 
 	case nSC1PTrainingModeMenuMainReset:
 		return nSC1PTrainingModeMenuOptionSpriteEnumCount;

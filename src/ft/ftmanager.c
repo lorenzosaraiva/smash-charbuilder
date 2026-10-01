@@ -421,21 +421,11 @@ static sb32 ftManagerIsCharBuilderSlotActive(s32 slot_id)
     {
         return FALSE;
     }
-    for (i = 0; i < slot_id; i++)
-    {
-        if ((gSCManagerCharBuilderSlots[i].is_enabled != FALSE) &&
-            (gSCManagerCharBuilderSlots[i].body == slot->body))
-        {
-            return FALSE;
-        }
-    }
     for (i = 0; i < ARRAY_COUNT(gSCManagerBattleState->players); i++)
     {
-        if ((gSCManagerBattleState->players[i].pkind == nFTPlayerKindMan) &&
-            (gSCManagerBattleState->players[i].fkind == slot->body))
-        {
-            return TRUE;
-        }
+        if ((gSCManagerCharBuilderPlayerSlots[i] == slot_id) &&
+            (gSCManagerBattleState->players[i].pkind != nFTPlayerKindNot) &&
+            (gSCManagerBattleState->players[i].fkind == slot->body)) return TRUE;
     }
     return FALSE;
 }
@@ -455,7 +445,7 @@ static sb32 ftManagerCharBuilderSpecialLwNeedsMain(s32 fkind)
 // 0x800D782C
 void ftManagerSetupFilesPlayablesAll(void)
 {
-    s32 i, j;
+    s32 i;
 
     for (i = 0; i <= nFTKindPlayableEnd; i++)
     {
@@ -466,10 +456,6 @@ void ftManagerSetupFilesPlayablesAll(void)
     {
         if (ftManagerIsCharBuilderSlotActive(i) != FALSE)
         {
-            for (j = 0; j < SCCHARBUILDER_ATTACKS_COUNT; j++)
-            {
-                ftManagerSetupFilesMotionKind(gSCManagerCharBuilderSlots[i].attacks[j]);
-            }
             ftManagerSetupFilesMotionKind(gSCManagerCharBuilderSlots[i].special_hi);
             ftManagerSetupFilesMotionKind(gSCManagerCharBuilderSlots[i].special_lw);
             if (ftManagerCharBuilderSpecialHiNeedsMain(gSCManagerCharBuilderSlots[i].special_hi) != FALSE)

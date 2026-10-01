@@ -1,140 +1,139 @@
-/* Compiled in ftmain's existing overlay: no new segment or linker layout.
- * No donor file, animation, status, or raw donor joint is used at runtime. */
+/* Compiled in ftmain's overlay; no runtime donor file/script is needed. */
 #include <ft/ftcustommove.h>
+#include "ftcustommoves.generated.inc"
 
-#define FTCUSTOMMOVE_SCRIPT_WORDS (5 * FTCUSTOMMOVE_HITBOX_COUNT_MAX + 4)
-
-/* MarioModel JointTree ordinal + nFTPartsJointCommonStart (4).
- * Left/right branches are anchored by MarioMain's slope leg roots (18/23)
- * and right item socket (17). Feet here are shoe joints, not slope roots.
- * Torso is the central body pivot used by vanilla body hitboxes. */
-static const s32 sFTCustomMarioJointMap[nFTCustomJointEnumCount] =
-{
-    nFTPartsJointTopN, 5, 12, 10, 16, 9, 15, 20, 25, 22, 27
-};
-
-/* Normalized from CaptainMainMotion_AttackAirD; source 26 is right knee,
- * source 5 is torso. Smaller local Y offsets suit Mario's shorter limbs. */
-static const FTCustomMoveDefinition sFTCustomMarioAttackAirLw =
-{
-    7, 18, 2,
-    {
-        { nFTCustomJointKneeR, 0, 14, -80, 100, 0, 0, 330,
-          { 0, 45, 0 }, nGMHitElementNormal, TRUE, 3, 0, nGMHitLevelStrong, nGMHitSoundKick, FALSE },
-        { nFTCustomJointTorso, 0, 14, -80, 100, 0, 0, 190,
-          { 0, 0, 0 }, nGMHitElementNormal, TRUE, 3, 0, nGMHitLevelStrong, nGMHitSoundKick, FALSE }
-    }
-};
-
-/* Independent storage: simultaneous Mario fighters cannot overwrite scripts. */
 static ftMotionCommand sFTCustomMoveScripts[GMCOMMON_PLAYERS_MAX][FTCUSTOMMOVE_SCRIPT_WORDS];
-/* Inspectable in the ELF/debugger, including release builds. */
 u32 gFTCustomMoveValidationFailures;
+static s8 sFTCustomLastAirAttack[4] = { -1, -1, -1, -1 };
 
 static s32 ftCustomJointResolve(FTStruct *fp, FTCustomJointKind kind)
 {
     s32 joint_id;
-
-    if ((fp == NULL) || (fp->fkind != nFTKindMario) ||
-        (kind < 0) || (kind >= nFTCustomJointEnumCount))
-    {
-        return -1;
-    }
-    joint_id = sFTCustomMarioJointMap[kind];
-    if ((joint_id < 0) || (joint_id >= ARRAY_COUNT(fp->joints)) ||
-        (fp->joints[joint_id] == NULL))
-    {
-        return -1;
-    }
+    if ((fp == NULL) || (fp->fkind < nFTKindPlayableStart) ||
+        (fp->fkind > nFTKindPlayableEnd) || (kind < 0) || (kind >= nFTCustomJointEnumCount)) return -1;
+    joint_id = sFTCustomJointMaps[fp->fkind][kind];
+    if ((joint_id < 0) || (joint_id >= ARRAY_COUNT(fp->joints)) || (fp->joints[joint_id] == NULL)) return -1;
     return joint_id;
 }
 
 static const FTCustomMoveDefinition* ftCustomMoveGetDefinition(FTStruct *fp)
 {
-    if ((fp->fkind == nFTKindMario) && (fp->pkind != nFTPlayerKindDemo) &&
-        (fp->player < GMCOMMON_PLAYERS_MAX) &&
-        (fp->status_id == nFTCommonStatusAttackAirLw) &&
-        (fp->motion_id == nFTCommonMotionAttackAirLw))
+    SCCharBuilderSlot *slot;
+    s32 slot_id, attack, i, donor;
+    if ((fp == NULL) || (fp->pkind == nFTPlayerKindDemo) ||
+        (fp->player >= GMCOMMON_PLAYERS_MAX) || (fp->fkind < nFTKindPlayableStart) || (fp->fkind > nFTKindPlayableEnd) ||
+        ((gSCManagerSceneData.scene_curr != nSCKindVSBattle) &&
+         (gSCManagerSceneData.scene_curr != nSCKind1PTrainingMode))) return NULL;
+    slot_id = gSCManagerCharBuilderPlayerSlots[fp->player];
+    if ((slot_id < 0) || (slot_id >= SCCHARBUILDER_SLOTS_COUNT)) return NULL;
+    slot = &gSCManagerCharBuilderSlots[slot_id];
+    if ((slot->is_enabled == FALSE) || (slot->body != fp->fkind)) return NULL;
+    for (i = 0; i < 33; i++)
     {
-        return &sFTCustomMarioAttackAirLw;
+        if (i < ARRAY_COUNT(sFTCustomMotionIDs))
+        {
+            if (fp->motion_id != sFTCustomMotionIDs[i]) continue;
+        }
+        else if ((sFTCustomBodyExtraMotionIDs[fp->fkind][i - 29] < 0) ||
+                 (fp->motion_id != sFTCustomBodyExtraMotionIDs[fp->fkind][i - 29])) continue;
+        if (i < 2) attack = nSCCharBuilderAttackJab;
+        else if (i == 2) attack = nSCCharBuilderAttackDash;
+        else if (i < 8) attack = nSCCharBuilderAttackFTilt;
+        else if (i < 11) attack = nSCCharBuilderAttackUTilt;
+        else if (i == 11) attack = nSCCharBuilderAttackDTilt;
+        else if (i < 17) attack = nSCCharBuilderAttackFSmash;
+        else if (i < 24) attack = nSCCharBuilderAttackUSmash + (i - 17);
+        else if (i < 29) attack = nSCCharBuilderAttackNAir + (i - 24);
+        else attack = nSCCharBuilderAttackJab;
+        if ((i >= 19) && (i < 24)) sFTCustomLastAirAttack[fp->player] = attack;
+        donor = slot->attacks[attack];
+        if ((donor < nFTKindPlayableStart) || (donor > nFTKindPlayableEnd) || (donor == fp->fkind)) return NULL;
+        return &sFTCustomMoves[donor][i];
     }
+    if ((fp->motion_id == nFTCommonMotionLandingAirNull) && (sFTCustomLastAirAttack[fp->player] >= nSCCharBuilderAttackNAir))
+    {
+        attack = sFTCustomLastAirAttack[fp->player];
+        donor = slot->attacks[attack];
+        if ((donor >= nFTKindPlayableStart) && (donor <= nFTKindPlayableEnd) && (donor != fp->fkind))
+            return &sFTCustomMoves[donor][24 + attack - nSCCharBuilderAttackNAir];
+    }
+    else sFTCustomLastAirAttack[fp->player] = -1;
     return NULL;
-}
-
-static sb32 ftCustomMoveValidateHitbox(const FTCustomHitboxDefinition *hit)
-{
-    return (hit->group_id >= 0) && (hit->group_id < 7) &&
-        (hit->damage >= 0) && (hit->damage <= 255) &&
-        (hit->angle >= -512) && (hit->angle <= 511) &&
-        (hit->knockback_scale >= 0) && (hit->knockback_scale <= 1023) &&
-        (hit->knockback_weight >= 0) && (hit->knockback_weight <= 1023) &&
-        (hit->knockback_base >= 0) && (hit->knockback_base <= 1023) &&
-        (hit->diameter > 0) && (hit->diameter <= 65535) &&
-        (hit->element >= nGMHitElementNormal) && (hit->element <= nGMHitElementSleep) &&
-        ((hit->can_rebound == FALSE) || (hit->can_rebound == TRUE)) &&
-        (hit->hit_ground_air > 0) && (hit->hit_ground_air <= 3) &&
-        (hit->shield_damage >= -128) && (hit->shield_damage <= 127) &&
-        (hit->fgm_level >= 0) && (hit->fgm_level < nGMHitLevelEnumCount) &&
-        (hit->fgm_kind >= 0) && (hit->fgm_kind < nGMHitSoundEnumCount) &&
-        ((hit->is_scale_pos == FALSE) || (hit->is_scale_pos == TRUE));
 }
 
 static ftMotionCommand* ftCustomMoveBuildScript(FTStruct *fp, const FTCustomMoveDefinition *move)
 {
     ftMotionCommand *script;
-    const FTCustomHitboxDefinition *hit;
-    s32 i, joint_id, cursor = 0;
-
-    if ((fp == NULL) || (fp->player >= GMCOMMON_PLAYERS_MAX))
-    {
-        gFTCustomMoveValidationFailures++;
-        return NULL;
-    }
+    u32 word, op, previous_op = nFTMotionEventEnd;
+    s32 i = 0, j, count, joint_id;
+    if ((fp == NULL) || (fp->player >= GMCOMMON_PLAYERS_MAX)) return NULL;
     script = sFTCustomMoveScripts[fp->player];
-    /* Invalid definitions yield a harmless empty script, never native hitboxes. */
     script[0] = ftMotionCommandEnd();
-    if ((move == NULL) || (move->hitbox_count <= 0) ||
-        (move->hitbox_count > ARRAY_COUNT(fp->attack_colls)) ||
-        (move->hitbox_count > FTCUSTOMMOVE_HITBOX_COUNT_MAX) ||
-        (move->startup_frames < 0) || (move->startup_frames > 65535) ||
-        (move->active_frames <= 0) || (move->active_frames > 65535))
+    if ((move == NULL) || (move->events == NULL) || (move->word_count <= 0) ||
+        (move->word_count > FTCUSTOMMOVE_SCRIPT_WORDS)) goto invalid;
+    while (i < move->word_count)
     {
-        gFTCustomMoveValidationFailures++;
-        return script;
-    }
-    script[cursor++] = ftMotionCommandWaitAsync(move->startup_frames);
-    for (i = 0; i < move->hitbox_count; i++)
-    {
-        hit = &move->hitboxes[i];
-        joint_id = ftCustomJointResolve(fp, hit->joint);
-        if ((joint_id == -1) || (ftCustomMoveValidateHitbox(hit) == FALSE))
+        word = move->events[i];
+        op = word >> 26;
+        count = 1;
+        switch (op)
         {
-            gFTCustomMoveValidationFailures++;
-            continue;
+        case nFTMotionEventMakeAttackColl:
+        case nFTMotionEventMakeAttackCollScaled:
+            count = 5;
+            if (((word >> 23) & 7) >= ARRAY_COUNT(fp->attack_colls)) goto invalid;
+            joint_id = ftCustomJointResolve(fp, (word >> 13) & 127);
+            if (joint_id == -1) goto invalid;
+            word = (word & ~(127 << 13)) | (joint_id << 13);
+            break;
+        case nFTMotionEventSetAttackCollOffset:
+            count = 2;
+            /* fallthrough */
+        case nFTMotionEventClearAttackCollID:
+        case nFTMotionEventRefreshAttackCollID:
+        case nFTMotionEventSetAttackCollDamage:
+        case nFTMotionEventSetAttackCollSize:
+        case nFTMotionEventSetAttackCollSoundLevel:
+            if (((word >> 23) & 7) >= ARRAY_COUNT(fp->attack_colls)) goto invalid;
+            break;
+        case nFTMotionEventClearAttackCollAll:
+        case nFTMotionEventSyncWait:
+        case nFTMotionEventAsyncWait:
+        case nFTMotionEventPauseScript:
+        case nFTMotionEventEnd:
+            break;
+        case nFTMotionEventGoto:
+            count = 2;
+            if ((i != move->word_count - 3) || (previous_op != nFTMotionEventPauseScript) ||
+                (move->events[i + 1] != 0)) goto invalid;
+            break;
+        default: goto invalid;
         }
-        script[cursor++] = (hit->is_scale_pos != FALSE) ?
-            ftMotionCommandMakeAttackCollScaledS1(i, hit->group_id, joint_id, hit->damage, hit->can_rebound, hit->element) :
-            ftMotionCommandMakeAttackCollS1(i, hit->group_id, joint_id, hit->damage, hit->can_rebound, hit->element);
-        script[cursor++] = ftMotionCommandMakeAttackCollS2(hit->diameter, hit->offset.x);
-        script[cursor++] = ftMotionCommandMakeAttackCollS3(hit->offset.y, hit->offset.z);
-        script[cursor++] = ftMotionCommandMakeAttackCollS4(hit->angle, hit->knockback_scale, hit->knockback_weight, hit->hit_ground_air);
-        script[cursor++] = ftMotionCommandMakeAttackCollS5(hit->shield_damage, hit->fgm_level, hit->fgm_kind, hit->knockback_base);
+        if ((i + count) > move->word_count) goto invalid;
+        script[i] = word;
+        for (j = 1; j < count; j++) script[i + j] = move->events[i + j];
+        if (op == nFTMotionEventGoto) script[i + 1] = (uintptr_t)script;
+        /* Retain the shorter-limb offsets from the tested Mario aerial. */
+        if ((fp->fkind == nFTKindMario) && (move == &sFTCustomMoves[nFTKindCaptain][23]) && (count == 5))
+        {
+            script[i + 2] = ftMotionCommandMakeAttackCollS3((joint_id == 25) ? 45 : 0, 0);
+        }
+        i += count;
+        previous_op = op;
     }
-    script[cursor++] = ftMotionCommandWait(move->active_frames);
-    script[cursor++] = ftMotionCommandClearAttackCollAll();
-    script[cursor] = ftMotionCommandEnd();
+    if ((script[i - 1] >> 26) != nFTMotionEventEnd) goto invalid;
+    return script;
+invalid:
+    gFTCustomMoveValidationFailures++;
+    script[0] = ftMotionCommandEnd();
     return script;
 }
 
-/* Keep Mario's flags, sounds and landing policy in his original script.
- * Only its hitbox events are replaced by our collision-only parallel script. */
 static sb32 ftCustomMoveSkipNativeCollision(FTStruct *fp, FTMotionScript *ms, u32 ev_kind)
 {
     if ((ftCustomMoveGetDefinition(fp) == NULL) ||
-        ((ms != &fp->motion_scripts[0][0]) && (ms != &fp->motion_scripts[1][0])))
-    {
-        return FALSE;
-    }
+        ((ms != &fp->motion_scripts[0][0]) && (ms != &fp->motion_scripts[1][0]) &&
+         (ms != &fp->motion_scripts[0][1]) && (ms != &fp->motion_scripts[1][1]))) return FALSE;
     switch (ev_kind)
     {
     case nFTMotionEventMakeAttackColl:

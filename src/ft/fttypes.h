@@ -1225,7 +1225,7 @@ struct FTStruct
     f32 camera_zoom_frame;              // Maximum size of fighter's camera range?
     f32 camera_zoom_range;              // Multiplier of fighter's camera range?
 
-    FTMotionScript motion_scripts[2][2];// Fighter's move scripts; [i][0] is played before, then [i][1] once all 'proc_whatevers' have been executed 
+    FTMotionScript motion_scripts[2][3];// Primary, native parallel, normalized custom collision scripts.
 
     DObj *joints[FTPARTS_JOINT_NUM_MAX];// Fighter's joints (DObjs)
 

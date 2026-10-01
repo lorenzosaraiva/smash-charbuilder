@@ -64,19 +64,14 @@ static ftMotionCommand sFTMainCharBuilderDonkeySpecialLwScript[] =
 static SCCharBuilderSlot* ftMainCharBuilderGetSlot(FTStruct *fp)
 {
     s32 i;
-
-    if (fp->pkind != nFTPlayerKindMan)
-    {
-        return NULL;
-    }
-    for (i = 0; i < SCCHARBUILDER_SLOTS_COUNT; i++)
-    {
-        if ((gSCManagerCharBuilderSlots[i].is_enabled != FALSE) && (gSCManagerCharBuilderSlots[i].body == fp->fkind))
-        {
-            return &gSCManagerCharBuilderSlots[i];
-        }
-    }
-    return NULL;
+    if ((fp->pkind == nFTPlayerKindDemo) || (fp->player >= GMCOMMON_PLAYERS_MAX) ||
+        ((gSCManagerSceneData.scene_curr != nSCKindVSBattle) &&
+         (gSCManagerSceneData.scene_curr != nSCKind1PTrainingMode))) return NULL;
+    i = gSCManagerCharBuilderPlayerSlots[fp->player];
+    if ((i < 0) || (i >= SCCHARBUILDER_SLOTS_COUNT)) return NULL;
+    if ((gSCManagerCharBuilderSlots[i].is_enabled == FALSE) ||
+        (gSCManagerCharBuilderSlots[i].body != fp->fkind)) return NULL;
+    return &gSCManagerCharBuilderSlots[i];
 }
 
 static s32 ftMainCharBuilderGetActiveSpecialDonor(FTStruct *fp)
@@ -435,9 +430,7 @@ static s32 ftMainCharBuilderGetAttack(s32 motion_id)
 
 static void* ftMainCharBuilderGetMotionScript(FTStruct *fp, s32 motion_id)
 {
-    SCCharBuilderSlot *slot = ftMainCharBuilderGetSlot(fp);
     void *script;
-    s32 attack;
     s32 donor;
 
     donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
@@ -466,37 +459,8 @@ static void* ftMainCharBuilderGetMotionScript(FTStruct *fp, s32 motion_id)
         }
         return script;
     }
-    /* Mario normals use local gameplay definitions and Mario motion scripts. */
-    if ((fp->fkind == nFTKindMario) && (ftMainCharBuilderGetAttack(motion_id) != -1))
-    {
-        return NULL;
-    }
-    if (slot == NULL)
-    {
-        return NULL;
-    }
-    attack = ftMainCharBuilderGetAttack(motion_id);
-
-    if (attack == -1)
-    {
-        return NULL;
-    }
-    donor = slot->attacks[attack];
-
-    if ((donor < nFTKindPlayableStart) || (donor > nFTKindPlayableEnd) || (donor == fp->fkind))
-    {
-        return NULL;
-    }
-    script = ftMainCharBuilderGetMotionScriptKind(donor, motion_id);
-
-    if (fp->player < GMCOMMON_PLAYERS_MAX)
-    {
-        if (script != NULL)
-        {
-            sFTMainCharBuilderMotionDonors[fp->player] = donor;
-        }
-    }
-    return script;
+    /* Every normal uses the body's own script plus normalized collisions. */
+    return NULL;
 }
 
 static void ftMainCharBuilderCheckSpecialStatus(FTStruct *fp, sb32 is_special_status)
@@ -1286,7 +1250,7 @@ void ftMainUpdateMotionEventsAll(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 i;
 
-    for (i = 0; i < ARRAY_COUNT(fp->motion_scripts); i++)
+    for (i = 0; i < ARRAY_COUNT(fp->motion_scripts[0]); i++)
     {
         FTMotionScript *ms = &fp->motion_scripts[0][i];
         u32 ev_kind;
@@ -1330,7 +1294,7 @@ void ftMainUpdateMotionEventsAll(GObj *fighter_gobj)
     }
     if (!(fp->is_events_forward))
     {
-        for (i = 0; i < ARRAY_COUNT(fp->motion_scripts); i++)
+        for (i = 0; i < ARRAY_COUNT(fp->motion_scripts[0]); i++)
         {
             fp->motion_scripts[1][i] = fp->motion_scripts[0][i];
         }
@@ -5448,10 +5412,10 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         }
         if (ftCustomMoveGetDefinition(fp) != NULL)
         {
-            fp->motion_scripts[0][1].p_script = fp->motion_scripts[1][1].p_script =
+            fp->motion_scripts[0][2].p_script = fp->motion_scripts[1][2].p_script =
                 ftCustomMoveBuildScript(fp, ftCustomMoveGetDefinition(fp));
-            fp->motion_scripts[0][1].script_wait = fp->motion_scripts[1][1].script_wait = anim_frame;
-            fp->motion_scripts[0][1].script_id = fp->motion_scripts[1][1].script_id = 0;
+            fp->motion_scripts[0][2].script_wait = fp->motion_scripts[1][2].script_wait = anim_frame;
+            fp->motion_scripts[0][2].script_id = fp->motion_scripts[1][2].script_id = 0;
         }
         if (frame_begin != 0.0F)
         {

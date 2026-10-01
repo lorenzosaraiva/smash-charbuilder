@@ -254,13 +254,14 @@ def main():
     text.extend('| ' + f + ' | ' + ' | '.join(cells) + ' |' for f, cells in summary)
     text += ['', f'**Collision-only coverage: {simple_count}/{len(unique)} unique descriptor-selected script entries '
              f'({100 * simple_count / len(unique):.1f}%).** Angled variants and distinct byte-offset entries are separate; duplicate references are counted once per fighter. '
-             'This is an upper bound for normalized numeric collision timelines after each source joint is identified. '
-             'It is not the percentage of complete donor moves already portable, and only Mario has a runtime joint map.', '',
-             'The current definition has no late-hit phases, rehit/group transitions over time, '
-             'looping jab machine, moving-offset events, weapon semantic locations, hurtbox changes, '
-             'donor recovery, or donor landing policies. Link down-air bounce/rehit, Ness forward-smash reflector, '
-             'Pikachu forward-smash effects, Kirby rapid-jab accessory effects and jab chain transitions '
-             'must remain explicit gaps. Kirby down-air can create landing hitboxes.', '',
+             'This measures simple source timelines, not runtime coverage or complete donor-move portability. '
+             'The expanded runtime now has joint maps for all twelve bodies and collision timelines for all 156 families. '
+             'See `custom-move-roster.md` for implemented behavior and limits.', '',
+             'The generic layer supports phased hits, clears, refreshes, group transitions, offset mutations, '
+             'landing collisions and collision data in body-supported jab states. Weapon sockets map to the holding hand; '
+             'tails map to the torso on bodies without an equivalent part. Body animations, recovery, hurtbox policy and '
+             'state callbacks remain native. A donor does not add new jab-chain states, Link down-air bounce, Ness bat '
+             'reflector, Pikachu effects or Kirby rapid-jab accessories to another body.', '',
              '## Per-script evidence', '',
              '| Fighter | Family | Source script | Codes | Collision phase representable |', '|---|---|---|---|---|']
     text.extend(f'| {fighter} | {slot} | `{name}` | {"/".join(sorted(flags))} | {"Yes" if simple else "No"} |'
