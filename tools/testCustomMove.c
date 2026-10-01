@@ -42,7 +42,7 @@ static s32 testCustomMove(void)
     DObj joint;
     ftMotionCommand *script, *second;
     ftMotionCommand native[8], invalid[6];
-    FTCustomMoveDefinition bad;
+    FTCustomMoveDefinition bad = { 0 };
     const FTCustomMoveDefinition *move;
     FTThrowHitDesc native_throw[2] = { { 52, 12, 45, 70, 0, 80, 0 }, { 55, 6, 45, 70, 0, 80, 0 } };
     s32 body, donor, i, j, cursor, count, kind;
@@ -85,11 +85,27 @@ static s32 testCustomMove(void)
                     {
                         count = 2; CHECK(script[cursor + 1] == (uintptr_t)script);
                     }
-                    else CHECK(opcode == nFTMotionEventEnd || opcode == nFTMotionEventSyncWait || opcode == nFTMotionEventAsyncWait || opcode == nFTMotionEventPauseScript || opcode == nFTMotionEventClearAttackCollAll || opcode == nFTMotionEventClearAttackCollID || opcode == nFTMotionEventRefreshAttackCollID || opcode == nFTMotionEventSetAttackCollDamage || opcode == nFTMotionEventSetAttackCollSize || opcode == nFTMotionEventSetAttackCollSoundLevel);
+                    else CHECK(opcode == nFTMotionEventEnd || opcode == nFTMotionEventSyncWait || opcode == nFTMotionEventAsyncWait || opcode == nFTMotionEventPauseScript || opcode == nFTMotionEventClearAttackCollAll || opcode == nFTMotionEventClearAttackCollID || opcode == nFTMotionEventRefreshAttackCollID || opcode == nFTMotionEventSetAttackCollDamage || opcode == nFTMotionEventSetAttackCollSize || opcode == nFTMotionEventSetAttackCollSoundLevel || opcode == nFTMotionEventSetFlag1);
                     cursor += count;
                 }
                 CHECK(cursor == sFTCustomMoves[donor][i].word_count);
                 CHECK((script[cursor - 1] >> 26) == nFTMotionEventEnd);
+                ftCustomMoveStartClock(&fp,move,0.0F);
+                if (move != NULL && move->duration > 0)
+                {
+                    for (cursor = 0; cursor < move->duration; cursor++)
+                    {
+                        /* Body animation has already ended. Donor still runs. */
+                        if (!(move->flags & FTCUSTOMMOVE_FLAG_LOOP)) CHECK(ftCustomMoveAdvanceClock(&fp,-1.0F) > 0.0F);
+                        else CHECK(ftCustomMoveAdvanceClock(&fp,5.0F) == 5.0F);
+                        CHECK(ftCustomMoveEventFrame(&fp,&fp.motion_scripts[0][2],0.0F) == cursor);
+                        CHECK(ftCustomMoveEventSpeed(&fp,&fp.motion_scripts[0][2],2.0F) == 1.0F);
+                        CHECK(ftCustomMoveEventSpeed(&fp,&fp.motion_scripts[0][0],2.0F) == 2.0F);
+                    }
+                    if (!(move->flags & FTCUSTOMMOVE_FLAG_LOOP)) CHECK(ftCustomMoveAdvanceClock(&fp,100.0F) <= 0.0F);
+                    ftCustomMoveResetClock(&fp);
+                    CHECK(ftCustomMoveAdvanceClock(&fp,17.0F) == 17.0F);
+                }
             }
         }
     }
@@ -107,10 +123,17 @@ static s32 testCustomMove(void)
             failures = gFTCustomMoveValidationFailures;
             script = ftCustomMoveBuildScript(&fp, &sFTCustomGrabMoves[donor]);
             CHECK(script != NULL && gFTCustomMoveValidationFailures == failures);
-            CHECK((script[0] & 0x03FFFFFF) == sFTCustomGrabTimings[body][0]);
+            CHECK((script[0] & 0x03FFFFFF) == sFTCustomGrabTimings[donor][0]);
             CHECK(((script[1] >> 13) & 127) == sFTCustomGrabJointMap[body]);
-            CHECK((script[sFTCustomGrabMoves[donor].word_count - 3] & 0x03FFFFFF) == sFTCustomGrabTimings[body][1]);
+            CHECK((script[sFTCustomGrabMoves[donor].word_count - 3] & 0x03FFFFFF) == sFTCustomGrabTimings[donor][1]);
             CHECK((script[sFTCustomGrabMoves[donor].word_count - 2] >> 26) == nFTMotionEventClearAttackCollAll);
+            ftCustomMoveStartClock(&fp,move,0.0F);
+            if (move != NULL)
+            {
+                for (cursor = 0; cursor < move->duration; cursor++) CHECK(ftCustomMoveAdvanceClock(&fp,-1.0F) > 0.0F);
+                CHECK(ftCustomMoveAdvanceClock(&fp,100.0F) <= 0.0F);
+            }
+            ftCustomMoveResetClock(&fp);
             for (kind = 0; kind < 3; kind++)
             {
                 gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackGrab + kind] = donor;
@@ -169,13 +192,25 @@ static s32 testCustomMove(void)
     CHECK(ftCustomJointResolve(&fp,nFTCustomJointKneeR) == 25);
     script = ftCustomMoveBuildScript(&fp,ftCustomMoveGetDefinition(&fp));
     CHECK((script[0] & 0x03FFFFFF) == 7);
-    CHECK(((script[1] >> 13) & 127) == 25);
-    CHECK(((script[1] >> 5) & 255) == 14);
-    CHECK((script[3] >> 16) == 45);
-    CHECK((script[8] >> 16) == 0);
-    saved = script[1]; other = fp; other.player = 1;
+    CHECK((script[1] >> 26) == nFTMotionEventSetFlag1 && (script[1] & 0x03FFFFFF) == 40);
+    CHECK(((script[2] >> 13) & 127) == 25);
+    CHECK(((script[2] >> 5) & 255) == 14);
+    CHECK((script[4] >> 16) == 120);
+    CHECK((script[9] >> 16) == 30);
+    CHECK(sFTCustomMoves[nFTKindKirby][5].duration == 28);
+    ftCustomMoveStartClock(&fp,ftCustomMoveGetDefinition(&fp),0.0F);
+    CHECK(ftCustomMoveAdvanceClock(&fp,-1.0F) > 0.0F);
+    other = fp;
+    CHECK(ftCustomMoveGetClock(&other) == NULL);
+    ftCustomMoveResetClock(&other); /* A preview sharing the player ID. */
+    CHECK(ftCustomMoveGetClock(&fp) != NULL);
+    CHECK(ftCustomMoveEventFrame(&fp,&fp.motion_scripts[0][2],0.0F) == 0.0F);
+    /* No advance during hitlag; a shorter body pose cannot finish the move. */
+    CHECK(ftCustomMoveAdvanceClock(&fp,-1.0F) == 1.0F);
+    ftCustomMoveResetClock(&fp);
+    saved = script[2]; other = fp; other.player = 1;
     second = ftCustomMoveBuildScript(&other,&sFTCustomMoves[nFTKindFox][23]);
-    CHECK(second != script && script[1] == saved);
+    CHECK(second != script && script[2] == saved);
     fp.pkind = nFTPlayerKindCom; CHECK(ftCustomMoveGetDefinition(&fp) != NULL);
     fp.pkind = nFTPlayerKindDemo; CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
     fp.pkind = nFTPlayerKindMan;
@@ -185,7 +220,8 @@ static s32 testCustomMove(void)
     fp.motion_scripts[0][1].p_script = native;
     CHECK(ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][1],nFTMotionEventClearAttackCollAll));
     CHECK(!ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][2],nFTMotionEventClearAttackCollAll));
-    CHECK(!ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][0],nFTMotionEventSetFlag1));
+    CHECK(ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][0],nFTMotionEventSetFlag1));
+    CHECK(!ftCustomMoveSkipNativeCollision(&fp,&fp.motion_scripts[0][0],nFTMotionEventSetFlag2));
     gSCManagerCharBuilderPlayerSlots[0] = -1; CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
     gSCManagerCharBuilderPlayerSlots[0] = 0;
     gSCManagerSceneData.scene_curr = nSCKindTitle; CHECK(ftCustomMoveGetDefinition(&fp) == NULL);

@@ -46,9 +46,14 @@ typedef struct FTCustomHitboxDefinition
 
 typedef struct FTCustomMoveDefinition
 {
-    const ftMotionCommand *events; /* Collision-only events with semantic joints. */
+    const ftMotionCommand *events; /* Collisions and common timing/input flags. */
     s32 word_count;
+    s32 duration;                /* Donor animation frames, independent of body pose. */
+    u32 flags;
 } FTCustomMoveDefinition;
+
+#define FTCUSTOMMOVE_FLAG_FLAG1 1
+#define FTCUSTOMMOVE_FLAG_LOOP 2
 
 /* Numeric gameplay only: the victim's status remains the body's native one. */
 typedef struct FTCustomThrowDefinition

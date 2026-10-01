@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Compile grab shapes and numeric throw properties without donor states.
 
-Grab timing follows the visual body's native catch animation. All source
+Grab timing follows the donor's catch animation. All source
 capture anchors become the target body's own capture anchor. Throws omit
 victim status IDs and keep the body's native release/cargo/suplex policy.
 """
 import re
 from generateCustomMoves import ROOT, ROSTER, arrays, us_text, enum_values, expand, semantic
+from customMoveTiming import animation_duration
 
 def main():
     scripts, throws = {}, {}
@@ -45,7 +46,7 @@ def main():
         out += ['static const ftMotionCommand '+name+'[] = {', '    ftMotionCommandWaitAsync('+str(start)+'),']
         out += ['    '+command+',' for command in commands]
         out += ['    ftMotionCommandWait('+str(end-start)+'),', '    ftMotionCommandClearAttackCollAll(), ftMotionCommandEnd()', '};']
-        refs.append('{ '+name+', ARRAY_COUNT('+name+') }')
+        refs.append('{ '+name+', ARRAY_COUNT('+name+'), '+str(animation_duration(descs[ids['nFTCommonMotionCatch']][0]))+', 0 }')
         row=[]
         for kind in ('Catch','ThrowF','ThrowB'):
             desc=descs[ids['nFTCommonMotion'+kind]]
@@ -65,7 +66,7 @@ def main():
         properties.append('{ '+', '.join(row)+' }')
     out += ['static const s8 sFTCustomGrabJointMap[12] = { '+', '.join(map(str,maps))+' };',
             'static const u16 sFTCustomGrabTimings[12][2] = { '+', '.join('{ '+str(a)+', '+str(b)+' }' for a,b in timings)+' };',
-            'static const FTCustomMoveDefinition sFTCustomGrabMoves[12] = { '+', '.join(refs)+' };',
+            'const FTCustomMoveDefinition sFTCustomGrabMoves[12] = { '+', '.join(refs)+' };',
             'static const FTCustomThrowDefinition sFTCustomThrowProperties[12][3][2] = {']
     out += ['    '+row+',' for row in properties]
     out += ['};']

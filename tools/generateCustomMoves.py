@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Compile US normal collision timelines into local, semantic-joint data.
 
-Only collision operations and timing survive. No donor pointers, states,
-animation, effects, flags, hurtbox changes or callbacks enter the ROM table.
+Collision operations, timing and common input/landing flag1 events survive.
+No donor pointers, states, animation, effects, hurtbox changes or callbacks
+enter the ROM table.
 """
 from pathlib import Path
 import re
 from functools import lru_cache
 from auditNormalMoves import ROOT, ROSTER, SLOTS, arrays, calls, enum_values, us_text
+from customMoveTiming import animation_duration, landing_duration
 
 # Root, torso, head, hands L/R, elbows L/R, knees L/R, shoes L/R.
 # JointTree row ordinal + 4. Slope leg roots and item sockets establish sides.
@@ -113,6 +115,7 @@ def main():
         extra_ids=[next((i for i,d in enumerate(descs) if re.search(pattern,','.join(d))),-1) for pattern in extra_patterns]
         body_extra.append(extra_ids)
         for motion in motions:
+            null_landing = False
             if motion in ('Jab3','RapidStart','RapidLoop','RapidEnd'):
                 extra_index=('Jab3','RapidStart','RapidLoop','RapidEnd').index(motion)
                 extra_id=extra_ids[extra_index]
@@ -124,17 +127,34 @@ def main():
                 family=next((v for v in SLOTS.values() if motion in v),['LandingAirNull'])
                 fallback=next(m for m in family if descs[ids['nFTCommonMotion'+m]][0] not in ('0','0x00000000') and descs[ids['nFTCommonMotion'+m]][1]!='0x80000000')
                 desc=descs[ids['nFTCommonMotion'+fallback]]
+                null_landing = motion.startswith('LandingAir')
+            source_commands = [] if desc[1]=='dCustomEmpty' else expand(desc[1],scripts)
+            duration = 0 if desc[1]=='dCustomEmpty' else animation_duration(desc[0])
+            if null_landing:
+                air = 'AttackAir'+motion.removeprefix('LandingAir')
+                duration = landing_duration(desc[0], expand(descs[ids['nFTCommonMotion'+air]][1],scripts))
+            gameplay_flag1 = motion in ('Attack11','Attack12','AttackLw3','Jab3','RapidStart','RapidLoop','RapidEnd') or motion.startswith('AttackAir')
             commands=[];words=0
-            for op,args in ([] if desc[1]=='dCustomEmpty' else expand(desc[1],scripts)):
+            frame = 0
+            for op,args in source_commands:
                 if op in ('ftMotionCommandWait','ftMotionCommandWaitAsync'):
                     assert 0<=int(args[0],0)<=65535
+                    value = int(args[0],0)
+                    if motion == 'RapidLoop' and op == 'ftMotionCommandWaitAsync':
+                        assert value >= frame, (fighter,motion,value,frame)
+                        commands.append('ftMotionCommandWait('+str(value-frame)+')')
+                        frame = value
+                    else:
+                        commands.append(op+'('+','.join(args)+')')
+                        frame = value if op.endswith('Async') else frame+value
+                    words+=1
+                elif op == 'ftMotionCommandSetFlag1' and gameplay_flag1:
                     commands.append(op+'('+','.join(args)+')');words+=1
                 elif 'AttackColl' in op:
                     nums=[int(x,0) for x in args]
                     if 'MakeAttackColl' in op:
                         assert len(nums)==18 and 0<=nums[0]<4 and 0<=nums[1]<7,(fighter,motion,nums)
                         nums[2]='nFTCustomJoint'+SEM[semantic(fighter,nums[2])]
-                        # Preserve the tested Mario/Falcon down-air adaptation.
                         words+=5
                     else:
                         assert op in ('ftMotionCommandClearAttackCollAll','ftMotionCommandClearAttackCollID','ftMotionCommandRefreshAttackCollID','ftMotionCommandSetAttackCollDamage','ftMotionCommandSetAttackCollSize','ftMotionCommandSetAttackCollSoundLevel','ftMotionCommandSetAttackCollOffset'),op
@@ -145,15 +165,17 @@ def main():
             out+=['static const ftMotionCommand '+name+'[] = {']
             out+=['    '+c+',' for c in commands]
             if motion=='RapidLoop':
-                # Own-body looping animation remains authoritative. The local
-                # pointer is patched to this player's buffer by the builder.
-                out+=['    ftMotionCommandPauseScript(), ftMotionCommandGotoS1(), 0,']
+                # A timed local loop retains the donor period even when the
+                # visible body's looping animation has a different length.
+                assert duration >= frame,(fighter,motion,duration,frame)
+                out+=['    ftMotionCommandWait('+str(duration-frame)+'), ftMotionCommandGotoS1(), 0,']
                 words+=3
             out+=['    ftMotionCommandEnd()', '};']
             maxwords=max(maxwords,words+1)
-            row.append('{ '+name+', ARRAY_COUNT('+name+') }')
+            flags = (1 if gameplay_flag1 else 0) | (2 if motion == 'RapidLoop' else 0)
+            row.append('{ '+name+', ARRAY_COUNT('+name+'), '+str(duration)+', '+str(flags)+' }')
         refs.append(row)
-    out+=['static const FTCustomMoveDefinition sFTCustomMoves[12]['+str(len(motions))+'] = {']
+    out+=['const FTCustomMoveDefinition sFTCustomMoves[12]['+str(len(motions))+'] = {']
     out+=['    { '+', '.join(r)+' },' for r in refs]
     out+=['};','static const s32 sFTCustomMotionIDs[] = { '+', '.join('nFTCommonMotion'+m for m in motions[:29])+' };',
           'static const s32 sFTCustomBodyExtraMotionIDs[12][4] = {']

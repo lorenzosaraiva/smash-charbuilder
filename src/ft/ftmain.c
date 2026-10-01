@@ -9,6 +9,11 @@
 extern alSoundEffect* func_800269C0_275C0(u16);
 extern void func_ovl0_800C9A38();
 
+sb32 ftMainHasCustomAttackTimeline(FTStruct *fp)
+{
+    return ftCustomMoveGetDefinition(fp) != NULL;
+}
+
 typedef enum FTMainCharBuilderSpecialKind
 {
     nFTMainCharBuilderSpecialKindNone,
@@ -718,7 +723,8 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         break;
 
     case nFTMotionEventAsyncWait:
-        ms->script_wait = ftMotionEventCast(ms, FTMotionEventDefault)->value - fighter_gobj->anim_frame;
+        ms->script_wait = ftMotionEventCast(ms, FTMotionEventDefault)->value -
+            ftCustomMoveEventFrame(fp, ms, fighter_gobj->anim_frame);
 
         ftMotionEventAdvance(ms, FTMotionEventDefault);
         break;
@@ -1260,7 +1266,7 @@ void ftMainUpdateMotionEventsAll(GObj *fighter_gobj)
         {
             if (ms->script_wait != F32_MAX)
             {
-                ms->script_wait -= DObjGetStruct(fighter_gobj)->anim_speed;
+                ms->script_wait -= ftCustomMoveEventSpeed(fp, ms, DObjGetStruct(fighter_gobj)->anim_speed);
             }
             while (TRUE)
             {
@@ -1318,7 +1324,7 @@ void ftMainUpdateMotionEventsForward(GObj *fighter_gobj)
         {
             if (ms->script_wait != F32_MAX)
             {
-                ms->script_wait -= DObjGetStruct(fighter_gobj)->anim_speed;
+                ms->script_wait -= ftCustomMoveEventSpeed(fp, ms, DObjGetStruct(fighter_gobj)->anim_speed);
             }
             while (TRUE)
             {
@@ -1415,7 +1421,7 @@ void ftMainUpdateMotionEventsForwardEffect(GObj *fighter_gobj)
         {
             if (ms->script_wait != F32_MAX)
             {
-                ms->script_wait -= DObjGetStruct(fighter_gobj)->anim_speed;
+                ms->script_wait -= ftCustomMoveEventSpeed(fp, ms, DObjGetStruct(fighter_gobj)->anim_speed);
             }
             while (TRUE)
             {
@@ -1492,6 +1498,7 @@ void ftMainPlayAnim(GObj *fighter_gobj)
     }
     ftParamUpdateAnimKeys(fighter_gobj);
     ftParamsUpdateFighterPartsTransform(fp->joints[nFTPartsJointTopN]);
+    fighter_gobj->anim_frame = ftCustomMoveAdvanceClock(fp, fighter_gobj->anim_frame);
 }
 
 // 0x800E0830 - Play fighter animation and run motion scripts normally
@@ -4962,6 +4969,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     DObj *transn_child;                 // Child of TransN_Joint
     s32 i;
 
+    ftCustomMoveResetClock(fp);
     status_struct = NULL;
     opening_struct = NULL;
     charbuilder_donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
@@ -5417,6 +5425,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
                 ftCustomMoveBuildScript(fp, ftCustomMoveGetDefinition(fp));
             fp->motion_scripts[0][2].script_wait = fp->motion_scripts[1][2].script_wait = anim_frame;
             fp->motion_scripts[0][2].script_id = fp->motion_scripts[1][2].script_id = 0;
+            ftCustomMoveStartClock(fp, ftCustomMoveGetDefinition(fp), frame_begin);
         }
         if (frame_begin != 0.0F)
         {

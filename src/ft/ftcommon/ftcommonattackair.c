@@ -1,6 +1,8 @@
 #include <ft/fighter.h>
 #include <it/item.h>
 
+extern sb32 ftMainHasCustomAttackTimeline(FTStruct*);
+
 // // // // // // // // // // // //
 //                               //
 //           FUNCTIONS           //
@@ -12,7 +14,8 @@ void ftCommonAttackAirLwProcHit(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))
+    if (((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink)) &&
+        (ftMainHasCustomAttackTimeline(fp) == FALSE))
     {
         ftParamClearAttackCollAll(fighter_gobj);
 
@@ -33,7 +36,8 @@ void ftCommonAttackAirLwProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))
+    if (((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink)) &&
+        (ftMainHasCustomAttackTimeline(fp) == FALSE))
     {
         if (fp->status_vars.common.attackair.rehit_timer != 0)
         {

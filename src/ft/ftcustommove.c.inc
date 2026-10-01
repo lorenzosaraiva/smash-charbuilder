@@ -8,6 +8,72 @@ u32 gFTCustomMoveValidationFailures;
 static s8 sFTCustomLastAirAttack[4] = { -1, -1, -1, -1 };
 static FTThrowHitDesc sFTCustomThrowDescs[GMCOMMON_PLAYERS_MAX][2];
 
+typedef struct FTCustomMoveClock
+{
+    FTStruct *owner;
+    s32 status_id, motion_id, duration;
+    f32 frame, native_frame;
+    u32 flags;
+} FTCustomMoveClock;
+
+static FTCustomMoveClock sFTCustomMoveClocks[GMCOMMON_PLAYERS_MAX];
+
+static FTCustomMoveClock* ftCustomMoveGetClock(FTStruct *fp)
+{
+    FTCustomMoveClock *clock;
+    if ((fp == NULL) || (fp->player >= GMCOMMON_PLAYERS_MAX)) return NULL;
+    clock = &sFTCustomMoveClocks[fp->player];
+    if ((clock->owner != fp) || (clock->status_id != fp->status_id) || (clock->motion_id != fp->motion_id)) return NULL;
+    return clock;
+}
+
+static void ftCustomMoveResetClock(FTStruct *fp)
+{
+    if ((fp->player < GMCOMMON_PLAYERS_MAX) && (sFTCustomMoveClocks[fp->player].owner == fp))
+        sFTCustomMoveClocks[fp->player].owner = NULL;
+}
+
+static void ftCustomMoveStartClock(FTStruct *fp, const FTCustomMoveDefinition *move, f32 frame_begin)
+{
+    FTCustomMoveClock *clock;
+    ftCustomMoveResetClock(fp);
+    if ((move == NULL) || (move->duration <= 0) || (fp->player >= GMCOMMON_PLAYERS_MAX)) return;
+    clock = &sFTCustomMoveClocks[fp->player];
+    clock->owner = fp;
+    clock->status_id = fp->status_id;
+    clock->motion_id = fp->motion_id;
+    clock->duration = move->duration;
+    clock->flags = move->flags;
+    clock->frame = frame_begin - 1.0F;
+    clock->native_frame = frame_begin;
+}
+
+/* Called when animation advances, so hitlag and pauses stop both clocks. */
+static f32 ftCustomMoveAdvanceClock(FTStruct *fp, f32 native_frame)
+{
+    FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
+    if (clock == NULL) return native_frame;
+    clock->native_frame = native_frame;
+    clock->frame += 1.0F;
+    if (clock->flags & FTCUSTOMMOVE_FLAG_LOOP) return native_frame;
+    if (clock->frame >= clock->duration) return -1.0F;
+    return (clock->frame > 0.0F) ? clock->frame : 0.001F;
+}
+
+static f32 ftCustomMoveEventFrame(FTStruct *fp, FTMotionScript *ms, f32 native_frame)
+{
+    FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
+    if (clock == NULL) return native_frame;
+    return ((ms == &fp->motion_scripts[0][2]) || (ms == &fp->motion_scripts[1][2])) ? clock->frame : clock->native_frame;
+}
+
+static f32 ftCustomMoveEventSpeed(FTStruct *fp, FTMotionScript *ms, f32 anim_speed)
+{
+    if ((ftCustomMoveGetClock(fp) != NULL) &&
+        ((ms == &fp->motion_scripts[0][2]) || (ms == &fp->motion_scripts[1][2]))) return 1.0F;
+    return anim_speed;
+}
+
 static s32 ftCustomJointResolve(FTStruct *fp, FTCustomJointKind kind)
 {
     s32 joint_id;
@@ -113,17 +179,11 @@ static ftMotionCommand* ftCustomMoveBuildScript(FTStruct *fp, const FTCustomMove
     ftMotionCommand *script;
     u32 word, op, previous_op = nFTMotionEventEnd;
     s32 i = 0, j, count, joint_id;
-    sb32 is_grab = FALSE;
     if ((fp == NULL) || (fp->player >= GMCOMMON_PLAYERS_MAX)) return NULL;
     script = sFTCustomMoveScripts[fp->player];
     script[0] = ftMotionCommandEnd();
     if ((move == NULL) || (move->events == NULL) || (move->word_count <= 0) ||
         (move->word_count > FTCUSTOMMOVE_SCRIPT_WORDS)) goto invalid;
-    for (j = 0; j < ARRAY_COUNT(sFTCustomGrabMoves); j++)
-    {
-        if (move == &sFTCustomGrabMoves[j]) is_grab = TRUE;
-    }
-    if (is_grab && ((fp->fkind < nFTKindPlayableStart) || (fp->fkind > nFTKindPlayableEnd))) goto invalid;
     while (i < move->word_count)
     {
         word = move->events[i];
@@ -155,24 +215,21 @@ static ftMotionCommand* ftCustomMoveBuildScript(FTStruct *fp, const FTCustomMove
         case nFTMotionEventPauseScript:
         case nFTMotionEventEnd:
             break;
+        case nFTMotionEventSetFlag1:
+            if (!(move->flags & FTCUSTOMMOVE_FLAG_FLAG1)) goto invalid;
+            break;
         case nFTMotionEventGoto:
             count = 2;
-            if ((i != move->word_count - 3) || (previous_op != nFTMotionEventPauseScript) ||
+            if ((i != move->word_count - 3) || (previous_op != nFTMotionEventSyncWait) ||
+                !(move->flags & FTCUSTOMMOVE_FLAG_LOOP) ||
                 (move->events[i + 1] != 0)) goto invalid;
             break;
         default: goto invalid;
         }
         if ((i + count) > move->word_count) goto invalid;
         script[i] = word;
-        if (is_grab && (op == nFTMotionEventAsyncWait)) script[i] = ftMotionCommandWaitAsync(sFTCustomGrabTimings[fp->fkind][0]);
-        if (is_grab && (op == nFTMotionEventSyncWait)) script[i] = ftMotionCommandWait(sFTCustomGrabTimings[fp->fkind][1]);
         for (j = 1; j < count; j++) script[i + j] = move->events[i + j];
         if (op == nFTMotionEventGoto) script[i + 1] = (uintptr_t)script;
-        /* Retain the shorter-limb offsets from the tested Mario aerial. */
-        if ((fp->fkind == nFTKindMario) && (move == &sFTCustomMoves[nFTKindCaptain][23]) && (count == 5))
-        {
-            script[i + 2] = ftMotionCommandMakeAttackCollS3((joint_id == 25) ? 45 : 0, 0);
-        }
         i += count;
         previous_op = op;
     }
@@ -186,11 +243,16 @@ invalid:
 
 static sb32 ftCustomMoveSkipNativeCollision(FTStruct *fp, FTMotionScript *ms, u32 ev_kind)
 {
-    if ((ftCustomMoveGetDefinition(fp) == NULL) ||
+    const FTCustomMoveDefinition *move = ftCustomMoveGetDefinition(fp);
+    if ((move == NULL) ||
         ((ms != &fp->motion_scripts[0][0]) && (ms != &fp->motion_scripts[1][0]) &&
          (ms != &fp->motion_scripts[0][1]) && (ms != &fp->motion_scripts[1][1]))) return FALSE;
     switch (ev_kind)
     {
+    case nFTMotionEventSetFlag1:
+        if (!(move->flags & FTCUSTOMMOVE_FLAG_FLAG1)) return FALSE;
+        ftMotionEventAdvance(ms, FTMotionEventDefault);
+        return TRUE;
     case nFTMotionEventMakeAttackColl:
     case nFTMotionEventMakeAttackCollScaled:
         ftMotionEventAdvance(ms, FTMotionEventMakeAttack);

@@ -5,6 +5,7 @@ import hashlib
 import struct
 from n64crc import calculate_crcs
 from generateCustomMoves import MAPS, ROSTER
+from verifyCustomMoveData import verify_sources
 
 ROOT = Path(__file__).resolve().parents[1]
 def read_elf(path, endian):
@@ -28,10 +29,17 @@ rom = (ROOT/'build/smashbrothers.us.z64').read_bytes()
 assert rom[:4] == b'\x80\x37\x12\x40'
 assert calculate_crcs(rom) == struct.unpack_from('>II',rom,0x10)
 host,sections,symbols = read_elf(ROOT/'build/testCustomMove','<')
+verify_sources(host,sections,symbols)
+metadata = {}
+for name in ('sFTCustomMoves','sFTCustomGrabMoves'):
+    address,length,index = symbols[name]
+    start = sections[index][4]+address-sections[index][3]
+    records = struct.unpack_from('<'+str(length//4)+'I',host,start)
+    metadata[name] = [records[i+2:i+4] for i in range(0,len(records),4)]
 checked = 0
 excluded = ('sFTCustomMoves','sFTCustomMoveScripts','sFTCustomMotionIDs','sFTCustomJointMaps',
             'sFTCustomBodyExtraMotionIDs','sFTCustomLastAirAttack','sFTCustomGrabMoves',
-            'sFTCustomGrabJointMap','sFTCustomGrabTimings','sFTCustomThrowDescs')
+            'sFTCustomGrabJointMap','sFTCustomGrabTimings','sFTCustomThrowDescs','sFTCustomMoveClocks')
 for name,(address,length,index) in symbols.items():
     if not name.startswith('sFTCustom') or name in excluded: continue
     if not length or sections[index][1] == 8: continue
@@ -50,10 +58,17 @@ for name,format in (('sFTCustomGrabJointMap','B'),('sFTCustomGrabTimings','H')):
     values = struct.unpack_from('<'+str(count)+format,host,start)
     assert struct.pack('>'+str(count)+format,*values) in rom,name
 elf,sections,symbols = read_elf(ROOT/'build/smashbrothers.us.elf','>')
+for name,expected in metadata.items():
+    address,length,index = symbols[name]
+    start = sections[index][4]+address-sections[index][3]
+    records = struct.unpack_from('>'+str(length//4)+'I',elf,start)
+    assert [records[i+2:i+4] for i in range(0,len(records),4)] == expected, name+' donor duration/flags'
 phoff = struct.unpack_from('>I',elf,28)[0]
 size,count = struct.unpack_from('>HH',elf,42)
 programs = [struct.unpack_from('>8I',elf,phoff+i*size) for i in range(count)]
-for name in ('ftMainSetStatus','ftMainParseMotionEvent','sc1PTrainingModeUpdateViewOption','mnOptionBuilderAssignPlayer','mnOptionBuilderRun'):
+for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMainHasCustomAttackTimeline',
+             'ftCommonAttackAirLwProcHit','ftCommonAttackAirLwProcUpdate',
+             'sc1PTrainingModeUpdateViewOption','mnOptionBuilderAssignPlayer','mnOptionBuilderRun',*metadata):
     value,length,index = symbols[name]
     assert length>0,name
     for typ,fileoffset,vaddr,paddr,filesz,memsz,flags,align in programs:
