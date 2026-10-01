@@ -1,6 +1,8 @@
-# Character Lab: full normal attack roster
+# Character Lab: normal attacks, grabs and throws
 
 The working Mario aerial was committed as `f0d2e1a6c` before this extension. The new ROM supports all thirteen normal attack families from all twelve playable fighters on all twelve bodies: jab, dash attack, three tilts, three smashes and five aerials. The generated table contains 396 entries including angled variants, landing scripts, third jabs and rapid-jab phases.
+
+The editor also has independent **Grab**, **Forward Throw** and **Back Throw** donor rows after Down Air. Each accepts all twelve fighters and applies to assigned human or CPU slots. New presets start with their body's own grab and throw donors; Use Body For All and Randomize Attacks include these rows.
 
 ## Playing
 
@@ -22,13 +24,21 @@ The four unlockable fighters (Luigi, Captain Falcon, Jigglypuff and Ness) and It
 - The earlier special adapters remain separate, as in the working checkpoint. This extension normalizes normal/aerial collisions; it does not add a new special-move system.
 - Custom definitions apply in VS and training only. Demo/preview fighters and unrelated modes keep their normal behavior.
 
+## Grab and throw compatibility
+
+Grabs replace collision shapes and offsets, with donor capture anchors mapped to the body's own capture joint. Startup and active duration follow the body's native grab animation. Native shield-grab logic, catch flags, capture callbacks and effects remain intact. A tether donor does not transplant its tether animation or guarantee its original reach on another body.
+
+Forward and back throws copy the donor's damage, angle, knockback scale/weight/base and element for both throw descriptors. The Grab donor also supplies the grab escape descriptor values. Each player has independent descriptor storage. Native victim status IDs, release timing and capture animations are retained. Kirby's forward throw and Donkey Kong's cargo release use their source throw values without importing their capture states into other bodies. Throw motion collisions and collateral hits remain the body's own.
+
 The lab uses the game's existing option tabs, font sprites at readable 2x size, gold headings, red selection and purple/gray panels. The HITBOX label is composed from the same native alphabet, rather than an external font.
 
 ## Validation
 
-Generate the data with `python3 tools/generateCustomMoves.py` and `python3 tools/generateTrainingHitboxLabel.py`. `tools/auditNormalMoves.py` remains a read-only census of the source moves.
+Generate the data with `python3 tools/generateCustomMoves.py`, `python3 tools/generateCustomGrabs.py` and `python3 tools/generateTrainingHitboxLabel.py`. `tools/auditNormalMoves.py` remains a read-only census of the source moves.
 
 The freestanding host test includes the actual runtime implementation. It checks all 12 × 12 × 33 = **4,752 body/donor/variant combinations**, per-player buffers, CPU/vanilla/demo/scene eligibility, native event suppression, local rapid-loop pointers, malformed definitions and the tested Mario aerial parameters. It does not simulate N64 animations or collision detection.
+
+Grab coverage adds **144 body/donor combinations**, verifying body timing and capture joints. Descriptor tests cover **432 body/donor/grab-or-throw combinations**, preserve both native victim statuses, verify known Samus and Donkey Kong source values, and check independent player storage and eligibility guards.
 
 ```sh
 gcc -m32 -nostdlib -static -fno-pie -fno-stack-protector -O1 \
@@ -39,6 +49,6 @@ make -j4 COLOR=0
 python3 tools/verifyCustomMoveRom.py
 ```
 
-The ROM verifier checks all 396 host-tested data tables, all twelve semantic maps, linked creator/assignment/training code at ELF load addresses, N64 byte order and the patched checksum. The modified ROM is expected to differ from vanilla, so the Makefile's vanilla comparison prints `FAILURE` after a successful compile/link. In-emulator playtesting of this expanded build is still required.
+The ROM verifier checks all 396 normal and twelve grab collision tables, 36 two-part throw definitions, semantic and capture maps, grab timings, linked creator/assignment/training code at ELF load addresses, N64 byte order and the patched checksum. The modified ROM is expected to differ from vanilla, so the Makefile's vanilla comparison prints `FAILURE` after a successful compile/link. In-emulator playtesting of this expanded build is still required.
 
 Output: `build/smashbrothers.us.z64`, also copied to `C:\Users\Lorenzo\Desktop\Smash 64\roms\smash-character-lab-full-roster.z64`. A companion Windows shortcut opens that copy with the installed RMG-K.

@@ -35,7 +35,7 @@ mnCommonSetOptionChangeWaitN(sMNOptionOptionChangeWait, is_button, stick_range, 
 #define MNOPTION_BUILDER_SLOT_ROWS 9
 #define MNOPTION_BUILDER_TEXT_SCALE 2.0F
 
-#define MNOPTION_BUILDER_ENTRY_COUNT 21
+#define MNOPTION_BUILDER_ENTRY_COUNT 24
 #define MNOPTION_BUILDER_VISIBLE_COUNT 12
 
 #define MNOPTION_BUILDER_ROW_X 38
@@ -1009,7 +1009,7 @@ void mnOptionBuilderMakeEditor(GObj *gobj)
     {
         "ENABLED", "BODY", "USE BODY FOR ALL", "JAB", "DASH ATTACK", "FORWARD TILT", "UP TILT",
         "DOWN TILT", "FORWARD SMASH", "UP SMASH", "DOWN SMASH", "NEUTRAL AIR", "FORWARD AIR",
-        "BACK AIR", "UP AIR", "DOWN AIR", "NEUTRAL B", "UP B", "DOWN B", "RANDOMIZE ATTACKS", "TEST IN TRAINING"
+        "BACK AIR", "UP AIR", "DOWN AIR", "GRAB", "FORWARD THROW", "BACK THROW", "NEUTRAL B", "UP B", "DOWN B", "RANDOMIZE ATTACKS", "TEST IN TRAINING"
     };
     SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
     u32 title_color[3] = { 0xFF, 0xD8, 0x4A };
@@ -1048,19 +1048,19 @@ void mnOptionBuilderMakeEditor(GObj *gobj)
         {
             value = mnOptionBuilderGetFighterName(slot->body);
         }
-        else if ((i >= 3) && (i <= 15))
+        else if ((i >= 3) && (i <= 18))
         {
             value = mnOptionBuilderGetFighterName(slot->attacks[i - 3]);
         }
-        else if (i == 16)
+        else if (i == 19)
         {
             value = "FOX LASER";
         }
-        else if (i == 17)
+        else if (i == 20)
         {
             value = mnOptionBuilderGetFighterName(slot->special_hi);
         }
-        else if (i == 18)
+        else if (i == 21)
         {
             value = mnOptionBuilderGetFighterName(slot->special_lw);
         }
@@ -1124,15 +1124,15 @@ void mnOptionBuilderChangeValue(s32 add)
     {
         value = &slot->body;
     }
-    else if ((sMNOptionBuilderEntry >= 3) && (sMNOptionBuilderEntry <= 15))
+    else if ((sMNOptionBuilderEntry >= 3) && (sMNOptionBuilderEntry <= 18))
     {
         value = &slot->attacks[sMNOptionBuilderEntry - 3];
     }
-    else if (sMNOptionBuilderEntry == 17)
+    else if (sMNOptionBuilderEntry == 20)
     {
         value = &slot->special_hi;
     }
-    else if (sMNOptionBuilderEntry == 18)
+    else if (sMNOptionBuilderEntry == 21)
     {
         value = &slot->special_lw;
     }
@@ -1146,7 +1146,7 @@ void mnOptionBuilderChangeValue(s32 add)
         }
         else *value = (*value == nFTKindMario) ? nFTKindPlayableEnd : *value - 1;
     }
-    while ((sMNOptionBuilderEntry == 18) && (*value == nFTKindKirby));
+    while ((sMNOptionBuilderEntry == 21) && (*value == nFTKindKirby));
 }
 
 void mnOptionBuilderUseBodyForAll(void)
@@ -1277,11 +1277,11 @@ void mnOptionBuilderRun(void)
             mnOptionBuilderUseBodyForAll();
             break;
 
-        case 19:
+        case 22:
             mnOptionBuilderRandomize();
             break;
 
-        case 20:
+        case 23:
             mnOptionBuilderTestInTraining();
             return;
 

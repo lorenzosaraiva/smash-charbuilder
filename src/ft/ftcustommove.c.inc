@@ -1,25 +1,27 @@
 /* Compiled in ftmain's overlay; no runtime donor file/script is needed. */
 #include <ft/ftcustommove.h>
 #include "ftcustommoves.generated.inc"
+#include "ftcustomgrabs.generated.inc"
 
 static ftMotionCommand sFTCustomMoveScripts[GMCOMMON_PLAYERS_MAX][FTCUSTOMMOVE_SCRIPT_WORDS];
 u32 gFTCustomMoveValidationFailures;
 static s8 sFTCustomLastAirAttack[4] = { -1, -1, -1, -1 };
+static FTThrowHitDesc sFTCustomThrowDescs[GMCOMMON_PLAYERS_MAX][2];
 
 static s32 ftCustomJointResolve(FTStruct *fp, FTCustomJointKind kind)
 {
     s32 joint_id;
     if ((fp == NULL) || (fp->fkind < nFTKindPlayableStart) ||
         (fp->fkind > nFTKindPlayableEnd) || (kind < 0) || (kind >= nFTCustomJointEnumCount)) return -1;
-    joint_id = sFTCustomJointMaps[fp->fkind][kind];
+    joint_id = (kind == nFTCustomJointGrabPoint) ? sFTCustomGrabJointMap[fp->fkind] : sFTCustomJointMaps[fp->fkind][kind];
     if ((joint_id < 0) || (joint_id >= ARRAY_COUNT(fp->joints)) || (fp->joints[joint_id] == NULL)) return -1;
     return joint_id;
 }
 
-static const FTCustomMoveDefinition* ftCustomMoveGetDefinition(FTStruct *fp)
+static SCCharBuilderSlot* ftCustomMoveGetSlot(FTStruct *fp)
 {
     SCCharBuilderSlot *slot;
-    s32 slot_id, attack, i, donor;
+    s32 slot_id;
     if ((fp == NULL) || (fp->pkind == nFTPlayerKindDemo) ||
         (fp->player >= GMCOMMON_PLAYERS_MAX) || (fp->fkind < nFTKindPlayableStart) || (fp->fkind > nFTKindPlayableEnd) ||
         ((gSCManagerSceneData.scene_curr != nSCKindVSBattle) &&
@@ -28,6 +30,21 @@ static const FTCustomMoveDefinition* ftCustomMoveGetDefinition(FTStruct *fp)
     if ((slot_id < 0) || (slot_id >= SCCHARBUILDER_SLOTS_COUNT)) return NULL;
     slot = &gSCManagerCharBuilderSlots[slot_id];
     if ((slot->is_enabled == FALSE) || (slot->body != fp->fkind)) return NULL;
+    return slot;
+}
+
+static const FTCustomMoveDefinition* ftCustomMoveGetDefinition(FTStruct *fp)
+{
+    SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
+    s32 attack, i, donor;
+    if (slot == NULL) return NULL;
+    if ((fp->status_id == nFTCommonStatusCatch) && (fp->motion_id == nFTCommonMotionCatch))
+    {
+        donor = slot->attacks[nSCCharBuilderAttackGrab];
+        if ((donor >= nFTKindPlayableStart) && (donor <= nFTKindPlayableEnd) && (donor != fp->fkind))
+            return &sFTCustomGrabMoves[donor];
+        return NULL;
+    }
     for (i = 0; i < 33; i++)
     {
         if (i < ARRAY_COUNT(sFTCustomMotionIDs))
@@ -61,16 +78,52 @@ static const FTCustomMoveDefinition* ftCustomMoveGetDefinition(FTStruct *fp)
     return NULL;
 }
 
+/* Retain native victim status, capture choreography and release flag timing. */
+static void ftCustomMoveApplyThrow(FTStruct *fp)
+{
+    SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
+    const FTCustomThrowDefinition *data;
+    FTThrowHitDesc *desc;
+    s32 kind, donor, i;
+    if ((slot == NULL) || (fp->throw_desc == NULL)) return;
+    if ((fp->status_id == nFTCommonStatusCatch) || (fp->status_id == nFTCommonStatusCatchPull) ||
+        (fp->status_id == nFTCommonStatusCatchWait)) kind = 0;
+    else if (fp->motion_attack_id == nFTMotionAttackIDThrowF) kind = 1;
+    else if (fp->motion_attack_id == nFTMotionAttackIDThrowB) kind = 2;
+    else return;
+    donor = slot->attacks[nSCCharBuilderAttackGrab + kind];
+    if ((donor < nFTKindPlayableStart) || (donor > nFTKindPlayableEnd) || (donor == fp->fkind)) return;
+    for (i = 0; i < 2; i++)
+    {
+        data = &sFTCustomThrowProperties[donor][kind][i];
+        desc = &sFTCustomThrowDescs[fp->player][i];
+        *desc = fp->throw_desc[i];
+        desc->damage = data->damage;
+        desc->angle = data->angle;
+        desc->knockback_scale = data->knockback_scale;
+        desc->knockback_weight = data->knockback_weight;
+        desc->knockback_base = data->knockback_base;
+        desc->element = data->element;
+    }
+    fp->throw_desc = sFTCustomThrowDescs[fp->player];
+}
+
 static ftMotionCommand* ftCustomMoveBuildScript(FTStruct *fp, const FTCustomMoveDefinition *move)
 {
     ftMotionCommand *script;
     u32 word, op, previous_op = nFTMotionEventEnd;
     s32 i = 0, j, count, joint_id;
+    sb32 is_grab = FALSE;
     if ((fp == NULL) || (fp->player >= GMCOMMON_PLAYERS_MAX)) return NULL;
     script = sFTCustomMoveScripts[fp->player];
     script[0] = ftMotionCommandEnd();
     if ((move == NULL) || (move->events == NULL) || (move->word_count <= 0) ||
         (move->word_count > FTCUSTOMMOVE_SCRIPT_WORDS)) goto invalid;
+    for (j = 0; j < ARRAY_COUNT(sFTCustomGrabMoves); j++)
+    {
+        if (move == &sFTCustomGrabMoves[j]) is_grab = TRUE;
+    }
+    if (is_grab && ((fp->fkind < nFTKindPlayableStart) || (fp->fkind > nFTKindPlayableEnd))) goto invalid;
     while (i < move->word_count)
     {
         word = move->events[i];
@@ -111,6 +164,8 @@ static ftMotionCommand* ftCustomMoveBuildScript(FTStruct *fp, const FTCustomMove
         }
         if ((i + count) > move->word_count) goto invalid;
         script[i] = word;
+        if (is_grab && (op == nFTMotionEventAsyncWait)) script[i] = ftMotionCommandWaitAsync(sFTCustomGrabTimings[fp->fkind][0]);
+        if (is_grab && (op == nFTMotionEventSyncWait)) script[i] = ftMotionCommandWait(sFTCustomGrabTimings[fp->fkind][1]);
         for (j = 1; j < count; j++) script[i + j] = move->events[i + j];
         if (op == nFTMotionEventGoto) script[i + 1] = (uintptr_t)script;
         /* Retain the shorter-limb offsets from the tested Mario aerial. */

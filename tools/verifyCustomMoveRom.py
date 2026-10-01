@@ -29,17 +29,26 @@ assert rom[:4] == b'\x80\x37\x12\x40'
 assert calculate_crcs(rom) == struct.unpack_from('>II',rom,0x10)
 host,sections,symbols = read_elf(ROOT/'build/testCustomMove','<')
 checked = 0
+excluded = ('sFTCustomMoves','sFTCustomMoveScripts','sFTCustomMotionIDs','sFTCustomJointMaps',
+            'sFTCustomBodyExtraMotionIDs','sFTCustomLastAirAttack','sFTCustomGrabMoves',
+            'sFTCustomGrabJointMap','sFTCustomGrabTimings','sFTCustomThrowDescs')
 for name,(address,length,index) in symbols.items():
-    if not name.startswith('sFTCustom') or name in ('sFTCustomMoves','sFTCustomMoveScripts','sFTCustomMotionIDs','sFTCustomJointMaps','sFTCustomBodyExtraMotionIDs','sFTCustomLastAirAttack'): continue
+    if not name.startswith('sFTCustom') or name in excluded: continue
     if not length or sections[index][1] == 8: continue
     start = sections[index][4]+address-sections[index][3]
     words = struct.unpack_from('<'+str(length//4)+'I',host,start)
     pattern = struct.pack('>'+str(length//4)+'I',*words)
     assert pattern in rom,'Missing collision data: '+name
     checked += 1
-assert checked == 396,checked
-joint_map = bytes(joint for fighter in ROSTER for joint in MAPS[fighter])
+assert checked == 409,checked  # 396 normals, 12 grabs, one numeric throw table
+joint_map = bytes(joint for fighter in ROSTER for joint in MAPS[fighter]+[0])
 assert joint_map in rom
+for name,format in (('sFTCustomGrabJointMap','B'),('sFTCustomGrabTimings','H')):
+    address,length,index = symbols[name]
+    start = sections[index][4]+address-sections[index][3]
+    count = length//struct.calcsize(format)
+    values = struct.unpack_from('<'+str(count)+format,host,start)
+    assert struct.pack('>'+str(count)+format,*values) in rom,name
 elf,sections,symbols = read_elf(ROOT/'build/smashbrothers.us.elf','>')
 phoff = struct.unpack_from('>I',elf,28)[0]
 size,count = struct.unpack_from('>HH',elf,42)
@@ -55,6 +64,6 @@ for name in ('ftMainSetStatus','ftMainParseMotionEvent','sc1PTrainingModeUpdateV
     else: raise AssertionError('Code missing from ROM: '+name)
 assert 'gSCManagerCharBuilderPlayerSlots' in symbols
 assert 'gFTCustomMoveValidationFailures' in symbols
-print('PASS: all 396 host-tested collision tables, 12 joint maps, creator/assignment/training code and N64 CRC are in the ROM.')
+print('PASS: 396 normal and 12 grab collision tables, all 36 two-part throw definitions, joint maps, grab timings, creator/assignment/training code and N64 CRC are in the ROM.')
 print('ROM bytes:',len(rom))
 print('SHA-256:',hashlib.sha256(rom).hexdigest())

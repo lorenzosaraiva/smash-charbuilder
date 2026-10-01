@@ -13,11 +13,17 @@ struct FTMotionScript { ftMotionCommand *p_script; };
 struct FTMotionEventDefault { u32 words[1]; };
 struct FTMotionEventMakeAttack { u32 words[5]; };
 struct FTMotionEventSetAttackOffset { u32 words[2]; };
+struct FTThrowHitDesc
+{
+    s32 status_id, damage, angle, knockback_scale, knockback_weight, knockback_base, element;
+};
 struct FTStruct
 {
     s32 fkind, pkind;
     u32 player;
     s32 status_id, motion_id;
+    s32 motion_attack_id;
+    FTThrowHitDesc *throw_desc;
     DObj *joints[FTPARTS_JOINT_NUM_MAX];
     s32 attack_colls[4];
     FTMotionScript motion_scripts[2][3];
@@ -38,7 +44,8 @@ static s32 testCustomMove(void)
     ftMotionCommand native[8], invalid[6];
     FTCustomMoveDefinition bad;
     const FTCustomMoveDefinition *move;
-    s32 body, donor, i, j, cursor, count;
+    FTThrowHitDesc native_throw[2] = { { 52, 12, 45, 70, 0, 80, 0 }, { 55, 6, 45, 70, 0, 80, 0 } };
+    s32 body, donor, i, j, cursor, count, kind;
     u32 word, opcode, saved, failures;
     gSCManagerSceneData.scene_curr = nSCKindVSBattle;
     fp.pkind = nFTPlayerKindMan;
@@ -50,7 +57,7 @@ static s32 testCustomMove(void)
         gSCManagerCharBuilderSlots[0].body = body;
         for (donor = 0; donor < 12; donor++)
         {
-            for (j = 0; j < 13; j++) gSCManagerCharBuilderSlots[0].attacks[j] = donor;
+            for (j = 0; j < SCCHARBUILDER_ATTACKS_COUNT; j++) gSCManagerCharBuilderSlots[0].attacks[j] = donor;
             for (i = 0; i < 33; i++)
             {
                 fp.motion_id = (i < 29) ? sFTCustomMotionIDs[i] : sFTCustomBodyExtraMotionIDs[body][i - 29];
@@ -86,6 +93,76 @@ static s32 testCustomMove(void)
             }
         }
     }
+    for (body = 0; body < 12; body++)
+    {
+        fp.fkind = body;
+        gSCManagerCharBuilderSlots[0].body = body;
+        for (donor = 0; donor < 12; donor++)
+        {
+            fp.status_id = nFTCommonStatusCatch;
+            fp.motion_id = nFTCommonMotionCatch;
+            gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackGrab] = donor;
+            move = ftCustomMoveGetDefinition(&fp);
+            CHECK(move == ((body == donor) ? NULL : &sFTCustomGrabMoves[donor]));
+            failures = gFTCustomMoveValidationFailures;
+            script = ftCustomMoveBuildScript(&fp, &sFTCustomGrabMoves[donor]);
+            CHECK(script != NULL && gFTCustomMoveValidationFailures == failures);
+            CHECK((script[0] & 0x03FFFFFF) == sFTCustomGrabTimings[body][0]);
+            CHECK(((script[1] >> 13) & 127) == sFTCustomGrabJointMap[body]);
+            CHECK((script[sFTCustomGrabMoves[donor].word_count - 3] & 0x03FFFFFF) == sFTCustomGrabTimings[body][1]);
+            CHECK((script[sFTCustomGrabMoves[donor].word_count - 2] >> 26) == nFTMotionEventClearAttackCollAll);
+            for (kind = 0; kind < 3; kind++)
+            {
+                gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackGrab + kind] = donor;
+                fp.status_id = (kind == 0) ? nFTCommonStatusCatch : nFTCommonStatusThrowF;
+                fp.motion_attack_id = (kind == 2) ? nFTMotionAttackIDThrowB : nFTMotionAttackIDThrowF;
+                fp.throw_desc = native_throw;
+                ftCustomMoveApplyThrow(&fp);
+                if (body == donor) CHECK(fp.throw_desc == native_throw);
+                else
+                {
+                    CHECK(fp.throw_desc != native_throw);
+                    for (j = 0; j < 2; j++)
+                    {
+                        CHECK(fp.throw_desc[j].status_id == native_throw[j].status_id);
+                        CHECK(fp.throw_desc[j].damage == sFTCustomThrowProperties[donor][kind][j].damage);
+                        CHECK(fp.throw_desc[j].angle == sFTCustomThrowProperties[donor][kind][j].angle);
+                        CHECK(fp.throw_desc[j].knockback_scale == sFTCustomThrowProperties[donor][kind][j].knockback_scale);
+                        CHECK(fp.throw_desc[j].knockback_weight == sFTCustomThrowProperties[donor][kind][j].knockback_weight);
+                        CHECK(fp.throw_desc[j].knockback_base == sFTCustomThrowProperties[donor][kind][j].knockback_base);
+                        CHECK(fp.throw_desc[j].element == sFTCustomThrowProperties[donor][kind][j].element);
+                    }
+                }
+            }
+        }
+    }
+    /* Known source values, two independent players, and eligibility guards. */
+    fp.fkind = nFTKindMario; gSCManagerCharBuilderSlots[0].body = nFTKindMario;
+    fp.status_id = nFTCommonStatusThrowF; fp.motion_attack_id = nFTMotionAttackIDThrowF;
+    gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackThrowF] = nFTKindSamus;
+    fp.throw_desc = native_throw; ftCustomMoveApplyThrow(&fp);
+    CHECK(fp.throw_desc[0].damage == 16 && fp.throw_desc[0].angle == 40);
+    CHECK(fp.throw_desc[0].knockback_base == 90 && fp.throw_desc[0].element == 2);
+    CHECK(fp.throw_desc[1].damage == 8 && native_throw[0].damage == 12);
+    other = fp; other.player = 1;
+    gSCManagerCharBuilderSlots[1] = gSCManagerCharBuilderSlots[0];
+    gSCManagerCharBuilderSlots[1].attacks[nSCCharBuilderAttackThrowF] = nFTKindDonkey;
+    other.throw_desc = native_throw; ftCustomMoveApplyThrow(&other);
+    CHECK(other.throw_desc != fp.throw_desc && other.throw_desc[0].damage == 8);
+    CHECK(fp.throw_desc[0].damage == 16);
+    fp.pkind = nFTPlayerKindCom; fp.throw_desc = native_throw; ftCustomMoveApplyThrow(&fp);
+    CHECK(fp.throw_desc != native_throw);
+    fp.pkind = nFTPlayerKindDemo; fp.throw_desc = native_throw; ftCustomMoveApplyThrow(&fp);
+    CHECK(fp.throw_desc == native_throw); fp.pkind = nFTPlayerKindMan;
+    gSCManagerCharBuilderPlayerSlots[0] = -1; ftCustomMoveApplyThrow(&fp);
+    CHECK(fp.throw_desc == native_throw); gSCManagerCharBuilderPlayerSlots[0] = 0;
+    gSCManagerSceneData.scene_curr = nSCKindTitle; ftCustomMoveApplyThrow(&fp);
+    CHECK(fp.throw_desc == native_throw); gSCManagerSceneData.scene_curr = nSCKindVSBattle;
+    gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackThrowF] = 12; ftCustomMoveApplyThrow(&fp);
+    CHECK(fp.throw_desc == native_throw);
+    fp.status_id = nFTCommonStatusWait; fp.motion_attack_id = 0;
+    gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackThrowF] = nFTKindSamus; ftCustomMoveApplyThrow(&fp);
+    CHECK(fp.throw_desc == native_throw);
     fp.fkind = nFTKindMario; fp.motion_id = nFTCommonMotionAttackAirLw;
     gSCManagerCharBuilderSlots[0].body = nFTKindMario;
     gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackDAir] = nFTKindCaptain;

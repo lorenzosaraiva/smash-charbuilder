@@ -17,6 +17,7 @@ typedef enum FTCustomJointKind
     nFTCustomJointKneeR,
     nFTCustomJointFootL,
     nFTCustomJointFootR,
+    nFTCustomJointGrabPoint,
     nFTCustomJointEnumCount
 } FTCustomJointKind;
 
@@ -48,5 +49,16 @@ typedef struct FTCustomMoveDefinition
     const ftMotionCommand *events; /* Collision-only events with semantic joints. */
     s32 word_count;
 } FTCustomMoveDefinition;
+
+/* Numeric gameplay only: the victim's status remains the body's native one. */
+typedef struct FTCustomThrowDefinition
+{
+    s32 damage;
+    s32 angle;
+    s32 knockback_scale;
+    s32 knockback_weight;
+    s32 knockback_base;
+    s32 element;
+} FTCustomThrowDefinition;
 
 #endif

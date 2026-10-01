@@ -4,7 +4,7 @@
 #include <ssb_types.h>
 
 #define SCCHARBUILDER_SLOTS_COUNT 4
-#define SCCHARBUILDER_ATTACKS_COUNT 13
+#define SCCHARBUILDER_ATTACKS_COUNT 16
 
 typedef enum SCCharBuilderAttack
 {
@@ -20,7 +20,10 @@ typedef enum SCCharBuilderAttack
     nSCCharBuilderAttackFAir,
     nSCCharBuilderAttackBAir,
     nSCCharBuilderAttackUAir,
-    nSCCharBuilderAttackDAir
+    nSCCharBuilderAttackDAir,
+    nSCCharBuilderAttackGrab,
+    nSCCharBuilderAttackThrowF,
+    nSCCharBuilderAttackThrowB
 
 } SCCharBuilderAttack;
 

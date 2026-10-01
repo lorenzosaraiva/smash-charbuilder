@@ -870,6 +870,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         ftMotionEventAdvance(ms, FTMotionEventSetThrow1);
 
         fp->throw_desc = ftMotionEventCast(ms, FTMotionEventSetThrow2)->throw_desc;
+        ftCustomMoveApplyThrow(fp);
 
         ftMotionEventAdvance(ms, FTMotionEventSetThrow2);
         break;
