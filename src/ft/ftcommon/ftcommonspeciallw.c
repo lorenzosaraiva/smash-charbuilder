@@ -49,10 +49,12 @@ sb32 ftCommonSpecialLwCheckInterruptCommon(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
+    s32 donor = ftMainCharBuilderGetSpecialLwKind(fighter_gobj);
 
-    if ((fp->input.pl.button_tap & fp->input.button_mask_b) && (attr->is_have_speciallw) && (fp->input.pl.stick_range.y <= FTCOMMON_SPECIALLW_STICK_RANGE_MIN))
+    if ((fp->input.pl.button_tap & fp->input.button_mask_b) && ((attr->is_have_speciallw) || (donor != fp->fkind)) && (fp->input.pl.stick_range.y <= FTCOMMON_SPECIALLW_STICK_RANGE_MIN))
     {
-        dFTCommonSpecialLwStatusList[fp->fkind](fighter_gobj);
+        donor = ftMainCharBuilderSetSpecialLwDonor(fighter_gobj, donor);
+        dFTCommonSpecialLwStatusList[donor](fighter_gobj);
 
         return TRUE;
     }

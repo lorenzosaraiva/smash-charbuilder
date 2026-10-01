@@ -272,6 +272,13 @@ size_t lbRelocGetFileSize(u32 id)
     return lbRelocGetExternBytesNum(id);
 }
 
+size_t lbRelocGetFileDataSize(u32 id)
+{
+    lbRelocReadDmaTableEntry(id);
+
+    return sLBRelocCurrentTableEntry->decompressed_size * sizeof(u32);
+}
+
 /* 
  * Get a pointer to the start of a file.
  * This will copy the file from ROM into RAM if necessary

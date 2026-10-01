@@ -337,15 +337,154 @@ void ftManagerSetupFilesKind(s32 fkind)
     }
 }
 
+static void ftManagerSetupFilesMotionKind(s32 fkind)
+{
+    FTData *data;
+
+    if ((fkind < nFTKindMario) || (fkind > nFTKindPlayableEnd))
+    {
+        return;
+    }
+
+    data = dFTManagerDataFiles[fkind];
+
+    if ((data->file_mainmotion_id != 0) && (*data->p_file_mainmotion == NULL))
+    {
+        *data->p_file_mainmotion = lbRelocGetExternHeapFile
+        (
+            data->file_mainmotion_id,
+            syTaskmanMalloc(lbRelocGetFileSize(data->file_mainmotion_id), 0x10)
+        );
+    }
+    if ((data->p_file_submotion != NULL) && (data->file_submotion_id != 0) && (*data->p_file_submotion == NULL))
+    {
+        *data->p_file_submotion = lbRelocGetExternHeapFile
+        (
+            data->file_submotion_id,
+            syTaskmanMalloc(lbRelocGetFileSize(data->file_submotion_id), 0x10)
+        );
+    }
+}
+
+static void ftManagerSetupFileMainKind(s32 fkind)
+{
+    FTData *data;
+
+    if ((fkind < nFTKindMario) || (fkind > nFTKindPlayableEnd))
+    {
+        return;
+    }
+
+    data = dFTManagerDataFiles[fkind];
+
+    if ((data->p_file_main != NULL) && (data->file_main_id != 0) && (*data->p_file_main == NULL))
+    {
+        *data->p_file_main = lbRelocGetExternHeapFile
+        (
+            data->file_main_id,
+            syTaskmanMalloc(lbRelocGetFileSize(data->file_main_id), 0x10)
+        );
+    }
+}
+
+static void ftManagerSetupFileSpecial(void **p_file, u32 file_id)
+{
+    if ((p_file != NULL) && (file_id != 0) && (*p_file == NULL))
+    {
+        *p_file = lbRelocGetExternHeapFile(file_id, syTaskmanMalloc(lbRelocGetFileSize(file_id), 0x10));
+    }
+}
+
+static void ftManagerSetupFilesSpecialKind(s32 fkind)
+{
+    FTData *data;
+
+    if ((fkind < nFTKindMario) || (fkind > nFTKindPlayableEnd))
+    {
+        return;
+    }
+
+    data = dFTManagerDataFiles[fkind];
+
+    ftManagerSetupFileSpecial(data->p_file_special1, data->file_special1_id);
+    ftManagerSetupFileSpecial(data->p_file_special2, data->file_special2_id);
+    ftManagerSetupFileSpecial(data->p_file_special3, data->file_special3_id);
+    ftManagerSetupFileSpecial(data->p_file_special4, data->file_special4_id);
+}
+
+static sb32 ftManagerIsCharBuilderSlotActive(s32 slot_id)
+{
+    SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[slot_id];
+    s32 i;
+
+    if ((slot->is_enabled == FALSE) || (gSCManagerBattleState == NULL))
+    {
+        return FALSE;
+    }
+    for (i = 0; i < slot_id; i++)
+    {
+        if ((gSCManagerCharBuilderSlots[i].is_enabled != FALSE) &&
+            (gSCManagerCharBuilderSlots[i].body == slot->body))
+        {
+            return FALSE;
+        }
+    }
+    for (i = 0; i < ARRAY_COUNT(gSCManagerBattleState->players); i++)
+    {
+        if ((gSCManagerBattleState->players[i].pkind == nFTPlayerKindMan) &&
+            (gSCManagerBattleState->players[i].fkind == slot->body))
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static sb32 ftManagerCharBuilderSpecialHiNeedsMain(s32 fkind)
+{
+    return (fkind == nFTKindLink) || (fkind == nFTKindYoshi) ||
+           (fkind == nFTKindKirby) || (fkind == nFTKindNess);
+}
+
+static sb32 ftManagerCharBuilderSpecialLwNeedsMain(s32 fkind)
+{
+    return (fkind == nFTKindSamus) || (fkind == nFTKindLink) ||
+           (fkind == nFTKindYoshi) || (fkind == nFTKindPikachu);
+}
+
 // 0x800D782C
 void ftManagerSetupFilesPlayablesAll(void)
 {
-    s32 i;
+    s32 i, j;
 
     for (i = 0; i <= nFTKindPlayableEnd; i++)
     {
         ftManagerSetupFilesKind(i);
     }
+
+    for (i = 0; i < SCCHARBUILDER_SLOTS_COUNT; i++)
+    {
+        if (ftManagerIsCharBuilderSlotActive(i) != FALSE)
+        {
+            for (j = 0; j < SCCHARBUILDER_ATTACKS_COUNT; j++)
+            {
+                ftManagerSetupFilesMotionKind(gSCManagerCharBuilderSlots[i].attacks[j]);
+            }
+            ftManagerSetupFilesMotionKind(gSCManagerCharBuilderSlots[i].special_hi);
+            ftManagerSetupFilesMotionKind(gSCManagerCharBuilderSlots[i].special_lw);
+            if (ftManagerCharBuilderSpecialHiNeedsMain(gSCManagerCharBuilderSlots[i].special_hi) != FALSE)
+            {
+                ftManagerSetupFileMainKind(gSCManagerCharBuilderSlots[i].special_hi);
+            }
+            if (ftManagerCharBuilderSpecialLwNeedsMain(gSCManagerCharBuilderSlots[i].special_lw) != FALSE)
+            {
+                ftManagerSetupFileMainKind(gSCManagerCharBuilderSlots[i].special_lw);
+            }
+            ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_hi);
+            ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_lw);
+        }
+    }
+    ftManagerSetupFilesSpecialKind(nFTKindFox);
 }
 
 // 0x800D786C

@@ -153,6 +153,7 @@ sb32 ftCommonSpecialAirCheckInterruptCommon(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
+    s32 donor;
 
     if (fp->input.pl.button_tap & fp->input.button_mask_b)
     {
@@ -160,18 +161,29 @@ sb32 ftCommonSpecialAirCheckInterruptCommon(GObj *fighter_gobj)
         {
             if (fp->input.pl.stick_range.y >= FTCOMMON_SPECIALHI_STICK_RANGE_MIN)
             {
-                if (attr->is_have_specialairhi)
+                donor = ftMainCharBuilderGetSpecialHiKind(fighter_gobj);
+
+                if ((attr->is_have_specialairhi) || (donor != fp->fkind))
                 {
-                    dFTCommonSpecialAirHiStatusList[fp->fkind](fighter_gobj);
+                    donor = ftMainCharBuilderSetSpecialHiDonor(fighter_gobj, donor);
+                    dFTCommonSpecialAirHiStatusList[donor](fighter_gobj);
 
                     return TRUE;
                 }
             }
             else if (fp->input.pl.stick_range.y <= FTCOMMON_SPECIALLW_STICK_RANGE_MIN)
             {
-                if (attr->is_have_specialairlw)
+                donor = ftMainCharBuilderGetSpecialLwKind(fighter_gobj);
+
+                if ((attr->is_have_specialairlw) || (donor != fp->fkind))
                 {
-                    dFTCommonSpecialAirLwStatusList[fp->fkind](fighter_gobj);
+                    donor = ftMainCharBuilderSetSpecialLwDonor(fighter_gobj, donor);
+
+                    if (dFTCommonSpecialAirLwStatusList[donor] == NULL)
+                    {
+                        return FALSE;
+                    }
+                    dFTCommonSpecialAirLwStatusList[donor](fighter_gobj);
 
                     return TRUE;
                 }

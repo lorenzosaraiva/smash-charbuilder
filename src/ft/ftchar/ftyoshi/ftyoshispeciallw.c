@@ -27,7 +27,7 @@ void ftYoshiSpecialLwLandingProcUpdate(GObj *fighter_gobj)
         pos.y = 0.0F;
         pos.z = 0.0F;
 
-        gmCollisionGetFighterPartsWorldPosition(fp->joints[FTYOSHI_YOSHIBOMB_STAR_SPAWN_JOINT], &pos);
+        gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTYOSHI_YOSHIBOMB_STAR_SPAWN_JOINT), &pos);
         wpYoshiStarMakeStars(fighter_gobj, &pos);
     }
     ftAnimEndCheckSetStatus(fighter_gobj, ftCommonWaitSetStatus);

@@ -4661,7 +4661,7 @@ GObj* efManagerCaptainFalconKickMakeEffect(GObj *fighter_gobj)
     fp = ftGetStruct(fighter_gobj);
     dobj = DObjGetStruct(effect_gobj);
 
-    dobj->user_data.p = ftGetStruct(fighter_gobj)->joints[23];
+    dobj->user_data.p = ftMainCharBuilderGetSpecialJoint(fp, 23);
 
     dobj->rotate.vec.f.y = fp->lr * F_CLC_DTOR32(90.0F);
 
@@ -4917,7 +4917,7 @@ GObj* efManagerKirbyCutterDrawMakeEffect(GObj *fighter_gobj)
 
     dobj = DObjGetStruct(effect_gobj);
 
-    dobj->user_data.p = ftGetStruct(fighter_gobj)->joints[17];
+    dobj->user_data.p = ftMainCharBuilderGetSpecialJoint(ftGetStruct(fighter_gobj), 17);
 
     return effect_gobj;
 }
@@ -4942,7 +4942,7 @@ GObj* efManagerKirbyCutterTrailMakeEffect(GObj *fighter_gobj)
     fp = ftGetStruct(fighter_gobj);
     dobj = DObjGetStruct(effect_gobj);
 
-    dobj->user_data.p = ftGetStruct(fighter_gobj)->joints[17];
+    dobj->user_data.p = ftMainCharBuilderGetSpecialJoint(fp, 17);
     dobj->rotate.vec.f.y = fp->lr * F_CLC_DTOR32(90.0F);
 
     return effect_gobj;
@@ -5120,7 +5120,7 @@ GObj* efManagerNessPKThunderWaveMakeEffect(GObj *fighter_gobj)
 
         ep->fighter_gobj = fighter_gobj;
 
-        DObjGetStruct(effect_gobj)->user_data.p = fp->joints[5];
+        DObjGetStruct(effect_gobj)->user_data.p = ftMainCharBuilderGetSpecialJoint(fp, 5);
 
         DObjGetStruct(effect_gobj)->rotate.vec.f.y = fp->lr * F_CLC_DTOR32(90.0F);
         DObjGetStruct(effect_gobj)->translate.vec.f.z = 0.0F;

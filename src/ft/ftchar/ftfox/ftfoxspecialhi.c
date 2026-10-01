@@ -139,6 +139,11 @@ void ftFoxSpecialHiUpdateModelPitch(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE)
+    {
+        return;
+    }
+
     fp->joints[4]->rotate.vec.f.x = (syUtilsArcTan2(fp->physics.vel_air.x, fp->physics.vel_air.y) * fp->lr) - F_CST_DTOR32(90.0F);
     ftParamsUpdateFighterPartsTransformAll(fp->joints[4]);
 }

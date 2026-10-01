@@ -14,6 +14,14 @@
 
 extern void mnVSModeStartScene();
 
+SCCharBuilderSlot gSCManagerCharBuilderSlots[SCCHARBUILDER_SLOTS_COUNT] =
+{
+    { TRUE, nFTKindMario, { nFTKindFox, nFTKindCaptain, nFTKindLink, nFTKindPikachu, nFTKindNess, nFTKindDonkey, nFTKindKirby, nFTKindSamus, nFTKindYoshi, nFTKindFox, nFTKindLink, nFTKindPurin, nFTKindCaptain }, nFTKindPikachu, nFTKindFox },
+    { TRUE, nFTKindFox,   { nFTKindMario, nFTKindLink, nFTKindYoshi, nFTKindCaptain, nFTKindKirby, nFTKindSamus, nFTKindDonkey, nFTKindNess, nFTKindPikachu, nFTKindMario, nFTKindPikachu, nFTKindLuigi, nFTKindLink }, nFTKindNess, nFTKindCaptain },
+    { TRUE, nFTKindLink,  { nFTKindPikachu, nFTKindFox, nFTKindMario, nFTKindNess, nFTKindDonkey, nFTKindCaptain, nFTKindSamus, nFTKindKirby, nFTKindLuigi, nFTKindYoshi, nFTKindFox, nFTKindPurin, nFTKindMario }, nFTKindFox, nFTKindYoshi },
+    { TRUE, nFTKindKirby, { nFTKindCaptain, nFTKindMario, nFTKindFox, nFTKindLink, nFTKindPurin, nFTKindNess, nFTKindPikachu, nFTKindDonkey, nFTKindSamus, nFTKindLuigi, nFTKindYoshi, nFTKindFox, nFTKindLink }, nFTKindMario, nFTKindSamus }
+};
+
 // // // // // // // // // // // //
 //                               //
 //   GLOBAL / STATIC VARIABLES   //

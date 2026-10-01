@@ -125,7 +125,8 @@ typedef enum MNOptionOptions
 	nMNOptionOptionSound = nMNOptionOptionStart,
 	nMNOptionOptionScreenAdjust,
 	nMNOptionOptionBackupClear,
-	nMNOptionOptionEnd = nMNOptionOptionBackupClear,
+	nMNOptionOptionCharBuilder,
+	nMNOptionOptionEnd = nMNOptionOptionCharBuilder,
 
 	nMNOptionOptionEnumCount
 

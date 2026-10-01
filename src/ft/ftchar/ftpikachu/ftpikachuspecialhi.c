@@ -150,6 +150,11 @@ void ftPikachuSpecialHiUpdateModelPitchScale(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE)
+    {
+        return;
+    }
+
     fp->joints[FTPIKACHU_QUICKATTACK_BASE_JOINT]->rotate.vec.f.x = (syUtilsArcTan2(fp->physics.vel_air.x, fp->physics.vel_air.y) * fp->lr) - F_CST_DTOR32(90.0F);
 
     fp->joints[FTPIKACHU_QUICKATTACK_BASE_JOINT]->scale.vec.f.x = FTPIKACHU_QUICKATTACK_SCALE_X;

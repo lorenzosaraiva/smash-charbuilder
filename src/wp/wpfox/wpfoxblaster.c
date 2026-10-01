@@ -106,7 +106,13 @@ sb32 wpFoxBlasterProcReflector(GObj *weapon_gobj)
 GObj* wpFoxBlasterMakeWeapon(GObj *fighter_gobj, Vec3f *pos)
 {
     WPStruct *wp;
-    GObj *weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPFoxBlasterWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
+    GObj *weapon_gobj;
+
+    if (gFTDataFoxSpecial1 == NULL)
+    {
+        return NULL;
+    }
+    weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dWPFoxBlasterWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
 
     if (weapon_gobj == NULL)
     {

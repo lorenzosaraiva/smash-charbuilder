@@ -4,5 +4,6 @@
 #include "sctypes.h"
 #include "scoverlay.h"
 #include "scfunctions.h"
+#include "sccharbuilder.h"
 
 #endif

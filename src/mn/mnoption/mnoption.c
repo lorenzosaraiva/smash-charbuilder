@@ -29,6 +29,18 @@ mnCommonSetOptionChangeWaitP(sMNOptionOptionChangeWait, is_button, stick_range, 
 #define mnOptionSetOptionChangeWaitN(is_button, stick_range, div) \
 mnCommonSetOptionChangeWaitN(sMNOptionOptionChangeWait, is_button, stick_range, div)
 
+#define MNOPTION_BUILDER_MODE_NONE 0
+#define MNOPTION_BUILDER_MODE_SLOTS 1
+#define MNOPTION_BUILDER_MODE_EDIT 2
+
+#define MNOPTION_BUILDER_ENTRY_COUNT 21
+#define MNOPTION_BUILDER_VISIBLE_COUNT 12
+
+#define MNOPTION_BUILDER_ROW_X 38
+#define MNOPTION_BUILDER_VALUE_X 286
+#define MNOPTION_BUILDER_ROW_Y 50
+#define MNOPTION_BUILDER_ROW_HEIGHT 14
+
 // // // // // // // // // // // //
 //                               //
 //       EXTERNAL VARIABLES      //
@@ -44,7 +56,7 @@ extern sb32 dSYAudioSoundQuality;
 // // // // // // // // // // // //
 
 // 0x80133620
-u32 dMNOptionFileIDs[/* */] = { &llMNCommonFileID, &llMNOptionFileID };
+u32 dMNOptionFileIDs[/* */] = { &llMNCommonFileID, &llMNOptionFileID, &llMNCommonFontsFileID };
 
 // 0x80133628
 Lights1 dMNOptionLights1 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x3C, 0x3C, 0x3C);
@@ -71,6 +83,29 @@ GObj *sMNOptionOptionScreenAdjustGObj;
 
 // 0x801337A8
 GObj *sMNOptionOptionBackupClearGObj;
+
+GObj *sMNOptionOptionCharBuilderGObj;
+
+GObj *sMNOptionBuilderBackdropGObj;
+
+GObj *sMNOptionBuilderTextGObj;
+
+intptr_t dMNOptionBuilderLetterOffsets[/* */] =
+{
+    &llMNCommonFontsLetterASprite, &llMNCommonFontsLetterBSprite,
+    &llMNCommonFontsLetterCSprite, &llMNCommonFontsLetterDSprite,
+    &llMNCommonFontsLetterESprite, &llMNCommonFontsLetterFSprite,
+    &llMNCommonFontsLetterGSprite, &llMNCommonFontsLetterHSprite,
+    &llMNCommonFontsLetterISprite, &llMNCommonFontsLetterJSprite,
+    &llMNCommonFontsLetterKSprite, &llMNCommonFontsLetterLSprite,
+    &llMNCommonFontsLetterMSprite, &llMNCommonFontsLetterNSprite,
+    &llMNCommonFontsLetterOSprite, &llMNCommonFontsLetterPSprite,
+    &llMNCommonFontsLetterQSprite, &llMNCommonFontsLetterRSprite,
+    &llMNCommonFontsLetterSSprite, &llMNCommonFontsLetterTSprite,
+    &llMNCommonFontsLetterUSprite, &llMNCommonFontsLetterVSprite,
+    &llMNCommonFontsLetterWSprite, &llMNCommonFontsLetterXSprite,
+    &llMNCommonFontsLetterYSprite, &llMNCommonFontsLetterZSprite
+};
 
 // 0x801337B0
 s32 sMNOptionPad0x801337B0[2];
@@ -113,6 +148,12 @@ s32 sMNOptionTotalTimeTics;
 
 // 0x801337E8
 s32 sMNOptionReturnTic;
+
+s32 sMNOptionBuilderMode;
+
+s32 sMNOptionBuilderSlot;
+
+s32 sMNOptionBuilderEntry;
 
 // 0x801337EC - Padding?
 // s32 sMNOptionPad0x801337EC;
@@ -363,6 +404,66 @@ void mnOptionMakeBackupClear(void)
 
     sobj->pos.x = 86.0F;
     sobj->pos.y = 140.0F;
+}
+
+f32 mnOptionGetStringWidth(const char *str)
+{
+    Sprite *sprite;
+    f32 width = 0.0F;
+    s32 i;
+
+    for (i = 0; str[i] != '\0'; i++)
+    {
+        if (str[i] == ' ')
+        {
+            width += 4.0F;
+        }
+        else
+        {
+            sprite = lbRelocGetFileData(Sprite*, sMNOptionFiles[2], dMNOptionBuilderLetterOffsets[str[i] - 'A']);
+            width += sprite->width + 1.0F;
+        }
+    }
+    return (width == 0.0F) ? 0.0F : width - 1.0F;
+}
+
+void mnOptionMakeString(GObj *gobj, const char *str, f32 x, f32 y, u32 *color, sb32 is_right)
+{
+    SObj *sobj;
+    f32 pos_x = is_right ? x - mnOptionGetStringWidth(str) : x;
+    s32 i;
+
+    for (i = 0; str[i] != '\0'; i++)
+    {
+        if (str[i] == ' ')
+        {
+            pos_x += 4.0F;
+        }
+        else
+        {
+            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNOptionFiles[2], dMNOptionBuilderLetterOffsets[str[i] - 'A']));
+            sobj->sprite.attr &= ~SP_FASTCOPY;
+            sobj->sprite.attr |= SP_TRANSPARENT;
+            sobj->sprite.red = color[0];
+            sobj->sprite.green = color[1];
+            sobj->sprite.blue = color[2];
+            sobj->pos.x = pos_x;
+            sobj->pos.y = y;
+            pos_x += sobj->sprite.width + 1.0F;
+        }
+    }
+}
+
+void mnOptionMakeCharBuilder(void)
+{
+    u32 text_color[3] = { 0x00, 0x00, 0x00 };
+    GObj *gobj;
+
+    sMNOptionOptionCharBuilderGObj = gobj = gcMakeGObjSPAfter(0, NULL, 4, GOBJ_PRIORITY_DEFAULT);
+    gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 2, GOBJ_PRIORITY_DEFAULT, ~0);
+    mnOptionMakeOptionTabs(gobj, 47.0F, 178.0F, 17);
+    mnOptionSetOptionSpriteColors(gobj, sMNOptionOption == nMNOptionOptionCharBuilder);
+    mnOptionMakeString(gobj, "CHAR BUILDER", 70.0F, 185.0F, text_color, FALSE);
 }
 
 // 0x80132174 - Unused?
@@ -786,6 +887,358 @@ void mnOptionMakeDecalsCamera(void)
     syRdpSetViewport(&cobj->viewport, 10.0F, 10.0F, 310.0F, 230.0F);
 }
 
+void mnOptionBuilderBackdropProcDisplay(GObj *gobj)
+{
+    s32 cursor_row;
+    s32 start;
+    s32 cursor_y;
+
+    if (sMNOptionBuilderMode == MNOPTION_BUILDER_MODE_SLOTS)
+    {
+        cursor_row = sMNOptionBuilderSlot;
+    }
+    else
+    {
+        start = sMNOptionBuilderEntry - 5;
+
+        if (start < 0)
+        {
+            start = 0;
+        }
+        if (start > (MNOPTION_BUILDER_ENTRY_COUNT - MNOPTION_BUILDER_VISIBLE_COUNT))
+        {
+            start = MNOPTION_BUILDER_ENTRY_COUNT - MNOPTION_BUILDER_VISIBLE_COUNT;
+        }
+        cursor_row = sMNOptionBuilderEntry - start;
+    }
+    cursor_y = MNOPTION_BUILDER_ROW_Y + (cursor_row * MNOPTION_BUILDER_ROW_HEIGHT);
+
+    gDPPipeSync(gSYTaskmanDLHeads[0]++);
+    gDPSetCycleType(gSYTaskmanDLHeads[0]++, G_CYC_1CYCLE);
+    gDPSetCombineMode(gSYTaskmanDLHeads[0]++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+    gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2);
+
+    gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0x00, 0x00, 0x00, 0xE8);
+    gDPFillRectangle(gSYTaskmanDLHeads[0]++, 10, 10, 310, 230);
+
+    gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0x00, 0x00, 0x00, 0xFF);
+    gDPFillRectangle(gSYTaskmanDLHeads[0]++, 24, 18, 116, 40);
+
+    gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0x5F, 0x58, 0x46, 0xFF);
+    gDPFillRectangle(gSYTaskmanDLHeads[0]++, 24, 18, 28, 40);
+
+    gDPSetPrimColor(gSYTaskmanDLHeads[0]++, 0, 0, 0xF2, 0xC7, 0x0D, 0xFF);
+    gDPFillRectangle(gSYTaskmanDLHeads[0]++, 30, 44, 290, 44);
+    gDPFillRectangle(gSYTaskmanDLHeads[0]++, 32, cursor_y + 2, 35, cursor_y + 8);
+    gDPFillRectangle(gSYTaskmanDLHeads[0]++, 32, cursor_y + 11, 288, cursor_y + 11);
+
+    gDPPipeSync(gSYTaskmanDLHeads[0]++);
+    gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
+    lbCommonClearExternSpriteParams();
+}
+
+void mnOptionBuilderMakeBackdrop(void)
+{
+    sMNOptionBuilderBackdropGObj = gcMakeGObjSPAfter(0, NULL, 6, GOBJ_PRIORITY_DEFAULT);
+    gcAddGObjDisplay(sMNOptionBuilderBackdropGObj, mnOptionBuilderBackdropProcDisplay, 4, GOBJ_PRIORITY_DEFAULT, ~0);
+}
+
+const char* mnOptionBuilderGetFighterName(s32 fkind)
+{
+    // These names deliberately fit the narrow value column in the editor.
+    const char *names[/* */] =
+    {
+        "MARIO", "FOX", "DONKEY", "SAMUS", "LUIGI", "LINK",
+        "YOSHI", "CAPTAIN", "KIRBY", "PIKACHU", "JIGGLY", "NESS"
+    };
+
+    return names[fkind];
+}
+
+void mnOptionBuilderMakeSlotList(GObj *gobj)
+{
+    const char *slot_names[/* */] = { "BUILD ONE", "BUILD TWO", "BUILD THREE", "BUILD FOUR" };
+    u32 title_color[3] = { 0xFF, 0xD8, 0x4A };
+    u32 header_color[3] = { 0x5F, 0x58, 0x46 };
+    u32 normal_color[3] = { 0xFF, 0xFF, 0xFF };
+    s32 i;
+
+    mnOptionMakeString(gobj, "SETTINGS", 36.0F, 25.0F, header_color, FALSE);
+    mnOptionMakeString(gobj, "CHAR BUILDER", 288.0F, 24.0F, title_color, TRUE);
+
+    for (i = 0; i < SCCHARBUILDER_SLOTS_COUNT; i++)
+    {
+        mnOptionMakeString(gobj, slot_names[i], MNOPTION_BUILDER_ROW_X, MNOPTION_BUILDER_ROW_Y + (i * MNOPTION_BUILDER_ROW_HEIGHT), normal_color, FALSE);
+        mnOptionMakeString(gobj, mnOptionBuilderGetFighterName(gSCManagerCharBuilderSlots[i].body), MNOPTION_BUILDER_VALUE_X, MNOPTION_BUILDER_ROW_Y + (i * MNOPTION_BUILDER_ROW_HEIGHT), normal_color, TRUE);
+    }
+}
+
+void mnOptionBuilderMakeEditor(GObj *gobj)
+{
+    const char *slot_names[/* */] = { "BUILD ONE", "BUILD TWO", "BUILD THREE", "BUILD FOUR" };
+    const char *entry_names[/* */] =
+    {
+        "ENABLED", "BODY", "USE BODY FOR ALL", "JAB", "DASH ATTACK", "FORWARD TILT", "UP TILT",
+        "DOWN TILT", "FORWARD SMASH", "UP SMASH", "DOWN SMASH", "NEUTRAL AIR", "FORWARD AIR",
+        "BACK AIR", "UP AIR", "DOWN AIR", "NEUTRAL B", "UP B", "DOWN B", "RANDOMIZE ATTACKS", "TEST IN TRAINING"
+    };
+    SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
+    u32 title_color[3] = { 0xFF, 0xD8, 0x4A };
+    u32 header_color[3] = { 0x5F, 0x58, 0x46 };
+    u32 normal_color[3] = { 0xFF, 0xFF, 0xFF };
+    const char *value;
+    s32 start;
+    s32 end;
+    s32 i;
+
+    start = sMNOptionBuilderEntry - 5;
+
+    if (start < 0)
+    {
+        start = 0;
+    }
+    if (start > (MNOPTION_BUILDER_ENTRY_COUNT - MNOPTION_BUILDER_VISIBLE_COUNT))
+    {
+        start = MNOPTION_BUILDER_ENTRY_COUNT - MNOPTION_BUILDER_VISIBLE_COUNT;
+    }
+    end = start + MNOPTION_BUILDER_VISIBLE_COUNT;
+    mnOptionMakeString(gobj, "SETTINGS", 36.0F, 25.0F, header_color, FALSE);
+    mnOptionMakeString(gobj, slot_names[sMNOptionBuilderSlot], 288.0F, 24.0F, title_color, TRUE);
+
+    for (i = start; i < end; i++)
+    {
+        mnOptionMakeString(gobj, entry_names[i], MNOPTION_BUILDER_ROW_X, MNOPTION_BUILDER_ROW_Y + ((i - start) * MNOPTION_BUILDER_ROW_HEIGHT), normal_color, FALSE);
+
+        value = NULL;
+
+        if (i == 0)
+        {
+            value = slot->is_enabled ? "ON" : "OFF";
+        }
+        else if (i == 1)
+        {
+            value = mnOptionBuilderGetFighterName(slot->body);
+        }
+        else if ((i >= 3) && (i <= 15))
+        {
+            value = mnOptionBuilderGetFighterName(slot->attacks[i - 3]);
+        }
+        else if (i == 16)
+        {
+            value = "FOX LASER";
+        }
+        else if (i == 17)
+        {
+            value = mnOptionBuilderGetFighterName(slot->special_hi);
+        }
+        else if (i == 18)
+        {
+            value = mnOptionBuilderGetFighterName(slot->special_lw);
+        }
+        if (value != NULL)
+        {
+            mnOptionMakeString(gobj, value, MNOPTION_BUILDER_VALUE_X, MNOPTION_BUILDER_ROW_Y + ((i - start) * MNOPTION_BUILDER_ROW_HEIGHT), normal_color, TRUE);
+        }
+    }
+}
+
+void mnOptionBuilderRedraw(void)
+{
+    if (sMNOptionBuilderTextGObj != NULL)
+    {
+        gcEjectGObj(sMNOptionBuilderTextGObj);
+    }
+    sMNOptionBuilderTextGObj = gcMakeGObjSPAfter(0, NULL, 7, GOBJ_PRIORITY_DEFAULT);
+    gcAddGObjDisplay(sMNOptionBuilderTextGObj, lbCommonDrawSObjAttr, 4, GOBJ_PRIORITY_DEFAULT, ~0);
+
+    if (sMNOptionBuilderMode == MNOPTION_BUILDER_MODE_SLOTS)
+    {
+        mnOptionBuilderMakeSlotList(sMNOptionBuilderTextGObj);
+    }
+    else mnOptionBuilderMakeEditor(sMNOptionBuilderTextGObj);
+}
+
+void mnOptionBuilderRandomize(void)
+{
+    SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
+    u32 seed = sMNOptionTotalTimeTics + (sMNOptionBuilderSlot * 7919);
+    s32 i;
+
+    for (i = 0; i < SCCHARBUILDER_ATTACKS_COUNT; i++)
+    {
+        seed = (seed * 1103515245) + 12345;
+        slot->attacks[i] = (seed >> 16) % (nFTKindPlayableEnd + 1);
+    }
+    seed = (seed * 1103515245) + 12345;
+    slot->special_hi = (seed >> 16) % (nFTKindPlayableEnd + 1);
+    seed = (seed * 1103515245) + 12345;
+    slot->special_lw = (seed >> 16) % (nFTKindPlayableEnd + 1);
+
+    if (slot->special_lw == nFTKindKirby)
+    {
+        slot->special_lw = nFTKindSamus;
+    }
+}
+
+void mnOptionBuilderChangeValue(s32 add)
+{
+    SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
+    u8 *value;
+
+    if (sMNOptionBuilderEntry == 0)
+    {
+        slot->is_enabled = (slot->is_enabled == FALSE) ? TRUE : FALSE;
+        return;
+    }
+    if (sMNOptionBuilderEntry == 1)
+    {
+        value = &slot->body;
+    }
+    else if ((sMNOptionBuilderEntry >= 3) && (sMNOptionBuilderEntry <= 15))
+    {
+        value = &slot->attacks[sMNOptionBuilderEntry - 3];
+    }
+    else if (sMNOptionBuilderEntry == 17)
+    {
+        value = &slot->special_hi;
+    }
+    else if (sMNOptionBuilderEntry == 18)
+    {
+        value = &slot->special_lw;
+    }
+    else return;
+
+    do
+    {
+        if (add > 0)
+        {
+            *value = (*value == nFTKindPlayableEnd) ? nFTKindMario : *value + 1;
+        }
+        else *value = (*value == nFTKindMario) ? nFTKindPlayableEnd : *value - 1;
+    }
+    while ((sMNOptionBuilderEntry == 18) && (*value == nFTKindKirby));
+}
+
+void mnOptionBuilderUseBodyForAll(void)
+{
+    SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
+    s32 i;
+
+    for (i = 0; i < SCCHARBUILDER_ATTACKS_COUNT; i++)
+    {
+        slot->attacks[i] = slot->body;
+    }
+    slot->special_hi = slot->body;
+    slot->special_lw = slot->body;
+}
+
+void mnOptionBuilderTestInTraining(void)
+{
+    SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
+
+    slot->is_enabled = TRUE;
+    gSCManagerSceneData.player = 0;
+    gSCManagerSceneData.training_man_fkind = slot->body;
+    gSCManagerSceneData.training_man_costume = 0;
+    gSCManagerSceneData.training_com_fkind = nFTKindNull;
+    gSCManagerSceneData.training_com_costume = 0;
+    gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
+    gSCManagerSceneData.scene_curr = nSCKindPlayers1PTraining;
+    sMNOptionIsProceedScene = TRUE;
+}
+
+void mnOptionBuilderExit(void)
+{
+    gcEjectGObj(sMNOptionBuilderTextGObj);
+    gcEjectGObj(sMNOptionBuilderBackdropGObj);
+    sMNOptionBuilderTextGObj = NULL;
+    sMNOptionBuilderBackdropGObj = NULL;
+    sMNOptionBuilderMode = MNOPTION_BUILDER_MODE_NONE;
+}
+
+void mnOptionBuilderRun(void)
+{
+    sb32 stick_range;
+    s32 is_button;
+    sb32 is_up;
+    sb32 is_down;
+    sb32 is_left;
+    sb32 is_right;
+
+    is_up = mnOptionCheckGetOptionButtonInput(is_button, U_JPAD | U_CBUTTONS) || mnOptionCheckGetOptionStickInputUD(stick_range, 20, 1);
+    is_down = mnOptionCheckGetOptionButtonInput(is_button, D_JPAD | D_CBUTTONS) || mnOptionCheckGetOptionStickInputUD(stick_range, -20, 0);
+    is_left = mnOptionCheckGetOptionButtonInput(is_button, L_JPAD | L_CBUTTONS) || mnOptionCheckGetOptionStickInputLR(stick_range, -20, 0);
+    is_right = mnOptionCheckGetOptionButtonInput(is_button, R_JPAD | R_CBUTTONS) || mnOptionCheckGetOptionStickInputLR(stick_range, 20, 1);
+
+    if (is_up || is_down)
+    {
+        func_800269C0_275C0(nSYAudioFGMMenuScroll2);
+        sMNOptionOptionChangeWait = 10;
+
+        if (sMNOptionBuilderMode == MNOPTION_BUILDER_MODE_SLOTS)
+        {
+            sMNOptionBuilderSlot = is_up ? ((sMNOptionBuilderSlot == 0) ? SCCHARBUILDER_SLOTS_COUNT - 1 : sMNOptionBuilderSlot - 1) : ((sMNOptionBuilderSlot + 1) % SCCHARBUILDER_SLOTS_COUNT);
+        }
+        else
+        {
+            sMNOptionBuilderEntry = is_up ? ((sMNOptionBuilderEntry == 0) ? MNOPTION_BUILDER_ENTRY_COUNT - 1 : sMNOptionBuilderEntry - 1) : ((sMNOptionBuilderEntry + 1) % MNOPTION_BUILDER_ENTRY_COUNT);
+        }
+        mnOptionBuilderRedraw();
+        return;
+    }
+    if ((sMNOptionBuilderMode == MNOPTION_BUILDER_MODE_EDIT) && (is_left || is_right))
+    {
+        mnOptionBuilderChangeValue(is_right ? 1 : -1);
+        func_800269C0_275C0(nSYAudioFGMMenuScroll1);
+        sMNOptionOptionChangeWait = 10;
+        mnOptionBuilderRedraw();
+        return;
+    }
+    if (scSubsysControllerGetPlayerTapButtons(B_BUTTON) != FALSE)
+    {
+        func_800269C0_275C0(nSYAudioFGMMenuSelect);
+
+        if (sMNOptionBuilderMode == MNOPTION_BUILDER_MODE_EDIT)
+        {
+            sMNOptionBuilderMode = MNOPTION_BUILDER_MODE_SLOTS;
+            mnOptionBuilderRedraw();
+        }
+        else mnOptionBuilderExit();
+        return;
+    }
+    if (scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON) != FALSE)
+    {
+        func_800269C0_275C0(nSYAudioFGMMenuSelect);
+
+        if (sMNOptionBuilderMode == MNOPTION_BUILDER_MODE_SLOTS)
+        {
+            sMNOptionBuilderMode = MNOPTION_BUILDER_MODE_EDIT;
+            sMNOptionBuilderEntry = 0;
+            mnOptionBuilderRedraw();
+            return;
+        }
+        switch (sMNOptionBuilderEntry)
+        {
+        case 2:
+            mnOptionBuilderUseBodyForAll();
+            break;
+
+        case 19:
+            mnOptionBuilderRandomize();
+            break;
+
+        case 20:
+            mnOptionBuilderTestInTraining();
+            return;
+
+        default:
+            mnOptionBuilderChangeValue(1);
+            break;
+        }
+        mnOptionBuilderRedraw();
+    }
+}
+
 // 0x80132D60
 void mnOptionInitVars(void)
 {
@@ -812,6 +1265,11 @@ void mnOptionInitVars(void)
     D_ovl60_801337D4 = NULL;
     sMNOptionIsProceedScene = FALSE;
     sMNOptionReturnTic = sMNOptionTotalTimeTics + I_MIN_TO_TICS(5);
+    sMNOptionBuilderMode = MNOPTION_BUILDER_MODE_NONE;
+    sMNOptionBuilderSlot = 0;
+    sMNOptionBuilderEntry = 0;
+    sMNOptionBuilderBackdropGObj = NULL;
+    sMNOptionBuilderTextGObj = NULL;
 }
 
 // 0x80132E10
@@ -830,7 +1288,7 @@ void mnOptionFuncRun(GObj *gobj)
     sb32 stick_range;
 
     // 0x801336EC
-    GObj **option_gobjs[/* */] = { &sMNOptionOptionSoundGObj, &sMNOptionOptionScreenAdjustGObj, &sMNOptionOptionBackupClearGObj };
+    GObj **option_gobjs[/* */] = { &sMNOptionOptionSoundGObj, &sMNOptionOptionScreenAdjustGObj, &sMNOptionOptionBackupClearGObj, &sMNOptionOptionCharBuilderGObj };
 
     s32 is_button;
 
@@ -870,6 +1328,11 @@ void mnOptionFuncRun(GObj *gobj)
         {
             sMNOptionOptionChangeWait = 0;
         }
+        if (sMNOptionBuilderMode != MNOPTION_BUILDER_MODE_NONE)
+        {
+            mnOptionBuilderRun();
+            return;
+        }
         if (scSubsysControllerGetPlayerTapButtons(A_BUTTON | START_BUTTON) != FALSE)
         {
             switch (sMNOptionOption)
@@ -898,6 +1361,13 @@ void mnOptionFuncRun(GObj *gobj)
                 gSCManagerSceneData.scene_curr = nSCKindBackupClear;
 
                 sMNOptionIsProceedScene = TRUE;
+                return;
+
+            case nMNOptionOptionCharBuilder:
+                func_800269C0_275C0(nSYAudioFGMMenuSelect);
+                sMNOptionBuilderMode = MNOPTION_BUILDER_MODE_SLOTS;
+                mnOptionBuilderMakeBackdrop();
+                mnOptionBuilderRedraw();
                 return;
             }
         }
@@ -1055,6 +1525,7 @@ void mnOptionFuncStart(void)
     mnOptionMakeSoundToggle();
     mnOptionMakeScreenAdjust();
     mnOptionMakeBackupClear();
+    mnOptionMakeCharBuilder();
     mnOptionMakeSoundUnderline();
     mnOptionMakeMenuGObj();
 

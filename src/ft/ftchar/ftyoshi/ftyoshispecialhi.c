@@ -25,21 +25,23 @@ void ftYoshiSpecialHiGetEggPosition(FTStruct *fp, Vec3f *pos)
     pos->y = 0.0F;
     pos->z = 0.0F;
 
-    gmCollisionGetFighterPartsWorldPosition(fp->joints[FTYOSHI_EGGTHROW_JOINT], pos);
+    gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTYOSHI_EGGTHROW_JOINT), pos);
 }
 
 // 0x8015E9E0
 void ftYoshiSpecialHiUpdateEggVectors(FTStruct *fp)
 {
+    DObj *joint;
     Vec3f pos;
 
     if (fp->status_vars.yoshi.specialhi.egg_gobj != NULL)
     {
         ftYoshiSpecialHiGetEggPosition(fp, &pos);
+        joint = ftMainCharBuilderGetSpecialJoint(fp, FTYOSHI_EGGTHROW_JOINT);
 
         DObjGetStruct(fp->status_vars.yoshi.specialhi.egg_gobj)->translate.vec.f = pos;
 
-        DObjGetStruct(fp->status_vars.yoshi.specialhi.egg_gobj)->scale.vec.f = fp->joints[FTYOSHI_EGGTHROW_JOINT]->scale.vec.f;
+        DObjGetStruct(fp->status_vars.yoshi.specialhi.egg_gobj)->scale.vec.f = joint->scale.vec.f;
     }
 }
 

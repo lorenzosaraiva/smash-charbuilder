@@ -65,6 +65,7 @@ extern void lbRelocReadDmaTableEntry(u32 entry_id);
 extern void lbRelocLoadAndRelocFile(u32 id, void *ram_dst, u32 bytes_num, s32 loc);
 extern size_t lbRelocGetExternBytesNum(u32 id);
 extern size_t lbRelocGetFileSize(u32 id);
+extern size_t lbRelocGetFileDataSize(u32 id);
 extern void* lbRelocGetExternBufferFile(u32 id);
 extern void* lbRelocGetExternHeapFile(u32 id, void *heap);
 extern void* lbRelocGetInternBufferFile(u32 id);

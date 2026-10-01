@@ -45,7 +45,7 @@ void ftNessSpecialHiMakePKThunder(GObj *fighter_gobj)
     pos.y = 0.0F;
     pos.z = 0.0F;
 
-    gmCollisionGetFighterPartsWorldPosition(fp->joints[FTNESS_PKTHUNDER_SPAWN_JOINT], &pos);
+    gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTNESS_PKTHUNDER_SPAWN_JOINT), &pos);
 
     pos.z = 0.0F;
 
@@ -505,6 +505,11 @@ void ftNessSpecialHiCollideWallPhysics(GObj *fighter_gobj, MPCollData *coll_data
 void ftNessSpecialHiUpdateModelPitch(GObj *fighter_gobj) // Update joint's X rotation axis
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+
+    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE)
+    {
+        return;
+    }
     
     // PK Thunder's velocity sign can sometimes end up becoming the inverse of the LR sign, causing Ness' model rotation to corrupt.
     // Solution:

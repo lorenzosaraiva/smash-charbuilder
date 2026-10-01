@@ -4,9 +4,574 @@
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <sys/controller.h>
+#include "ftcustommove.c.inc"
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 extern void func_ovl0_800C9A38();
+
+typedef enum FTMainCharBuilderSpecialKind
+{
+    nFTMainCharBuilderSpecialKindNone,
+    nFTMainCharBuilderSpecialKindHi,
+    nFTMainCharBuilderSpecialKindLw
+
+} FTMainCharBuilderSpecialKind;
+
+static s32 sFTMainCharBuilderSpecialDonors[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
+static u8 sFTMainCharBuilderSpecialKinds[GMCOMMON_PLAYERS_MAX];
+static sb32 sFTMainCharBuilderSamusBombMade[GMCOMMON_PLAYERS_MAX];
+static sb32 sFTMainCharBuilderDonkeyLwSawGround[GMCOMMON_PLAYERS_MAX];
+static s32 sFTMainCharBuilderSpecialMotionIDs[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
+static s32 sFTMainCharBuilderMotionDonors[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
+
+static ftMotionCommand sFTMainCharBuilderSamusSpecialLwScript[] =
+{
+    ftMotionCommandWaitAsync(10),
+    ftMotionCommandSetFlag0(TRUE),
+    ftMotionPlayFGM(nSYAudioFGMSamusSpecialLw),
+    ftMotionCommandMakeRumble(0, 6),
+    ftMotionCommandEnd()
+};
+
+static ftMotionCommand sFTMainCharBuilderDonkeySpecialLwScript[] =
+{
+    ftMotionCommandSetSlopeContour(3),
+    ftMotionCommandWaitAsync(16),
+    ftMotionCommandMakeAttackColl(0, 0, nFTPartsJointTopN, 10, 0, 0, 400, 0, 0, -500, 90, 100, 150, 2, -4, 2, 1, 0),
+    ftMotionCommandMakeAttackColl(1, 0, nFTPartsJointTopN, 10, 0, 0, 400, 0, 0, -100, 90, 100, 150, 2, -4, 2, 1, 0),
+    ftMotionCommandMakeAttackColl(2, 0, nFTPartsJointTopN, 10, 0, 0, 400, 0, 0, 300, 90, 100, 150, 2, -4, 2, 1, 0),
+    ftMotionCommandMakeAttackColl(3, 0, nFTPartsJointTopN, 10, 0, 0, 400, 0, 0, 700, 90, 100, 150, 2, -4, 2, 1, 0),
+    ftMotionPlayFGM(nSYAudioFGMBossSlam),
+    ftMotionCommandEffect(-1, nEFKindQuakeMag1, 0, 0, 0, 0, 0, 0, 0),
+    ftMotionCommandEffect(nFTPartsJointTopN, nEFKindImpactWave, 0, 0, 0, 0, 0, 0, 0),
+    ftMotionCommandEffect(nFTPartsJointTopN, nEFKindDustHeavyDouble, 0, 0, 0, 0, 0, 0, 0),
+    ftMotionCommandWait(2),
+    ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandWait(8),
+    ftMotionCommandMakeAttackColl(0, 0, nFTPartsJointTopN, 10, 0, 0, 400, 0, 0, -500, 90, 100, 150, 2, -4, 2, 1, 0),
+    ftMotionCommandMakeAttackColl(1, 0, nFTPartsJointTopN, 10, 0, 0, 400, 0, 0, -100, 90, 100, 150, 2, -4, 2, 1, 0),
+    ftMotionCommandMakeAttackColl(2, 0, nFTPartsJointTopN, 10, 0, 0, 400, 0, 0, 300, 90, 100, 150, 2, -4, 2, 1, 0),
+    ftMotionCommandMakeAttackColl(3, 0, nFTPartsJointTopN, 10, 0, 0, 400, 0, 0, 700, 90, 100, 150, 2, -4, 2, 1, 0),
+    ftMotionPlayFGM(nSYAudioFGMBossSlam),
+    ftMotionCommandEffect(-1, nEFKindQuakeMag1, 0, 0, 0, 0, 0, 0, 0),
+    ftMotionCommandEffect(nFTPartsJointTopN, nEFKindImpactWave, 0, 0, 0, 0, 0, 0, 0),
+    ftMotionCommandEffect(nFTPartsJointTopN, nEFKindDustHeavyDouble, 0, 0, 0, 0, 0, 0, 0),
+    ftMotionCommandWait(2),
+    ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandEnd()
+};
+
+static SCCharBuilderSlot* ftMainCharBuilderGetSlot(FTStruct *fp)
+{
+    s32 i;
+
+    if (fp->pkind != nFTPlayerKindMan)
+    {
+        return NULL;
+    }
+    for (i = 0; i < SCCHARBUILDER_SLOTS_COUNT; i++)
+    {
+        if ((gSCManagerCharBuilderSlots[i].is_enabled != FALSE) && (gSCManagerCharBuilderSlots[i].body == fp->fkind))
+        {
+            return &gSCManagerCharBuilderSlots[i];
+        }
+    }
+    return NULL;
+}
+
+static s32 ftMainCharBuilderGetActiveSpecialDonor(FTStruct *fp)
+{
+    if ((fp->player >= GMCOMMON_PLAYERS_MAX) ||
+        (sFTMainCharBuilderSpecialDonors[fp->player] < nFTKindPlayableStart) ||
+        (sFTMainCharBuilderSpecialDonors[fp->player] > nFTKindPlayableEnd))
+    {
+        return -1;
+    }
+    return sFTMainCharBuilderSpecialDonors[fp->player];
+}
+
+static void ftMainCharBuilderClearSpecialDonor(FTStruct *fp)
+{
+    if (fp->player >= GMCOMMON_PLAYERS_MAX)
+    {
+        return;
+    }
+    sFTMainCharBuilderSpecialDonors[fp->player] = -1;
+    sFTMainCharBuilderSpecialKinds[fp->player] = nFTMainCharBuilderSpecialKindNone;
+    sFTMainCharBuilderSamusBombMade[fp->player] = FALSE;
+    sFTMainCharBuilderDonkeyLwSawGround[fp->player] = FALSE;
+    sFTMainCharBuilderSpecialMotionIDs[fp->player] = -1;
+}
+
+static sb32 ftMainCharBuilderIsBorrowingMotion(FTStruct *fp)
+{
+    return (fp->player < GMCOMMON_PLAYERS_MAX) && (sFTMainCharBuilderMotionDonors[fp->player] != -1);
+}
+
+sb32 ftMainCharBuilderIsSpecialAdapter(GObj *fighter_gobj)
+{
+    return ftMainCharBuilderGetActiveSpecialDonor(ftGetStruct(fighter_gobj)) != -1;
+}
+
+DObj* ftMainCharBuilderGetSpecialJoint(FTStruct *fp, s32 joint_id)
+{
+    if (ftMainCharBuilderGetActiveSpecialDonor(fp) != -1)
+    {
+        return fp->joints[nFTPartsJointTopN];
+    }
+    return fp->joints[joint_id];
+}
+
+static s32 ftMainCharBuilderGetMotionJointID(FTStruct *fp, s32 joint_id, sb32 is_allow_none)
+{
+    joint_id = ftParamGetJointID(fp, joint_id);
+
+    if (ftMainCharBuilderIsBorrowingMotion(fp) == FALSE)
+    {
+        return joint_id;
+    }
+    if ((is_allow_none != FALSE) && (joint_id == -1))
+    {
+        return joint_id;
+    }
+    if ((joint_id < 0) || (joint_id >= FTPARTS_JOINT_NUM_MAX) || (fp->joints[joint_id] == NULL))
+    {
+        return nFTPartsJointTopN;
+    }
+    return joint_id;
+}
+
+static s32 ftMainCharBuilderGetSpecialMotionID(s32 donor, s32 special_kind, s32 ga)
+{
+    switch (donor)
+    {
+    case nFTKindMario:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTMarioMotionSpecialHi : nFTMarioMotionSpecialAirHi) :
+            ((ga == nMPKineticsGround) ? nFTMarioMotionSpecialLw : nFTMarioMotionSpecialAirLw);
+
+    case nFTKindFox:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTFoxMotionSpecialHiStart : nFTFoxMotionSpecialAirHiStart) :
+            ((ga == nMPKineticsGround) ? nFTFoxMotionSpecialLwStart : nFTFoxMotionSpecialAirLwStart);
+
+    case nFTKindDonkey:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTDonkeyMotionSpecialHi : nFTDonkeyMotionSpecialAirHi) :
+            nFTDonkeyMotionSpecialLwLoop;
+
+    case nFTKindSamus:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTSamusMotionSpecialHi : nFTSamusMotionSpecialAirHi) :
+            ((ga == nMPKineticsGround) ? nFTSamusMotionSpecialLw : nFTSamusMotionSpecialAirLw);
+
+    case nFTKindLuigi:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTLuigiMotionSpecialHi : nFTLuigiMotionSpecialAirHi) :
+            ((ga == nMPKineticsGround) ? nFTLuigiMotionSpecialLw : nFTLuigiMotionSpecialAirLw);
+
+    case nFTKindLink:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTLinkMotionSpecialHi : nFTLinkMotionSpecialAirHi) :
+            ((ga == nMPKineticsGround) ? nFTLinkMotionSpecialLw : nFTLinkMotionSpecialAirLw);
+
+    case nFTKindYoshi:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTYoshiMotionSpecialHi : nFTYoshiMotionSpecialAirHi) :
+            ((ga == nMPKineticsGround) ? nFTYoshiMotionSpecialLwStart : nFTYoshiMotionSpecialAirLwStart);
+
+    case nFTKindCaptain:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTCaptainMotionSpecialHi : nFTCaptainMotionSpecialAirHi) :
+            ((ga == nMPKineticsGround) ? nFTCaptainMotionSpecialLw : nFTCaptainMotionSpecialAirLw);
+
+    case nFTKindKirby:
+        if (special_kind == nFTMainCharBuilderSpecialKindLw)
+        {
+            return -1;
+        }
+        return (ga == nMPKineticsGround) ? nFTKirbyMotionSpecialHi : nFTKirbyMotionSpecialAirHi;
+
+    case nFTKindPikachu:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTPikachuMotionSpecialHi : nFTPikachuMotionSpecialAirHi) :
+            ((ga == nMPKineticsGround) ? nFTPikachuMotionSpecialLwStart : nFTPikachuMotionSpecialAirLwStart);
+
+    case nFTKindPurin:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ? nFTPurinMotionSpecialHi : nFTPurinMotionSpecialLw;
+
+    case nFTKindNess:
+        return (special_kind == nFTMainCharBuilderSpecialKindHi) ?
+            ((ga == nMPKineticsGround) ? nFTNessMotionSpecialHiStart : nFTNessMotionSpecialAirHiStart) :
+            ((ga == nMPKineticsGround) ? nFTNessMotionSpecialLwStart : nFTNessMotionSpecialAirLwStart);
+    }
+    return -1;
+}
+
+s32 ftMainCharBuilderGetSpecialHiKind(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    SCCharBuilderSlot *slot = ftMainCharBuilderGetSlot(fp);
+
+    if ((slot == NULL) || (slot->special_hi > nFTKindPlayableEnd))
+    {
+        return fp->fkind;
+    }
+    return slot->special_hi;
+}
+
+s32 ftMainCharBuilderGetSpecialLwKind(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    SCCharBuilderSlot *slot = ftMainCharBuilderGetSlot(fp);
+
+    if ((slot == NULL) || (slot->special_lw > nFTKindPlayableEnd))
+    {
+        return fp->fkind;
+    }
+    if ((slot->special_lw == nFTKindKirby) && (fp->fkind != nFTKindKirby))
+    {
+        return fp->fkind;
+    }
+    return slot->special_lw;
+}
+
+static void* ftMainCharBuilderGetMotionScriptKind(s32 donor, s32 motion_id)
+{
+    FTMotionDesc *motion_desc;
+    FTData *data;
+    intptr_t file_head;
+    size_t file_size;
+    u32 file_id;
+    u32 *script;
+
+    if ((donor < nFTKindPlayableStart) || (donor > nFTKindPlayableEnd))
+    {
+        return NULL;
+    }
+    data = dFTManagerDataFiles[donor];
+
+    if ((data == NULL) || (data->mainmotion == NULL) || (data->mainmotion_array_count <= 0) ||
+        (motion_id < 0) || (motion_id >= data->mainmotion_array_count))
+    {
+        return NULL;
+    }
+    motion_desc = &data->mainmotion->motion_desc[motion_id];
+
+    if (motion_desc->offset == 0x80000000)
+    {
+        return NULL;
+    }
+    if (motion_desc->anim_desc.flags.is_use_submotion_script)
+    {
+        if ((data->p_file_submotion == NULL) || (*data->p_file_submotion == NULL))
+        {
+            return NULL;
+        }
+        file_head = (intptr_t)*data->p_file_submotion;
+        file_id = data->file_submotion_id;
+    }
+    else
+    {
+        if ((data->p_file_mainmotion == NULL) || (*data->p_file_mainmotion == NULL))
+        {
+            return NULL;
+        }
+        file_head = (intptr_t)*data->p_file_mainmotion;
+        file_id = data->file_mainmotion_id;
+    }
+    if ((file_id == 0) || (((uintptr_t)motion_desc->offset & (sizeof(u32) - 1)) != 0))
+    {
+        return NULL;
+    }
+    file_size = lbRelocGetFileDataSize(file_id);
+
+    if ((file_size < sizeof(u32)) || ((uintptr_t)motion_desc->offset > (file_size - sizeof(u32))))
+    {
+        return NULL;
+    }
+    script = (u32*)(file_head + motion_desc->offset);
+
+    if ((*script >> 26) > nFTMotionEventSetAfterImage)
+    {
+        return NULL;
+    }
+    return script;
+}
+
+static sb32 ftMainCharBuilderIsMotionValid(s32 fkind, s32 motion_id)
+{
+    FTData *data;
+
+    if ((fkind < nFTKindPlayableStart) || (fkind > nFTKindPlayableEnd))
+    {
+        return FALSE;
+    }
+    data = dFTManagerDataFiles[fkind];
+
+    return (data != NULL) && (data->mainmotion != NULL) &&
+           (motion_id >= 0) && (motion_id < data->mainmotion_array_count);
+}
+
+static void ftMainCharBuilderSetSpecialDonorKind(GObj *fighter_gobj, s32 donor, s32 special_kind)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    s32 motion_id;
+
+    ftMainCharBuilderClearSpecialDonor(fp);
+
+    if ((fp->player >= GMCOMMON_PLAYERS_MAX) || (donor < nFTKindPlayableStart) ||
+        (donor > nFTKindPlayableEnd) || (donor == fp->fkind))
+    {
+        return;
+    }
+    if ((special_kind == nFTMainCharBuilderSpecialKindLw) && (donor == nFTKindKirby))
+    {
+        return;
+    }
+    motion_id = ftMainCharBuilderGetSpecialMotionID(fp->fkind, special_kind, fp->ga);
+
+    if (ftMainCharBuilderIsMotionValid(fp->fkind, motion_id) == FALSE)
+    {
+        return;
+    }
+    if ((special_kind == nFTMainCharBuilderSpecialKindLw) && (donor == nFTKindDonkey))
+    {
+        if (fp->ga != nMPKineticsGround)
+        {
+            return;
+        }
+    }
+    else if ((special_kind == nFTMainCharBuilderSpecialKindLw) && (donor == nFTKindSamus))
+    {
+        if (gFTDataSamusMain == NULL)
+        {
+            return;
+        }
+    }
+    else
+    {
+        motion_id = ftMainCharBuilderGetSpecialMotionID(donor, special_kind, fp->ga);
+
+        if (ftMainCharBuilderIsMotionValid(donor, motion_id) == FALSE)
+        {
+            return;
+        }
+    }
+    sFTMainCharBuilderSpecialDonors[fp->player] = donor;
+    sFTMainCharBuilderSpecialKinds[fp->player] = special_kind;
+}
+
+s32 ftMainCharBuilderSetSpecialHiDonor(GObj *fighter_gobj, s32 donor)
+{
+    ftMainCharBuilderSetSpecialDonorKind(fighter_gobj, donor, nFTMainCharBuilderSpecialKindHi);
+
+    return (ftMainCharBuilderGetActiveSpecialDonor(ftGetStruct(fighter_gobj)) == donor) ? donor : ftGetStruct(fighter_gobj)->fkind;
+}
+
+s32 ftMainCharBuilderSetSpecialLwDonor(GObj *fighter_gobj, s32 donor)
+{
+    ftMainCharBuilderSetSpecialDonorKind(fighter_gobj, donor, nFTMainCharBuilderSpecialKindLw);
+
+    return (ftMainCharBuilderGetActiveSpecialDonor(ftGetStruct(fighter_gobj)) == donor) ? donor : ftGetStruct(fighter_gobj)->fkind;
+}
+
+static s32 ftMainCharBuilderGetAttack(s32 motion_id)
+{
+    switch (motion_id)
+    {
+    case nFTCommonMotionAttack11:
+    case nFTCommonMotionAttack12:
+        return nSCCharBuilderAttackJab;
+
+    case nFTCommonMotionAttackDash:
+        return nSCCharBuilderAttackDash;
+
+    case nFTCommonMotionAttackS3Hi:
+    case nFTCommonMotionAttackS3HiS:
+    case nFTCommonMotionAttackS3:
+    case nFTCommonMotionAttackS3LwS:
+    case nFTCommonMotionAttackS3Lw:
+        return nSCCharBuilderAttackFTilt;
+
+    case nFTCommonMotionAttackHi3F:
+    case nFTCommonMotionAttackHi3:
+    case nFTCommonMotionAttackHi3B:
+        return nSCCharBuilderAttackUTilt;
+
+    case nFTCommonMotionAttackLw3:
+        return nSCCharBuilderAttackDTilt;
+
+    case nFTCommonMotionAttackS4Hi:
+    case nFTCommonMotionAttackS4HiS:
+    case nFTCommonMotionAttackS4:
+    case nFTCommonMotionAttackS4LwS:
+    case nFTCommonMotionAttackS4Lw:
+        return nSCCharBuilderAttackFSmash;
+
+    case nFTCommonMotionAttackHi4:
+        return nSCCharBuilderAttackUSmash;
+
+    case nFTCommonMotionAttackLw4:
+        return nSCCharBuilderAttackDSmash;
+
+    case nFTCommonMotionAttackAirN:
+        return nSCCharBuilderAttackNAir;
+
+    case nFTCommonMotionAttackAirF:
+        return nSCCharBuilderAttackFAir;
+
+    case nFTCommonMotionAttackAirB:
+        return nSCCharBuilderAttackBAir;
+
+    case nFTCommonMotionAttackAirHi:
+        return nSCCharBuilderAttackUAir;
+
+    case nFTCommonMotionAttackAirLw:
+        return nSCCharBuilderAttackDAir;
+    }
+    return -1;
+}
+
+static void* ftMainCharBuilderGetMotionScript(FTStruct *fp, s32 motion_id)
+{
+    SCCharBuilderSlot *slot = ftMainCharBuilderGetSlot(fp);
+    void *script;
+    s32 attack;
+    s32 donor;
+
+    donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
+
+    if (donor != -1)
+    {
+        motion_id = sFTMainCharBuilderSpecialMotionIDs[fp->player];
+
+        if ((sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindLw) &&
+            (donor == nFTKindSamus))
+        {
+            script = sFTMainCharBuilderSamusSpecialLwScript;
+        }
+        else if ((sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindLw) &&
+                 (donor == nFTKindDonkey) && (motion_id == nFTDonkeyMotionSpecialLwLoop))
+        {
+            script = sFTMainCharBuilderDonkeySpecialLwScript;
+        }
+        else
+        {
+            script = ftMainCharBuilderGetMotionScriptKind(donor, motion_id);
+        }
+        if ((script != NULL) && (fp->player < GMCOMMON_PLAYERS_MAX))
+        {
+            sFTMainCharBuilderMotionDonors[fp->player] = donor;
+        }
+        return script;
+    }
+    /* Mario normals use local gameplay definitions and Mario motion scripts. */
+    if ((fp->fkind == nFTKindMario) && (ftMainCharBuilderGetAttack(motion_id) != -1))
+    {
+        return NULL;
+    }
+    if (slot == NULL)
+    {
+        return NULL;
+    }
+    attack = ftMainCharBuilderGetAttack(motion_id);
+
+    if (attack == -1)
+    {
+        return NULL;
+    }
+    donor = slot->attacks[attack];
+
+    if ((donor < nFTKindPlayableStart) || (donor > nFTKindPlayableEnd) || (donor == fp->fkind))
+    {
+        return NULL;
+    }
+    script = ftMainCharBuilderGetMotionScriptKind(donor, motion_id);
+
+    if (fp->player < GMCOMMON_PLAYERS_MAX)
+    {
+        if (script != NULL)
+        {
+            sFTMainCharBuilderMotionDonors[fp->player] = donor;
+        }
+    }
+    return script;
+}
+
+static void ftMainCharBuilderCheckSpecialStatus(FTStruct *fp, sb32 is_special_status)
+{
+    s32 donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
+    s32 special_kind;
+
+    if (donor == -1)
+    {
+        return;
+    }
+    if (is_special_status == FALSE)
+    {
+        ftMainCharBuilderClearSpecialDonor(fp);
+        return;
+    }
+    special_kind = sFTMainCharBuilderSpecialKinds[fp->player];
+    if ((special_kind == nFTMainCharBuilderSpecialKindLw) && (donor == nFTKindDonkey))
+    {
+        if (fp->ga == nMPKineticsGround)
+        {
+            sFTMainCharBuilderDonkeyLwSawGround[fp->player] = TRUE;
+        }
+        else if (sFTMainCharBuilderDonkeyLwSawGround[fp->player] != FALSE)
+        {
+            ftMainCharBuilderClearSpecialDonor(fp);
+        }
+    }
+}
+
+static sb32 ftMainCharBuilderIsSamusBomb(FTStruct *fp)
+{
+    return (ftMainCharBuilderGetActiveSpecialDonor(fp) == nFTKindSamus) &&
+           (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindLw) &&
+           (fp->motion_attack_id == nFTMotionAttackIDSpecialLw);
+}
+
+static void ftMainCharBuilderMakeSamusBomb(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    Vec3f pos;
+
+    if ((fp->motion_vars.flags.flag0 == FALSE) || (sFTMainCharBuilderSamusBombMade[fp->player] != FALSE))
+    {
+        return;
+    }
+    fp->motion_vars.flags.flag0 = FALSE;
+    sFTMainCharBuilderSamusBombMade[fp->player] = TRUE;
+
+    pos.x = pos.z = 0.0F;
+    pos.y = FTSAMUS_BOMB_OFF_Y;
+    gmCollisionGetFighterPartsWorldPosition(fp->joints[nFTPartsJointTopN], &pos);
+    wpSamusBombMakeWeapon(fighter_gobj, &pos);
+}
+
+static sb32 ftMainCharBuilderIsSpecialN(FTStruct *fp)
+{
+    return (ftMainCharBuilderGetSlot(fp) != NULL) && (fp->motion_attack_id == nFTMotionAttackIDSpecialN);
+}
+
+static void ftMainCharBuilderMakeLaser(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    Vec3f pos;
+
+    if (fp->motion_vars.flags.flag0 == 0)
+    {
+        return;
+    }
+    fp->motion_vars.flags.flag0 = 0;
+    pos = fp->joints[nFTPartsJointTopN]->translate.vec.f;
+    pos.x += fp->lr * 60.0F;
+    pos.y += 80.0F;
+    wpFoxBlasterMakeWeapon(fighter_gobj, &pos);
+}
 
 // // // // // // // // // // // //
 //                               //
@@ -172,6 +737,10 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
     s32 slope_contour;
     sb32 unused3;
 
+    if (ftCustomMoveSkipNativeCollision(fp, ms, ev_kind) != FALSE)
+    {
+        return;
+    }
     switch (ev_kind)
     {
     case nFTMotionEventEnd:
@@ -219,7 +788,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
                     ftParamClearAttackRecordID(fp, attack_id);
                 }
             }
-            attack_coll->joint_id = ftParamGetJointID(fp, ftMotionEventCast(ms, FTMotionEventMakeAttack1)->joint_id);
+            attack_coll->joint_id = ftMainCharBuilderGetMotionJointID(fp, ftMotionEventCast(ms, FTMotionEventMakeAttack1)->joint_id, FALSE);
             attack_coll->joint = fp->joints[attack_coll->joint_id];
             attack_coll->damage = ftMotionEventCast(ms, FTMotionEventMakeAttack1)->damage;
             attack_coll->can_rebound = ftMotionEventCast(ms, FTMotionEventMakeAttack1)->can_rebound;
@@ -423,7 +992,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
     case nFTMotionEventEffectItemHold:
         if (!(fp->is_effect_skip))
         {
-            joint_id = ftParamGetJointID(fp, ftMotionEventCast(ms, FTMotionEventMakeEffect1)->joint_id);
+            joint_id = ftMainCharBuilderGetMotionJointID(fp, ftMotionEventCast(ms, FTMotionEventMakeEffect1)->joint_id, TRUE);
             effect_id = ftMotionEventCast(ms, FTMotionEventMakeEffect1)->effect_id;
             flag = ftMotionEventCast(ms, FTMotionEventMakeEffect1)->flag;
 
@@ -456,7 +1025,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         break;
 
     case nFTMotionEventSetHitStatusPartID:
-        ftParamSetHitStatusPartID(fighter_gobj, ftParamGetJointID(fp, ftMotionEventCast(ms, FTMotionEventSetHitStatusPartID)->joint_id), ftMotionEventCast(ms, FTMotionEventSetHitStatusPartID)->hitstatus);
+        ftParamSetHitStatusPartID(fighter_gobj, ftMainCharBuilderGetMotionJointID(fp, ftMotionEventCast(ms, FTMotionEventSetHitStatusPartID)->joint_id, FALSE), ftMotionEventCast(ms, FTMotionEventSetHitStatusPartID)->hitstatus);
 
         ftMotionEventAdvance(ms, FTMotionEventSetHitStatusPartID);
         break;
@@ -468,13 +1037,16 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         break;
 
     case nFTMotionEventResetDamageCollPartAll:
-        ftParamResetFighterDamageCollsAll(fighter_gobj);
+        if (ftMainCharBuilderIsBorrowingMotion(fp) == FALSE)
+        {
+            ftParamResetFighterDamageCollsAll(fighter_gobj);
+        }
 
         ftMotionEventAdvance(ms, FTMotionEventDefault);
         break;
 
     case nFTMotionEventSetDamageCollPartID:
-        joint_id = ftParamGetJointID(fp, ftMotionEventCast(ms, FTMotionEventSetDamageCollPartID1)->joint_id);
+        joint_id = ftMainCharBuilderGetMotionJointID(fp, ftMotionEventCast(ms, FTMotionEventSetDamageCollPartID1)->joint_id, FALSE);
 
         ftMotionEventAdvance(ms, FTMotionEventSetDamageCollPartID1);
 
@@ -573,34 +1145,46 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         break;
 
     case nFTMotionEventSetModelPartID:
-        ftParamSetModelPartID
-        (
-            fighter_gobj, 
-            ftParamGetJointID(fp, ftMotionEventCast(ms, FTMotionEventSetModelPartID)->joint_id), 
-            ftMotionEventCast(ms, FTMotionEventSetModelPartID)->modelpart_id
-        );
+        if (ftMainCharBuilderIsBorrowingMotion(fp) == FALSE)
+        {
+            ftParamSetModelPartID
+            (
+                fighter_gobj,
+                ftParamGetJointID(fp, ftMotionEventCast(ms, FTMotionEventSetModelPartID)->joint_id),
+                ftMotionEventCast(ms, FTMotionEventSetModelPartID)->modelpart_id
+            );
+        }
         ftMotionEventAdvance(ms, FTMotionEventSetModelPartID);
         break;
 
     case nFTMotionEventResetModelPartAll:
-        ftParamResetModelPartAll(fighter_gobj);
+        if (ftMainCharBuilderIsBorrowingMotion(fp) == FALSE)
+        {
+            ftParamResetModelPartAll(fighter_gobj);
+        }
 
         ftMotionEventAdvance(ms, FTMotionEventDefault);
         break;
 
     case nFTMotionEventHideModelPartAll:
-        ftParamHideModelPartAll(fighter_gobj);
+        if (ftMainCharBuilderIsBorrowingMotion(fp) == FALSE)
+        {
+            ftParamHideModelPartAll(fighter_gobj);
+        }
 
         ftMotionEventAdvance(ms, FTMotionEventDefault);
         break;
 
     case nFTMotionEventSetTexturePartID:
-        ftParamSetTexturePartID
-        (
-            fighter_gobj, 
-            ftMotionEventCast(ms, FTMotionEventSetTexturePartID)->texturepart_id, 
-            ftMotionEventCast(ms, FTMotionEventSetTexturePartID)->frame
-        );
+        if (ftMainCharBuilderIsBorrowingMotion(fp) == FALSE)
+        {
+            ftParamSetTexturePartID
+            (
+                fighter_gobj,
+                ftMotionEventCast(ms, FTMotionEventSetTexturePartID)->texturepart_id,
+                ftMotionEventCast(ms, FTMotionEventSetTexturePartID)->frame
+            );
+        }
         ftMotionEventAdvance(ms, FTMotionEventSetTexturePartID);
         break;
 
@@ -662,8 +1246,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
         break;
 
     case nFTMotionEventSetAfterImage:
-        fp->afterimage.is_itemswing = ftMotionEventCast(ms, FTMotionEventSetAfterImage)->is_itemswing;
-        fp->afterimage.drawstatus = ftMotionEventCast(ms, FTMotionEventSetAfterImage)->drawstatus;
+        if (ftMainCharBuilderIsBorrowingMotion(fp) == FALSE)
+        {
+            fp->afterimage.is_itemswing = ftMotionEventCast(ms, FTMotionEventSetAfterImage)->is_itemswing;
+            fp->afterimage.drawstatus = ftMotionEventCast(ms, FTMotionEventSetAfterImage)->drawstatus;
+        }
 
         ftMotionEventAdvance(ms, FTMotionEventSetAfterImage);
         break;
@@ -1496,6 +2083,14 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
         {
             this_fp->playertag_wait--;
         }
+        if (ftMainCharBuilderIsSamusBomb(this_fp) != FALSE)
+        {
+            ftMainCharBuilderMakeSamusBomb(fighter_gobj);
+        }
+        else if (ftMainCharBuilderIsSpecialN(this_fp) != FALSE)
+        {
+            ftMainCharBuilderMakeLaser(fighter_gobj);
+        }
         if (this_fp->proc_update != NULL)
         {
             this_fp->proc_update(fighter_gobj);
@@ -1852,7 +2447,15 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
     }
     if (fp->hitlag_tics == 0)
     {
-        if (fp->proc_accessory != NULL)
+        if (ftMainCharBuilderIsSamusBomb(fp) != FALSE)
+        {
+            ftMainCharBuilderMakeSamusBomb(fighter_gobj);
+        }
+        else if (ftMainCharBuilderIsSpecialN(fp) != FALSE)
+        {
+            ftMainCharBuilderMakeLaser(fighter_gobj);
+        }
+        else if (fp->proc_accessory != NULL)
         {
             fp->proc_accessory(fighter_gobj);
         }
@@ -4378,7 +4981,12 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     GMStatFlags attack_flags;
     s32 unused2;
     s32 motion_id;
+    s32 motion_attack_id;
+    s32 charbuilder_donor;
+    s32 charbuilder_motion_id;
+    sb32 is_charbuilder_special_status;
     void *event_script_ptr;
+    void *charbuilder_script_ptr;
     DObjDesc *dobjdesc;
     s32 unused3;
     FTStatusDesc *status_desc;
@@ -4391,6 +4999,9 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 
     status_struct = NULL;
     opening_struct = NULL;
+    charbuilder_donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
+    charbuilder_motion_id = -1;
+    is_charbuilder_special_status = FALSE;
 
     status_flags = fp->stat_flags;
 
@@ -4398,7 +5009,15 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     {
         ftMainUpdateMotionEventsForwardEffect(fighter_gobj);
 
-        if (fp->proc_accessory != NULL)
+        if (ftMainCharBuilderIsSamusBomb(fp) != FALSE)
+        {
+            ftMainCharBuilderMakeSamusBomb(fighter_gobj);
+        }
+        else if (ftMainCharBuilderIsSpecialN(fp) != FALSE)
+        {
+            ftMainCharBuilderMakeLaser(fighter_gobj);
+        }
+        else if (fp->proc_accessory != NULL)
         {
             fp->proc_accessory(fighter_gobj);
         }
@@ -4563,7 +5182,13 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     }
     else if (status_id >= nFTCommonStatusSpecialStart)
     {
-        status_struct = dFTMainSpecialStatusDescs[fp->fkind];
+        if (charbuilder_donor != -1)
+        {
+            status_struct = dFTMainSpecialStatusDescs[charbuilder_donor];
+            is_charbuilder_special_status = TRUE;
+        }
+        else status_struct = dFTMainSpecialStatusDescs[fp->fkind];
+
         status_struct_id = status_id - nFTCommonStatusSpecialStart;
     }
     else if (status_id >= nFTCommonStatusActionStart)
@@ -4580,9 +5205,16 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 
     if (fp->pkind != nFTPlayerKindDemo)
     {
-        if ((status_struct[status_struct_id].mflags.attack_id == nFTMotionAttackIDNone) || (status_struct[status_struct_id].mflags.attack_id != fp->motion_attack_id))
+        motion_attack_id = status_struct[status_struct_id].mflags.attack_id;
+
+        if (is_charbuilder_special_status != FALSE)
         {
-            ftParamSetMotionID(fp, status_struct[status_struct_id].mflags.attack_id);
+            motion_attack_id = (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi) ?
+                nFTMotionAttackIDSpecialHi : nFTMotionAttackIDSpecialLw;
+        }
+        if ((motion_attack_id == nFTMotionAttackIDNone) || (motion_attack_id != fp->motion_attack_id))
+        {
+            ftParamSetMotionID(fp, motion_attack_id);
         }
         attack_flags = status_desc->sflags;
 
@@ -4591,6 +5223,8 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             ftParamSetStatUpdate(fp, status_struct[status_struct_id].sflags.halfword);
         }
     }
+    ftMainCharBuilderCheckSpecialStatus(fp, is_charbuilder_special_status);
+
     if (fp->proc_status != NULL)
     {
         fp->proc_status(fighter_gobj);
@@ -4600,7 +5234,19 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 
     if (status_struct != NULL)
     {
-        motion_id = status_struct[status_struct_id].mflags.motion_id;
+        charbuilder_motion_id = status_struct[status_struct_id].mflags.motion_id;
+
+        if (is_charbuilder_special_status != FALSE)
+        {
+            motion_id = ftMainCharBuilderGetSpecialMotionID
+            (
+                fp->fkind,
+                sFTMainCharBuilderSpecialKinds[fp->player],
+                fp->ga
+            );
+        }
+        else motion_id = charbuilder_motion_id;
+
         fp->motion_id = motion_id;
         script_array = fp->data->mainmotion;
     }
@@ -4748,7 +5394,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             if (motion_desc->offset != 0x80000000)
             {
                 // Actually subaction scripts?
-                if (fp->anim_desc.flags.is_use_submotion_script)
+                if (motion_desc->anim_desc.flags.is_use_submotion_script)
                 {
                     event_file_head = *fp->data->p_file_submotion;
 
@@ -4763,6 +5409,22 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             }
             else event_script_ptr = NULL;
 
+            if (fp->player < GMCOMMON_PLAYERS_MAX)
+            {
+                sFTMainCharBuilderMotionDonors[fp->player] = -1;
+                sFTMainCharBuilderSpecialMotionIDs[fp->player] =
+                    (is_charbuilder_special_status != FALSE) ? charbuilder_motion_id : -1;
+            }
+            charbuilder_script_ptr = ftMainCharBuilderGetMotionScript(fp, motion_id);
+
+            if (is_charbuilder_special_status != FALSE)
+            {
+                event_script_ptr = charbuilder_script_ptr;
+            }
+            else if (charbuilder_script_ptr != NULL)
+            {
+                event_script_ptr = charbuilder_script_ptr;
+            }
             fp->motion_scripts[0][0].p_script = fp->motion_scripts[1][0].p_script = event_script_ptr;
         }
         else
@@ -4783,6 +5445,13 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         for (i = 1; i < ARRAY_COUNT(fp->motion_scripts[0]); i++)
         {
             fp->motion_scripts[0][i].p_script = fp->motion_scripts[1][i].p_script = NULL;
+        }
+        if (ftCustomMoveGetDefinition(fp) != NULL)
+        {
+            fp->motion_scripts[0][1].p_script = fp->motion_scripts[1][1].p_script =
+                ftCustomMoveBuildScript(fp, ftCustomMoveGetDefinition(fp));
+            fp->motion_scripts[0][1].script_wait = fp->motion_scripts[1][1].script_wait = anim_frame;
+            fp->motion_scripts[0][1].script_id = fp->motion_scripts[1][1].script_id = 0;
         }
         if (frame_begin != 0.0F)
         {

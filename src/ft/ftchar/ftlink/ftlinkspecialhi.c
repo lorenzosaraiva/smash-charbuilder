@@ -166,7 +166,7 @@ void ftLinkSpecialHiMakeWeapon(GObj *fighter_gobj, sb32 is_skip_gobj)
         {
             pos.x = pos.y = pos.z = 0.0F;
 
-            gmCollisionGetFighterPartsWorldPosition(fp->joints[FTLINK_SPINATTACK_SPAWN_JOINT], &pos);
+            gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTLINK_SPINATTACK_SPAWN_JOINT), &pos);
 
             fp->status_vars.link.specialhi.spin_attack_gobj = wpLinkSpinAttackMakeWeapon(fighter_gobj, &pos);
 
