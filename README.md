@@ -37,6 +37,7 @@ after successful pushes to `main` still need the one-time
 5. For VS, assign builds to human/CPU player slots and select **Play VS**.
 
 In Training, press **Start -> View -> HITBOX** to see attack and hurtbox outlines.
+Grabs preserve the current combo count and damage through the hold and throw.
 Presets in this version last for the running ROM session.
 
 Every normal donor attack now uses its original hitbox path, size, active timing,

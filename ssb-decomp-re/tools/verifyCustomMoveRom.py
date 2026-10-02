@@ -53,6 +53,7 @@ phoff = struct.unpack_from('>I',elf,28)[0]
 size,count = struct.unpack_from('>HH',elf,42)
 programs = [struct.unpack_from('>8I',elf,phoff+i*size) for i in range(count)]
 for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMainProcPhysicsMap','ftMainHasCustomAttackTimeline',
+             'ftMainUpdateComboStats','ftMainProcUpdateInterrupt',
              'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
              'ftCommonSpecialNCheckInterruptCommon','ftCommonSpecialAirCheckInterruptCommon',
              'ftCommonThrowSetStatus','ftDonkeyThrowFFProcUpdate','mnOptionBuilderChangeValue',

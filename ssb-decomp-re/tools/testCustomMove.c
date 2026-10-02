@@ -50,6 +50,8 @@ struct FTStruct
     struct { struct { struct { sb32 is_turn; s32 turn_tics; } throwff;
         struct { s32 throw_wait; } catchwait; } common; } status_vars;
     GObj *catch_gobj;
+    GObj *capture_gobj;
+    sb32 is_hitstun;
     sb32 is_ignore_dead;
     sb32 is_effect_attach;
     u8 capture_immune_mask;
@@ -364,6 +366,7 @@ static s32 testCustomAnimation(void)
 #include "testCharBuilderNeutral.c.inc"
 #include "testCharBuilderThrow.c.inc"
 #include "testCustomCollision.c.inc"
+#include "testTrainingCombo.c.inc"
 void _start(void)
 {
     s32 result = testCustomMove();
@@ -372,6 +375,7 @@ void _start(void)
     if (result == 0) result = testFullCollisionRoster();
     if (result == 0) result = testCharBuilderNeutral();
     if (result == 0) result = testCharBuilderThrow();
+    if (result == 0) result = testTrainingCombo();
     if (result != 0)
     {
         char message[] = "Failed CHECK at line 0000\n";

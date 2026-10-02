@@ -36,6 +36,7 @@ being set up.
    choose **Play VS**. A slot can be human or CPU.
 
 In Training, press **Start -> View -> HITBOX** to see attack and hurtbox outlines.
+Grabs preserve the current combo count and damage through the hold and throw.
 Creator builds currently last for the running ROM session.
 
 ## What's in it?

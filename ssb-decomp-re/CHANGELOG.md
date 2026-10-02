@@ -1,5 +1,15 @@
 # Character Lab changes
 
+## Training grab combo continuity - 2026-10-02
+
+- Training preserves the existing combo count and damage through grabs, cargo
+  holds and throw windup, then continues through throw hitstun until recovery.
+- Applies to native and creator fighters. Bare grabs add no hit or damage; actual
+  hitstun flags, throw behavior and other scenes retain their existing handling.
+- Automated production counter tests cover all bodies, four slots, hold/release,
+  escape/recovery, independent counters and non-Training resets. The built ROM
+  includes the verified counter update; in-game acceptance remains pending.
+
 ## Full normal donor collision paths - 2026-10-02
 
 - Original paths across all twelve donor/body choices for normal attacks, angled

@@ -33,6 +33,16 @@ Press **Start**, find **View**, and change it to **HITBOX**. Red attack outlines
 and hurtbox visualization help you see what is happening. NORMAL/CLOSE UP restore
 ordinary rendering.
 
+Grabbing the opponent keeps the current combo count and damage while they are
+held, carried or waiting for the throw. Throw damage adds to that combo; the
+counter resets after release and hitstun end. A grab by itself adds no hit or
+damage. This applies to native fighters and creator builds in Training.
+
+To check it in-game, land a hit and grab before the opponent recovers, wait in
+the hold, then throw. Check that the count/damage survive the hold and increase
+on the throw. Also check a grab escape and a recovered opponent reset the meter.
+Automated counter tests pass; rendered gameplay acceptance remains pending.
+
 Leaving the test through the pause menu, or using **Back** on its character-select
 screen, reopens the same build's editor with **Test in Training** selected. Resetting
 the training match keeps that return destination.

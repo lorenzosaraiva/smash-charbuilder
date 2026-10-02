@@ -18,11 +18,29 @@ Checkboxes mean implemented, not tested in every matchup.
 
 Character Lab's [detailed feature checklist](../ssb-decomp-re/docs/status.md)
 covers normal attacks, grabs/throws, human/CPU assignments, Training HITBOX view,
-the animation pilots and remaining work.
+grab-preserving combo counters, the animation pilots and remaining work.
 
 The [Remix creator guide](../remix/character_creator_guide.md) describes that
 version's SRAM recipes, compiled roster and experimental adapters. Its moves
 and animations do not have Character Lab's full donor timing/trajectory system.
+
+## Future Remix port
+
+- [ ] Port Character Lab's donor timing and collision paths to Remix.
+
+This is feasible, but a substantial integration rather than a source-folder copy.
+The original twelve fighters can reuse the generated donor data and conversion
+tools. Remix needs assembly hooks for the independent move clock, safe attack
+events and root-relative collision placement, integrated with its existing
+creator adapters and gameplay patches. Its current normal adapter borrows raw
+donor scripts while retaining body animation timing and bone placement.
+
+Start with the original twelve behind Remix's existing Original 12 Only option,
+then add animation pilots, grab/throw selections and special adapters. Extending
+the same fidelity to Remix-exclusive fighters needs their own move, rig and
+collision data, plus compatibility checks for their mechanics. The existing
+Remix UI and saved recipes provide a useful starting point. No port is implemented
+by the Training counter fix; Remix already has its own improved combo meter.
 
 ## Gameplay order
 

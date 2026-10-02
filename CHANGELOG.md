@@ -1,5 +1,14 @@
 # Changes
 
+## Training grab combo continuity - 2026-10-02
+
+- Training keeps combo count and damage during capture, cargo carry and throw
+  windup, continuing into throw hitstun for native fighters and creator builds.
+- Production counter regression tests cover all bodies/slots, recovery and escape,
+  empty grabs and scene isolation; linked counter code is verified in the new ROM.
+- Updated guides/checklists and recorded a future Remix port assessment. Remix
+  gameplay is unchanged; it already has an improved combo meter.
+
 ## Full normal donor collision paths - 2026-10-02
 
 - Original paths across all twelve donor/body choices for normal attacks, angled

@@ -5,6 +5,7 @@
 #include <sc/scene.h>
 #include <sys/controller.h>
 #include "ftcustommove.c.inc"
+#include "fttrainingcombo.c.inc"
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 extern void func_ovl0_800C9A38();
@@ -2049,11 +2050,7 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
         {
             this_fp->proc_interrupt(fighter_gobj);
         }
-        if (!(this_fp->is_hitstun))
-        {
-            gSCManagerBattleState->players[this_fp->player].combo_damage_foe = 0;
-            gSCManagerBattleState->players[this_fp->player].combo_count_foe = 0;
-        }
+        ftMainUpdateComboStats(this_fp);
         is_jostle = FALSE;
 
         this_fp->physics.vel_jostle_x = this_fp->physics.vel_jostle_z = 0.0F;

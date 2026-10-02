@@ -74,6 +74,8 @@ This is a work in progress: most animations still belong to the selected body.
 6. Exit a training test to reopen the same build's editor.
 
 Builds and player assignments last for the running ROM session.
+Training combo count/damage survive grabs, cargo holds and throw windup, then
+reset after release and hitstun end. A bare grab adds no hit or damage.
 Neutral B currently offers Body Move or Fox Laser. Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 Three Mario animation pilots are implemented; full animation coverage is pending.

@@ -15,6 +15,7 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Existing Up B/Down B adapters, still experimental and needing more playtesting.
 - [x] Assign builds to any human or CPU slot in VS, including two builds with the same body.
 - [x] Training HITBOX view for attack and hurtbox outlines.
+- [x] Training combo count/damage survive capture, cargo carry and throw windup.
 - [x] Return from a lab training test to the same build's editor.
 - [x] The four unlockable characters and Item Switch enabled.
 - [x] Creator UI built with the game's existing font, colors and menu elements.
@@ -48,6 +49,7 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [ ] Complete, consistent special-move compatibility across all bodies.
 - [ ] Save creator presets across ROM restarts; currently they last for the running session.
 - [ ] Wider emulator and real-hardware testing.
+- [ ] In-game acceptance of hit -> grab -> throw combo continuity and escape/reset.
 - [x] First public ROM/ZIP release published and downloaded/checksum verified.
 - [ ] Configure the original-ROM source for automatic hosted ROM builds.
 
@@ -68,3 +70,8 @@ special adapters and transitions need more gameplay reports. You may run into bu
 
 For a useful report, include the build/commit, emulator, body, donor, attack and steps
 to reproduce it. A short clip helps. Ideas and casual feedback are welcome too.
+
+Training combo regression tests exercise the production counter update across all
+twelve bodies, native/creator fighters and four player slots. They cover held and
+throwing victims, release into hitstun, recovery, empty grabs, attacker/victim
+distinction, independent player counters and vanilla resets outside Training.
