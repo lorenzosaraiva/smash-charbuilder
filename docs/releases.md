@@ -3,6 +3,9 @@
 Destination: [lorenzosaraiva/smash-charbuilder](https://github.com/lorenzosaraiva/smash-charbuilder).
 The active workflow is `.github/workflows/character-lab-release.yml` at the root.
 It builds Character Lab; Remix releases remain a separate future step.
+The first public download was built and checked locally. Automatic updates
+still need the setup below; until then, pushes run the source checks and the
+release workflow reports the missing configuration without replacing downloads.
 
 ## One-time automatic-build setup
 

@@ -11,8 +11,8 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
 
-**[How to play Character Lab](ssb-decomp-re/docs/playing.md)** ·
-**[Done / not done](docs/status.md)** · **[Build guide](docs/building.md)** ·
+**[How to play Character Lab](ssb-decomp-re/docs/playing.md)** Â·
+**[Done / not done](docs/status.md)** Â· **[Build guide](docs/building.md)** Â·
 **[Changes](CHANGELOG.md)**
 
 ## Downloads
@@ -23,10 +23,10 @@ The permanent Character Lab links are:
 - [ROM only: character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64)
 - [All releases](https://github.com/lorenzosaraiva/smash-charbuilder/releases)
 
-These links become available with the first published release. Automatic builds
-are prepared for successful pushes to `main`; the original-ROM build source needs
-the one-time [release setup](docs/releases.md). The ZIP includes a play guide,
-feature checklist, changelog and commit/checksum information.
+The ZIP includes a play guide, feature checklist, changelog and commit/checksum
+information. The first release was built and checked locally. Automatic updates
+after successful pushes to `main` still need the one-time
+[original-ROM build-source setup](docs/releases.md).
 
 ## Make your first Character Lab build
 

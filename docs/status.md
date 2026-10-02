@@ -11,7 +11,7 @@ Checkboxes mean implemented, not tested in every matchup.
 - [x] Character Lab build command with checked ROM and ZIP in root `dist/`.
 - [x] GitHub release workflow with fixed download filenames.
 - [ ] Configure the original-ROM source for automatic hosted builds.
-- [ ] Publish and verify the first public download.
+- [x] Publish and verify the first public download.
 - [ ] Automatic Remix ROM builds/releases.
 
 ## Gameplay
