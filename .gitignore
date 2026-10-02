@@ -1,0 +1,24 @@
+# Local ROMs, saves and generated outputs
+*.z64
+*.rom
+*.n64
+*.v64
+*.sra
+*.srm
+*.state
+*.state1
+*.ram
+build/
+dist/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.vscode/
+.claude/
+.codex/
+
+# Component-specific extraction/tool rules remain in their .gitignore files.

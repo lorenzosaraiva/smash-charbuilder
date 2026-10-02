@@ -13,8 +13,9 @@ Build the ROM normally:
 patch_extra.bat
 ```
 
-On this workspace a successful build is also copied automatically to
-`C:\Users\Lorenzo\Desktop\Smash 64\roms\ssb64asm_extra.z64`.
+A successful build is also copied automatically to `dist/char_builder.z64`
+inside the Remix folder. Set `SMASH_EXTRA_ROM_DIR` to copy it to your emulator's
+ROM folder instead. See the [shared build guide](../docs/building.md).
 
 In game, open `Settings -> CHAR CREATOR`. There are four SRAM-backed build
 slots. Each slot contains:
@@ -22,10 +23,15 @@ slots. Each slot contains:
 - an editable 20-character name;
 - an Enabled switch and Body selector;
 - Jab, Dash Attack, tilts, smashes, and all five aerials;
-- Neutral, Up, and Down Special;
+- Fox's locked Neutral Special, plus editable Up and Down Special;
 - `USE BODY FOR ALL MOVES`, which creates a safe baseline;
 - `TEST IN TRAINING`, which saves the recipe, selects it for player 1, and
   opens the Training character-select screen.
+
+All four slots start enabled with mixed normal attacks already selected. Their
+default bodies are Mario, Fox, Link, and Kirby. Each preset uses a bounded
+group of original-roster donors, while Up and Down Special initially stay on
+the body. `USE BODY FOR ALL MOVES` preserves Fox's Neutral Special lock.
 
 The creator hub also has an `Original 12 Only` switch. Turn it on to limit
 every Body and move selector to the original US roster (Mario through Ness).
@@ -41,12 +47,10 @@ boss-only forms, and other unsafe/non-playable forms are intentionally omitted.
 1. Open a build slot and edit its name with the same keyboard used by Player
    Tags.
 2. Select a Body.
-3. Choose `USE BODY FOR ALL MOVES`.
-4. Turn Enabled on.
-5. Change one move, preferably an aerial from a similarly proportioned body.
-6. Choose `TEST IN TRAINING`.
-7. On the Training CSS, select the same fighter as the recipe's Body.
-8. Open `Player Settings` on the CSS if you later want to choose another saved
+3. Adjust any preselected moves you want to change.
+4. Choose `TEST IN TRAINING`.
+5. On the Training CSS, select the same fighter as the recipe's Body.
+6. Open `Player Settings` on the CSS if you later want to choose another saved
    build for that port; use the `Custom Build` option.
 
 The body check is deliberate: a recipe only activates when the selected CSS
@@ -65,14 +69,24 @@ saved recipes after adding, removing, or reordering characters in the ROM.
 
 ## Compatibility model
 
-Normal attacks borrow the donor's moveset command stream while retaining the
-body's animation and skeleton. This is reliable for hitbox/timing experiments,
-but hitbox bone IDs are interpreted on the body's skeleton. Very different
-rigs can therefore place hitboxes incorrectly. If a borrowed script names a
-joint the body does not have, the hitbox is attached to the body's top joint
-instead of dereferencing a null joint and crashing.
+Normal attacks retain the body's animation and action callbacks while borrowing
+the donor's complete motion-command stream. That stream supplies startup and
+active timing, hitbox clears, damage, angle, knockback growth, fixed/base
+knockback, shield damage, hitbox size and offsets, sound, and element. Hitstun
+is then calculated normally by the engine from the borrowed knockback data.
+The body's animation still determines the move's total recovery in this first
+pass, so a donor command that extends past a shorter body animation is cut off.
 
-Specials are broader bundles: they include character-specific executable code,
+Hitbox bone IDs are interpreted on the body's skeleton. Very different rigs
+can therefore place hitboxes incorrectly. If a borrowed script names a joint
+the body does not have, the hitbox is attached to the body's top joint instead
+of dereferencing a null joint and crashing.
+
+Neutral Special is locked to Fox so every custom build creates his laser
+directly from the body's native Neutral-B action. This avoids applying Fox's
+fighter state, skeleton assumptions, and accessory callback to another body.
+Up and Down Special remain selectable and are broader bundles: they include
+character-specific executable code,
 state fields, physics, projectiles, model parts, and follow-up actions. The
 special adapter keeps the selected body model and attributes, but temporarily
 activates the donor's character ID, FTData, unique-action table, motion-command
@@ -88,8 +102,9 @@ layout are valid; it does not prove that a donor callback never touches an
 incompatible body joint, model part, state field, or follow-up action. The
 animation is also being applied to a different skeleton, so proportions and
 attachment positions can look unusual. Highly coupled mechanics such as
-captures, body-part swaps, and Kirby's copy/inhale system are especially likely
-to need a move-specific visual or state adapter.
+captures and body-part swaps are especially likely to need a move-specific
+visual or state adapter. Kirby's Neutral and Down Special behavior is not a
+supported compatibility target in this pass.
 
 The runtime caches at most eight donor moveset files per port per match. These
 files are loaded during the engine's pre-match character-loading phase rather

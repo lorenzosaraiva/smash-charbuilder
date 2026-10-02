@@ -1,5 +1,12 @@
 # Super Smash Bros. 64 Decompilation
 
+## Combined repository
+
+This folder is part of the root `smash` repository, whose origin is
+`lorenzosaraiva/smash-charbuilder`. Active workflows and shared documentation
+are in the parent `.github/` and `docs/` folders. Both creator codebases are
+ordinary source directories; only third-party build dependencies are submodules.
+
 ## Character Lab branch
 
 This checkout contains the Character Lab gameplay mod. Use

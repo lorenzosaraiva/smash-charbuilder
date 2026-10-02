@@ -29,7 +29,7 @@ def git(*arguments):
 
 def source_dirty():
     try:
-        return bool(git('status', '--porcelain', '--untracked-files=normal', '--ignore-submodules=untracked'))
+        return bool(git('status', '--porcelain', '--untracked-files=normal', '--ignore-submodules=untracked', '--', '.'))
     except subprocess.TimeoutExpired:
         print('Git status timed out; recording local change status as unknown.')
         return None
@@ -47,6 +47,7 @@ def package():
         'project': 'Smash 64 Character Lab',
         'commit': git('rev-parse', 'HEAD'),
         'source_dirty': source_dirty(),
+        'source_directory': git('rev-parse', '--show-prefix').rstrip('/') or '.',
         'rom': 'character-lab.z64',
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),

@@ -4,8 +4,8 @@ setlocal EnableDelayedExpansion
 set ROM=ssb64asm_extra.z64
 set LOG=output.log
 set ASM=%~dp0smashremix\assembler
-if not defined SMASH_EXTRA_ROM_DIR set "SMASH_EXTRA_ROM_DIR=C:\Users\Lorenzo\Desktop\Smash 64\roms"
-set "DEPLOY_ROM=%SMASH_EXTRA_ROM_DIR%\%ROM%"
+if not defined SMASH_EXTRA_ROM_DIR set "SMASH_EXTRA_ROM_DIR=%~dp0dist"
+set "DEPLOY_ROM=%SMASH_EXTRA_ROM_DIR%\char_builder.z64"
 
 echo. > "%ROM%"
 echo Building "%ROM%"...

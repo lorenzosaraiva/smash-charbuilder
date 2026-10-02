@@ -56,6 +56,12 @@ scope CharCreator {
     special_parameter_records:
     fill SLOT_COUNT * 0x000C
 
+    // Shared normals use the body's animation and animation flags with the
+    // donor's motion-command stream. Keep one synthetic parameter record per
+    // port so simultaneous custom fighters cannot overwrite each other.
+    normal_parameter_records:
+    fill SLOT_COUNT * 0x000C
+
     // Donor callbacks can index fp->joints directly, bypassing command guards.
     // Back up all 37 engine slots while a borrowed special is active; missing
     // donor joints temporarily resolve to the body's top joint.
@@ -84,6 +90,10 @@ scope CharCreator {
     // when the borrowed callback later constructs a projectile from one.
     loaded_special_files:; fill 16
     preload_pointer:; dw 0
+    // Character Creator's laser does not use Fox's shared special-file global.
+    // Keeping a private pointer prevents later fighter loads from clearing or
+    // republishing the resource behind the projectile descriptor.
+    laser_file_pointer:; dw 0
     catalog_mode_last:; dw 0xFFFFFFFF
 
     // Runtime breadcrumbs used to verify that the pre-match loader runs after
@@ -97,6 +107,9 @@ scope CharCreator {
     diagnostic_action_index:; dw 0
     diagnostic_parameter_array:; dw 0
     diagnostic_parameter_index:; dw 0
+    diagnostic_laser_stage:; dw 0
+    diagnostic_laser_resource:; dw 0
+    diagnostic_laser_weapon:; dw 0
 
     // Fields in each slot's entry-pointer table.
     constant FIELD_ENABLED(0)
@@ -256,6 +269,14 @@ scope CharCreator {
         sw      r0, 0x0004(t0)
         sw      r0, 0x0008(t0)
         sw      r0, 0x000C(t0)
+        li      t0, laser_file_pointer
+        sw      r0, 0x0000(t0)
+        li      t0, diagnostic_laser_stage
+        sw      r0, 0x0000(t0)
+        li      t0, diagnostic_laser_resource
+        sw      r0, 0x0000(t0)
+        li      t0, diagnostic_laser_weapon
+        sw      r0, 0x0000(t0)
         jr      ra
         nop
     }
@@ -565,13 +586,30 @@ scope CharCreator {
         lli     s3, FIELD_JAB               // first donor field
 
         _field_loop:
+        lli     t1, FIELD_NSP
+        beq     s3, t1, _fox_nsp
+        nop
         sll     t0, s3, 0x0002
         addu    t0, s1, t0
         lw      t0, 0x0000(t0)
         jal     catalog_id_
         lw      a0, 0x0000(t0)
-        beq     v0, s2, _next_field
         or      s4, v0, r0                 // donor Character.id
+        b       _donor_ready
+        nop
+
+        _fox_nsp:
+        // Neutral-B owns only Fox's projectile attributes. Loading Fox's
+        // complete main/special bundle wastes heap space and leaves the stock
+        // constructor dependent on shared globals that later loaders mutate.
+        jal     ensure_laser_file_
+        nop
+        b       _next_field
+        nop
+
+        _donor_ready:
+        beq     s4, s2, _next_field
+        nop
 
         li      t0, 0x80116E10             // character struct pointer table
         sll     t1, s4, 0x0002
@@ -1035,6 +1073,8 @@ scope CharCreator {
 
         lw      t0, 0x001C(sp)
         lw      t1, 0x000C(sp)
+        lli     t2, FIELD_NSP
+        beq     t1, t2, _body              // Neutral-B uses the safe laser dispatcher below
         sll     t1, t1, 0x0002
         addu    t0, t0, t1
         lw      t0, 0x0000(t0)
@@ -1231,6 +1271,241 @@ scope CharCreator {
         nop
     }
 
+    // @ Description
+    // Loads Fox's laser attribute file into a Character Creator-owned pointer.
+    // This runs only in the pre-match load phase; Neutral-B never allocates.
+    // Returns v0 = file base, or 0 when the resource could not be established.
+    scope ensure_laser_file_: {
+        addiu   sp, sp, -0x0020
+        sw      ra, 0x0004(sp)
+        li      t0, laser_file_pointer
+        lw      v0, 0x0000(t0)
+        bnez    v0, _end
+        nop
+
+        li      t0, 0x80116E10             // character struct pointer table
+        lli     t1, Character.id.FOX
+        sll     t1, t1, 0x0002
+        addu    t0, t0, t1
+        lw      t0, 0x0000(t0)             // Fox FTData
+        beqz    t0, _fail
+        nop
+        lw      a0, 0x0014(t0)             // Fox file_special1 (laser attributes)
+        beqz    a0, _fail
+        li      a1, laser_file_pointer
+        sw      r0, 0x0000(a1)             // never accept a stale scene pointer
+        jal     Render.load_file_
+        nop
+        li      t0, laser_file_pointer
+        lw      v0, 0x0000(t0)
+        beqz    v0, _fail
+        li      t1, diagnostic_laser_resource
+        sw      v0, 0x0000(t1)
+        b       _end
+        nop
+
+        _fail:
+        or      v0, r0, r0
+        _end:
+        lw      ra, 0x0004(sp)
+        addiu   sp, sp, 0x0020
+        jr      ra
+        nop
+    }
+
+    // Neutral-B intentionally does not borrow Fox's fighter state. The body
+    // owns its native neutral action and animation; when that script raises
+    // flag0, these hooks consume it and construct Fox's laser directly.
+    scope neutral_is_custom_: {
+        addiu   sp, sp, -0x0020
+        sw      ra, 0x0004(sp)
+        sw      a0, 0x0008(sp)
+        lw      t0, 0x0084(a0)             // fighter struct
+        beqz    t0, _no
+        sw      t0, 0x000C(sp)
+        lw      t1, 0x028C(t0)             // motion_attack_id
+        lli     t2, 0x0012                 // nFTMotionAttackIDSpecialN
+        bne     t1, t2, _no
+        lbu     a0, 0x000D(t0)             // port
+        jal     get_slot_
+        nop
+        beqz    v0, _no
+        nop
+        lw      t0, 0x0004(v0)             // configured body entry
+        jal     catalog_id_
+        lw      a0, 0x0000(t0)
+        lw      t0, 0x000C(sp)
+        lw      t1, 0x0008(t0)             // actual body Character.id
+        bne     v0, t1, _no
+        nop
+        b       _end
+        lli     v0, 0x0001
+        _no:
+        or      v0, r0, r0
+        _end:
+        lw      ra, 0x0004(sp)
+        addiu   sp, sp, 0x0020
+        jr      ra
+        nop
+    }
+
+    // a0 = fighter GObj. Returns v0 = 1 when this is a custom Neutral-B,
+    // whether or not its projectile flag was raised on this frame.
+    scope neutral_try_spawn_: {
+        addiu   sp, sp, -0x0030
+        sw      ra, 0x0004(sp)
+        sw      a0, 0x0008(sp)
+        jal     neutral_is_custom_
+        nop
+        beqz    v0, _end
+        sw      v0, 0x000C(sp)
+        lw      a0, 0x0008(sp)
+        lw      t0, 0x0084(a0)             // fighter struct
+        lw      t1, 0x017C(t0)             // motion_vars.flags.flag0
+        beqz    t1, _end
+        nop
+        sw      r0, 0x017C(t0)             // consume before spawning
+        lw      t1, 0x08E8(t0)             // TopN joint
+        beqz    t1, _end
+        nop
+        lwc1    f0, 0x001C(t1)             // world X
+        lwc1    f2, 0x0020(t1)             // world Y
+        lwc1    f4, 0x0024(t1)             // world Z
+        lw      t2, 0x0044(t0)             // facing direction
+        mtc1    t2, f6
+        cvt.s.w f6, f6
+        lui     t2, 0x4270                 // 60.0F
+        mtc1    t2, f8
+        mul.s   f6, f6, f8
+        add.s   f0, f0, f6
+        lui     t2, 0x42A0                 // 80.0F
+        mtc1    t2, f8
+        add.s   f2, f2, f8
+        swc1    f0, 0x0010(sp)
+        swc1    f2, 0x0014(sp)
+        swc1    f4, 0x0018(sp)
+        addiu   a1, sp, 0x0010
+        jal     neutral_make_weapon_
+        nop
+        _end:
+        lw      v0, 0x000C(sp)
+        lw      ra, 0x0004(sp)
+        addiu   sp, sp, 0x0030
+        jr      ra
+        nop
+    }
+
+    // @ Description
+    // Creates a stock-behaving Fox laser without entering Remix's patched
+    // wpFoxBlasterMakeWeapon. The descriptor uses a private, match-lifetime
+    // resource pointer and the same callback block as the stock projectile.
+    // a0 = fighter GObj, a1 = spawn position. Returns v0 = weapon GObj or 0.
+    scope neutral_make_weapon_: {
+        addiu   sp, sp, -0x0030
+        sw      ra, 0x0014(sp)
+        sw      a0, 0x0020(sp)
+        sw      a1, 0x0024(sp)
+
+        li      t0, diagnostic_laser_stage
+        lli     t1, 0x0001
+        sw      t1, 0x0000(t0)
+        li      t0, laser_file_pointer
+        lw      t1, 0x0000(t0)
+        li      t0, diagnostic_laser_resource
+        sw      t1, 0x0000(t0)
+        beqz    t1, _fail                  // missing resource fails closed
+        nop
+
+        li      t0, diagnostic_laser_stage
+        lli     t1, 0x0002
+        sw      t1, 0x0000(t0)
+        lw      a0, 0x0020(sp)
+        li      a1, laser_projectile_struct
+        lw      a2, 0x0024(sp)
+        jal     0x801655C8                 // generic weapon creation
+        lui     a3, 0x8000                 // parent is a fighter
+        li      t0, diagnostic_laser_weapon
+        sw      v0, 0x0000(t0)
+        beqz    v0, _fail
+        sw      v0, 0x0018(sp)
+
+        lw      v1, 0x0084(v0)             // weapon struct
+        beqz    v1, _fail
+        lui     at, 0x4320                 // Fox laser speed: 160.0F
+        mtc1    at, f8
+        lwc1    f12, 0x0024(v1)            // Y velocity
+        lw      t0, 0x0018(v1)             // projectile direction
+        mtc1    t0, f6
+        cvt.s.w f6, f6
+        mul.s   f14, f6, f8
+        swc1    f14, 0x0020(v1)            // X velocity
+        jal     0x8001863C                 // atan2(Y, X)
+        nop
+
+        lw      t7, 0x0018(sp)
+        lw      t8, 0x0074(t7)             // projectile DObj
+        beqz    t8, _effect
+        nop
+        swc1    f0, 0x0038(t8)             // face along velocity
+
+        _effect:
+        jal     0x80103320                 // Fox laser muzzle/glow effect
+        lw      a0, 0x0024(sp)
+        li      t0, diagnostic_laser_stage
+        lli     t1, 0x0003
+        sw      t1, 0x0000(t0)
+        b       _end
+        lw      v0, 0x0018(sp)
+
+        _fail:
+        or      v0, r0, r0
+        _end:
+        lw      ra, 0x0014(sp)
+        addiu   sp, sp, 0x0030
+        jr      ra
+        nop
+    }
+
+    OS.align(16)
+    laser_projectile_struct:
+    dw 0x00000000                        // render flags
+    dw 0x00000001                        // nWPKindBlaster
+    dw laser_file_pointer                // private loaded Fox Special1 file
+    OS.copy_segment(0x10391C, 0x28)      // stock attributes offset + callbacks
+
+    // Replaces the stock proc_accessory indirect calls. A custom Neutral-B
+    // consumes flag0 above and skips the body's projectile callback; every
+    // other action tail-calls the original callback unchanged.
+    scope neutral_accessory_dispatch_: {
+        addiu   sp, sp, -0x0020
+        sw      ra, 0x0004(sp)
+        sw      v0, 0x0008(sp)             // original proc_accessory
+        sw      a0, 0x000C(sp)
+        jal     neutral_try_spawn_
+        nop
+        beqz    v0, _original
+        nop
+        lw      ra, 0x0004(sp)
+        addiu   sp, sp, 0x0020
+        jr      ra                         // suppress body projectile callback
+        nop
+        _original:
+        lw      t9, 0x0008(sp)
+        lw      a0, 0x000C(sp)
+        lw      ra, 0x0004(sp)
+        addiu   sp, sp, 0x0020
+        jr      t9
+        nop
+    }
+
+    OS.patch_start(0x5D8B8, 0x800E20B8)
+    jal     neutral_accessory_dispatch_
+    OS.patch_end()
+
+    OS.patch_start(0x62784, 0x800E6F84)
+    jal     neutral_accessory_dispatch_
+    OS.patch_end()
+
     // Character.move_action_array_table_ jumps here. Substitute the donor's
     // unique action array only while a borrowed special owns the action chain.
     scope action_array_hook_: {
@@ -1406,15 +1681,12 @@ scope CharCreator {
     }
 
     // ftMainSetStatus has resolved the selected action parameter record here.
-    // For a borrowed special, independently resolve the donor record from the
-    // current action. Other status hooks can replace the record between the
-    // unique-action lookup and this point, and an out-of-range parameter index
-    // would otherwise select unrelated data. Copy the donor record to per-port
-    // scratch space and replace only its animation with the body's Taunt
-    // animation. Taunt is a shared, finite action available to every supported
-    // body, so donor command timing can advance without applying a donor
-    // figatree to an incompatible skeleton. The donor command pointer and
-    // non-animation flags stay intact.
+    // Shared normals combine the body's animation and flags with the donor's
+    // command stream. Borrowed specials instead copy the donor record and
+    // replace its animation with the body's Taunt animation. Taunt is a
+    // shared, finite action available to every supported body, so donor command
+    // timing can advance without applying a donor figatree to an incompatible
+    // skeleton.
     scope parameter_record_hook_: {
         OS.patch_start(0x62D54, 0x800E7554)
         j       parameter_record_hook_
@@ -1439,6 +1711,59 @@ scope CharCreator {
 
         lbu     t0, 0x000D(s1)              // port
         sll     t1, t0, 0x0002
+
+        // A shared normal's selected record belongs to the donor because
+        // parameter_base_hook_ temporarily substituted the donor FTData.
+        // Rebuild that record with the matching body animation while retaining
+        // the donor command pointer, whose waits and commands define startup,
+        // active frames, hitbox data, and clear timing.
+        li      t4, active_normal_donor
+        addu    t4, t4, t1
+        lw      t5, 0x0000(t4)
+        bltz    t5, _check_special
+        nop
+        lw      t5, 0x0024(s1)              // current action
+        sltiu   t6, t5, 0x00DC
+        beqz    t6, _check_special           // unique follow-ups use donor data
+        nop
+
+        // Shared action record -> body parameter-array index.
+        li      t6, 0x80128DD8
+        sll     t7, t5, 0x0002
+        addu    t7, t7, t5                  // action * 5
+        sll     t7, t7, 0x0002              // action * 20
+        addu    t6, t6, t7
+        lhu     t7, 0x0000(t6)
+        srl     t7, t7, 0x0006
+        sltiu   t6, t7, 0x03FE
+        beqz    t6, _check_special
+        nop
+        lw      t5, 0x09C4(s1)              // body FTData
+        beqz    t5, _check_special
+        nop
+        lw      t6, 0x0064(t5)              // body parameter array
+        sll     t8, t7, 0x0001
+        addu    t8, t8, t7                  // parameter index * 3
+        sll     t8, t8, 0x0002              // parameter index * 12
+        addu    t6, t6, t8                  // body parameter record
+
+        // t4 = this port's 12-byte synthetic normal record.
+        sll     t4, t0, 0x0003              // port * 8
+        addu    t4, t4, t1                  // port * 12
+        li      t7, normal_parameter_records
+        addu    t4, t4, t7
+        lw      t7, 0x0000(t6)              // body animation ID
+        sw      t7, 0x0000(t4)
+        lw      t7, 0x0004(t3)              // donor command offset/pointer
+        sw      t7, 0x0004(t4)
+        lw      t7, 0x0008(t6)              // body animation flags
+        sw      t7, 0x0008(t4)
+        or      v1, t5, r0                  // resolve animation through body
+        or      t3, t4, r0
+        b       _return
+        nop
+
+        _check_special:
         li      t4, body_character_data
         addu    t4, t4, t1
         lw      t5, 0x0000(t4)              // saved body FTData
@@ -1962,28 +2287,42 @@ scope CharCreator {
         _slot_loop:
         lw      t4, 0x0000(t6)             // slot entry-pointer table
         lw      t3, 0x0004(t4)             // body entry
-        sw      t7, 0x000C(t3)             // interactive maximum
-        lw      t2, 0x0004(t3)             // body catalog index
+        sw      t7, 0x0008(t3)             // interactive maximum
+        lw      t2, 0x0000(t3)             // body catalog index
         sltu    t1, t7, t2
         beqzl   t1, _body_ready
         nop
         or      t2, r0, r0                 // filtered body falls back to Mario
-        sw      t2, 0x0004(t3)
+        sw      t2, 0x0000(t3)
 
         _body_ready:
         addiu   t4, t4, FIELD_JAB * 4
         lli     t3, FIELD_COUNT - FIELD_JAB
+        lli     t8, FIELD_JAB
         _field_loop:
         lw      t1, 0x0000(t4)             // move entry
-        sw      t7, 0x000C(t1)
-        lw      t0, 0x0004(t1)
+        lli     at, FIELD_NSP
+        beq     t8, at, _lock_nsp
+        nop
+        sw      t7, 0x0008(t1)
+        lw      t0, 0x0000(t1)
         sltu    at, t7, t0
         beqzl   at, _field_next
         nop
-        sw      t2, 0x0004(t1)             // filtered donor becomes the body
+        sw      t2, 0x0000(t1)             // filtered donor becomes the body
+        b       _field_next
+        nop
+
+        _lock_nsp:
+        lli     t0, 0x0001                 // catalog index 1 is Fox
+        sw      t0, 0x0000(t1)
+        sw      t0, 0x0004(t1)
+        sw      t0, 0x0008(t1)
+
         _field_next:
         addiu   t4, t4, 0x0004
         addiu   t3, t3, -0x0001
+        addiu   t8, t8, 0x0001
         bnez    t3, _field_loop
         nop
         addiu   t6, t6, 0x0004
@@ -2021,18 +2360,32 @@ scope CharCreator {
         sw      t0, 0x000C(sp)
         addiu   t1, t1, FIELD_JAB * 4
         lli     t2, FIELD_COUNT - FIELD_JAB
+        lli     t3, FIELD_JAB
         _loop:
         lw      v0, 0x0000(t1)
+        lli     t4, FIELD_NSP
+        beq     t3, t4, _set_fox_nsp
+        nop
         lw      t0, 0x000C(sp)
-        sw      t0, 0x0004(v0)
+        b       _update
+        sw      t0, 0x0000(v0)
+
+        _set_fox_nsp:
+        lli     t0, 0x0001                 // catalog index 1 is Fox
+        sw      t0, 0x0000(v0)
+
+        _update:
         sw      t1, 0x0010(sp)
         sw      t2, 0x0014(sp)
+        sw      t3, 0x0018(sp)
         jal     Menu.update_pointer_
-        nop
+        addiu   v0, v0, -0x0004            // value pointer -> entry base
         lw      t1, 0x0010(sp)
         lw      t2, 0x0014(sp)
+        lw      t3, 0x0018(sp)
         addiu   t1, t1, 0x0004
         addiu   t2, t2, -0x0001
+        addiu   t3, t3, 0x0001
         bnez    t2, _loop
         nop
         jal     reset_cache_

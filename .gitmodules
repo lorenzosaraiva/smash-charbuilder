@@ -1,0 +1,14 @@
+[submodule "remix/smashremix"]
+	path = remix/smashremix
+	url = https://github.com/JSsixtyfour/smashremix
+	branch = master
+	ignore = dirty
+[submodule "ssb-decomp-re/tools/splat"]
+	path = ssb-decomp-re/tools/splat
+	url = https://github.com/ethteck/splat.git
+[submodule "ssb-decomp-re/tools/asm-processor"]
+	path = ssb-decomp-re/tools/asm-processor
+	url = https://github.com/simonlindholm/asm-processor
+[submodule "ssb-decomp-re/tools/asm-differ"]
+	path = ssb-decomp-re/tools/asm-differ
+	url = https://github.com/simonlindholm/asm-differ

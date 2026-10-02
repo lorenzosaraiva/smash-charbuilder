@@ -13,8 +13,9 @@ initial animation pilot so far.
 
 ## Download
 
-The first GitHub release has not been published yet. The release workflow is
-ready for the one-time [download setup](docs/releases.md). Once enabled, every
+This codebase is part of [Smash Character Builder](../README.md). Downloads use
+the combined project's [releases](https://github.com/lorenzosaraiva/smash-charbuilder/releases)
+and the root workflow described in the [download setup](../docs/releases.md). Once enabled, every
 successful push to `main` publishes a new build with the same download filenames.
 
 Grab **character-lab.zip** for the ROM, a quick play guide, the feature checklist
@@ -22,7 +23,7 @@ and build information. If you only need the ROM, use **character-lab.z64**.
 The permanent links are shown in each successful release workflow's summary.
 
 The existing Google Drive copy can stay available while GitHub downloads are
-being set up. Its link still needs to be added here.
+being set up.
 
 ## Make your first character
 
@@ -66,7 +67,8 @@ On Windows with WSL/Ubuntu:
 ```
 
 The checked ROM and shareable ZIP appear in **dist/**. Generated ROMs, original
-ROMs and build files stay out of Git history. See the [build guide](docs/building.md)
+ROMs and build files stay out of Git history. Root build entry points also copy
+these files into the combined project's `dist/`. See the [build guide](docs/building.md)
 for the first-time setup and the [release guide](docs/releases.md) for automation.
 
 ## Bugs, ideas and helping out

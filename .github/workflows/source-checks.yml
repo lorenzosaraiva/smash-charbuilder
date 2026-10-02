@@ -1,0 +1,38 @@
+name: Character Lab source checks
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ssb-decomp-re
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install host compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib
+      - name: Check move behavior and donor data
+        run: |
+          mkdir -p build
+          gcc -m32 -nostdlib -static -fno-pie -fno-stack-protector -O1 \
+            -Iinclude -Isrc -D__sgi -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DREGION_US \
+            tools/testCustomMove.c -o build/testCustomMove
+          build/testCustomMove
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'tools')
+          from elfData import read_elf
+          from verifyCustomMoveData import verify_sources
+          verify_sources(*read_elf(Path('build/testCustomMove'), '<'))
+          PY
+          python3 tools/testNativeAnimation.py

@@ -1,0 +1,150 @@
+name: Build and release Character Lab
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: character-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    outputs:
+      configured: ${{ steps.build-source.outputs.configured }}
+    defaults:
+      run:
+        working-directory: ssb-decomp-re
+    steps:
+      - name: Check out source and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Check automatic-build setup
+        id: build-source
+        env:
+          BASEROM_URL: ${{ secrets.BASEROM_URL }}
+        run: |
+          if [[ -z "$BASEROM_URL" ]]; then
+            echo configured=false >> "$GITHUB_OUTPUT"
+            echo 'Automatic ROM builds await BASEROM_URL. See docs/releases.md at repository root.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'This run leaves existing downloads unchanged.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo configured=true >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install system dependencies
+        if: steps.build-source.outputs.configured == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git python3 python3-venv python3-pip clang curl \
+            binutils-mips-linux-gnu build-essential ripgrep gcc-multilib \
+            clang-format libcapstone-dev libglib2.0-0 libpcre3
+
+      - name: Get the original US ROM from the configured build source
+        if: steps.build-source.outputs.configured == 'true'
+        env:
+          BASEROM_URL: ${{ secrets.BASEROM_URL }}
+        run: |
+          if [[ "$BASEROM_URL" != https://* ]]; then
+            echo 'Set the BASEROM_URL repository secret to a direct HTTPS download of the original US ROM.'
+            echo 'See docs/releases.md. The latest published download is unchanged if this build fails.'
+            exit 1
+          fi
+          if ! curl --fail --silent --location "$BASEROM_URL" --output baserom.us.z64; then
+            echo 'Could not retrieve the configured original ROM. Check BASEROM_URL.'
+            exit 1
+          fi
+          python3 tools/packageRelease.py --check-base
+
+      - name: Build, verify, and package
+        if: steps.build-source.outputs.configured == 'true'
+        run: bash tools/build-character-lab.sh --setup --init --jobs 4
+
+      - name: Keep the checked release files
+        if: steps.build-source.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: character-lab-${{ github.sha }}
+          path: |
+            ssb-decomp-re/dist/character-lab.z64
+            ssb-decomp-re/dist/character-lab.zip
+            ssb-decomp-re/dist/SHA256SUMS.txt
+            ssb-decomp-re/dist/build-info.json
+            ssb-decomp-re/dist/release-notes.md
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    needs: build
+    if: needs.build.outputs.configured == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Retrieve the checked release files
+        uses: actions/download-artifact@v4
+        with:
+          name: character-lab-${{ github.sha }}
+          path: dist
+
+      - name: Publish the completed build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_REF: ${{ github.ref }}
+          BUILD_REF_NAME: ${{ github.ref_name }}
+        run: |
+          (cd dist && sha256sum --check SHA256SUMS.txt)
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          info = json.loads(Path('dist/build-info.json').read_text())
+          assert info['commit'] == os.environ['BUILD_SHA'], 'Package/source commit mismatch'
+          PY
+          if [[ "$BUILD_REF" == refs/tags/v* ]]; then
+            release_tag="$BUILD_REF_NAME"
+            make_latest=false
+          else
+            release_tag="build-${BUILD_NUMBER}-${BUILD_SHA:0:9}"
+            make_latest=true
+          fi
+          existing_draft="$(gh release view "$release_tag" --repo "$GH_REPO" --json isDraft --jq .isDraft 2>/dev/null || true)"
+          # Reruns can finish an interrupted draft; a published snapshot stays intact.
+          if [[ "$existing_draft" == false ]]; then
+            echo "Release $release_tag is already published."
+            exit 0
+          elif [[ "$existing_draft" == true ]]; then
+            gh release upload "$release_tag" \
+              dist/character-lab.z64 dist/character-lab.zip \
+              dist/SHA256SUMS.txt dist/build-info.json --repo "$GH_REPO" --clobber
+            gh release edit "$release_tag" --repo "$GH_REPO" --notes-file dist/release-notes.md
+          else
+            # A draft keeps the previous download available until all assets are uploaded.
+            gh release create "$release_tag" \
+              dist/character-lab.z64 dist/character-lab.zip \
+              dist/SHA256SUMS.txt dist/build-info.json \
+              --repo "$GH_REPO" --target "$BUILD_SHA" --draft \
+              --title "Character Lab · ${BUILD_SHA:0:9}" \
+              --notes-file dist/release-notes.md
+          fi
+          gh release edit "$release_tag" --repo "$GH_REPO" --draft=false --latest="$make_latest"
+          {
+            echo '### Character Lab download'
+            echo "Built from commit \`$BUILD_SHA\`. Experimental build; see the feature checklist."
+            echo "[Latest ROM](https://github.com/$GH_REPO/releases/latest/download/character-lab.z64)"
+            echo "[Latest play package](https://github.com/$GH_REPO/releases/latest/download/character-lab.zip)"
+          } >> "$GITHUB_STEP_SUMMARY"
