@@ -1,0 +1,9 @@
+name: An idea
+description: A feature, silly combination or improvement you'd like to see.
+body:
+  - type: textarea
+    attributes:
+      label: What's the idea?
+      description: No formal proposal needed. Tell us what would be fun or useful.
+    validations:
+      required: true

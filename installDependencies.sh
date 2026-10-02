@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 RED="\e[31m"
 GREEN="\e[32m"
 ENDCOLOR="\e[0m"
@@ -17,7 +18,7 @@ then
 	if command -v apt > /dev/null 2>&1
 	then
 
-		requiredPackages="git python3 clang curl binutils-mips-linux-gnu build-essential python3-pip ripgrep gcc-multilib clang-format libcapstone-dev"
+		requiredPackages="git python3 clang curl binutils-mips-linux-gnu build-essential python3-pip ripgrep gcc-multilib clang-format libcapstone-dev libglib2.0-0 libpcre3"
 		for package in $requiredPackages; do
 			dpkg -s "$package" > /dev/null 2>&1 || missingPackages="${missingPackages}${package} "
 		done

@@ -140,7 +140,7 @@ cd "$work"
 }
 [ -s cpp.err ] && cat cpp.err >&2
 
-"$IRIX4/usr/bin/qemu-irix-4.0" -silent -L "$IRIX4" "$IRIX4/usr/lib/accom" \
+IRIX4_ROOT="$IRIX4" bash "$SCRIPT_DIR/qemu-run.sh" -silent -L "$IRIX4" "$IRIX4/usr/lib/accom" \
 	-Xv -EB -Xg0 -O2 -Xprototypes -Xxansi -XSin.T <in.i >in.B 2>accom.err || {
 	sed -e '/^ccom:[^ ]*$/d' -e 's|^ccom:[^ ]*/accom: ||' accom.err >&2
 	exit 1

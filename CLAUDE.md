@@ -1,5 +1,14 @@
 # Super Smash Bros. 64 Decompilation
 
+## Character Lab branch
+
+This checkout contains the Character Lab gameplay mod. Use
+`bash tools/build-character-lab.sh` to build, run its host/ROM checks and package
+downloads. Changes to the vanilla ROM are intentional; the original Makefile's
+vanilla comparison is not this mod's acceptance check. See `README.md` and
+`docs/status.md` for current scope. The matching-decompilation notes below describe
+the upstream work and its tools.
+
 ## Project Overview
 
 N64 decompilation of Super Smash Bros. (US version). The goal is to produce C source code that compiles to a byte-identical ROM. Currently ~95.9% code matched with ~30 nonmatching functions remaining, mostly in ovl8 (debug menu overlay).

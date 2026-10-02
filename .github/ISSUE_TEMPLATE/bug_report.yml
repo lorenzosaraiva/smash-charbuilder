@@ -1,0 +1,24 @@
+name: Something broke
+description: Tell us about a move, animation, menu or build bug.
+title: '[Bug] '
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead? A clip is welcome.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Build and emulator
+      description: Commit from build-info.json, emulator/version, or say you built locally.
+  - type: input
+    attributes:
+      label: Body, donor and move
+      placeholder: DK body, Fox Neutral B, Training
+  - type: textarea
+    attributes:
+      label: How can we reproduce it?
+      description: Steps, controller/CPU slot and any relevant settings.
+    validations:
+      required: true

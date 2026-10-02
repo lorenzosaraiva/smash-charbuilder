@@ -18,6 +18,8 @@ tools/vpk0cmd
 tools/halAssetTool
 .vscode/
 build/
+dist/
+.venv/
 ctx.c
 ctx.c.m2c
 m2cfiles/
