@@ -20,7 +20,7 @@ def retarget(fighter,pose):
     # Donor squash/stretch contributes to its collision FK, but body bone
     # lengths remain fixed. Extract orientation from a unit-scale pose.
     orientations={j:(*v[:7],1,1,1) for j,v in pose.items()}
-    animated=world(source,orientations);parents={0:IDENTITY};result={}
+    animated=world({j:b for j,b in source.items() if j in orientations},orientations);parents={0:IDENTITY};result={}
     for j,s in rig_map(fighter).items():
         desired=mul(mul(animated[s][0],transpose(source_bind[s][0])),target_bind[j][0])
         local=mul(transpose(parents[target[j].parent]),desired)
@@ -36,35 +36,37 @@ def retarget(fighter,pose):
     return result
 
 def collision_definitions(fighter,motion,frames):
-    scripts={}
-    for p in (ROOT/'src/relocData').glob('*MainMotion.c'):
-        scripts.update(arrays(us_text(p.read_text()),r'(?:ftMotionCommand|u32)'))
-    tables=arrays(us_text((ROOT/'src/ft/ftdata.c').read_text()),'FTMotionDesc')
-    from auditNormalMoves import enum_values
-    ids=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
-    fields=[x.strip() for x in re.sub(r'[{}]','',tables['dFT'+fighter+'MotionDescs']).split(',') if x.strip()]
-    script=fields[ids['nFTCommonMotion'+motion]*3+1]
-    commands=expand(script,scripts);timeline={};frame=0
+    from customMoveCatalog import MOTIONS,resolved_moves,source_scripts
+    motion,desc,duration=resolved_moves(fighter)[MOTIONS.index(motion)]
+    commands=[] if desc[1]=='dCustomEmpty' else expand(desc[1],source_scripts())
+    timeline={};tick=0;wall=0
     for op,args in commands:
-        if op=='ftMotionCommandWait':frame+=int(args[0],0)
-        elif op=='ftMotionCommandWaitAsync':frame=int(args[0],0)
-        elif 'AttackColl' in op:timeline.setdefault(frame,[]).append((op,[int(a,0) for a in args]))
+        if op=='ftMotionCommandWait':tick+=int(args[0],0)
+        elif op=='ftMotionCommandWaitAsync':tick=int(args[0],0)
+        wall=max(wall,tick)
+        if 'AttackColl' in op:timeline.setdefault(wall,[]).append((op,[int(a,0) for a in args]))
     active={};result=[]
     for frame in range(frames):
-        for op,a in timeline.get(frame,[]):
+        tick=frame%duration if motion=='RapidLoop' else frame
+        for op,a in timeline.get(tick,[]):
             if 'MakeAttackColl' in op:active[a[0]]=(a[2],tuple(a[7:10]),'Scaled' in op)
             elif op=='ftMotionCommandClearAttackCollAll':active.clear()
             elif op=='ftMotionCommandClearAttackCollID':active.pop(a[0],None)
-            elif op=='ftMotionCommandSetAttackCollOffset':
+            elif op=='ftMotionCommandSetAttackCollOffset' and a[0] in active:
                 j,offset,scaled=active[a[0]];active[a[0]]=(j,tuple(a[1:]),scaled)
         result.append(dict(active))
     return result
 
+
 def collision_frames(fighter,motion,poses):
+    from customMoveCatalog import MOTIONS,resolved_moves
+    _,desc,_=resolved_moves(fighter)[MOTIONS.index(motion)]
+    flags=flag_word(desc[2]);bones,_=rig(fighter,flags)
     result=[];size=source_size(fighter)
     for pose,active in zip(poses,collision_definitions(fighter,motion,len(poses))):
-        transforms=world(model(fighter),pose);centers=[(0,0,0)]*4
+        transforms=world(bones,pose);centers=[(0,0,0)]*4
         for aid,(j,offset,scaled) in active.items():
+            assert j in transforms,(fighter,motion,j,flags)
             r,t=transforms[j]
             if scaled:offset=tuple(v/size for v in offset)
             centers[aid]=tuple(v*size for v in add(t,transform(r,offset)))

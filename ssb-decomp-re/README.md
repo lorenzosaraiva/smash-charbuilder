@@ -47,9 +47,9 @@ Creator builds currently last for the running ROM session.
 - Neutral B choice between **Body Move** and **Fox Laser**; experimental Up B/Down B adapters.
 - Three Mario animation pilots: Falcon down air, Fox straight forward tilt,
   DK straight forward smash.
-- Original hitbox paths across bodies for Kirby up-tilt, Falcon up-air and those three straight
-  pilot attacks, independently of visible animations. See the
-  [collision guide](docs/collision-trajectories.md) for coverage and how to compare.
+- Original donor hitbox paths for the complete normal roster on every foreign
+  body, including angled variants, weapon/tail attacks, multihits and landing
+  hitboxes. See the [collision guide](docs/collision-trajectories.md).
 
 The [checkbox list](docs/status.md) covers what is implemented, what still needs
 playtesting and what is missing. In particular, throws currently copy donor

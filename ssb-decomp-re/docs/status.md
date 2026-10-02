@@ -31,16 +31,13 @@ they do not mean every matchup has been playtested. Please share weird cases.
 
 ## Still to do
 
-- [ ] Original donor hitbox trajectories on every body for all normal attacks.
-- [x] First collision-only milestone: Kirby up-tilt on DK and all other bodies.
-- [x] Falcon up-air on Kirby and every other foreign body, including donor recovery
-  and landing-timeline transitions; Kirby keeps its own visible animation.
-- [x] Generated donor-move registry and native oracle calls, shared across bodies.
-- [x] Falcon down-air, Fox straight forward tilt and DK straight forward smash
-  collision trajectories on all foreign bodies; animations remain Mario-only.
-- [x] Native geometry checks, body-size/facing compensation and per-player lifecycle tests.
-- [ ] Rendered acceptance of collision-only paths, actual hits/shields and interruptions.
-- [ ] Grounded/aerial/angled/weapon/tail and multihit trajectory coverage.
+- [x] Original donor hitbox trajectories on every body for all normal attacks.
+- [x] Grounded/aerial/angled/weapon/tail and multihit trajectory coverage.
+- [x] Landing collision paths and body-supported third/rapid-jab timelines.
+- [x] Shared descriptor/fallback catalog for scripts, trajectories and verification.
+- [x] Native geometry checks for all 293 resolved timelines and all 396 registry entries.
+- [x] Body-size/facing compensation, per-player lifecycle and repeated-loop tests.
+- [ ] Rendered acceptance of collision paths, actual hits/shields and interruptions.
 - [ ] Validate donor startup, active frames, recovery, landing lag and hitlag in-game.
 - [ ] Full donor jab-chain capabilities and repeat-hit/refresh behavior.
 - [ ] Every donor attack animation on every body.
@@ -60,8 +57,8 @@ and tether/paired capture mechanics. Keep the selected body's hurtboxes initiall
 ## Known rough edges
 
 Most attacks still show the body's animation. That can look odd even when the donor's
-numbers and timing are in use. Five donor attacks now use original collision paths
-across bodies; other attacks still use mapped body joints. See the
+numbers and timing are in use. All normal donor choices now use original collision
+paths across bodies, independently of those visible poses. See the
 [collision coverage and test guide](collision-trajectories.md). Throws keep body poses and release timing; changing
 the donor does not yet reproduce its full choreography. Tether-grab animation/reach
 and fighter-specific effects, movement or capture behavior are not universally copied.

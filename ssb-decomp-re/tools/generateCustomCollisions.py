@@ -1,80 +1,85 @@
 #!/usr/bin/env python3
-"""Compile donor collision paths separately from target body animations."""
+"""Compile every normal donor path once; share it across all target bodies."""
+from functools import lru_cache
 import json
-import re
-from customAnimation import ROOT, animation, sample
-from customMoveTiming import animation_duration
-from generateCustomAnimations import collision_frames, vec
-from auditNormalMoves import arrays, enum_values, us_text, SLOTS
+from customAnimation import ROOT,animation,sample,flag_word
+from customMoveCatalog import ROSTER,MOTIONS,motion_descriptors,resolved_moves,extra_ids
+from generateCustomAnimations import collision_frames,vec
 
-COLLISION_PILOTS = (('Kirby', 'AttackHi3', 'FTKirbyAnimUTilt', 'KirbyUTilt'),
-                    ('Captain', 'AttackAirHi', 'FTCaptainAnimAttackAirU', 'CaptainUAir'))
+# Keep the familiar milestone names for tools/users; coverage comes from the
+# complete resolved catalog below, never from a manually maintained allowlist.
+LABELS={('Kirby','AttackHi3'):'KirbyUTilt',('Captain','AttackAirHi'):'CaptainUAir'}
 
-
-def motion_descriptors(fighter):
-    tables = arrays(us_text((ROOT/'src/ft/ftdata.c').read_text()), 'FTMotionDesc')
-    ids = enum_values((ROOT/'src/ft/ftdef.h').read_text(), 'FTCommonMotion')
-    fields = [x.strip() for x in re.sub(r'[{}]', '', tables['dFT'+fighter+'MotionDescs']).split(',') if x.strip()]
-    return ids, [tuple(fields[i:i+3]) for i in range(0, len(fields), 3)]
-
-
-def trajectory_indices(fighter, motion):
-    """Use the same native missing-variant fallback as the donor move compiler."""
-    ids, descriptors = motion_descriptors(fighter)
-    wanted = descriptors[ids['nFTCommonMotion'+motion]]
-    indices = []
-    for index, candidate in enumerate(m for family in SLOTS.values() for m in family):
-        desc = descriptors[ids['nFTCommonMotion'+candidate]]
-        if desc[0] in ('0', '0x00000000') or desc[1] == '0x80000000':
-            family = next(f for f in SLOTS.values() if candidate in f)
-            desc = next(descriptors[ids['nFTCommonMotion'+m]] for m in family
-                        if descriptors[ids['nFTCommonMotion'+m]][0] not in ('0', '0x00000000')
-                        and descriptors[ids['nFTCommonMotion'+m]][1] != '0x80000000')
-        if desc == wanted:
-            indices.append(index)
-    assert indices, (fighter, motion)
-    return indices
+@lru_cache(None)
+def catalog():
+    cases=[];rows=[];seen={}
+    for fighter in ROSTER:
+        row=[]
+        for index,(motion,desc,duration) in enumerate(resolved_moves(fighter)):
+            if desc[1]=='dCustomEmpty':row.append(None);continue
+            loop=motion=='RapidLoop';native_loop=loop and extra_ids(fighter)[2]>=0
+            key=(fighter,desc,duration,loop)
+            if key not in seen:
+                case=dict(fighter=fighter,motion=motion,name=desc[0][3:-6],flags=flag_word(desc[2]),duration=duration,index=index,
+                          label=LABELS.get((fighter,motion),fighter+motion),loop_start=duration if native_loop else 0,
+                          loop_period=duration if loop else 0,native_loop=native_loop)
+                seen[key]=len(cases);cases.append(case)
+            row.append(seen[key])
+        rows.append(row)
+    return tuple(cases),tuple(tuple(row) for row in rows)
 
 
-def frames_for(fighter, motion, name):
-    ids, descriptors = motion_descriptors(fighter)
-    desc = descriptors[ids['nFTCommonMotion'+motion]]
-    assert desc[0] == '&ll'+name+'FileID' and desc[2] == 'FTANIM_FLAG_NONE', (fighter, motion, desc)
-    assert re.search(r'NULL,\s*/\* translate_scales \*/', next((ROOT/'src/relocData').glob('*_'+fighter+'Main.c')).read_text()), fighter
-    duration = animation_duration(desc[0])
-    frames = collision_frames(fighter, motion, sample(fighter, name, duration+1))
-    assert frames[-1][0] == 0, 'Hitbox active after donor recovery'
-    return frames
+@lru_cache(None)
+def case_frames(case_id):
+    case=catalog()[0][case_id];fighter,motion,name,duration=(case[k] for k in ('fighter','motion','name','duration'))
+    count=duration*(3 if case['native_loop'] else 1)+1
+    frames=collision_frames(fighter,motion,sample(fighter,name,count,case['flags']))
+    if case['native_loop']:
+        # Figatree loops retain interpolator targets and live hitboxes. Keep the
+        # first cycle as a prefix, then repeat the verified steady cycle.
+        for first,second in zip(frames[duration:2*duration],frames[2*duration:3*duration]):
+            assert first[0]==second[0] and max(abs(a-b) for c,d in zip(first[1],second[1]) for a,b in zip(c,d))<0.001,(fighter,'non-periodic rapid animation')
+    return tuple(frames)
+
+
+def stored_frames(case_id):
+    case=catalog()[0][case_id];frames=case_frames(case_id)
+    end=case['loop_start']+case['loop_period'] if case['loop_period'] else len(frames)-1
+    active=[i for i,(mask,_) in enumerate(frames[:end]) if mask]
+    if not active:return 0,()
+    first,last=min(active),max(active)
+    return first,frames[first:last+1]
+
+
+def frames_for(fighter,motion,name):
+    return case_frames(next(i for i,c in enumerate(catalog()[0]) if (c['fighter'],c['motion'],c['name'])==(fighter,motion,name)))
 
 
 def main():
-    output = ['/* Generated by tools/generateCustomCollisions.py. Do not edit. */']
-    report = []
-    for fighter, motion, name, label in COLLISION_PILOTS:
-        frames = frames_for(fighter, motion, name)
-        output.append('const FTCustomCollisionFrame sFTCustomCollision'+label+'[] = {')
-        output.extend('    { { '+', '.join(vec(c) for c in centers)+' }, '+str(mask)+' },' for mask, centers in frames)
-        output.append('};')
-        report.append(dict(donor=fighter, motion=motion, animation=animation(name)[0].name,
-                           frames=len(frames), active_frames=[i for i, (mask, _) in enumerate(frames) if mask],
-                           bytes=len(frames)*52, bodies='all foreign original-roster bodies'))
-    # One generated registry, shared by every target body. Preserve the existing
-    # pose pilots' straight-variant coverage and reuse their embedded collisions.
-    registry = ['/* Generated donor-move registry; target body is not a key. */',
-                'const FTCustomCollisionTrajectory sFTCustomCollisionTrajectories[] = {']
-    for fighter, index in (('Captain', 23), ('Fox', 5), ('Donkey', 14)):
-        symbol = 'sFTCustomAnimation'+fighter
-        registry.append('    { &sFTCustomMoves[nFTKind'+fighter+']['+str(index)+'], &'+symbol+'[0].collision, ARRAY_COUNT('+symbol+'), sizeof(FTCustomAnimationFrame) },')
-    for fighter, motion, name, label in COLLISION_PILOTS:
-        symbol = 'sFTCustomCollision'+label
-        for index in trajectory_indices(fighter, motion):
-            registry.append('    { &sFTCustomMoves[nFTKind'+fighter+']['+str(index)+'], '+symbol+', ARRAY_COUNT('+symbol+'), sizeof(FTCustomCollisionFrame) },')
+    cases,rows=catalog();output=['/* Generated by tools/generateCustomCollisions.py. Do not edit. */'];report=[]
+    for i,case in enumerate(cases):
+        first,frames=stored_frames(i)
+        if frames:
+            output.append('const FTCustomCollisionFrame sFTCustomCollision'+case['label']+'[] = {')
+            output.extend('    { { '+', '.join(vec(c) for c in centers)+' }, '+str(mask)+' },' for mask,centers in frames)
+            output.append('};')
+        report.append(dict(**case,first=first,stored_frames=len(frames),bytes=len(frames)*52,active_centers=sum(mask.bit_count() for mask,_ in frames)))
+    registry=['/* Direct donor/variant lookup. Aliases share trajectory bytes. */',
+              'const FTCustomCollisionTrajectory sFTCustomCollisionTrajectories[12][33] = {']
+    for fighter,row in zip(ROSTER,rows):
+        registry.append('    { /* '+fighter+' */')
+        for case_id in row:
+            if case_id is None:record='NULL, 0, 0, 0, 0'
+            else:
+                case=cases[case_id];first,frames=stored_frames(case_id)
+                pointer='sFTCustomCollision'+case['label'] if frames else 'NULL'
+                record=', '.join(map(str,(pointer,first,len(frames),case['loop_start'],case['loop_period'])))
+            registry.append('        { '+record+' },')
+        registry.append('    },')
     registry.append('};')
-    (ROOT/'src/ft/ftcustomcollisions.generated.inc').write_text('\n'.join(output)+'\n', encoding='utf-8')
-    (ROOT/'src/ft/ftcustomcollisionregistry.generated.inc').write_text('\n'.join(registry)+'\n', encoding='utf-8')
-    (ROOT/'build/collision-pilot-manifest.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
-    print('Generated collision-only donor trajectories:', sum(r['bytes'] for r in report), 'bytes.')
+    (ROOT/'src/ft/ftcustomcollisions.generated.inc').write_text('\n'.join(output)+'\n',encoding='utf-8')
+    (ROOT/'src/ft/ftcustomcollisionregistry.generated.inc').write_text('\n'.join(registry)+'\n',encoding='utf-8')
+    (ROOT/'build/collision-roster-manifest.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+    print(f'Generated {len(cases)} resolved donor timelines, {sum(bool(r["bytes"]) for r in report)} active paths, 396 registry entries; {sum(r["bytes"] for r in report)} sampled bytes.')
 
-
-if __name__ == '__main__':
-    main()
+if __name__=='__main__':main()

@@ -35,7 +35,7 @@ static s32 testFalconUAirCollision(void)
         for (tick = 0; tick <= move->duration; tick++)
         {
             ftCustomMoveAdvanceClock(&fp, -1);
-            frame = &sFTCustomCollisionCaptainUAir[tick];
+            frame = ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindCaptain][22], tick);
             CHECK(ftCustomCollisionGetFrame(&fp) == frame);
             CHECK(frame->active_mask == ((tick >= 5 && tick < 14) ? 3 : 0));
             CHECK(ftCustomAnimationGetFrame(&fp) == NULL);
@@ -70,7 +70,7 @@ static s32 testFalconUAirCollision(void)
         }
         ftCustomMoveStartClock(&fp, move, 10);
         ftCustomMoveAdvanceClock(&fp, -1);
-        CHECK(ftCustomCollisionGetFrame(&fp) == &sFTCustomCollisionCaptainUAir[10]);
+        CHECK(ftCustomCollisionGetFrame(&fp) == ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindCaptain][22], 10));
         /* Landing switches to donor landing duration, without aerial trajectory leakage. */
         fp.motion_id = nFTCommonMotionLandingAirNull;
         CHECK(ftCustomCollisionGetFrame(&fp) == NULL);
@@ -128,7 +128,7 @@ static s32 testCustomCollision(void)
             {
                 ftCustomMoveAdvanceClock(fp, -1);
                 frame = ftCustomCollisionGetFrame(fp);
-                CHECK(frame == &sFTCustomCollisionKirbyUTilt[tick]);
+                CHECK(frame == ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindKirby][9], tick));
                 CHECK(frame->active_mask == ((tick >= 4 && tick < 12) ? 3 : 0));
                 /* Repeated reads model paused/hitlag frames; none advances time. */
                 CHECK(ftCustomCollisionGetFrame(fp) == frame);
@@ -196,16 +196,16 @@ static s32 testCustomCollision(void)
         ftCustomMoveAdvanceClock(fp, 0);
         fp->attack_colls[0].attack_state = nGMAttackStateNew;
         ftCustomCollisionApply(fp);
-        frame = &sFTCustomCollisionKirbyUTilt[4 + player];
+        frame = ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindKirby][9], 4 + player);
         CHECK(ftCustomCollisionGetFrame(fp) == frame);
         CHECK(collisionNear(fp->attack_colls[0].offset.y * fp->attr->size, frame->centers[0].y));
     }
     preview = players[0]; ftCustomMoveResetClock(&preview);
     CHECK(ftCustomCollisionGetFrame(&preview) == NULL);
-    CHECK(ftCustomCollisionGetFrame(&players[0]) == &sFTCustomCollisionKirbyUTilt[4]);
+    CHECK(ftCustomCollisionGetFrame(&players[0]) == ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindKirby][9], 4));
     /* Shared preset, independent clock. */
     gSCManagerCharBuilderPlayerSlots[1] = 0;
-    CHECK(ftCustomCollisionGetFrame(&players[1]) == &sFTCustomCollisionKirbyUTilt[5]);
+    CHECK(ftCustomCollisionGetFrame(&players[1]) == ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindKirby][9], 5));
     players[0].status_id++; CHECK(ftCustomCollisionGetFrame(&players[0]) == NULL); players[0].status_id--;
     players[0].motion_id++; CHECK(ftCustomCollisionGetFrame(&players[0]) == NULL); players[0].motion_id--;
     players[0].pkind = nFTPlayerKindDemo; CHECK(ftCustomCollisionGetFrame(&players[0]) == NULL);
@@ -221,6 +221,83 @@ static s32 testCustomCollision(void)
     players[0].attr->size = 1.25F; players[0].joints[0] = NULL;
     ftCustomCollisionApply(&players[0]); CHECK(players[0].attack_colls[0].offset.y == before.offset.y);
     ftCustomMoveResetClock(&players[0]); CHECK(ftCustomCollisionGetFrame(&players[0]) == NULL);
-    CHECK(ftCustomCollisionGetFrame(&players[1]) == &sFTCustomCollisionKirbyUTilt[5]);
+    CHECK(ftCustomCollisionGetFrame(&players[1]) == ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindKirby][9], 5));
     return testFalconUAirCollision();
+}
+
+/* All donor definitions, every foreign body, all samples and repeated loops. */
+static s32 testFullCollisionRoster(void)
+{
+    FTStruct fp={0};DObj root={0},limb={0};FTTestAttributes attr={0};
+    const FTCustomMoveDefinition *move;const FTCustomCollisionTrajectory *trajectory;
+    const FTCustomCollisionFrame *frame;FTAttackColl before;
+    s32 body,donor,variant,tick,aid,end,i;
+    gSCManagerSceneData.scene_curr=nSCKindVSBattle;
+    fp.player=0;fp.pkind=nFTPlayerKindCom;fp.attr=&attr;
+    fp.motion_id=nFTCommonMotionAttack11;
+    for(i=0;i<ARRAY_COUNT(fp.joints);i++)fp.joints[i]=&limb;
+    fp.joints[0]=&root;gSCManagerCharBuilderPlayerSlots[0]=0;
+    gSCManagerCharBuilderSlots[0].is_enabled=TRUE;
+    for(body=0;body<12;body++)
+    {
+        fp.fkind=body;attr.size=(body%2)?0.5F:2.0F;
+        gSCManagerCharBuilderSlots[0].body=body;
+        for(donor=0;donor<12;donor++)
+        {
+            if(body==donor)continue;
+            for(i=0;i<SCCHARBUILDER_ATTACKS_COUNT;i++)gSCManagerCharBuilderSlots[0].attacks[i]=donor;
+            for(variant=0;variant<33;variant++)
+            {
+                move=&sFTCustomMoves[donor][variant];trajectory=&sFTCustomCollisionTrajectories[donor][variant];
+                ftCustomMoveStartClock(&fp,move,0);
+                end=(trajectory->loop_period?trajectory->loop_start+trajectory->loop_period*3:move->duration)+2;
+                for(tick=0;tick<end;tick++)
+                {
+                    ftCustomMoveAdvanceClock(&fp,0);
+                    frame=ftCustomCollisionGetFrame(&fp);
+                    if(move->duration<=0){CHECK(frame==NULL);continue;}
+                    CHECK(frame==ftCustomCollisionSample(trajectory,tick));
+                    for(aid=0;aid<4;aid++)
+                    {
+                        fp.attack_colls[aid]=(FTAttackColl){0};
+                        fp.attack_colls[aid].attack_state=nGMAttackStateInterpolate;
+                        fp.attack_colls[aid].joint=&limb;fp.attack_colls[aid].joint_id=23;
+                        fp.attack_colls[aid].offset=(Vec3f){123,456,789};
+                        fp.attack_colls[aid].size=137;fp.attack_colls[aid].damage=11;fp.attack_colls[aid].group_id=3;
+                        fp.attack_colls[aid].pos_prev=(Vec3f){4,5,6};fp.attack_colls[aid].pos_curr=(Vec3f){7,8,9};
+                    }
+                    limb.translate.vec.f.x=tick*1000;before=fp.attack_colls[0];
+                    ftCustomCollisionApply(&fp);ftCustomCollisionApply(&fp);
+                    CHECK(ftCustomCollisionGetFrame(&fp)==frame);
+                    for(aid=0;aid<4;aid++)
+                    {
+                        FTAttackColl *attack=&fp.attack_colls[aid];
+                        CHECK(attack->size==137 && attack->damage==11 && attack->group_id==3);
+                        CHECK(attack->attack_state==nGMAttackStateInterpolate);
+                        CHECK(attack->pos_prev.x==4 && attack->pos_curr.x==7);
+                        if(frame && (frame->active_mask&(1<<aid)))
+                        {
+                            CHECK(attack->joint==&root && attack->joint_id==0 && !attack->is_scale_pos);
+                            CHECK(collisionNear(attack->offset.x*attr.size,frame->centers[aid].x));
+                            CHECK(collisionNear(attack->offset.y*attr.size,frame->centers[aid].y));
+                            CHECK(collisionNear(attack->offset.z*attr.size,frame->centers[aid].z));
+                        }
+                        else CHECK(attack->joint==&limb && attack->offset.x==before.offset.x);
+                    }
+                    if(!trajectory->loop_period && tick>=move->duration)CHECK(!frame || !frame->active_mask);
+                }
+                fp.status_id++;CHECK(ftCustomCollisionGetFrame(&fp)==NULL);fp.status_id--;
+                ftCustomMoveResetClock(&fp);
+            }
+        }
+    }
+    /* Luigi's source ends with a backward absolute wait: the head hit and
+       clear execute together at 44. It must not leave a head hit through 60. */
+    CHECK(ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindLuigi][2],3)->active_mask==1);
+    CHECK(ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindLuigi][2],4)->active_mask==1);
+    CHECK(ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindLuigi][2],44)->active_mask==0);
+    CHECK(ftCustomCollisionSample(&sFTCustomCollisionTrajectories[nFTKindLuigi][2],59)->active_mask==0);
+    /* Other clock users must not index the normal registry. */
+    ftCustomMoveStartClock(&fp,&sFTCustomGrabMoves[0],0);CHECK(ftCustomCollisionGetFrame(&fp)==NULL);
+    return 0;
 }

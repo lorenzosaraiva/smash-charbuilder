@@ -60,6 +60,6 @@ Next: finish rendered acceptance of these three moves, then cover angled variant
 
 The newer [collision milestone](collision-trajectories.md) separates collision
 lookup from Mario pose lookup. These three paths now work on every foreign body,
-alongside Kirby up-tilt. Their animation coverage remains Mario-only; the original
+alongside the complete normal-attack trajectory catalog. Their animation coverage remains Mario-only; the original
 pilot byte layout is preserved. Current expanded geometry and lifecycle results
 are recorded in the collision guide.

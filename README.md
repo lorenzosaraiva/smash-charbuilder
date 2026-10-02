@@ -39,12 +39,12 @@ after successful pushes to `main` still need the one-time
 In Training, press **Start -> View -> HITBOX** to see attack and hurtbox outlines.
 Presets in this version last for the running ROM session.
 
-Most combinations still use the body's animation. Original donor hitbox paths now
-work across bodies for **Kirby up-tilt**, **Falcon up-air/down-air**, **Fox straight forward
-tilt** and **DK straight forward smash**. The three Mario animation pilots remain
-available. Other attacks use mapped body joints with donor values/timing; full
-coverage is unfinished. See the [collision guide](ssb-decomp-re/docs/collision-trajectories.md)
-and [checklist](ssb-decomp-re/docs/status.md).
+Every normal donor attack now uses its original hitbox path, size, active timing,
+damage and knockback on the other bodies, including angled variants and landing
+hitboxes. Most visible animations still belong to the body; the three Mario
+animation pilots remain available. See the
+[collision guide](ssb-decomp-re/docs/collision-trajectories.md) and
+[checklist](ssb-decomp-re/docs/status.md). Broader in-game acceptance is pending.
 
 ## Build from this folder
 

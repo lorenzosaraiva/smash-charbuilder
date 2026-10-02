@@ -27,5 +27,5 @@ The Sonic creator hook previously edited inside the upstream dependency is now
 versioned in `remix/smashremix_overwrite/Sonic/SonicSpecial.asm`.
 
 The repository migration changed source ownership and build paths. Subsequent
-gameplay work now includes the DK/Kirby collision-only milestone; animation
-expansion remains pending. See the [current checklist](status.md).
+gameplay work now includes original donor collision paths for the complete
+normal roster; visible animation expansion remains pending. See the [current checklist](status.md).

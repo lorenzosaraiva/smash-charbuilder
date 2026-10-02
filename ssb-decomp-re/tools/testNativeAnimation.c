@@ -39,7 +39,9 @@ struct DObj
 typedef struct { s32 unused; } FTParts;
 struct DObjDesc { s32 id; void *dl; Vec3f translate,rotate,scale; };
 typedef struct OracleHit { s32 joint; Vec3f offset; sb32 scaled; } OracleHit;
-static AObj pool[320]; static s32 allocated;
+typedef struct OracleEvent { s32 kind,value,aid,joint; Vec3f offset; sb32 scaled; } OracleEvent;
+typedef struct OracleHidden { s32 joint,parent,partindex,kind; } OracleHidden;
+static AObj pool[640]; static s32 allocated;
 static void quit(s32 result) { __asm__ volatile("int $0x80" : : "a"(1),"b"(result):"memory"); __builtin_unreachable(); }
 AObj* gcAddAObjForDObj(DObj *dobj,s32 track)
 {
@@ -61,59 +63,130 @@ static void output(void *data,u32 size)
     __asm__ volatile("int $0x80":"=a"(written):"a"(4),"b"(1),"c"(data),"d"(size):"memory");
     if (written != size) quit(102);
 }
-static void dump(DObjDesc *bind,AObjEvent32 **table,s32 joints,s32 frames,s32 table_count)
+/* Independently construct the donor tree using native setup/hidden-part rules.
+   Binding precedes TransN detachment, as in ftMainSetStatus. */
+static void append(DObj *parent,DObj *child)
 {
-    DObj joint={0}; GObj gobj={0}; f32 values[9]; s32 i,frame;
-    for (i=0;i<joints;i++)
+    DObj *last=parent->child;
+    if (last==NULL) parent->child=child;
+    else { while(last->sib_next!=NULL)last=last->sib_next;last->sib_next=child; }
+    child->parent=parent;
+}
+static s32 bindTree(DObj *joint,AObjEvent32 **table,s32 count,s32 slot)
+{
+    while(joint!=NULL)
     {
-        allocated=0;joint=(DObj){0};joint.parent_gobj=&gobj;
-        joint.anim_speed=1;joint.anim_wait=AOBJ_ANIM_CHANGED;
-        joint.anim_joint.event16=(i<table_count)?(void*)table[i]:NULL;
-        if (joint.anim_joint.event16==NULL) joint.anim_wait=AOBJ_ANIM_NULL;
-        joint.rotate.vec.f=bind[i].rotate;joint.translate.vec.f=bind[i].translate;joint.scale.vec.f=bind[i].scale;
-        for (frame=0;frame<frames;frame++)
+        joint->anim_joint.event16=(slot<count)?(void*)table[slot]:NULL;slot++;
+        joint->anim_wait=joint->anim_joint.event16?AOBJ_ANIM_CHANGED:AOBJ_ANIM_NULL;
+        if (joint->child!=NULL)slot=bindTree(joint->child,table,count,slot);
+        joint=joint->sib_next;
+    }
+    return slot;
+}
+static void dump(DObjDesc *bind,AObjEvent32 **table,s32 table_count,u32 setup0,u32 setup1,
+                 OracleHidden *hidden,s32 hidden_count,u32 flags,Vec3f *scales,
+                 s32 frames,const OracleEvent *events,f32 size)
+{
+    DObj joints[40]={0},*ancestors[18]={0},*joint,*parent;
+    sb32 enabled[40]={0};
+    GObj gobj={0};Mtx44f matrix;Vec3f centers[4];f32 values[9];
+    s32 i,j,depth,frame,aid,wait=0,guard;
+    u32 mask;
+    OracleHit hits[4]={{-1},{-1},{-1},{-1}};
+    const OracleEvent *event=events;
+    allocated=0;
+    for (i=0;i<40;i++)
+    {
+        joints[i].parent_gobj=&gobj;joints[i].anim_speed=1;
+        joints[i].scale.vec.f=(Vec3f){1,1,1};joints[i].anim_wait=AOBJ_ANIM_NULL;
+    }
+    for (i=0;bind[i].id!=18;i++)
+    {
+        if (i>=36)quit(103);
+        if (!((i<32?setup0:setup1)&(1U<<(31-i%32))))continue;
+        depth=bind[i].id&0xfff;j=i+4;joint=&joints[j];enabled[j]=TRUE;
+        if (depth && ancestors[depth-1]==NULL)quit(104);
+        append(depth?ancestors[depth-1]:&joints[0],joint);ancestors[depth]=joint;
+    }
+    for (i=0;i<hidden_count;i++)
+    {
+        if (!(flags&(1U<<(31-i))))continue;
+        j=hidden[i].joint;joint=&joints[j];parent=&joints[hidden[i].parent];
+        if (enabled[j])quit(105);
+        enabled[j]=TRUE;joint->parent=parent;
+        switch(hidden[i].kind)
         {
-            ftAnimParseDObjFigatree(&joint);gcPlayDObjAnimJoint(&joint);
-            values[0]=joint.rotate.vec.f.x;values[1]=joint.rotate.vec.f.y;values[2]=joint.rotate.vec.f.z;
-            values[3]=joint.translate.vec.f.x;values[4]=joint.translate.vec.f.y;values[5]=joint.translate.vec.f.z;
-            values[6]=joint.scale.vec.f.x;values[7]=joint.scale.vec.f.y;values[8]=joint.scale.vec.f.z;
-            output(values,sizeof(values));
+        case 0:append(parent,joint);break;
+        case 1:joint->sib_next=parent->child;parent->child=joint;break;
+        case 2:joint->sib_next=parent->child->sib_next;parent->child->sib_next=joint;break;
+        case 3:
+            joint->child=parent->child;parent->child=joint;
+            for(parent=joint->child;parent!=NULL;parent=parent->sib_next)parent->parent=joint;
+            break;
+        default:quit(106);
         }
     }
-}
-static void dumpGeometry(DObjDesc *bind,AObjEvent32 **table,s32 joints_count,s32 frames,s32 table_count,OracleHit (*hits)[4],f32 size)
-{
-    DObj joints[32],*ancestors[18],*parent;
-    GObj gobj={0}; Mtx44f matrix; Vec3f centers[4];
-    s32 i,frame,aid,depth;
-    allocated=0;
-    for (i=0;i<joints_count;i++)
+    for (j=4;j<40;j++)if(enabled[j])
     {
-        DObj *joint=&joints[i];*joint=(DObj){0};joint->parent_gobj=&gobj;
-        joint->anim_speed=1;joint->anim_wait=AOBJ_ANIM_CHANGED;
-        joint->anim_joint.event16=(i<table_count)?(void*)table[i]:NULL;
-        if (joint->anim_joint.event16==NULL) joint->anim_wait=AOBJ_ANIM_NULL;
-        joint->rotate.vec.f=bind[i].rotate;joint->translate.vec.f=bind[i].translate;joint->scale.vec.f=bind[i].scale;
-        depth=bind[i].id; joint->parent=depth?ancestors[depth-1]:NULL;ancestors[depth]=joint;
+        joints[j].rotate.vec.f=bind[j-4].rotate;joints[j].translate.vec.f=bind[j-4].translate;joints[j].scale.vec.f=bind[j-4].scale;
+    }
+    bindTree(joints[0].child,table,table_count,0);
+    if (enabled[1])
+    {
+        joint=&joints[1];parent=joint->parent;parent->child=joint->child;
+        for (parent=joint->child;parent!=NULL;parent=parent->sib_next)parent->parent=joint->parent;
+        joint->child=NULL;
     }
     for (frame=0;frame<frames;frame++)
     {
-        for (i=0;i<joints_count;i++) { ftAnimParseDObjFigatree(&joints[i]);gcPlayDObjAnimJoint(&joints[i]); }
+        if(frame)wait--;
+        guard=0;
+        /* The native sync wait adds to script_wait; async wait replaces it
+           with target - current frame. A negative wait executes immediately. */
+        while(event!=NULL && wait<=0)
+        {
+            if(++guard>10000)quit(108);
+            switch(event->kind)
+            {
+            case 0:event=NULL;continue;
+            case 1:wait+=event->value;break;
+            case 2:wait=event->value-frame;break;
+            case 3:hits[event->aid]=(OracleHit){event->joint,event->offset,event->scaled};break;
+            case 4:for(aid=0;aid<4;aid++)hits[aid].joint=-1;break;
+            case 5:hits[event->aid].joint=-1;break;
+            case 6:if(hits[event->aid].joint>=0)hits[event->aid].offset=event->offset;break;
+            case 7:event=events;continue;
+            default:quit(109);
+            }
+            event++;
+        }
+        for (j=1;j<40;j++)if(enabled[j])
+        {
+            joint=&joints[j];ftAnimParseDObjFigatree(joint);
+            if (scales!=NULL)lbCommonPlayTranslateScaledDObjAnim(joint,&scales[j]);
+            else gcPlayDObjAnimJoint(joint);
+            values[0]=joint->rotate.vec.f.x;values[1]=joint->rotate.vec.f.y;values[2]=joint->rotate.vec.f.z;
+            values[3]=joint->translate.vec.f.x;values[4]=joint->translate.vec.f.y;values[5]=joint->translate.vec.f.z;
+            values[6]=joint->scale.vec.f.x;values[7]=joint->scale.vec.f.y;values[8]=joint->scale.vec.f.z;
+            output(values,sizeof(values));
+        }
+        mask=0;
         for (aid=0;aid<4;aid++)
         {
-            OracleHit *hit=&hits[frame][aid]; centers[aid]=(Vec3f){0};
-            if (hit->joint<0) continue;
+            OracleHit *hit=&hits[aid];centers[aid]=(Vec3f){0};
+            if (hit->joint<0)continue;
+            mask|=1U<<aid;
+            if (hit->joint && !enabled[hit->joint])quit(107);
             centers[aid]=hit->offset;
-            if (hit->scaled) { centers[aid].x/=size;centers[aid].y/=size;centers[aid].z/=size; }
-            parent=hit->joint?&joints[hit->joint-4]:NULL;
-            while (parent!=NULL)
+            if (hit->scaled){centers[aid].x/=size;centers[aid].y/=size;centers[aid].z/=size;}
+            parent=hit->joint?&joints[hit->joint]:NULL;
+            while(parent!=NULL && parent!=&joints[0])
             {
-                gmCollisionTransformMatrixAll(parent,NULL,matrix);
-                gmCollisionGetWorldPosition(matrix,&centers[aid]);parent=parent->parent;
+                gmCollisionTransformMatrixAll(parent,NULL,matrix);gmCollisionGetWorldPosition(matrix,&centers[aid]);parent=parent->parent;
             }
             centers[aid].x*=size;centers[aid].y*=size;centers[aid].z*=size;
         }
-        output(centers,sizeof(centers));
+        output(centers,sizeof(centers));output(&mask,sizeof(mask));
     }
 }
 /* Compare donor reach with compensated target TopN using original matrices. */

@@ -8,7 +8,7 @@ from generateCustomMoves import MAPS, ROSTER
 from verifyCustomMoveData import verify_sources
 from elfData import read_elf
 from customMoveTiming import animation_duration
-from generateCustomCollisions import COLLISION_PILOTS, frames_for
+from generateCustomCollisions import catalog, stored_frames
 
 ROOT = Path(__file__).resolve().parents[1]
 rom = (ROOT/'build/smashbrothers.us.z64').read_bytes()
@@ -113,36 +113,37 @@ for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     assert pattern in rom,name+' missing from ROM'
     animation_bytes += length
 print('PASS: all three linked Mario animation pilots match host-tested poses and donor hitbox trajectories ('+str(animation_bytes)+' bytes).')
-collision_bytes = 0
-for fighter,motion,animation,label in COLLISION_PILOTS:
-    name = 'sFTCustomCollision'+label
-    address,length,index = host_symbols[name]
-    assert length == len(frames_for(fighter,motion,animation))*52
-    start = host_sections[index][4]+address-host_sections[index][3]
-    words = struct.unpack_from('<'+str(length//4)+'I',host,start)
-    pattern = struct.pack('>'+str(length//4)+'I',*words)
-    address,linked_length,index = symbols[name]
-    start = sections[index][4]+address-sections[index][3]
-    assert linked_length == length and elf[start:start+length] == pattern and pattern in rom,name
-    collision_bytes += length
-name = 'sFTCustomCollisionTrajectories'
-address,length,index = host_symbols[name]
-start = host_sections[index][4]+address-host_sections[index][3]
-host_records = struct.unpack_from('<'+str(length//4)+'I',host,start)
-address,linked_length,index = symbols[name]
-start = sections[index][4]+address-sections[index][3]
-linked_records = struct.unpack_from('>'+str(length//4)+'I',elf,start)
-assert linked_length == length and host_records[2::4] == linked_records[2::4] and host_records[3::4] == linked_records[3::4]
-for i in range(0,len(host_records),4):
-    assert linked_records[i]-symbols['sFTCustomMoves'][0] == host_records[i]-host_symbols['sFTCustomMoves'][0]
-    for target,(value,size,_) in host_symbols.items():
-        if not target.startswith(('sFTCustomAnimation','sFTCustomCollision')) or target == name: continue
-        if value <= host_records[i+1] < value+size:
-            assert linked_records[i+1]-symbols[target][0] == host_records[i+1]-value,target
-            break
-    else: raise AssertionError('Registry frame pointer does not target a checked trajectory')
-assert elf[start:start+length] in rom, 'Trajectory registry missing from ROM'
-print(f'PASS: linked collision-only trajectories ({collision_bytes} bytes) and shared donor-move registry match host-tested data.')
+collision_bytes=0
+cases,rows=catalog()
+for case_id,case in enumerate(cases):
+    first,frames=stored_frames(case_id)
+    if not frames:continue
+    name='sFTCustomCollision'+case['label']
+    address,length,index=host_symbols[name]
+    assert length==len(frames)*52
+    start=host_sections[index][4]+address-host_sections[index][3]
+    words=struct.unpack_from('<'+str(length//4)+'I',host,start)
+    pattern=struct.pack('>'+str(length//4)+'I',*words)
+    address,linked_length,index=symbols[name]
+    start=sections[index][4]+address-sections[index][3]
+    assert linked_length==length and elf[start:start+length]==pattern and pattern in rom,name
+    collision_bytes+=length
+name='sFTCustomCollisionTrajectories'
+address,length,index=host_symbols[name]
+assert length==12*33*20
+start=host_sections[index][4]+address-host_sections[index][3]
+host_records=struct.unpack_from('<'+str(length//4)+'I',host,start)
+address,linked_length,index=symbols[name]
+start=sections[index][4]+address-sections[index][3]
+linked_records=struct.unpack_from('>'+str(length//4)+'I',elf,start)
+assert linked_length==length
+for i in range(0,len(host_records),5):
+    assert host_records[i+1:i+5]==linked_records[i+1:i+5]
+    if not host_records[i]:assert linked_records[i]==0;continue
+    target=next(n for n,(v,_,_) in host_symbols.items() if n.startswith('sFTCustomCollision') and v==host_records[i])
+    assert linked_records[i]==symbols[target][0],target
+assert elf[start:start+length] in rom,'Trajectory registry missing from ROM'
+print(f'PASS: full normal collision paths ({collision_bytes} bytes) and all 396 direct registry entries match host-tested data.')
 print('PASS: 396 normal and 12 grab collision tables, all 36 two-part throw definitions, joint maps, grab timings, creator/assignment/training code and N64 CRC are in the ROM.')
 print('PASS: selectable neutral dispatch, bounded laser scripts/durations and DK immediate throw dispatch are linked in the ROM.')
 print('ROM bytes:',len(rom))

@@ -369,6 +369,7 @@ void _start(void)
     s32 result = testCustomMove();
     if (result == 0) result = testCustomAnimation();
     if (result == 0) result = testCustomCollision();
+    if (result == 0) result = testFullCollisionRoster();
     if (result == 0) result = testCharBuilderNeutral();
     if (result == 0) result = testCharBuilderThrow();
     if (result != 0)

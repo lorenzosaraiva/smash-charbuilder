@@ -1,30 +1,36 @@
 /* Collision lookup never reads or changes the target body's animated limbs. */
 typedef struct FTCustomCollisionTrajectory
 {
-    const FTCustomMoveDefinition *move;
     const FTCustomCollisionFrame *frames;
-    s32 count, stride;
+    s32 first, count, loop_start, loop_period;
 } FTCustomCollisionTrajectory;
 
 #include "ftcustomcollisions.generated.inc"
 #include "ftcustomcollisionregistry.generated.inc"
+static const FTCustomCollisionFrame sFTCustomCollisionInactive = { { { 0 } }, 0 };
+
+static const FTCustomCollisionFrame* ftCustomCollisionSample(const FTCustomCollisionTrajectory *trajectory, s32 frame)
+{
+    if (trajectory->frames == NULL) return NULL;
+    if (frame < 0) frame = 0;
+    if ((trajectory->loop_period > 0) && (frame >= trajectory->loop_start))
+        frame = trajectory->loop_start + (frame - trajectory->loop_start) % trajectory->loop_period;
+    frame -= trajectory->first;
+    if ((frame < 0) || (frame >= trajectory->count)) return &sFTCustomCollisionInactive;
+    return &trajectory->frames[frame];
+}
 
 static const FTCustomCollisionFrame* ftCustomCollisionGetFrame(FTStruct *fp)
 {
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
-    const FTCustomCollisionTrajectory *trajectory;
-    s32 frame, i;
+    u32 offset, index;
     if ((clock == NULL) || (ftCustomMoveGetSlot(fp) == NULL)) return NULL;
-    frame = (s32)clock->frame;
-    if (frame < 0) frame = 0;
-    for (i = 0; i < ARRAY_COUNT(sFTCustomCollisionTrajectories); i++)
-    {
-        trajectory = &sFTCustomCollisionTrajectories[i];
-        if (clock->move != trajectory->move) continue;
-        if (frame >= trajectory->count) frame = trajectory->count - 1;
-        return (const FTCustomCollisionFrame*)((const u8*)trajectory->frames + frame * trajectory->stride);
-    }
-    return NULL;
+    /* Integer bounds avoid subtracting pointers from different objects: grab
+       and special definitions share the clock but are outside the normal table. */
+    offset = (u32)clock->move - (u32)sFTCustomMoves;
+    if ((offset >= sizeof(sFTCustomMoves)) || (offset % sizeof(FTCustomMoveDefinition))) return NULL;
+    index = offset / sizeof(FTCustomMoveDefinition);
+    return ftCustomCollisionSample(&sFTCustomCollisionTrajectories[index / 33][index % 33], (s32)clock->frame);
 }
 
 static void ftCustomCollisionApply(FTStruct *fp)

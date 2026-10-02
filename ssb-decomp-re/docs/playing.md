@@ -49,7 +49,11 @@ same body, or share a build.
 
 ## Expectations
 
-To try the collision milestone, choose **DK Body -> Up Tilt: Kirby**, then
+Normal attacks now follow their donor collision paths on every body, including
+angled variants, weapon/tail attacks, multihits and landing hitboxes. The body
+keeps its visible pose outside the three Mario animation pilots.
+
+For an easy comparison, choose **DK Body -> Up Tilt: Kirby**, then
 **Test in Training -> View: HITBOX**. The two hitboxes follow Kirby's original
 up-tilt path and duration while DK keeps his own pose. The same donor path also
 works on the other bodies. Compare with a vanilla Kirby up-tilt at the same

@@ -27,15 +27,15 @@ and animations do not have Character Lab's full donor timing/trajectory system.
 ## Gameplay order
 
 - [x] Shared collision trajectories independent of visible body animations.
-- [x] Kirby up-tilt, Falcon up-air/down-air, Fox straight forward tilt and DK straight
-  forward smash trajectories on all other original-roster bodies.
-- [x] Generated donor-move registry: one trajectory enables every foreign body.
+- [x] Complete normal-attack path catalog for all twelve donors and bodies,
+  including angled variants, landing collisions and body-supported jab phases.
+- [x] Direct donor/variant registry with shared trajectory data and loop handling.
+- [x] Original animation/matrix checks for every resolved donor timeline.
 - [ ] In-game comparison with vanilla donors, including contact and interruptions.
-- [ ] Expand original trajectories to every normal attack and variant.
 
 1. **Original normal-attack collisions and timing.** Reproduce donor hitbox paths
    and sizes relative to fighter position/facing, independent of body proportions.
-   Start with DK using Kirby's up-tilt, then expand across bodies and attacks.
+   Full source coverage is implemented; finish rendered/gameplay acceptance.
 2. **Donor animations on each body.** Use the collision clock for visible poses.
 3. **Neutral specials, excluding Kirby's copy system.** Include projectiles,
    charging, movement, ground/air transitions and recovery.
@@ -46,5 +46,5 @@ Also track multihits/refresh rules, jab chains, aerial landing lag, hitlag and
 interruption cleanup, donor movement and move-specific behavior such as Link's
 down-air bounce. Body hurtboxes remain the initial policy.
 
-Full trajectory and animation coverage remains unfinished. See the detailed
-checklist for implementation coverage and pending in-game acceptance.
+Normal trajectory generation is complete. Visible animations, donor-specific
+mechanics and in-game acceptance remain on the detailed checklist.

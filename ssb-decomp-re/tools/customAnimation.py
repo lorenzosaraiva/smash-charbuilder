@@ -1,4 +1,4 @@
-"""Native US figatree decoding and matrix helpers for the retargeting pilot."""
+"""Native US figatree decoding and matrix helpers for shared donor collision paths."""
 from dataclasses import dataclass
 from functools import lru_cache
 import math
@@ -38,6 +38,7 @@ def model(fighter):
     assert result,fighter
     return result
 
+@lru_cache(None)
 def source_size(fighter):
     text = next((ROOT/'src/relocData').glob('*_'+fighter+'Main.c')).read_text()
     # Keep comments for locating the attribute; select the US conditional.
@@ -51,7 +52,11 @@ def source_size(fighter):
             parent,cond=stack[-1];active=parent and not cond
         elif line.lstrip().startswith('#endif'): active=stack.pop()[0]
         elif active: lines.append(line)
-    return float(re.search(r'([\d.]+)f?,\s*/\* size \*/','\n'.join(lines))[1])
+    selected='\n'.join(lines)
+    selected=selected[re.search(r'FTAttributes\s+\w+\s*=\s*\{',selected).end():]
+    size=float(re.search(r'([\d.]+)f?,\s*/\* size \*/',selected)[1])
+    assert 0.25<=size<=2,(fighter,'invalid fighter size',size)
+    return size
 
 @lru_cache(None)
 def animation(name):
@@ -68,12 +73,18 @@ def encode(body):
             'SetVal0Rate':8,'SetValAfterBlock':9,'SetValAfter':10,'SetFlags':14}
     def macro(m):
         op=m[1];args=[v.strip() for v in m[2].split(',') if v.strip()]
+        if op=='Loop': return ','.join(args)
         toggle=op.endswith('T') or op=='Block'
         if op.endswith('T'):op=op[:-1]
         assert op in macros,op
         flags=0 if not args else sum(1<<TRACKS.index(flag.strip().removeprefix('FT_ANIM_')) for flag in args[0].split('|') if flag.strip()!='0')
         command=(macros[op]<<11)|(flags<<1)|toggle
         return str(command)+(','+args[1] if toggle else '')
+    def raw(m):
+        op,flags,toggle=[v.strip() for v in m[1].split(',')]
+        mask=sum(1<<TRACKS.index(v.strip().removeprefix('FT_ANIM_')) for v in flags.split('|') if v.strip()!='0')
+        return str((int(op)<<11)|(mask<<1)|int(toggle))
+    body=re.sub(r'_FT_ANIM_CMD\(([^()]*)\)',raw,body)
     body=re.sub(r'ftAnim(\w+)\(([^()]*)\)',macro,body)
     return [int(v.strip(),0)&65535 for v in body.split(',') if v.strip()]
 
@@ -92,6 +103,9 @@ class JointPlayback:
             while self.wait<=0:
                 word=self.words[self.cursor];self.cursor+=1
                 op=word>>11;mask=(word>>1)&1023;toggle=word&1
+                if op==13:
+                    self.cursor+=signed(self.words[self.cursor])//2
+                    continue
                 payload=self.words[self.cursor] if toggle else 0
                 self.cursor+=toggle
                 if op==0:
@@ -100,6 +114,12 @@ class JointPlayback:
                     for track in self.tracks.values():track['length']+=1+self.wait
                     break
                 if op in (1,14):self.wait+=payload;continue
+                if op==11:
+                    for i in range(10):
+                        if mask&(1<<i):
+                            track=self.tracks.setdefault(i,dict(kind=0,base=0,target=0,rate=0,target_rate=0,invert=0,length=0))
+                            track['length']+=payload
+                    continue
                 assert op in (2,3,4,5,6,7,8,9,10),op
                 for i in range(10):
                     if not mask&(1<<i):continue
@@ -123,6 +143,7 @@ class JointPlayback:
                     track['length']=-self.wait-1
                 if op in (2,4,7,9):self.wait+=payload
         for i,t in self.tracks.items():
+            if not t['kind']: continue
             if not self.ended:t['length']+=1
             length=t['length']
             if t['kind']==1: value=t['target'] if length>=t['invert'] else t['base']
@@ -134,11 +155,93 @@ class JointPlayback:
             self.values[i]=f32(value)
         return tuple(self.values)
 
-def sample(fighter,name,frames):
-    bones=model(fighter);path,scripts=animation(name)
-    assert set(scripts)<=set(bones),(fighter,name,set(scripts)-set(bones))
+@lru_cache(None)
+def attributes(fighter):
+    text=us_text(next((ROOT/'src/relocData').glob('*_'+fighter+'Main.c')).read_text())
+    setup=next(b for n,b in arrays(text,'u32').items() if 'setup_parts' in n)
+    setup=[int(v.strip(),0) for v in setup.split(',') if v.strip()]
+    hidden=next(iter(arrays(text,'FTHiddenPart').values()))
+    hidden=[tuple(int(v.strip(),0) for v in row.split(',')) for row in re.findall(r'\{([^}]+)\}',hidden)]
+    scales=next((b for n,b in arrays(text,'Vec3f').items() if 'translate_scales' in n),None)
+    scales=[] if scales is None else [tuple(float(v.strip().rstrip('fF')) for v in row.split(',')) for row in re.findall(r'\{([^}]+)\}',scales)]
+    return setup,hidden,scales
+
+
+@lru_cache(None)
+def flag_word(flags):
+    defines=dict(re.findall(r'#define\s+(FTANIM_FLAG_\w+)\s+(0x[0-9A-Fa-f]+|0)\b',(ROOT/'src/ft/ftdef.h').read_text()))
+    return sum(int(defines.get(v.strip(),v.strip()),0) for v in flags.split('|'))
+
+
+@lru_cache(None)
+def rig(fighter,flags=0):
+    """Engine setup_parts, hidden-part insertion and figatree traversal order.
+
+    TransN is bound before being detached: its translation drives movement,
+    and must not be counted again in the fighter-relative hitbox center.
+    """
+    source=model(fighter);setup,hidden,_=attributes(fighter)
+    children={0:[]};bones={};stack={}
+    for i,(j,b) in enumerate(source.items()):
+        # Depth is reconstructed from the complete descriptor, but only enabled
+        # nodes update the native setup traversal's depth stack.
+        depth=0;p=b.parent
+        while p: depth+=1;p=source[p].parent
+        if not setup[i//32]&(1<<(31-i%32)): continue
+        parent=stack[depth-1] if depth else 0
+        bones[j]=Bone(parent,b.translate,b.rotate,b.scale,b.display)
+        children.setdefault(parent,[]).append(j);children[j]=[];stack[depth]=j
+    for i,(joint,parent,partindex,kind) in enumerate(hidden):
+        if not flags&(1<<(31-i)): continue
+        assert joint not in bones and parent in children,(fighter,flags,joint,parent)
+        original=source.get(joint,Bone(parent,(0,0,0),(0,0,0),(1,1,1),False))
+        bones[joint]=Bone(parent,original.translate,original.rotate,original.scale,original.display)
+        children[joint]=[]
+        if kind==3:
+            children[joint]=children[parent];children[parent]=[joint]
+            for child in children[joint]:bones[child].parent=joint
+        elif kind==0:children[parent].append(joint)
+        elif kind==1:children[parent].insert(0,joint)
+        elif kind==2:children[parent].insert(1,joint)
+        else:raise ValueError(kind)
+    assert flags&~0x1f == sum(1<<(31-i) for i in range(len(hidden)) if flags&(1<<(31-i))), (fighter,flags)
+    order=[]
+    def visit(parent):
+        for child in children[parent]:order.append(child);visit(child)
+    visit(0)
+    if 1 in bones:
+        for child in children[1]:bones[child].parent=bones[1].parent
+    # Parent-before-child order for FK differs from binding order when TransN
+    # was detached. It stays a leaf and its own original script is retained.
+    pending=dict(bones);ordered={}
+    while pending:
+        for j,b in list(pending.items()):
+            if b.parent==0 or b.parent in ordered:ordered[j]=b;del pending[j]
+    return ordered,tuple(order)
+
+
+def animation_scripts(fighter,name,flags=0):
+    path,raw=animation(name);bones,order=rig(fighter,flags)
+    assert not set(raw)-set(range(4,4+len(order))), (fighter,name,len(order),set(raw))
+    return {order[i-4]:words for i,words in raw.items()}
+
+
+def sample(fighter,name,frames,flags=0):
+    bones,_=rig(fighter,flags);scripts=animation_scripts(fighter,name,flags)
     players={joint:JointPlayback(words,bones[joint]) for joint,words in scripts.items()}
-    return [{j:players[j].play(frame) if j in players else (*b.rotate,0,*b.translate,*b.scale) for j,b in bones.items()} for frame in range(frames)]
+    scales=attributes(fighter)[2] if not flags&4 else []
+    result=[]
+    for frame in range(frames):
+        pose={j:players[j].play(frame) if j in players else (*b.rotate,0,*b.translate,*b.scale) for j,b in bones.items()}
+        for j,player in players.items():
+            if not scales:continue
+            values=list(pose[j])
+            for channel in (4,5,6):
+                if channel in player.tracks and player.tracks[channel]['kind']:
+                    values[channel]=f32(values[channel]*f32(scales[j][channel-4]))
+            pose[j]=tuple(values)
+        result.append(pose)
+    return result
 
 def rotation(r):
     x,y,z=r;sx,sy,sz=map(math.sin,r);cx,cy,cz=map(math.cos,r)
