@@ -1,5 +1,14 @@
 # Changes
 
+## Falcon up-air and shared move registration — 2026-10-02
+
+- Falcon up-air follows its original collision path on Kirby and all other bodies,
+  preserving damage/knockback phases, active windows, recovery and landing timing.
+- Generated donor-move registry replaces individual runtime move branches.
+  One donor trajectory serves every body; native verification expands from the
+  same move catalog, including multiple attacks from one donor.
+- Updated documentation/checklists and checked ROM/ZIP release.
+
 ## Donor collision paths — 2026-10-02
 
 - Kirby up-tilt uses its original hitbox path on DK and every other foreign body.

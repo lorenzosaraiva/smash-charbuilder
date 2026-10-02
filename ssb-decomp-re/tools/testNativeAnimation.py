@@ -7,7 +7,7 @@ from customAnimation import ROOT, PILOTS, model, sample, animation,source_size
 from generateCustomAnimations import collision_definitions,collision_frames
 from customMoveTiming import animation_duration
 from auditNormalMoves import arrays,us_text,ROSTER
-from generateCustomCollisions import COLLISION_PILOTS
+from generateCustomCollisions import COLLISION_PILOTS, frames_for
 
 ORACLE_CASES = (*PILOTS, *COLLISION_PILOTS)
 
@@ -24,20 +24,32 @@ def main():
     native=function((ROOT/'src/sys/objanim.c').read_text(),'gcPlayDObjAnimJoint')
     collision=(ROOT/'src/gm/gmcollision.c').read_text()
     output=[macros,native,function(collision,'gmCollisionTransformMatrixAll'),function(collision,'gmCollisionGetWorldPosition')]
+    seen_models=set();pose_calls=[];geometry_calls=[];placement_calls=[]
     for fighter,motion,name,index in ORACLE_CASES:
         path,_=animation(name)
         output.append('#include "../src/relocData/'+path.name+'"')
         text=us_text(next((ROOT/'src/relocData').glob('*_'+fighter+'Model.c')).read_text())
         body=next(body for label,body in arrays(text,'DObjDesc').items() if label.endswith('JointTree'))
         body=re.sub(r'\(void\*\)\w+','NULL',body)
-        output.append('static DObjDesc sOracle'+fighter+'Bind[] = { '+body+' };')
+        if fighter not in seen_models:
+            output.append('static DObjDesc sOracle'+fighter+'Bind[] = { '+body+' };')
+            seen_models.add(fighter)
         frames=animation_duration('&ll'+name+'FileID')+1
-        output.append('static OracleHit sOracle'+fighter+'Hits[][4] = {')
+        hit_symbol='sOracle'+name+'Hits'
+        output.append('static OracleHit '+hit_symbol+'[][4] = {')
         for active in collision_definitions(fighter,motion,frames):
             output.append('{ '+', '.join('{ '+str(active[aid][0])+', { '+', '.join(str(v) for v in active[aid][1])+' }, '+str(int(active[aid][2]))+' }' if aid in active else '{ -1, { 0,0,0 }, 0 }' for aid in range(4))+' },')
         output.append('};')
+        table=next(iter(arrays(us_text(path.read_text()),r'AObjEvent32\s*\*')))
+        arguments=f'sOracle{fighter}Bind,{table},ARRAY_COUNT(sOracle{fighter}Bind)-1,{frames},ARRAY_COUNT({table})'
+        pose_calls.append('dump('+arguments+');')
+        geometry_calls.append('dumpGeometry('+arguments+','+hit_symbol+','+str(source_size(fighter))+'F);')
+    for fighter,motion,name,label in COLLISION_PILOTS:
+        symbol='sFTCustomCollision'+label
+        placement_calls.append('dumpRootPlacement('+symbol+',ARRAY_COUNT('+symbol+'));')
     output.append('static const f32 sOracleBodySizes[] = { '+', '.join(str(source_size(f))+'F' for f in ROSTER)+' };')
     (ROOT/'build/nativeAnimationOracle.inc').write_text('\n'.join(output)+'\n')
+    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+geometry_calls+placement_calls)+'\n')
     subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protector','-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-O1','-Iinclude','-Isrc','-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US','tools/testNativeAnimation.c','-o','build/testNativeAnimation'],cwd=ROOT,check=True)
     raw=subprocess.check_output([str(ROOT/'build/testNativeAnimation')],cwd=ROOT)
     (ROOT/'build/native-animation-poses.bin').write_bytes(raw)
@@ -68,16 +80,18 @@ def main():
                 if mask&(1<<aid):centers_checked+=1
             native_geometry[(fighter,motion)].append(native_centers)
     placement_error=0;placements=0
-    for body in ROSTER:
-        for facing in (-1,1):
-            for frame,(mask,_) in enumerate(collision_frames('Kirby','AttackHi3',sample('Kirby','FTKirbyAnimUTilt',19))):
-                for aid in range(4):
-                    if not mask&(1<<aid):continue
-                    actual=struct.unpack_from('<3f',raw,cursor);cursor+=12
-                    expected=struct.unpack_from('<3f',raw,cursor);cursor+=12
-                    error=max(abs(a-b) for a,b in zip(actual,expected))
-                    placement_error=max(placement_error,error);placements+=1
-                    assert error<0.001,(body,facing,frame,aid,actual,expected)
+    for fighter,motion,name,label in COLLISION_PILOTS:
+        frames=frames_for(fighter,motion,name)
+        for body in ROSTER:
+            for facing in (-1,1):
+                for frame,(mask,_) in enumerate(frames):
+                    for aid in range(4):
+                        if not mask&(1<<aid):continue
+                        actual=struct.unpack_from('<3f',raw,cursor);cursor+=12
+                        expected=struct.unpack_from('<3f',raw,cursor);cursor+=12
+                        error=max(abs(a-b) for a,b in zip(actual,expected))
+                        placement_error=max(placement_error,error);placements+=1
+                        assert error<0.001,(fighter,motion,body,facing,frame,aid,actual,expected)
     assert cursor==len(raw)
     print(f'PASS: {comparisons} scalar pose samples match original ftAnimParseDObjFigatree/gcPlayDObjAnimJoint; maximum error {maximum:.7f}.')
     print(f'PASS: {centers_checked} active hitbox centers match original gmCollision matrix/point transforms; maximum coordinate error {geometry_error:.7f} engine units.')

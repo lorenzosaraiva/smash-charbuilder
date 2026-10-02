@@ -5,16 +5,40 @@ import re
 from customAnimation import ROOT, animation, sample
 from customMoveTiming import animation_duration
 from generateCustomAnimations import collision_frames, vec
-from auditNormalMoves import arrays, enum_values, us_text
+from auditNormalMoves import arrays, enum_values, us_text, SLOTS
 
-COLLISION_PILOTS = (('Kirby', 'AttackHi3', 'FTKirbyAnimUTilt', 'KirbyUTilt'),)
+COLLISION_PILOTS = (('Kirby', 'AttackHi3', 'FTKirbyAnimUTilt', 'KirbyUTilt'),
+                    ('Captain', 'AttackAirHi', 'FTCaptainAnimAttackAirU', 'CaptainUAir'))
 
 
-def frames_for(fighter, motion, name):
+def motion_descriptors(fighter):
     tables = arrays(us_text((ROOT/'src/ft/ftdata.c').read_text()), 'FTMotionDesc')
     ids = enum_values((ROOT/'src/ft/ftdef.h').read_text(), 'FTCommonMotion')
     fields = [x.strip() for x in re.sub(r'[{}]', '', tables['dFT'+fighter+'MotionDescs']).split(',') if x.strip()]
-    desc = fields[ids['nFTCommonMotion'+motion]*3:ids['nFTCommonMotion'+motion]*3+3]
+    return ids, [tuple(fields[i:i+3]) for i in range(0, len(fields), 3)]
+
+
+def trajectory_indices(fighter, motion):
+    """Use the same native missing-variant fallback as the donor move compiler."""
+    ids, descriptors = motion_descriptors(fighter)
+    wanted = descriptors[ids['nFTCommonMotion'+motion]]
+    indices = []
+    for index, candidate in enumerate(m for family in SLOTS.values() for m in family):
+        desc = descriptors[ids['nFTCommonMotion'+candidate]]
+        if desc[0] in ('0', '0x00000000') or desc[1] == '0x80000000':
+            family = next(f for f in SLOTS.values() if candidate in f)
+            desc = next(descriptors[ids['nFTCommonMotion'+m]] for m in family
+                        if descriptors[ids['nFTCommonMotion'+m]][0] not in ('0', '0x00000000')
+                        and descriptors[ids['nFTCommonMotion'+m]][1] != '0x80000000')
+        if desc == wanted:
+            indices.append(index)
+    assert indices, (fighter, motion)
+    return indices
+
+
+def frames_for(fighter, motion, name):
+    ids, descriptors = motion_descriptors(fighter)
+    desc = descriptors[ids['nFTCommonMotion'+motion]]
     assert desc[0] == '&ll'+name+'FileID' and desc[2] == 'FTANIM_FLAG_NONE', (fighter, motion, desc)
     assert re.search(r'NULL,\s*/\* translate_scales \*/', next((ROOT/'src/relocData').glob('*_'+fighter+'Main.c')).read_text()), fighter
     duration = animation_duration(desc[0])
@@ -34,7 +58,20 @@ def main():
         report.append(dict(donor=fighter, motion=motion, animation=animation(name)[0].name,
                            frames=len(frames), active_frames=[i for i, (mask, _) in enumerate(frames) if mask],
                            bytes=len(frames)*52, bodies='all foreign original-roster bodies'))
+    # One generated registry, shared by every target body. Preserve the existing
+    # pose pilots' straight-variant coverage and reuse their embedded collisions.
+    registry = ['/* Generated donor-move registry; target body is not a key. */',
+                'const FTCustomCollisionTrajectory sFTCustomCollisionTrajectories[] = {']
+    for fighter, index in (('Captain', 23), ('Fox', 5), ('Donkey', 14)):
+        symbol = 'sFTCustomAnimation'+fighter
+        registry.append('    { &sFTCustomMoves[nFTKind'+fighter+']['+str(index)+'], &'+symbol+'[0].collision, ARRAY_COUNT('+symbol+'), sizeof(FTCustomAnimationFrame) },')
+    for fighter, motion, name, label in COLLISION_PILOTS:
+        symbol = 'sFTCustomCollision'+label
+        for index in trajectory_indices(fighter, motion):
+            registry.append('    { &sFTCustomMoves[nFTKind'+fighter+']['+str(index)+'], '+symbol+', ARRAY_COUNT('+symbol+'), sizeof(FTCustomCollisionFrame) },')
+    registry.append('};')
     (ROOT/'src/ft/ftcustomcollisions.generated.inc').write_text('\n'.join(output)+'\n', encoding='utf-8')
+    (ROOT/'src/ft/ftcustomcollisionregistry.generated.inc').write_text('\n'.join(registry)+'\n', encoding='utf-8')
     (ROOT/'build/collision-pilot-manifest.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
     print('Generated collision-only donor trajectories:', sum(r['bytes'] for r in report), 'bytes.')
 

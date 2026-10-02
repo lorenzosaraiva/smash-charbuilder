@@ -33,6 +33,9 @@ they do not mean every matchup has been playtested. Please share weird cases.
 
 - [ ] Original donor hitbox trajectories on every body for all normal attacks.
 - [x] First collision-only milestone: Kirby up-tilt on DK and all other bodies.
+- [x] Falcon up-air on Kirby and every other foreign body, including donor recovery
+  and landing-timeline transitions; Kirby keeps its own visible animation.
+- [x] Generated donor-move registry and native oracle calls, shared across bodies.
 - [x] Falcon down-air, Fox straight forward tilt and DK straight forward smash
   collision trajectories on all foreign bodies; animations remain Mario-only.
 - [x] Native geometry checks, body-size/facing compensation and per-player lifecycle tests.
@@ -57,7 +60,7 @@ and tether/paired capture mechanics. Keep the selected body's hurtboxes initiall
 ## Known rough edges
 
 Most attacks still show the body's animation. That can look odd even when the donor's
-numbers and timing are in use. Four donor attacks now use original collision paths
+numbers and timing are in use. Five donor attacks now use original collision paths
 across bodies; other attacks still use mapped body joints. See the
 [collision coverage and test guide](collision-trajectories.md). Throws keep body poses and release timing; changing
 the donor does not yet reproduce its full choreography. Tether-grab animation/reach

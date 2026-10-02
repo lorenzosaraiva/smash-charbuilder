@@ -56,6 +56,10 @@ works on the other bodies. Compare with a vanilla Kirby up-tilt at the same
 fighter position and facing; visual acceptance is still pending. See the
 [coverage and comparison guide](collision-trajectories.md).
 
+Also try **Kirby Body -> Up Air: Falcon -> Test in Training -> View: HITBOX**.
+The hitboxes follow Falcon's original upward kick while Kirby keeps his own
+up-air pose. The same Falcon path works on every foreign body.
+
 Builds and assignments last for the running ROM session and reset when the ROM
 restarts. Most attack animations still come from the body. Throws copy donor
 damage/knockback but retain body choreography; DK skips cargo when another fighter's

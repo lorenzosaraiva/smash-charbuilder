@@ -4,6 +4,85 @@ static sb32 collisionNear(f32 a, f32 b)
     return ((a - b) < 0.001F) && ((a - b) > -0.001F);
 }
 
+static s32 testFalconUAirCollision(void)
+{
+    FTStruct fp = { 0 };
+    DObj root = { 0 }, limb = { 0 };
+    FTTestAttributes attr = { 0 };
+    const FTCustomMoveDefinition *move;
+    const FTCustomCollisionFrame *frame;
+    s32 body, tick, aid;
+    gSCManagerSceneData.scene_curr = nSCKind1PTrainingMode;
+    fp.player = 0; fp.pkind = nFTPlayerKindCom; fp.attr = &attr;
+    fp.motion_id = nFTCommonMotionAttackAirHi;
+    for (aid = 0; aid < ARRAY_COUNT(fp.joints); aid++) fp.joints[aid] = &limb;
+    fp.joints[nFTPartsJointTopN] = &root;
+    gSCManagerCharBuilderPlayerSlots[0] = 0;
+    gSCManagerCharBuilderSlots[0].is_enabled = TRUE;
+    gSCManagerCharBuilderSlots[0].attacks[nSCCharBuilderAttackUAir] = nFTKindCaptain;
+    for (body = 0; body < 12; body++)
+    {
+        fp.fkind = body; gSCManagerCharBuilderSlots[0].body = body;
+        /* The requested Kirby case uses its real size; others exercise scale independence. */
+        attr.size = (body == nFTKindKirby) ? 0.91F : 1.25F;
+        move = ftCustomMoveGetDefinition(&fp);
+        ftCustomMoveStartClock(&fp, move, 0);
+        if (body == nFTKindCaptain)
+        {
+            CHECK(move == NULL && ftCustomCollisionGetFrame(&fp) == NULL); continue;
+        }
+        CHECK(move == &sFTCustomMoves[nFTKindCaptain][22] && move->duration == 34);
+        for (tick = 0; tick <= move->duration; tick++)
+        {
+            ftCustomMoveAdvanceClock(&fp, -1);
+            frame = &sFTCustomCollisionCaptainUAir[tick];
+            CHECK(ftCustomCollisionGetFrame(&fp) == frame);
+            CHECK(frame->active_mask == ((tick >= 5 && tick < 14) ? 3 : 0));
+            CHECK(ftCustomAnimationGetFrame(&fp) == NULL);
+            limb.translate.vec.f.y = 1000 + tick * 50;
+            for (aid = 0; aid < 4; aid++)
+            {
+                fp.attack_colls[aid] = (FTAttackColl){ 0 };
+                fp.attack_colls[aid].attack_state = (frame->active_mask & (1 << aid)) ? nGMAttackStateInterpolate : nGMAttackStateOff;
+                fp.attack_colls[aid].joint = &limb;
+                fp.attack_colls[aid].size = aid == 0 ? 110 : 130;
+                fp.attack_colls[aid].damage = 16;
+                fp.attack_colls[aid].group_id = 0;
+                fp.attack_colls[aid].pos_prev.x = 42;
+            }
+            ftCustomCollisionApply(&fp);
+            ftCustomCollisionApply(&fp); /* Hitlag/paused processing keeps the same sample. */
+            CHECK(ftCustomCollisionGetFrame(&fp) == frame);
+            for (aid = 0; aid < 2; aid++)
+            {
+                CHECK(fp.attack_colls[aid].size == (aid == 0 ? 110 : 130));
+                CHECK(fp.attack_colls[aid].damage == 16 && fp.attack_colls[aid].group_id == 0);
+                CHECK(fp.attack_colls[aid].pos_prev.x == 42);
+                if (frame->active_mask & (1 << aid))
+                {
+                    CHECK(fp.attack_colls[aid].joint == &root && !fp.attack_colls[aid].is_scale_pos);
+                    CHECK(collisionNear(fp.attack_colls[aid].offset.x * attr.size, frame->centers[aid].x));
+                    CHECK(collisionNear(fp.attack_colls[aid].offset.y * attr.size, frame->centers[aid].y));
+                    CHECK(collisionNear(fp.attack_colls[aid].offset.z * attr.size, frame->centers[aid].z));
+                }
+                else CHECK(fp.attack_colls[aid].joint == &limb);
+            }
+        }
+        ftCustomMoveStartClock(&fp, move, 10);
+        ftCustomMoveAdvanceClock(&fp, -1);
+        CHECK(ftCustomCollisionGetFrame(&fp) == &sFTCustomCollisionCaptainUAir[10]);
+        /* Landing switches to donor landing duration, without aerial trajectory leakage. */
+        fp.motion_id = nFTCommonMotionLandingAirNull;
+        CHECK(ftCustomCollisionGetFrame(&fp) == NULL);
+        move = ftCustomMoveGetDefinition(&fp);
+        CHECK(move == &sFTCustomMoves[nFTKindCaptain][27]);
+        ftCustomMoveStartClock(&fp, move, 0);
+        CHECK(ftCustomCollisionGetFrame(&fp) == NULL);
+        fp.motion_id = nFTCommonMotionAttackAirHi;
+    }
+    return 0;
+}
+
 static s32 testCustomCollision(void)
 {
     FTStruct players[4] = { 0 }, preview;
@@ -143,5 +222,5 @@ static s32 testCustomCollision(void)
     ftCustomCollisionApply(&players[0]); CHECK(players[0].attack_colls[0].offset.y == before.offset.y);
     ftCustomMoveResetClock(&players[0]); CHECK(ftCustomCollisionGetFrame(&players[0]) == NULL);
     CHECK(ftCustomCollisionGetFrame(&players[1]) == &sFTCustomCollisionKirbyUTilt[5]);
-    return 0;
+    return testFalconUAirCollision();
 }

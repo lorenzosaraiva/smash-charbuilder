@@ -1,5 +1,17 @@
 # Character Lab changes
 
+## Falcon up-air and shared move registration — 2026-10-02
+
+- Falcon up-air trajectory on Kirby and every foreign original-roster body;
+  original radii, 16 damage, angle phases, hit groups, active/recovery and landing
+  timelines retain donor handling. Visible animations remain the body's own.
+- Generated donor-move registry handles all five supported attacks and Kirby
+  up-tilt aliases. Adding a donor path requires no body-specific runtime branch.
+- Native oracle calls and translated/facing checks are generated for the catalog;
+  donor models are shared when several moves use the same fighter.
+- Compiled data/registry pointers are checked in the ROM; runtime checks cover
+  all foreign bodies and landing transitions. In-game acceptance remains pending.
+
 ## Donor collision paths — 2026-10-02
 
 - Kirby up-tilt collision trajectory on all eleven foreign original-roster bodies,

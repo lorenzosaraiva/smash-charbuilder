@@ -1,40 +1,28 @@
 /* Collision lookup never reads or changes the target body's animated limbs. */
+typedef struct FTCustomCollisionTrajectory
+{
+    const FTCustomMoveDefinition *move;
+    const FTCustomCollisionFrame *frames;
+    s32 count, stride;
+} FTCustomCollisionTrajectory;
+
 #include "ftcustomcollisions.generated.inc"
+#include "ftcustomcollisionregistry.generated.inc"
 
 static const FTCustomCollisionFrame* ftCustomCollisionGetFrame(FTStruct *fp)
 {
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
-    s32 frame, count;
+    const FTCustomCollisionTrajectory *trajectory;
+    s32 frame, i;
     if ((clock == NULL) || (ftCustomMoveGetSlot(fp) == NULL)) return NULL;
     frame = (s32)clock->frame;
     if (frame < 0) frame = 0;
-    /* Reuse pilot trajectories on every body without duplicating their data. */
-    if (clock->move == &sFTCustomMoves[nFTKindCaptain][23])
+    for (i = 0; i < ARRAY_COUNT(sFTCustomCollisionTrajectories); i++)
     {
-        count = ARRAY_COUNT(sFTCustomAnimationCaptain);
-        if (frame >= count) frame = count - 1;
-        return &sFTCustomAnimationCaptain[frame].collision;
-    }
-    if (clock->move == &sFTCustomMoves[nFTKindFox][5])
-    {
-        count = ARRAY_COUNT(sFTCustomAnimationFox);
-        if (frame >= count) frame = count - 1;
-        return &sFTCustomAnimationFox[frame].collision;
-    }
-    if (clock->move == &sFTCustomMoves[nFTKindDonkey][14])
-    {
-        count = ARRAY_COUNT(sFTCustomAnimationDonkey);
-        if (frame >= count) frame = count - 1;
-        return &sFTCustomAnimationDonkey[frame].collision;
-    }
-    /* Kirby has one up-tilt; the three selected-body variants share it. */
-    if ((clock->move == &sFTCustomMoves[nFTKindKirby][8]) ||
-        (clock->move == &sFTCustomMoves[nFTKindKirby][9]) ||
-        (clock->move == &sFTCustomMoves[nFTKindKirby][10]))
-    {
-        count = ARRAY_COUNT(sFTCustomCollisionKirbyUTilt);
-        if (frame >= count) frame = count - 1;
-        return &sFTCustomCollisionKirbyUTilt[frame];
+        trajectory = &sFTCustomCollisionTrajectories[i];
+        if (clock->move != trajectory->move) continue;
+        if (frame >= trajectory->count) frame = trajectory->count - 1;
+        return (const FTCustomCollisionFrame*)((const u8*)trajectory->frames + frame * trajectory->stride);
     }
     return NULL;
 }

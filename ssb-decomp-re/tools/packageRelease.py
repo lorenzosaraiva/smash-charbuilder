@@ -78,9 +78,10 @@ Neutral B currently offers Body Move or Fox Laser. Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 Three Mario animation pilots are implemented; full animation coverage is pending.
 Original collision paths work on every foreign body for Kirby up-tilt, Falcon
-down-air, Fox straight forward tilt and DK straight forward smash. Other attacks
+up-air/down-air, Fox straight forward tilt and DK straight forward smash. Other attacks
 still use mapped body joints. Try DK Body -> Up Tilt: Kirby -> Test in Training
 with View: HITBOX. Numeric checks pass; in-game acceptance remains pending.
+For the new aerial test: Kirby Body -> Up Air: Falcon -> Test in Training -> HITBOX.
 
 See the repository README, docs/status.md and CHANGELOG.md for scope and known gaps.
 The package contains the ROM, this guide, build information and SHA-256 checksums.

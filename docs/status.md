@@ -27,8 +27,9 @@ and animations do not have Character Lab's full donor timing/trajectory system.
 ## Gameplay order
 
 - [x] Shared collision trajectories independent of visible body animations.
-- [x] Kirby up-tilt, Falcon down-air, Fox straight forward tilt and DK straight
+- [x] Kirby up-tilt, Falcon up-air/down-air, Fox straight forward tilt and DK straight
   forward smash trajectories on all other original-roster bodies.
+- [x] Generated donor-move registry: one trajectory enables every foreign body.
 - [ ] In-game comparison with vanilla donors, including contact and interruptions.
 - [ ] Expand original trajectories to every normal attack and variant.
 
