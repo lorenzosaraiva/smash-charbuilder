@@ -1,5 +1,17 @@
 # Character Lab changes
 
+## Donor collision paths — 2026-10-02
+
+- Kirby up-tilt collision trajectory on all eleven foreign original-roster bodies,
+  including the selected body's three up-tilt variants when applicable.
+- Shared donor-relative collision layer; Falcon down-air, Fox straight forward
+  tilt and DK straight forward smash trajectories now work across bodies too.
+- Donor sizes, event windows, damage/knockback and recovery stay on the existing
+  attack clock. Collision updates preserve hit records and swept-position history.
+- Body animations remain native outside the three existing Mario pose pilots.
+- Geometry is checked against original native playback/matrices, including target
+  size, position and both facings. In-game acceptance remains pending.
+
 ## Next release — repository setup
 
 - Newcomer README, feature checklist, play/build guides and release instructions.

@@ -2408,7 +2408,7 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
     }
     fp->is_events_forward = FALSE;
 
-    ftCustomAnimationApplyCollision(fp);
+    ftCustomCollisionApply(fp);
     for (i = 0; i < ARRAY_COUNT(fp->attack_colls); i++)
     {
         FTAttackColl *attack_coll = &fp->attack_colls[i];

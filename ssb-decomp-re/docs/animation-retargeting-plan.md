@@ -3,6 +3,13 @@
 Status: the three-move Mario pilot is implemented. Native playback, geometry, host lifecycle and linked-ROM checks pass. Rendered emulator acceptance remains pending; expansion in section 5 is gated on that check. See [the pilot report](animation-retargeting-pilot.md).
 Gameplay checkpoint: `c4cf93a87` (donor collision parameters, normal/grab timing and landing windows), following `290cffca3` (grab/throw donors) and `06f98fe70` (normal roster, player assignments, training HITBOX and unlocks).
 
+Current priority is the separate [collision trajectory milestone](collision-trajectories.md)
+before expanding visible animation coverage. Kirby up-tilt and the three pilot
+collision paths now work on every foreign body. The Mario pose pilot and its
+pending rendered acceptance remain unchanged. The current checklist order is
+collisions/timing, animations, neutral specials excluding Kirby copy, then tethers
+and paired capture/throw mechanics.
+
 ## Intended result
 
 A preset's selected body visibly performs the selected donor's normal attack. Its animation, collision windows and recovery share the existing donor frame clock. The body's mesh, textures, playable identity and initialized skeleton remain its own.

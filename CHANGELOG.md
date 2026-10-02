@@ -1,5 +1,14 @@
 # Changes
 
+## Donor collision paths — 2026-10-02
+
+- Kirby up-tilt uses its original hitbox path on DK and every other foreign body.
+- Falcon down-air, Fox straight forward tilt and DK straight forward smash paths
+  now work across bodies; visible retargeted poses remain Mario-only.
+- Native engine geometry, both facings, body-size compensation and runtime
+  lifecycle checks; checked local ROM/ZIP builds include these tests.
+- Updated the roadmap and retained pending in-game acceptance explicitly.
+
 ## Combined project repository
 
 - Both creator experiments now live in `lorenzosaraiva/smash-charbuilder`.

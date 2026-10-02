@@ -116,13 +116,47 @@ static void dumpGeometry(DObjDesc *bind,AObjEvent32 **table,s32 joints_count,s32
         output(centers,sizeof(centers));
     }
 }
+/* Compare donor reach with compensated target TopN using original matrices. */
+typedef struct FTCustomCollisionFrame { Vec3f centers[4]; u32 active_mask; } FTCustomCollisionFrame;
+#include "../src/ft/ftcustomcollisions.generated.inc"
+static void dumpRootPlacement(void)
+{
+    DObj root={0}; Mtx44f matrix; Vec3f donor,custom;
+    s32 body,facing,frame,aid;
+    for (body=0;body<ARRAY_COUNT(sOracleBodySizes);body++)
+    {
+        for (facing=-1;facing<=1;facing+=2)
+        {
+            root.rotate.vec.f.y=facing*1.5707963267948966F;
+            root.translate.vec.f=(Vec3f){1234,-56,78};
+            for (frame=0;frame<ARRAY_COUNT(sFTCustomCollisionKirbyUTilt);frame++)
+            {
+                const FTCustomCollisionFrame *hit=&sFTCustomCollisionKirbyUTilt[frame];
+                for (aid=0;aid<4;aid++)
+                {
+                    if (!(hit->active_mask&(1<<aid))) continue;
+                    donor=hit->centers[aid];custom=donor;
+                    custom.x/=sOracleBodySizes[body];custom.y/=sOracleBodySizes[body];custom.z/=sOracleBodySizes[body];
+                    root.scale.vec.f.x=root.scale.vec.f.y=root.scale.vec.f.z=sOracleBodySizes[body];
+                    gmCollisionTransformMatrixAll(&root,NULL,matrix);gmCollisionGetWorldPosition(matrix,&custom);
+                    root.scale.vec.f=(Vec3f){1,1,1};
+                    gmCollisionTransformMatrixAll(&root,NULL,matrix);gmCollisionGetWorldPosition(matrix,&donor);
+                    output(&custom,sizeof(custom));output(&donor,sizeof(donor));
+                }
+            }
+        }
+    }
+}
 void _start(void)
 {
     dump(sOracleCaptainBind,dFTCaptainAnimAttackAirD_joints,ARRAY_COUNT(sOracleCaptainBind)-1,41,ARRAY_COUNT(dFTCaptainAnimAttackAirD_joints));
     dump(sOracleFoxBind,dFTFoxAnimFTilt_joints,ARRAY_COUNT(sOracleFoxBind)-1,28,ARRAY_COUNT(dFTFoxAnimFTilt_joints));
     dump(sOracleDonkeyBind,dFTDonkeyAnimFSmash_joints,ARRAY_COUNT(sOracleDonkeyBind)-1,61,ARRAY_COUNT(dFTDonkeyAnimFSmash_joints));
+    dump(sOracleKirbyBind,dFTKirbyAnimUTilt_joints,ARRAY_COUNT(sOracleKirbyBind)-1,19,ARRAY_COUNT(dFTKirbyAnimUTilt_joints));
     dumpGeometry(sOracleCaptainBind,dFTCaptainAnimAttackAirD_joints,ARRAY_COUNT(sOracleCaptainBind)-1,41,ARRAY_COUNT(dFTCaptainAnimAttackAirD_joints),sOracleCaptainHits,1.05F);
     dumpGeometry(sOracleFoxBind,dFTFoxAnimFTilt_joints,ARRAY_COUNT(sOracleFoxBind)-1,28,ARRAY_COUNT(dFTFoxAnimFTilt_joints),sOracleFoxHits,1.0F);
     dumpGeometry(sOracleDonkeyBind,dFTDonkeyAnimFSmash_joints,ARRAY_COUNT(sOracleDonkeyBind)-1,61,ARRAY_COUNT(dFTDonkeyAnimFSmash_joints),sOracleDonkeyHits,1.25F);
+    dumpGeometry(sOracleKirbyBind,dFTKirbyAnimUTilt_joints,ARRAY_COUNT(sOracleKirbyBind)-1,19,ARRAY_COUNT(dFTKirbyAnimUTilt_joints),sOracleKirbyHits,0.91F);
+    dumpRootPlacement();
     quit(0);
 }

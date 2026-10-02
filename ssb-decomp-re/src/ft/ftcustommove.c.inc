@@ -285,3 +285,4 @@ static sb32 ftCustomMoveSkipNativeCollision(FTStruct *fp, FTMotionScript *ms, u3
 }
 
 #include "ftcustomanimation.c.inc"
+#include "ftcustomcollision.c.inc"

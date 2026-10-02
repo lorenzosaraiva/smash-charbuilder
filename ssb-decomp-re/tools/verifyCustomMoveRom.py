@@ -26,7 +26,7 @@ excluded = ('sFTCustomMoves','sFTCustomMoveScripts','sFTCustomMotionIDs','sFTCus
             'sFTCustomBodyExtraMotionIDs','sFTCustomLastAirAttack','sFTCustomGrabMoves',
             'sFTCustomGrabJointMap','sFTCustomGrabTimings','sFTCustomThrowDescs','sFTCustomMoveClocks')
 for name,(address,length,index) in symbols.items():
-    if not name.startswith('sFTCustom') or name.startswith('sFTCustomAnimation') or name in excluded: continue
+    if not name.startswith('sFTCustom') or name.startswith(('sFTCustomAnimation','sFTCustomCollision')) or name in excluded: continue
     if not length or sections[index][1] == 8: continue
     start = sections[index][4]+address-sections[index][3]
     words = struct.unpack_from('<'+str(length//4)+'I',host,start)
@@ -51,7 +51,7 @@ for name,expected in metadata.items():
 phoff = struct.unpack_from('>I',elf,28)[0]
 size,count = struct.unpack_from('>HH',elf,42)
 programs = [struct.unpack_from('>8I',elf,phoff+i*size) for i in range(count)]
-for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMainHasCustomAttackTimeline',
+for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMainProcPhysicsMap','ftMainHasCustomAttackTimeline',
              'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
              'ftCommonSpecialNCheckInterruptCommon','ftCommonSpecialAirCheckInterruptCommon',
              'ftCommonThrowSetStatus','ftDonkeyThrowFFProcUpdate','mnOptionBuilderChangeValue',
@@ -112,6 +112,16 @@ for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     assert pattern in rom,name+' missing from ROM'
     animation_bytes += length
 print('PASS: all three linked Mario animation pilots match host-tested poses and donor hitbox trajectories ('+str(animation_bytes)+' bytes).')
+name = 'sFTCustomCollisionKirbyUTilt'
+address,length,index = host_symbols[name]
+assert length == 19*52
+start = host_sections[index][4]+address-host_sections[index][3]
+words = struct.unpack_from('<'+str(length//4)+'I',host,start)
+pattern = struct.pack('>'+str(length//4)+'I',*words)
+address,linked_length,index = symbols[name]
+start = sections[index][4]+address-sections[index][3]
+assert linked_length == length and elf[start:start+length] == pattern and pattern in rom,name
+print('PASS: linked Kirby up-tilt collision-only trajectory matches host-tested bytes (988 bytes).')
 print('PASS: 396 normal and 12 grab collision tables, all 36 two-part throw definitions, joint maps, grab timings, creator/assignment/training code and N64 CRC are in the ROM.')
 print('PASS: selectable neutral dispatch, bounded laser scripts/durations and DK immediate throw dispatch are linked in the ROM.')
 print('ROM bytes:',len(rom))

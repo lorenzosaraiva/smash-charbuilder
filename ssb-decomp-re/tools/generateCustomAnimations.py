@@ -95,7 +95,7 @@ def main():
         out.append('const FTCustomAnimationFrame '+symbol+'[] = {')
         for pose,(mask,centers) in zip(poses,collisions):
             target=retarget(fighter,pose)
-            out.append('    { { '+', '.join('{ '+vec(target[j][:3])+', '+vec(target[j][4:7])+' }' for j in TARGET_JOINTS)+' }, { '+', '.join(vec(c) for c in centers)+' }, '+str(mask)+' },')
+            out.append('    { { '+', '.join('{ '+vec(target[j][:3])+', '+vec(target[j][4:7])+' }' for j in TARGET_JOINTS)+' }, { { '+', '.join(vec(c) for c in centers)+' }, '+str(mask)+' } },')
         out.append('};')
         report.append(dict(donor=fighter,motion=motion,variant=index,frames=len(poses),bytes=len(poses)*628,rig=rig_map(fighter)))
     (ROOT/'src/ft/ftcustomanimations.generated.inc').write_text('\n'.join(out)+'\n')

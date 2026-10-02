@@ -57,3 +57,9 @@ python3 tools/verifyCustomMoveRom.py
 `tools/reportCustomAnimationMemory.py` compares the built ELF/ROM with checkpoint copies named `build/animation-baseline.elf` and `build/animation-baseline.z64`. The Makefile's vanilla comparison reports `FAILURE` for this intentionally modified ROM; compilation/linking and the custom verifier succeed.
 
 Next: finish rendered acceptance of these three moves, then cover angled variants and other normals on Mario before expanding the body maps. Grabs and paired throw/victim animations remain a separate pass.
+
+The newer [collision milestone](collision-trajectories.md) separates collision
+lookup from Mario pose lookup. These three paths now work on every foreign body,
+alongside Kirby up-tilt. Their animation coverage remains Mario-only; the original
+pilot byte layout is preserved. Current expanded geometry and lifecycle results
+are recorded in the collision guide.

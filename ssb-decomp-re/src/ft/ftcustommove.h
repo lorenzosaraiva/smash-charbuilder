@@ -24,6 +24,13 @@ typedef enum FTCustomJointKind
 /* Matches FTStruct.attack_colls, not the event's wider 3-bit attack ID. */
 #define FTCUSTOMMOVE_HITBOX_COUNT_MAX 4
 
+/* Donor-sized positions relative to TopN, independent of the visible rig. */
+typedef struct FTCustomCollisionFrame
+{
+    Vec3f centers[FTCUSTOMMOVE_HITBOX_COUNT_MAX];
+    u32 active_mask;
+} FTCustomCollisionFrame;
+
 typedef struct FTCustomHitboxDefinition
 {
     FTCustomJointKind joint;

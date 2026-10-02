@@ -26,5 +26,6 @@ environment is preserved on disk and can be recreated by the build system.
 The Sonic creator hook previously edited inside the upstream dependency is now
 versioned in `remix/smashremix_overwrite/Sonic/SonicSpecial.asm`.
 
-This organization changes source ownership and build paths, not gameplay. The
-DK/Kirby animation milestone is still pending.
+The repository migration changed source ownership and build paths. Subsequent
+gameplay work now includes the DK/Kirby collision-only milestone; animation
+expansion remains pending. See the [current checklist](status.md).

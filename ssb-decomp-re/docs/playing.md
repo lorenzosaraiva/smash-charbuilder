@@ -49,6 +49,13 @@ same body, or share a build.
 
 ## Expectations
 
+To try the collision milestone, choose **DK Body -> Up Tilt: Kirby**, then
+**Test in Training -> View: HITBOX**. The two hitboxes follow Kirby's original
+up-tilt path and duration while DK keeps his own pose. The same donor path also
+works on the other bodies. Compare with a vanilla Kirby up-tilt at the same
+fighter position and facing; visual acceptance is still pending. See the
+[coverage and comparison guide](collision-trajectories.md).
+
 Builds and assignments last for the running ROM session and reset when the ROM
 restarts. Most attack animations still come from the body. Throws copy donor
 damage/knockback but retain body choreography; DK skips cargo when another fighter's

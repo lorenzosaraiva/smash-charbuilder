@@ -31,18 +31,35 @@ they do not mean every matchup has been playtested. Please share weird cases.
 
 ## Still to do
 
+- [ ] Original donor hitbox trajectories on every body for all normal attacks.
+- [x] First collision-only milestone: Kirby up-tilt on DK and all other bodies.
+- [x] Falcon down-air, Fox straight forward tilt and DK straight forward smash
+  collision trajectories on all foreign bodies; animations remain Mario-only.
+- [x] Native geometry checks, body-size/facing compensation and per-player lifecycle tests.
+- [ ] Rendered acceptance of collision-only paths, actual hits/shields and interruptions.
+- [ ] Grounded/aerial/angled/weapon/tail and multihit trajectory coverage.
+- [ ] Validate donor startup, active frames, recovery, landing lag and hitlag in-game.
+- [ ] Full donor jab-chain capabilities and repeat-hit/refresh behavior.
 - [ ] Every donor attack animation on every body.
 - [ ] Paired donor throw/victim choreography, including special capture mechanics.
-- [ ] The full neutral-special donor roster beyond Body Move/Fox Laser.
+- [ ] Tether grab reach, capture timing and visuals on other bodies.
+- [ ] Neutral-special donor roster beyond Body Move/Fox Laser, excluding Kirby copy.
+- [ ] Donor movement/physics and move-specific behavior such as Link's down-air bounce.
 - [ ] Complete, consistent special-move compatibility across all bodies.
 - [ ] Save creator presets across ROM restarts; currently they last for the running session.
 - [ ] Wider emulator and real-hardware testing.
-- [ ] First hosted release and public download verified after repository setup.
+- [x] First public ROM/ZIP release published and downloaded/checksum verified.
+- [ ] Configure the original-ROM source for automatic hosted ROM builds.
+
+Priority: collision paths and timing first, then body animations, neutral specials,
+and tether/paired capture mechanics. Keep the selected body's hurtboxes initially.
 
 ## Known rough edges
 
 Most attacks still show the body's animation. That can look odd even when the donor's
-numbers and timing are in use. Throws keep body poses and release timing; changing
+numbers and timing are in use. Four donor attacks now use original collision paths
+across bodies; other attacks still use mapped body joints. See the
+[collision coverage and test guide](collision-trajectories.md). Throws keep body poses and release timing; changing
 the donor does not yet reproduce its full choreography. Tether-grab animation/reach
 and fighter-specific effects, movement or capture behavior are not universally copied.
 

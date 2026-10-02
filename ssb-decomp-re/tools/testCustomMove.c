@@ -10,7 +10,13 @@
 typedef struct GObj GObj;
 struct DObj { struct { union { Vec3f f; } vec; } rotate,translate,scale; };
 typedef struct DObj DObj;
-typedef struct FTAttackColl { s32 attack_state; DObj *joint; Vec3f offset; sb32 is_scale_pos; } FTAttackColl;
+typedef struct FTAttackColl {
+    s32 attack_state, joint_id, damage, group_id;
+    DObj *joint;
+    Vec3f offset, pos_curr, pos_prev;
+    f32 size;
+    sb32 is_scale_pos;
+} FTAttackColl;
 struct FTMotionScript { ftMotionCommand *p_script; f32 script_wait; s32 script_id; };
 struct FTMotionEventDefault { u32 words[1]; };
 struct FTMotionEventMakeAttack { u32 words[5]; };
@@ -319,18 +325,18 @@ static s32 testCustomAnimation(void)
                     fp->attack_colls[aid].joint = &joints[0][5];
                     fp->attack_colls[aid].offset.x = 123.0F;
                 }
-                ftCustomAnimationApplyCollision(fp);
+                ftCustomCollisionApply(fp);
                 for (aid = 0; aid < 4; aid++)
                 {
                     CHECK(fp->attack_colls[aid].attack_state == state);
-                    if (pose->active_mask & (1 << aid))
+                    if (pose->collision.active_mask & (1 << aid))
                     {
                         CHECK(fp->attack_colls[aid].joint == fp->joints[0]);
-                        saved = fp->attack_colls[aid].offset.x * attr.size - pose->centers[aid].x;
+                        saved = fp->attack_colls[aid].offset.x * attr.size - pose->collision.centers[aid].x;
                         CHECK(saved < 0.001F && saved > -0.001F);
-                        saved = fp->attack_colls[aid].offset.y * attr.size - pose->centers[aid].y;
+                        saved = fp->attack_colls[aid].offset.y * attr.size - pose->collision.centers[aid].y;
                         CHECK(saved < 0.001F && saved > -0.001F);
-                        saved = fp->attack_colls[aid].offset.z * attr.size - pose->centers[aid].z;
+                        saved = fp->attack_colls[aid].offset.z * attr.size - pose->collision.centers[aid].z;
                         CHECK(saved < 0.001F && saved > -0.001F);
                         CHECK(!fp->attack_colls[aid].is_scale_pos);
                     }
@@ -357,10 +363,12 @@ static s32 testCustomAnimation(void)
 }
 #include "testCharBuilderNeutral.c.inc"
 #include "testCharBuilderThrow.c.inc"
+#include "testCustomCollision.c.inc"
 void _start(void)
 {
     s32 result = testCustomMove();
     if (result == 0) result = testCustomAnimation();
+    if (result == 0) result = testCustomCollision();
     if (result == 0) result = testCharBuilderNeutral();
     if (result == 0) result = testCharBuilderThrow();
     if (result != 0)
