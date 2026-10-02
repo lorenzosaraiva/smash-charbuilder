@@ -79,6 +79,8 @@ extern s32 ftMainCharBuilderGetSpecialLwKind(GObj* fighter_gobj);
 extern s32 ftMainCharBuilderSetSpecialHiDonor(GObj* fighter_gobj, s32 donor);
 extern s32 ftMainCharBuilderSetSpecialLwDonor(GObj* fighter_gobj, s32 donor);
 extern sb32 ftMainCharBuilderIsSpecialAdapter(GObj* fighter_gobj);
+extern sb32 ftMainCharBuilderTrySpecialN(GObj* fighter_gobj);
+extern sb32 ftMainCharBuilderIsImmediateDonkeyThrow(FTStruct* fp);
 extern DObj* ftMainCharBuilderGetSpecialJoint(FTStruct* fp, s32 joint_id);
 extern void ftMainSetStatus(GObj* fighter_gobj, s32 status_id, f32 frame_begin, f32 anim_speed, u32 flags);
 

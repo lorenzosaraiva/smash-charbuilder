@@ -4,6 +4,8 @@ The working Mario aerial was committed as `f0d2e1a6c` before this extension. The
 
 The editor also has independent **Grab**, **Forward Throw** and **Back Throw** donor rows after Down Air. Each accepts all twelve fighters and applies to assigned human or CPU slots. New presets start with their body's own grab and throw donors; Use Body For All and Randomize Attacks include these rows.
 
+**Neutral B** now switches between **BODY MOVE** and **FOX LASER** with left/right. Use Body For All restores the body's neutral special; randomization includes the two choices. The initial presets retain Fox laser. The full neutral-special donor roster is not implemented.
+
 ## Playing
 
 1. Open **Options → Character Lab**. Select one of four builds with A, edit donor values with left/right, and return with B.
@@ -31,6 +33,16 @@ Grabs replace collision shapes and offsets, with donor capture anchors mapped to
 
 Forward and back throws copy the donor's damage, angle, knockback scale/weight/base and element for both throw descriptors. The Grab donor also supplies the grab escape descriptor values. Each player has independent descriptor storage. Native victim status IDs, release timing and capture animations are retained. Kirby's forward throw and Donkey Kong's cargo release use their source throw values without importing their capture states into other bodies. Throw motion collisions and collateral hits remain the body's own.
 
+Exception for DK with another fighter's Forward Throw selected: enter DK's own finite forward release motion directly, instead of his pickup/cargo-wait sequence. The victim queues the common thrown state instead of cargo's shoulder escape loop. Donor throw damage/knockback still apply; the release pose and timing remain DK's. DK's own Forward Throw and vanilla DK retain cargo behavior. Paired donor throw animations remain future work.
+
+## Neutral-special compatibility
+
+The old prototype spawned Fox lasers during every assigned body's native neutral special. It replaced accessory callbacks and consumed native flags while leaving charge, suction and other body state transitions active. Neutral B was also a fixed label in the editor.
+
+BODY MOVE now uses the body's ordinary neutral-special implementation and events. FOX LASER on non-Fox bodies uses only a body-owned neutral pose, a local laser event script, common movement/collision callbacks and an independent finite frame clock. DK and Samus use their release poses rather than charge-start poses. Native neutral events and callbacks are suppressed for this action, so it cannot enter their charging loops or create another projectile/capture attack. Fox bodies keep their ordinary laser implementation. No foreign neutral-special status implementation, joint indices or animation file is loaded.
+
+Laser firing and recovery follow Fox's US source data: grounded shot on frame 25, repeat enabled on 29, recovery through frame 55; airborne shot/repeat on frame 15, recovery through frame 45. Hitlag pauses the clock. Landing, leaving a platform or taking damage can cancel the action normally. The projectile remains the native Fox blaster; its spawn uses the body's root position. The visual pose is still the body's, not a retargeted Fox animation.
+
 The lab uses the game's existing option tabs, font sprites at readable 2x size, gold headings, red selection and purple/gray panels. The HITBOX label is composed from the same native alphabet, rather than an external font.
 
 ## Validation
@@ -40,6 +52,8 @@ Generate the data with `python3 tools/generateCustomMoves.py`, `python3 tools/ge
 The freestanding host test includes the actual runtime implementation. It checks all 12 × 12 × 33 = **4,752 body/donor/variant combinations**, per-player buffers, CPU/vanilla/demo/scene eligibility, native event suppression, local rapid-loop pointers, malformed definitions and the original Falcon aerial parameters. Frame-clock tests run every valid donor variant through its complete duration while simulating an already-ended body animation, and check expiry, reset and the independent script clock. It does not simulate N64 animations or collision detection.
 
 Grab coverage adds **144 body/donor combinations**, verifying donor timing and mapped capture joints. Descriptor tests cover **432 body/donor/grab-or-throw combinations**, preserve both native victim statuses, verify known Samus and Donkey Kong source values, and check independent player storage and eligibility guards.
+
+Neutral adapter tests cover all twelve bodies on ground/in air across four independent slots, including CPU assignment, body/native-Fox fallbacks, finite recovery despite an ended body pose, repeat input, interruption and duplicate-shot prevention. DK tests include actual common throw dispatch and DK release callbacks with engine services stubbed: all twelve forward donors, common victim queue for foreign throws, donor numeric properties, one release, capture cleanup, native cargo and back-throw dispatch. These tests do not render or simulate victim physics. The ROM verifier also checks the new dispatch functions, local laser scripts and source animation durations.
 
 ```sh
 gcc -m32 -nostdlib -static -fno-pie -fno-stack-protector -O1 \

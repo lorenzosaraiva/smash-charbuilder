@@ -7,10 +7,11 @@
 #include <gm/gmdef.h>
 
 #define _FTTYPES_H_
+typedef struct GObj GObj;
 struct DObj { struct { union { Vec3f f; } vec; } rotate,translate,scale; };
 typedef struct DObj DObj;
 typedef struct FTAttackColl { s32 attack_state; DObj *joint; Vec3f offset; sb32 is_scale_pos; } FTAttackColl;
-struct FTMotionScript { ftMotionCommand *p_script; };
+struct FTMotionScript { ftMotionCommand *p_script; f32 script_wait; s32 script_id; };
 struct FTMotionEventDefault { u32 words[1]; };
 struct FTMotionEventMakeAttack { u32 words[5]; };
 struct FTMotionEventSetAttackOffset { u32 words[2]; };
@@ -18,6 +19,12 @@ struct FTThrowHitDesc
 {
     s32 status_id, damage, angle, knockback_scale, knockback_weight, knockback_base, element;
 };
+struct FTThrownStatus { s32 status1, status2; };
+typedef struct FTTestAttributes
+{
+    f32 size;
+    struct { FTThrownStatus ft_thrown[2]; } thrown_status[27];
+} FTTestAttributes;
 struct FTStruct
 {
     s32 fkind, pkind;
@@ -27,8 +34,22 @@ struct FTStruct
     FTThrowHitDesc *throw_desc;
     DObj *joints[FTPARTS_JOINT_NUM_MAX];
     FTAttackColl attack_colls[4];
-    struct { f32 size; } *attr;
+    FTTestAttributes *attr;
     FTMotionScript motion_scripts[2][3];
+    s32 ga;
+    f32 lr;
+    struct { struct { s32 flag0, flag1, flag2; } flags; } motion_vars;
+    struct { struct { u32 button_tap; Vec2b stick_range, stick_prev; } pl; u32 button_mask_b, button_mask_a; } input;
+    struct { struct { f32 x; } vel_ground; } physics;
+    struct { struct { struct { sb32 is_turn; s32 turn_tics; } throwff;
+        struct { s32 throw_wait; } catchwait; } common; } status_vars;
+    GObj *catch_gobj;
+    sb32 is_ignore_dead;
+    sb32 is_effect_attach;
+    u8 capture_immune_mask;
+    struct { u16 halfword; } stat_flags;
+    void (*proc_update)(GObj*), (*proc_interrupt)(GObj*), (*proc_physics)(GObj*),
+        (*proc_map)(GObj*), (*proc_accessory)(GObj*);
 };
 #include <sc/scdef.h>
 #include <sc/sccharbuilder.h>
@@ -334,10 +355,14 @@ static s32 testCustomAnimation(void)
     CHECK(ftCustomAnimationGetFrame(&players[1]) == NULL); /* Angled variants stay native. */
     return 0;
 }
+#include "testCharBuilderNeutral.c.inc"
+#include "testCharBuilderThrow.c.inc"
 void _start(void)
 {
     s32 result = testCustomMove();
     if (result == 0) result = testCustomAnimation();
+    if (result == 0) result = testCharBuilderNeutral();
+    if (result == 0) result = testCharBuilderThrow();
     if (result != 0)
     {
         char message[] = "Failed CHECK at line 0000\n";

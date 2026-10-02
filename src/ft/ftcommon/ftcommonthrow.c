@@ -56,6 +56,7 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
     GObj *catch_gobj;
     FTStruct *catch_fp;
     FTThrownStatus *thrown_status;
+    s32 thrown_status_queue;
 
     catch_gobj = this_fp->catch_gobj;
     catch_fp = ftGetStruct(catch_gobj);
@@ -68,6 +69,8 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
 
             mpCommonSetFighterAir(this_fp);
         }
+        else if (ftMainCharBuilderIsImmediateDonkeyThrow(this_fp))
+            status_id = nFTDonkeyStatusThrowFF;
         else status_id = nFTCommonStatusThrowF;
         thrown_status = &this_fp->attr->thrown_status[catch_fp->fkind].ft_thrown[0];
     }
@@ -82,6 +85,11 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
 
     this_fp->motion_vars.flags.flag2 = 0;
     this_fp->motion_vars.flags.flag1 = 0;
+    if ((this_fp->fkind == nFTKindDonkey) && (status_id == nFTDonkeyStatusThrowFF))
+    {
+        this_fp->status_vars.common.throwff.is_turn = FALSE;
+        this_fp->status_vars.common.throwff.turn_tics = 0;
+    }
 
     if ((this_fp->fkind == nFTKindSamus) || (this_fp->fkind == nFTKindNSamus))
     {
@@ -90,11 +98,16 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
             this_fp->is_effect_attach = TRUE;
         }
     }
+    thrown_status_queue = thrown_status->status2;
+    /* This release never enters cargo, so the victim must not enter its mash loop. */
+    if ((this_fp->fkind == nFTKindDonkey) && (status_id == nFTDonkeyStatusThrowFF) &&
+        (thrown_status_queue == nFTCommonStatusShouldered))
+        thrown_status_queue = nFTCommonStatusThrownCommon;
     if (thrown_status->status1 != -1)
     {
-        ftCommonThrownSetStatusQueue(catch_gobj, thrown_status->status1, thrown_status->status2);
+        ftCommonThrownSetStatusQueue(catch_gobj, thrown_status->status1, thrown_status_queue);
     }
-    else ftCommonThrownSetStatusImmediate(catch_gobj, thrown_status->status2);
+    else ftCommonThrownSetStatusImmediate(catch_gobj, thrown_status_queue);
 
     if ((this_fp->fkind == nFTKindKirby) || (this_fp->fkind == nFTKindNKirby))
     {

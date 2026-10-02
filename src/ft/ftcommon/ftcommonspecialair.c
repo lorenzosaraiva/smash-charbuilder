@@ -194,7 +194,8 @@ sb32 ftCommonSpecialAirCheckInterruptCommon(GObj *fighter_gobj)
                 {
                     ftParamSetStickLR(fp);
                 }
-                dFTCommonSpecialAirNStatusList[fp->fkind](fighter_gobj);
+                if (ftMainCharBuilderTrySpecialN(fighter_gobj) == FALSE)
+                    dFTCommonSpecialAirNStatusList[fp->fkind](fighter_gobj);
 
                 return TRUE;
             }

@@ -98,7 +98,8 @@ sb32 ftCommonSpecialNCheckInterruptCommon(GObj *fighter_gobj)
             {
                 ftParamSetStickLR(fp);
             }
-            dFTCommonSpecialNStatusList[fp->fkind](fighter_gobj);
+            if (ftMainCharBuilderTrySpecialN(fighter_gobj) == FALSE)
+                dFTCommonSpecialNStatusList[fp->fkind](fighter_gobj);
 
             return TRUE;
         }

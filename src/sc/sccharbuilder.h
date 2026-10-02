@@ -27,6 +27,12 @@ typedef enum SCCharBuilderAttack
 
 } SCCharBuilderAttack;
 
+typedef enum SCCharBuilderNeutral
+{
+    nSCCharBuilderNeutralBody,
+    nSCCharBuilderNeutralFoxLaser
+} SCCharBuilderNeutral;
+
 typedef struct SCCharBuilderSlot
 {
     u8 is_enabled;
@@ -34,6 +40,7 @@ typedef struct SCCharBuilderSlot
     u8 attacks[SCCHARBUILDER_ATTACKS_COUNT];
     u8 special_hi;
     u8 special_lw;
+    u8 special_n;
 
 } SCCharBuilderSlot;
 

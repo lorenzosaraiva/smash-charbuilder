@@ -7,6 +7,7 @@ from n64crc import calculate_crcs
 from generateCustomMoves import MAPS, ROSTER
 from verifyCustomMoveData import verify_sources
 from elfData import read_elf
+from customMoveTiming import animation_duration
 
 ROOT = Path(__file__).resolve().parents[1]
 rom = (ROOT/'build/smashbrothers.us.z64').read_bytes()
@@ -51,6 +52,9 @@ phoff = struct.unpack_from('>I',elf,28)[0]
 size,count = struct.unpack_from('>HH',elf,42)
 programs = [struct.unpack_from('>8I',elf,phoff+i*size) for i in range(count)]
 for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMainHasCustomAttackTimeline',
+             'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
+             'ftCommonSpecialNCheckInterruptCommon','ftCommonSpecialAirCheckInterruptCommon',
+             'ftCommonThrowSetStatus','ftDonkeyThrowFFProcUpdate','mnOptionBuilderChangeValue',
              'ftCommonAttackAirLwProcHit','ftCommonAttackAirLwProcUpdate',
              'sc1PTrainingModeUpdateViewOption','mnOptionBuilderAssignPlayer','mnOptionBuilderRun',*metadata):
     value,length,index = symbols[name]
@@ -66,6 +70,32 @@ assert 'gFTCustomMoveValidationFailures' in symbols
 assert 'gFTCustomAnimationValidationFailures' in symbols
 animation_bytes = 0
 host,host_sections,host_symbols = read_elf(ROOT/'build/testCustomMove','<')
+laser_addresses = []
+for name in ('sFTCharBuilderLaserGround','sFTCharBuilderLaserAir','sFTCharBuilderNeutralStatuses'):
+    address,length,index = host_symbols[name]
+    start = host_sections[index][4]+address-host_sections[index][3]
+    words = struct.unpack_from('<'+str(length//4)+'I',host,start)
+    pattern = struct.pack('>'+str(length//4)+'I',*words)
+    assert pattern in rom,name+' missing from ROM'
+    if name != 'sFTCharBuilderNeutralStatuses':
+        addresses = []
+        for typ,fileoffset,vaddr,paddr,filesz,memsz,flags,align in programs:
+            if typ != 1: continue
+            offset = rom.find(pattern,paddr,paddr+filesz)
+            while offset != -1:
+                addresses.append(vaddr+offset-paddr)
+                offset = rom.find(pattern,offset+1,paddr+filesz)
+        assert addresses,name+' outside ROM load segments'
+        laser_addresses.append(addresses)
+address,length,index = host_symbols['sFTCharBuilderLaserMoves']
+start = host_sections[index][4]+address-host_sections[index][3]
+records = struct.unpack_from('<8I',host,start)
+assert records[2] == animation_duration('&llFTFoxAnimLaserFileID') == 55
+assert records[6] == animation_duration('&llFTFoxAnimLaserAerialFileID') == 45
+# IDO omits local data names. Match the complete linked table with real script addresses.
+assert any(struct.pack('>8I',ground,*records[1:4],air,*records[5:8]) in rom
+           for ground in laser_addresses[0] for air in laser_addresses[1]),'Laser pointers/durations missing'
+assert 'ftMainCharBuilderIsSpecialN' not in symbols  # Removed blanket laser interception.
 for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     name = 'sFTCustomAnimation'+donor
     address,length,index = host_symbols[name]
@@ -80,5 +110,6 @@ for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     animation_bytes += length
 print('PASS: all three linked Mario animation pilots match host-tested poses and donor hitbox trajectories ('+str(animation_bytes)+' bytes).')
 print('PASS: 396 normal and 12 grab collision tables, all 36 two-part throw definitions, joint maps, grab timings, creator/assignment/training code and N64 CRC are in the ROM.')
+print('PASS: selectable neutral dispatch, bounded laser scripts/durations and DK immediate throw dispatch are linked in the ROM.')
 print('ROM bytes:',len(rom))
 print('SHA-256:',hashlib.sha256(rom).hexdigest())

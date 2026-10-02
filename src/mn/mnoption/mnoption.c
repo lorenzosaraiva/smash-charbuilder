@@ -1054,7 +1054,7 @@ void mnOptionBuilderMakeEditor(GObj *gobj)
         }
         else if (i == 19)
         {
-            value = "FOX LASER";
+            value = (slot->special_n == nSCCharBuilderNeutralFoxLaser) ? "FOX LASER" : "BODY MOVE";
         }
         else if (i == 20)
         {
@@ -1101,6 +1101,7 @@ void mnOptionBuilderRandomize(void)
     }
     seed = (seed * 1103515245) + 12345;
     slot->special_hi = (seed >> 16) % (nFTKindPlayableEnd + 1);
+    slot->special_n = (seed >> 15) & 1;
     seed = (seed * 1103515245) + 12345;
     slot->special_lw = (seed >> 16) % (nFTKindPlayableEnd + 1);
 
@@ -1127,6 +1128,12 @@ void mnOptionBuilderChangeValue(s32 add)
     else if ((sMNOptionBuilderEntry >= 3) && (sMNOptionBuilderEntry <= 18))
     {
         value = &slot->attacks[sMNOptionBuilderEntry - 3];
+    }
+    else if (sMNOptionBuilderEntry == 19)
+    {
+        slot->special_n = (slot->special_n == nSCCharBuilderNeutralFoxLaser) ?
+            nSCCharBuilderNeutralBody : nSCCharBuilderNeutralFoxLaser;
+        return;
     }
     else if (sMNOptionBuilderEntry == 20)
     {
@@ -1160,6 +1167,7 @@ void mnOptionBuilderUseBodyForAll(void)
     }
     slot->special_hi = slot->body;
     slot->special_lw = slot->body;
+    slot->special_n = nSCCharBuilderNeutralBody;
 }
 
 void mnOptionBuilderTestInTraining(void)

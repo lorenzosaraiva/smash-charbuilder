@@ -521,26 +521,7 @@ static void ftMainCharBuilderMakeSamusBomb(GObj *fighter_gobj)
     wpSamusBombMakeWeapon(fighter_gobj, &pos);
 }
 
-static sb32 ftMainCharBuilderIsSpecialN(FTStruct *fp)
-{
-    return (ftMainCharBuilderGetSlot(fp) != NULL) && (fp->motion_attack_id == nFTMotionAttackIDSpecialN);
-}
-
-static void ftMainCharBuilderMakeLaser(GObj *fighter_gobj)
-{
-    FTStruct *fp = ftGetStruct(fighter_gobj);
-    Vec3f pos;
-
-    if (fp->motion_vars.flags.flag0 == 0)
-    {
-        return;
-    }
-    fp->motion_vars.flags.flag0 = 0;
-    pos = fp->joints[nFTPartsJointTopN]->translate.vec.f;
-    pos.x += fp->lr * 60.0F;
-    pos.y += 80.0F;
-    wpFoxBlasterMakeWeapon(fighter_gobj, &pos);
-}
+#include "ftcharbuilderneutral.c.inc"
 
 // // // // // // // // // // // //
 //                               //
@@ -2060,10 +2041,6 @@ void ftMainProcUpdateInterrupt(GObj *fighter_gobj)
         {
             ftMainCharBuilderMakeSamusBomb(fighter_gobj);
         }
-        else if (ftMainCharBuilderIsSpecialN(this_fp) != FALSE)
-        {
-            ftMainCharBuilderMakeLaser(fighter_gobj);
-        }
         if (this_fp->proc_update != NULL)
         {
             this_fp->proc_update(fighter_gobj);
@@ -2423,10 +2400,6 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
         if (ftMainCharBuilderIsSamusBomb(fp) != FALSE)
         {
             ftMainCharBuilderMakeSamusBomb(fighter_gobj);
-        }
-        else if (ftMainCharBuilderIsSpecialN(fp) != FALSE)
-        {
-            ftMainCharBuilderMakeLaser(fighter_gobj);
         }
         else if (fp->proc_accessory != NULL)
         {
@@ -4988,10 +4961,6 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         {
             ftMainCharBuilderMakeSamusBomb(fighter_gobj);
         }
-        else if (ftMainCharBuilderIsSpecialN(fp) != FALSE)
-        {
-            ftMainCharBuilderMakeLaser(fighter_gobj);
-        }
         else if (fp->proc_accessory != NULL)
         {
             fp->proc_accessory(fighter_gobj);
@@ -5421,6 +5390,9 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         {
             fp->motion_scripts[0][i].p_script = fp->motion_scripts[1][i].p_script = NULL;
         }
+        /* Laser poses must not run the body's charge/capture/projectile events. */
+        if (sFTCharBuilderNeutralStartingOwner == fp)
+            fp->motion_scripts[0][0].p_script = fp->motion_scripts[1][0].p_script = NULL;
         if (ftCustomMoveGetDefinition(fp) != NULL)
         {
             fp->motion_scripts[0][2].p_script = fp->motion_scripts[1][2].p_script =

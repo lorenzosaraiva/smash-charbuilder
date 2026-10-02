@@ -101,6 +101,16 @@ static SCCharBuilderSlot* ftCustomMoveGetSlot(FTStruct *fp)
     return slot;
 }
 
+/* A foreign forward throw must release, rather than enter DK's carry loop. */
+sb32 ftMainCharBuilderIsImmediateDonkeyThrow(FTStruct *fp)
+{
+    SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
+    s32 donor;
+    if ((slot == NULL) || (fp->fkind != nFTKindDonkey)) return FALSE;
+    donor = slot->attacks[nSCCharBuilderAttackThrowF];
+    return (donor >= nFTKindPlayableStart) && (donor <= nFTKindPlayableEnd) && (donor != nFTKindDonkey);
+}
+
 static const FTCustomMoveDefinition* ftCustomMoveGetDefinition(FTStruct *fp)
 {
     SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
