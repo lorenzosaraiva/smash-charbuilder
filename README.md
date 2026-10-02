@@ -11,8 +11,8 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
 
-**[How to play Character Lab](ssb-decomp-re/docs/playing.md)** Â·
-**[Done / not done](docs/status.md)** Â· **[Build guide](docs/building.md)** Â·
+**[How to play Character Lab](ssb-decomp-re/docs/playing.md)** |
+**[Done / not done](docs/status.md)** | **[Build guide](docs/building.md)** |
 **[Changes](CHANGELOG.md)**
 
 ## Downloads
