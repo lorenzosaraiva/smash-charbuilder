@@ -1497,8 +1497,9 @@ void ftMainPlayAnim(GObj *fighter_gobj)
         fp->anim_vel = fp->joints[nFTPartsJointTransN]->translate.vec.f;
     }
     ftParamUpdateAnimKeys(fighter_gobj);
-    ftParamsUpdateFighterPartsTransform(fp->joints[nFTPartsJointTopN]);
     fighter_gobj->anim_frame = ftCustomMoveAdvanceClock(fp, fighter_gobj->anim_frame);
+    ftCustomAnimationApplyPose(fp);
+    ftParamsUpdateFighterPartsTransform(fp->joints[nFTPartsJointTopN]);
 }
 
 // 0x800E0830 - Play fighter animation and run motion scripts normally
@@ -2434,6 +2435,7 @@ void ftMainProcPhysicsMap(GObj *fighter_gobj)
     }
     fp->is_events_forward = FALSE;
 
+    ftCustomAnimationApplyCollision(fp);
     for (i = 0; i < ARRAY_COUNT(fp->attack_colls); i++)
     {
         FTAttackColl *attack_coll = &fp->attack_colls[i];

@@ -1,6 +1,6 @@
 # Next step: donor animations on custom bodies
 
-Status: implementation plan; animation retargeting has not been implemented.
+Status: the three-move Mario pilot is implemented. Native playback, geometry, host lifecycle and linked-ROM checks pass. Rendered emulator acceptance remains pending; expansion in section 5 is gated on that check. See [the pilot report](animation-retargeting-pilot.md).
 Gameplay checkpoint: `c4cf93a87` (donor collision parameters, normal/grab timing and landing windows), following `290cffca3` (grab/throw donors) and `06f98fe70` (normal roster, player assignments, training HITBOX and unlocks).
 
 ## Intended result

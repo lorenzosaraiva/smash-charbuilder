@@ -7,8 +7,9 @@
 #include <gm/gmdef.h>
 
 #define _FTTYPES_H_
-struct DObj { s32 unused; };
+struct DObj { struct { union { Vec3f f; } vec; } rotate,translate,scale; };
 typedef struct DObj DObj;
+typedef struct FTAttackColl { s32 attack_state; DObj *joint; Vec3f offset; sb32 is_scale_pos; } FTAttackColl;
 struct FTMotionScript { ftMotionCommand *p_script; };
 struct FTMotionEventDefault { u32 words[1]; };
 struct FTMotionEventMakeAttack { u32 words[5]; };
@@ -25,7 +26,8 @@ struct FTStruct
     s32 motion_attack_id;
     FTThrowHitDesc *throw_desc;
     DObj *joints[FTPARTS_JOINT_NUM_MAX];
-    s32 attack_colls[4];
+    FTAttackColl attack_colls[4];
+    struct { f32 size; } *attr;
     FTMotionScript motion_scripts[2][3];
 };
 #include <sc/scdef.h>
@@ -241,9 +243,108 @@ static s32 testCustomMove(void)
     CHECK(ftCustomMoveGetDefinition(&fp) == NULL);
     return 0;
 }
+static s32 testCustomAnimation(void)
+{
+    FTStruct players[4] = { 0 }, preview;
+    DObj joints[4][28] = { 0 };
+    struct { f32 size; } attr = { 1.12F };
+    const FTCustomMoveDefinition *moves[3] = { &sFTCustomMoves[nFTKindCaptain][23], &sFTCustomMoves[nFTKindFox][5], &sFTCustomMoves[nFTKindDonkey][14] };
+    const FTCustomAnimationFrame *tables[3] = { sFTCustomAnimationCaptain, sFTCustomAnimationFox, sFTCustomAnimationDonkey };
+    const FTCustomAnimationFrame *pose;
+    s32 player, pilot, frame, i, aid, state;
+    u32 failures;
+    f32 saved;
+    CHECK(sizeof(FTCustomAnimationFrame) == 628);
+    gSCManagerSceneData.scene_curr = nSCKind1PTrainingMode;
+    for (player = 0; player < 4; player++)
+    {
+        FTStruct *fp = &players[player];
+        fp->player = player; fp->fkind = nFTKindMario; fp->pkind = nFTPlayerKindCom;
+        fp->attr = (void*)&attr;
+        gSCManagerCharBuilderPlayerSlots[player] = 0;
+        gSCManagerCharBuilderSlots[0].body = nFTKindMario;
+        gSCManagerCharBuilderSlots[0].is_enabled = TRUE;
+        for (i = 0; i < 28; i++) fp->joints[i] = &joints[player][i];
+        ftCustomMoveStartClock(fp, moves[player % 3], player * 2.0F);
+        ftCustomMoveAdvanceClock(fp, 0);
+    }
+    for (player = 0; player < 4; player++) CHECK(ftCustomAnimationGetFrame(&players[player]) == &tables[player % 3][player * 2]);
+    preview = players[0]; ftCustomMoveResetClock(&preview);
+    CHECK(ftCustomAnimationGetFrame(&players[0]) == &tables[0][0]);
+    for (pilot = 0; pilot < 3; pilot++)
+    {
+        FTStruct *fp = &players[0];
+        ftCustomMoveStartClock(fp, moves[pilot], 0);
+        for (frame = 0; frame <= moves[pilot]->duration; frame++)
+        {
+            ftCustomMoveAdvanceClock(fp, -1); pose = &tables[pilot][frame];
+            CHECK(ftCustomAnimationGetFrame(fp) == pose);
+            ftCustomAnimationApplyPose(fp);
+            for (i = 0; i < 24; i++)
+            {
+                CHECK(joints[0][i + 4].rotate.vec.f.x == pose->joints[i].rotate.x);
+                CHECK(joints[0][i + 4].rotate.vec.f.y == pose->joints[i].rotate.y);
+                CHECK(joints[0][i + 4].rotate.vec.f.z == pose->joints[i].rotate.z);
+                CHECK(joints[0][i + 4].translate.vec.f.y == pose->joints[i].translate.y);
+                CHECK(joints[0][i + 4].scale.vec.f.x == 1.0F);
+            }
+            /* Reading/applying a frozen frame never advances the clock. */
+            ftCustomAnimationApplyPose(fp); CHECK(ftCustomAnimationGetFrame(fp) == pose);
+            for (state = nGMAttackStateNew; state <= nGMAttackStateInterpolate; state++)
+            {
+                for (aid = 0; aid < 4; aid++)
+                {
+                    fp->attack_colls[aid].attack_state = state;
+                    fp->attack_colls[aid].joint = &joints[0][5];
+                    fp->attack_colls[aid].offset.x = 123.0F;
+                }
+                ftCustomAnimationApplyCollision(fp);
+                for (aid = 0; aid < 4; aid++)
+                {
+                    CHECK(fp->attack_colls[aid].attack_state == state);
+                    if (pose->active_mask & (1 << aid))
+                    {
+                        CHECK(fp->attack_colls[aid].joint == fp->joints[0]);
+                        saved = fp->attack_colls[aid].offset.x * attr.size - pose->centers[aid].x;
+                        CHECK(saved < 0.001F && saved > -0.001F);
+                        saved = fp->attack_colls[aid].offset.y * attr.size - pose->centers[aid].y;
+                        CHECK(saved < 0.001F && saved > -0.001F);
+                        saved = fp->attack_colls[aid].offset.z * attr.size - pose->centers[aid].z;
+                        CHECK(saved < 0.001F && saved > -0.001F);
+                        CHECK(!fp->attack_colls[aid].is_scale_pos);
+                    }
+                    else CHECK(fp->attack_colls[aid].offset.x == 123.0F);
+                }
+            }
+        }
+    }
+    players[0].status_id++; CHECK(ftCustomAnimationGetFrame(&players[0]) == NULL); players[0].status_id--;
+    players[0].motion_id++; CHECK(ftCustomAnimationGetFrame(&players[0]) == NULL); players[0].motion_id--;
+    players[0].fkind = nFTKindFox; CHECK(ftCustomAnimationGetFrame(&players[0]) == NULL); players[0].fkind = nFTKindMario;
+    players[0].pkind = nFTPlayerKindDemo; CHECK(ftCustomAnimationGetFrame(&players[0]) == NULL); players[0].pkind = nFTPlayerKindMan;
+    gSCManagerSceneData.scene_curr = nSCKindTitle; CHECK(ftCustomAnimationGetFrame(&players[0]) == NULL);
+    gSCManagerSceneData.scene_curr = nSCKindVSBattle;
+    ftCustomMoveStartClock(&players[0],moves[0],0); ftCustomMoveAdvanceClock(&players[0],0);
+    saved = joints[0][4].rotate.vec.f.x; failures = gFTCustomAnimationValidationFailures;
+    players[0].joints[27] = NULL; ftCustomAnimationApplyPose(&players[0]);
+    CHECK(gFTCustomAnimationValidationFailures == failures + 1 && joints[0][4].rotate.vec.f.x == saved);
+    ftCustomMoveResetClock(&players[0]); CHECK(ftCustomAnimationGetFrame(&players[0]) == NULL);
+    CHECK(ftCustomAnimationGetFrame(&players[1]) == &tables[1][2]);
+    ftCustomMoveStartClock(&players[1],&sFTCustomMoves[nFTKindFox][4],0);
+    CHECK(ftCustomAnimationGetFrame(&players[1]) == NULL); /* Angled variants stay native. */
+    return 0;
+}
 void _start(void)
 {
     s32 result = testCustomMove();
+    if (result == 0) result = testCustomAnimation();
+    if (result != 0)
+    {
+        char message[] = "Failed CHECK at line 0000\n";
+        s32 value = result, i;
+        for (i = 24; i >= 21; i--) { message[i] = '0' + value % 10; value /= 10; }
+        __asm__ volatile("int $0x80" : : "a"(4), "b"(2), "c"(message), "d"(sizeof(message) - 1) : "memory");
+    }
     __asm__ volatile("int $0x80" : : "a"(1), "b"(result) : "memory");
     __builtin_unreachable();
 }

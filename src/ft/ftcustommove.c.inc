@@ -11,6 +11,7 @@ static FTThrowHitDesc sFTCustomThrowDescs[GMCOMMON_PLAYERS_MAX][2];
 typedef struct FTCustomMoveClock
 {
     FTStruct *owner;
+    const FTCustomMoveDefinition *move;
     s32 status_id, motion_id, duration;
     f32 frame, native_frame;
     u32 flags;
@@ -40,6 +41,7 @@ static void ftCustomMoveStartClock(FTStruct *fp, const FTCustomMoveDefinition *m
     if ((move == NULL) || (move->duration <= 0) || (fp->player >= GMCOMMON_PLAYERS_MAX)) return;
     clock = &sFTCustomMoveClocks[fp->player];
     clock->owner = fp;
+    clock->move = move;
     clock->status_id = fp->status_id;
     clock->motion_id = fp->motion_id;
     clock->duration = move->duration;
@@ -271,3 +273,5 @@ static sb32 ftCustomMoveSkipNativeCollision(FTStruct *fp, FTMotionScript *ms, u3
     }
     return FALSE;
 }
+
+#include "ftcustomanimation.c.inc"

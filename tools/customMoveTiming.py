@@ -19,7 +19,7 @@ def animation_duration(file_id):
         for op, arguments in re.findall(r'(ftAnim\w+)\(([^()]*)\)', script):
             args = [arg.strip() for arg in arguments.split(',')]
             if op in ('ftAnimEnd', 'ftAnimLoop'): break
-            if op in ('ftAnimBlock','ftAnimSetFlagsT','ftAnimSetTargetRateT') or ('Block' in op and op.endswith('T')):
+            if op in ('ftAnimBlock','ftAnimSetFlagsT') or ('Block' in op and op.endswith('T') and 'SetTargetRate' not in op):
                 duration += int(args[-1], 0)
         durations.append(duration)
     assert durations and max(durations) > 0, file_id
