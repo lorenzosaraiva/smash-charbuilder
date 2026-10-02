@@ -55,6 +55,9 @@ for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMain
              'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
              'ftCommonSpecialNCheckInterruptCommon','ftCommonSpecialAirCheckInterruptCommon',
              'ftCommonThrowSetStatus','ftDonkeyThrowFFProcUpdate','mnOptionBuilderChangeValue',
+             'sc1PTrainingModeStartScene','mnPlayers1PTrainingBackTo1PMode',
+             'mnPlayers1PTrainingInitVars','gSCManagerCharBuilderTrainingSlot',
+             'mnOptionBuilderTestInTraining','mnOptionInitVars','mnOptionFuncStart',
              'ftCommonAttackAirLwProcHit','ftCommonAttackAirLwProcUpdate',
              'sc1PTrainingModeUpdateViewOption','mnOptionBuilderAssignPlayer','mnOptionBuilderRun',*metadata):
     value,length,index = symbols[name]

@@ -12,6 +12,7 @@ The editor also has independent **Grab**, **Forward Throw** and **Back Throw** d
 2. On the lab's main screen, select **Player One/Two/Three/Four** and use left/right to assign a build or **Vanilla**. Assigning a build enables it. The player number is the controller/CPU slot, independently of team color.
 3. Select **Play VS**. Assigned bodies are preselected. Change the usual player-type control to CPU for a custom opponent. Keep that build's body selected; choosing a different body plays that body normally. Two slots can use distinct builds with the same body, or share one build.
 4. **Test in Training** assigns the edited build to player one. In training, press Start, select **View**, and choose **HITBOX** with left/right. It uses the engine's red attack outlines and hurtbox visualization for both fighters. NORMAL/CLOSE UP restore ordinary rendering.
+5. Leaving a training test through the pause menu, or pressing **Back** on its character-select screen, reopens that build's editor with **Test in Training** selected. Training resets keep this return destination. Ordinary training retains its usual return path.
 
 The four unlockable fighters (Luigi, Captain Falcon, Jigglypuff and Ness) and Item Switch are unlocked on fresh and existing saves. Existing records and options are preserved. These unlocks survive a restart; creator builds and player assignments currently last for the running ROM session.
 

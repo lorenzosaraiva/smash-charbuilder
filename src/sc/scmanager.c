@@ -4,6 +4,7 @@
 #include <mv/movie.h>
 #include <mn/menu.h>
 #include <sc/scene.h>
+#include <sc/sccharbuildertraining.h>
 #include <db/debug.h>
 #include <sys/debug.h>
 #include <sys/dma.h>
@@ -15,6 +16,7 @@
 extern void mnVSModeStartScene();
 
 s8 gSCManagerCharBuilderPlayerSlots[4] = { -1, -1, -1, -1 };
+s8 gSCManagerCharBuilderTrainingSlot = -1;
 SCCharBuilderSlot gSCManagerCharBuilderSlots[SCCHARBUILDER_SLOTS_COUNT] =
 {
     { TRUE, nFTKindMario, { nFTKindFox, nFTKindCaptain, nFTKindLink, nFTKindPikachu, nFTKindNess, nFTKindDonkey, nFTKindKirby, nFTKindSamus, nFTKindYoshi, nFTKindFox, nFTKindLink, nFTKindPurin, nFTKindCaptain, nFTKindMario, nFTKindMario, nFTKindMario }, nFTKindPikachu, nFTKindFox, nSCCharBuilderNeutralFoxLaser },

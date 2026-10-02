@@ -3,6 +3,7 @@
 #include <gr/ground.h>
 #include <if/interface.h>
 #include <sc/scene.h>
+#include <sc/sccharbuildertraining.h>
 #include <sys/video.h>
 #include <reloc_data.h>
 #include <sys/develop.h>
@@ -1906,7 +1907,10 @@ void sc1PTrainingModeStartScene(void)
 	syAudioSetBGMVolume(0, 0x7800);
 
 	gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
-	gSCManagerSceneData.scene_curr = nSCKindPlayers1PTraining;
+	gSCManagerSceneData.scene_curr =
+		((gSCManagerCharBuilderTrainingSlot >= 0) &&
+		 (gSCManagerCharBuilderTrainingSlot < SCCHARBUILDER_SLOTS_COUNT)) ?
+		nSCKindOption : nSCKindPlayers1PTraining;
 }
 
 // 0x801906D0

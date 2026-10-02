@@ -2,6 +2,7 @@
 #include <if/interface.h>
 #include <mn/menu.h>
 #include <sc/scene.h>
+#include <sc/sccharbuildertraining.h>
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
@@ -2046,7 +2047,10 @@ void mnPlayers1PTrainingRecallPuck(s32 player)
 void mnPlayers1PTrainingBackTo1PMode(void)
 {
 	gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
-	gSCManagerSceneData.scene_curr = nSCKind1PMode;
+	gSCManagerSceneData.scene_curr =
+		((gSCManagerCharBuilderTrainingSlot >= 0) &&
+		 (gSCManagerCharBuilderTrainingSlot < SCCHARBUILDER_SLOTS_COUNT)) ?
+		nSCKindOption : nSCKind1PMode;
 
 	mnPlayers1PTrainingSetSceneData();
 	syAudioStopBGMAll();
@@ -2943,6 +2947,7 @@ void mnPlayers1PTrainingFuncRun(GObj *gobj)
 	{
 		gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
 		gSCManagerSceneData.scene_curr = nSCKindTitle;
+		gSCManagerCharBuilderTrainingSlot = -1;
 
 		mnPlayers1PTrainingSetSceneData();
 		syTaskmanSetLoadScene();
@@ -3059,6 +3064,11 @@ void mnPlayers1PTrainingInitVars(void)
 {
 	s32 i;
 	s32 fkind, costume;
+
+	if ((gSCManagerSceneData.scene_prev != nSCKindOption) &&
+		(gSCManagerSceneData.scene_prev != nSCKindMaps) &&
+		(gSCManagerSceneData.scene_prev != nSCKind1PTrainingMode))
+		gSCManagerCharBuilderTrainingSlot = -1;
 
 	sMNPlayers1PTrainingTotalTimeTics = 0;
 	sMNPlayers1PTrainingIsStart = FALSE;

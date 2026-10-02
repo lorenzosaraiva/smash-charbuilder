@@ -1,6 +1,7 @@
 #include <mn/menu.h>
 #include <gm/gmsound.h>
 #include <sc/scene.h>
+#include <sc/sccharbuildertraining.h>
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <sys/controller.h>
@@ -1175,6 +1176,7 @@ void mnOptionBuilderTestInTraining(void)
     SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
 
     slot->is_enabled = TRUE;
+    gSCManagerCharBuilderTrainingSlot = sMNOptionBuilderSlot;
     gSCManagerCharBuilderPlayerSlots[0] = sMNOptionBuilderSlot;
     gSCManagerSceneData.player = 0;
     gSCManagerSceneData.training_man_fkind = slot->body;
@@ -1332,6 +1334,17 @@ void mnOptionInitVars(void)
     sMNOptionBuilderEntry = 0;
     sMNOptionBuilderBackdropGObj = NULL;
     sMNOptionBuilderTextGObj = NULL;
+    if (((gSCManagerSceneData.scene_prev == nSCKind1PTrainingMode) ||
+         (gSCManagerSceneData.scene_prev == nSCKindPlayers1PTraining)) &&
+        (gSCManagerCharBuilderTrainingSlot >= 0) &&
+        (gSCManagerCharBuilderTrainingSlot < SCCHARBUILDER_SLOTS_COUNT))
+    {
+        sMNOptionOption = nMNOptionOptionCharBuilder;
+        sMNOptionBuilderMode = MNOPTION_BUILDER_MODE_EDIT;
+        sMNOptionBuilderSlot = gSCManagerCharBuilderTrainingSlot;
+        sMNOptionBuilderEntry = MNOPTION_BUILDER_ENTRY_COUNT - 1;
+    }
+    gSCManagerCharBuilderTrainingSlot = -1;
 }
 
 // 0x80132E10
@@ -1591,6 +1604,12 @@ void mnOptionFuncStart(void)
     mnOptionMakeSoundUnderline();
     mnOptionMakeMenuGObj();
 
+    if (sMNOptionBuilderMode == MNOPTION_BUILDER_MODE_EDIT)
+    {
+        mnOptionBuilderMakeBackdrop();
+        mnOptionBuilderRedraw();
+        syAudioPlayBGM(0, nSYAudioBGMModeSelect);
+    }
     if (gSCManagerSceneData.scene_prev == nSCKindScreenAdjust)
     {
         syAudioPlayBGM(0, nSYAudioBGMModeSelect);
