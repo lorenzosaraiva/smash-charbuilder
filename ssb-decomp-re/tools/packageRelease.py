@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.3',
+        'version': '0.1.4',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -89,6 +89,11 @@ A fully stored charge fires on the next B; airborne Charge Shot fires immediatel
 Boomerang returns/catches natively; Egg Lay captures into the native egg state.
 Training/VS now use the extra memory bank, fixing preview heap allocation freezes.
 These new choices are decomp only; rendered projectile acceptance is pending.
+Borrowed Up/Down B use source phase clocks with temporary idle/falling poses.
+DK Down B keeps its original startup/slap/recovery and repeated hit windows;
+tap B during a cycle to queue another. Ness Up B now loads its wave/trail models
+on foreign bodies and keeps separate trail state, fixing the freeze.
+Other Up/Down B paths, movement, sockets and rendered acceptance remain pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 Three Mario animation pilots are implemented; full animation coverage is pending.

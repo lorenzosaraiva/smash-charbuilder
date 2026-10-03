@@ -25,7 +25,7 @@ void ftNessSpecialHiDecThunderTimers(FTStruct *fp)
     {
         fp->status_vars.ness.specialhi.pkjibaku_delay--;
     }
-    if (fp->passive_vars.ness.is_thunder_destroy & TRUE)
+    if (ftMainCharBuilderGetNessPassive(fp)->is_thunder_destroy & TRUE)
     {
         if (fp->status_vars.ness.specialhi.pkthunder_end_delay != 0)
         {
@@ -75,7 +75,7 @@ sb32 ftNessSpecialHiCheckCollidePKThunder(GObj *fighter_gobj)
     {
         return FALSE;
     }
-    if ((fp->passive_vars.ness.is_thunder_destroy & TRUE) || (pkthunder_gobj == NULL))
+    if ((ftMainCharBuilderGetNessPassive(fp)->is_thunder_destroy & TRUE) || (pkthunder_gobj == NULL))
     {
         return FALSE;
     }
@@ -184,8 +184,8 @@ void ftNessSpecialHiInitStatusVars(GObj *fighter_gobj)
     fp->status_vars.ness.specialhi.pkjibaku_delay = FTNESS_PKJIBAKU_DELAY;
     fp->status_vars.ness.specialhi.pkthunder_end_delay = FTNESS_PKTHUNDER_END_DELAY;
     fp->status_vars.ness.specialhi.pkthunder_gravity_delay = FTNESS_PKTHUNDER_GRAVITY_DELAY;
-    fp->passive_vars.ness.is_thunder_destroy = FALSE;
-    fp->passive_vars.ness.pkthunder_trail_id = 0;
+    ftMainCharBuilderGetNessPassive(fp)->is_thunder_destroy = FALSE;
+    ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_id = 0;
 }
 
 // 0x80153FF0
@@ -218,13 +218,13 @@ void ftNessSpecialHiUpdatePKThunder(GObj *fighter_gobj)
 
     if (weapon_gobj == NULL)
     {
-        fp->passive_vars.ness.is_thunder_destroy |= TRUE;
+        ftMainCharBuilderGetNessPassive(fp)->is_thunder_destroy |= TRUE;
     }
-    fp->passive_vars.ness.pkthunder_trail_id++;
+    ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_id++;
 
-    if (fp->passive_vars.ness.pkthunder_trail_id >= FTNESS_PKTHUNDER_TRAIL_POS_COUNT)
+    if (ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_id >= FTNESS_PKTHUNDER_TRAIL_POS_COUNT)
     {
-        fp->passive_vars.ness.pkthunder_trail_id = 0;
+        ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_id = 0;
     }
     ftNessSpecialHiDecThunderTimers(fp);
 }
@@ -236,7 +236,7 @@ void ftNessSpecialHiHoldProcUpdate(GObj *fighter_gobj)
 
     ftNessSpecialHiUpdatePKThunder(fighter_gobj);
 
-    if ((fp->status_vars.ness.specialhi.pkjibaku_delay <= 0) && (fp->status_vars.ness.specialhi.pkthunder_end_delay <= 0) && (fp->passive_vars.ness.is_thunder_destroy & TRUE))
+    if ((fp->status_vars.ness.specialhi.pkjibaku_delay <= 0) && (fp->status_vars.ness.specialhi.pkthunder_end_delay <= 0) && (ftMainCharBuilderGetNessPassive(fp)->is_thunder_destroy & TRUE))
     {
         ftNessSpecialHiEndSetStatus(fighter_gobj);
     }
@@ -254,7 +254,7 @@ void ftNessSpecialAirHiHoldProcUpdate(GObj *fighter_gobj)
 
     ftNessSpecialHiUpdatePKThunder(fighter_gobj);
 
-    if ((fp->status_vars.ness.specialhi.pkjibaku_delay <= 0) && (fp->status_vars.ness.specialhi.pkthunder_end_delay <= 0) && (fp->passive_vars.ness.is_thunder_destroy & TRUE))
+    if ((fp->status_vars.ness.specialhi.pkjibaku_delay <= 0) && (fp->status_vars.ness.specialhi.pkthunder_end_delay <= 0) && (ftMainCharBuilderGetNessPassive(fp)->is_thunder_destroy & TRUE))
     {
         ftNessSpecialAirHiEndSetStatus(fighter_gobj);
     }
@@ -283,7 +283,7 @@ void ftNessSpecialHiSetPKThunderDestroy(GObj *fighter_gobj) // Unused
     FTStruct *fp = ftGetStruct(fighter_gobj);
     GObj *weapon_gobj = fp->status_vars.ness.specialhi.pkthunder_gobj;
 
-    if (!(fp->passive_vars.ness.is_thunder_destroy & TRUE) && (weapon_gobj != NULL))
+    if (!(ftMainCharBuilderGetNessPassive(fp)->is_thunder_destroy & TRUE) && (weapon_gobj != NULL))
     {
         WPStruct *wp = wpGetStruct(weapon_gobj);
 

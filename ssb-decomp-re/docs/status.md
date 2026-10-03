@@ -82,3 +82,12 @@ Training combo regression tests exercise the production counter update across al
 twelve bodies, native/creator fighters and four player slots. They cover held and
 throwing victims, release into hitstun, recovery, empty grabs, attacker/victim
 distinction, independent player counters and vanilla resets outside Training.
+
+## Decomp Up/Down B timing fixes
+
+- [x] Donor phase durations/loop boundaries and independent event clocks; safe idle/falling poses.
+- [x] DK Down B startup/slap/recovery, four source hitboxes and queued repeat cycles.
+- [x] Ness Up B weapon/wave/trail preloads and independent foreign-body passive state.
+- [x] Host/native/linked-ROM checks and all-body ROM CPU regressions for these two donors.
+- [ ] Complete donor paths/sockets, movement and effects for every Up/Down B.
+- [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.

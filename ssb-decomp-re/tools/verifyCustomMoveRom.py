@@ -11,6 +11,7 @@ from customMoveTiming import animation_duration
 from generateCustomCollisions import catalog, stored_frames
 from generateNeutralProjectiles import catalog as projectile_catalog, render as render_projectiles
 from generateNeutralActions import catalog as action_catalog, render as render_actions
+from generateSpecialTiming import catalog as special_catalog, render as render_specials, donkey_frames
 from auditNormalMoves import enum_values
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,6 +50,14 @@ for name,format in (('sFTCustomGrabJointMap','B'),('sFTCustomGrabTimings','H')):
 elf,sections,symbols = read_elf(ROOT/'build/smashbrothers.us.elf','>')
 assert symbols['syTaskmanMalloc'][0]==0x80004980,'Main SDK/controller/ucode address layout moved'
 assert symbols['osMemSize'][0]==0x80000318,'Incorrect IPL memory-size parameter'
+assert (ROOT/'src/ft/ftspecialtiming.generated.inc').read_text()==render_specials()
+special_words=[v for donor,motion,duration,cycle,_ in special_catalog()
+               for v in (donor,motion,0,0,duration,4 if cycle else 0)]
+assert struct.pack('>'+str(len(special_words))+'I',*special_words) in rom,'Missing source special phase clocks'
+dk_path=b''.join(struct.pack('>12fI',*(v for point in centers for v in point),mask)
+                 for mask,centers in donkey_frames())
+assert dk_path in rom,'Missing source DK hand-slap collision path'
+print('PASS: 96 source Up/Down B phase durations/loops and DK hit windows/geometry are linked in the ROM.')
 for name,expected in metadata.items():
     address,length,index = symbols[name]
     start = sections[index][4]+address-sections[index][3]

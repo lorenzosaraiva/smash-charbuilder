@@ -24,6 +24,44 @@ typedef enum FTMainCharBuilderSpecialKind
 
 } FTMainCharBuilderSpecialKind;
 
+typedef struct FTCharBuilderSpecialTiming
+{
+    s32 donor, motion;
+    FTCustomMoveDefinition move;
+} FTCharBuilderSpecialTiming;
+#include "ftspecialtiming.generated.inc"
+static const FTCustomCollisionTrajectory sFTCharBuilderDonkeyLwTrajectory =
+{
+    sFTCharBuilderDonkeyLwFrames, 0, ARRAY_COUNT(sFTCharBuilderDonkeyLwFrames), 0, 34
+};
+
+static const FTCustomMoveDefinition* ftMainCharBuilderSpecialTiming(s32 donor, s32 motion)
+{
+    s32 i;
+    for (i = 0; i < ARRAY_COUNT(sFTCharBuilderSpecialTimings); i++)
+        if ((sFTCharBuilderSpecialTimings[i].donor == donor) && (sFTCharBuilderSpecialTimings[i].motion == motion))
+            return &sFTCharBuilderSpecialTimings[i].move;
+    return NULL;
+}
+
+/* PK Thunder can outlive the action. Keep its trails away from body passives. */
+static struct FTCharBuilderNessState { FTStruct *owner; u32 player_num; FTNessPassiveVars passive; } sFTCharBuilderNessStates[4];
+FTNessPassiveVars* ftMainCharBuilderGetNessPassive(FTStruct *fp)
+{
+    if ((fp->fkind != nFTKindNess) && (fp->fkind != nFTKindNNess) && (fp->player < 4))
+    {
+        if ((sFTCharBuilderNessStates[fp->player].owner != fp) ||
+            (sFTCharBuilderNessStates[fp->player].player_num != fp->player_num))
+        {
+            bzero(&sFTCharBuilderNessStates[fp->player].passive, sizeof(FTNessPassiveVars));
+            sFTCharBuilderNessStates[fp->player].owner = fp;
+            sFTCharBuilderNessStates[fp->player].player_num = fp->player_num;
+        }
+        return &sFTCharBuilderNessStates[fp->player].passive;
+    }
+    return &fp->passive_vars.ness;
+}
+
 static s32 sFTMainCharBuilderSpecialDonors[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
 static u8 sFTMainCharBuilderSpecialKinds[GMCOMMON_PLAYERS_MAX];
 static sb32 sFTMainCharBuilderSamusBombMade[GMCOMMON_PLAYERS_MAX];
@@ -65,6 +103,8 @@ static ftMotionCommand sFTMainCharBuilderDonkeySpecialLwScript[] =
     ftMotionCommandEffect(nFTPartsJointTopN, nEFKindDustHeavyDouble, 0, 0, 0, 0, 0, 0, 0),
     ftMotionCommandWait(2),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandPauseScript(),
+    ftMotionCommandGoto(sFTMainCharBuilderDonkeySpecialLwScript),
     ftMotionCommandEnd()
 };
 
@@ -331,7 +371,7 @@ static void ftMainCharBuilderSetSpecialDonorKind(GObj *fighter_gobj, s32 donor, 
     {
         return;
     }
-    motion_id = ftMainCharBuilderGetSpecialMotionID(fp->fkind, special_kind, fp->ga);
+    motion_id = (fp->ga == nMPKineticsAir) ? nFTCommonMotionFall : nFTCommonMotionWait;
 
     if (ftMainCharBuilderIsMotionValid(fp->fkind, motion_id) == FALSE)
     {
@@ -5180,12 +5220,8 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
 
         if (is_charbuilder_special_status != FALSE)
         {
-            motion_id = ftMainCharBuilderGetSpecialMotionID
-            (
-                fp->fkind,
-                sFTMainCharBuilderSpecialKinds[fp->player],
-                fp->ga
-            );
+            /* Temporary safe pose: no body special root movement or phase replay. */
+            motion_id = (fp->ga == nMPKineticsAir) ? nFTCommonMotionFall : nFTCommonMotionWait;
         }
         else motion_id = charbuilder_motion_id;
 
@@ -5398,6 +5434,18 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             fp->motion_scripts[0][2].script_wait = fp->motion_scripts[1][2].script_wait = anim_frame;
             fp->motion_scripts[0][2].script_id = fp->motion_scripts[1][2].script_id = 0;
             ftCustomMoveStartClock(fp, ftCustomMoveGetDefinition(fp), frame_begin);
+        }
+        if (is_charbuilder_special_status != FALSE)
+        {
+            const FTCustomMoveDefinition *timing = ftMainCharBuilderSpecialTiming(charbuilder_donor, charbuilder_motion_id);
+            ftCustomMoveStartClock(fp, timing, frame_begin);
+            for (i = 0; i < 2; i++)
+            {
+                fp->motion_scripts[i][2] = fp->motion_scripts[i][0];
+                fp->motion_scripts[i][0].p_script = NULL;
+            }
+            if ((charbuilder_donor == nFTKindDonkey) && (charbuilder_motion_id == nFTDonkeyMotionSpecialLwLoop) &&
+                (ftCustomMoveGetClock(fp) != NULL)) ftCustomMoveGetClock(fp)->trajectory = &sFTCharBuilderDonkeyLwTrajectory;
         }
         if (frame_begin != 0.0F)
         {

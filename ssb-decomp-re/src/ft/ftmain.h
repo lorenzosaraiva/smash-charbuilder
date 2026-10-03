@@ -8,6 +8,7 @@
 #include <gr/grdef.h>
 #include <gm/gmdef.h>
 
+extern FTNessPassiveVars* ftMainCharBuilderGetNessPassive(FTStruct *fp);
 extern void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms, u32 ev_kind);
 extern void ftMainUpdateMotionEventsAll(GObj* fighter_gobj);
 extern void ftMainUpdateMotionEventsForward(GObj* fighter_gobj);

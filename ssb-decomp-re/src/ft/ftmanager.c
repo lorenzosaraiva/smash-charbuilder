@@ -481,6 +481,12 @@ void ftManagerSetupFilesPlayablesAll(void)
             {
                 ftManagerSetupFileMainKind(gSCManagerCharBuilderSlots[i].special_lw);
             }
+            if (gSCManagerCharBuilderSlots[i].special_hi == nFTKindNess)
+            {
+                /* PK Thunder trail/wave models live in Ness's model file, not Main/Special. */
+                FTData *ness_data = dFTManagerDataFiles[nFTKindNess];
+                ftManagerSetupFileSpecial(ness_data->p_file_model, ness_data->file_model_id);
+            }
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_hi);
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_lw);
             switch (gSCManagerCharBuilderSlots[i].special_n)

@@ -83,3 +83,12 @@ down-air bounce. Body hurtboxes remain the initial policy.
 
 Normal trajectory generation is complete. Visible animations, donor-specific
 mechanics and in-game acceptance remain on the detailed checklist.
+
+## Decomp Up/Down B timing fixes
+
+- [x] Donor phase durations/loop boundaries and independent event clocks; safe idle/falling poses.
+- [x] DK Down B startup/slap/recovery, four source hitboxes and queued repeat cycles.
+- [x] Ness Up B weapon/wave/trail preloads and independent foreign-body passive state.
+- [x] Host/native/linked-ROM checks and all-body ROM CPU regressions for these two donors.
+- [ ] Complete donor paths/sockets, movement and effects for every Up/Down B.
+- [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.

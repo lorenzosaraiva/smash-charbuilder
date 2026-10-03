@@ -92,3 +92,6 @@ and the Smash 64 decompilation community's work. The original
 [decompilation README](docs/decompilation.md) and detailed
 [gameplay](docs/custom-move-roster.md) / [animation](docs/animation-retargeting-pilot.md)
 notes are kept for people who want to dig into the implementation.
+
+Borrowed Up/Down B now use donor phase clocks and temporary idle/falling poses.
+See [special timing and remaining limits](docs/special-timing.md).

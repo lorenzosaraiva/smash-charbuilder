@@ -44,7 +44,8 @@ Most visible poses still belong to the body. Samus's held charging orb and donor
 voice/effect events are not yet reproduced. Egg Lay positions the victim using
 the donor tongue socket, then hands off to the native egg state; exact victim
 rotation and matching attacker animations remain pending. Body hurtboxes remain
-native. Up B/Down B use the earlier experimental adapters.
+native. Up B/Down B now use independent donor phase clocks; broader fidelity
+remains experimental. See [special timing notes](special-timing.md).
 
 Host tests cover all six new foreign-body choices, ground/air and four player
 slots, stored charge, native fallbacks, boomerang identity and egg handoff.

@@ -41,8 +41,8 @@ Charge/store/release, returning boomerangs, donor melee paths/movement and Egg L
 capture/egg handoff now have dedicated adapters. See [neutral controls](neutral-specials.md)
 for charge controls and visual limits. Kirby's copy system is excluded. Rendered
 contact/reflection/absorption acceptance remains pending; report body/donor, ground
-or air, and emulator when something breaks. Up B and Down B use earlier adapters
-and may have rough combinations.
+or air, and emulator when something breaks. Up B and Down B use donor phase clocks
+with temporary idle/falling poses; broader fidelity remains experimental.
 
 ## Training
 
@@ -102,3 +102,8 @@ forward throw is selected. The [checklist](status.md) explains the remaining gap
 For the animation pilot, choose a Mario body with Falcon Down Air, Fox Forward
 Tilt or DK Forward Smash. The tilt/smash pilots cover the straight variants only;
 angled poses stay native. Visual acceptance is still pending.
+
+Borrowed Up/Down B currently use idle/falling poses while their donor phase clocks
+control duration and events. DK Down B keeps both original slap windows; tap B
+again during a cycle to queue another cycle. Ness Up B now loads its wave/trail
+assets on other bodies. See [timing and remaining limits](special-timing.md).

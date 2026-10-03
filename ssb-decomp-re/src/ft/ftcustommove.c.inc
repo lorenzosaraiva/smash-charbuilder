@@ -70,6 +70,11 @@ static f32 ftCustomMoveAdvanceClock(FTStruct *fp, f32 native_frame)
     clock->frame += 1.0F;
 #endif
     if (clock->flags & FTCUSTOMMOVE_FLAG_LOOP) return native_frame;
+    if (clock->flags & FTCUSTOMMOVE_FLAG_SPECIAL_CYCLE)
+    {
+        if (clock->frame >= clock->duration) clock->frame = 0.0F;
+        return clock->frame;
+    }
     if (clock->frame >= clock->duration) return -1.0F;
     return (clock->frame > 0.0F) ? clock->frame : 0.001F;
 }

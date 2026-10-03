@@ -8,6 +8,7 @@ from customMoveCatalog import resolved_moves,source_scripts,MOTIONS
 from generateCustomMoves import expand
 from generateNeutralProjectiles import catalog as projectile_catalog
 from generateNeutralActions import catalog as action_catalog
+from generateSpecialTiming import donkey_case
 
 
 def function(text,name):
@@ -79,7 +80,7 @@ def main():
         scaling='sOracle'+fighter+'Scale' if scales and not case['flags']&4 else 'NULL'
         projectile_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{case["flags"]}U,{scaling},{case["firing"]+1},{events},{source_size(fighter)}F);')
     action_calls=[]
-    for i,case in enumerate(action_catalog()):
+    for i,case in enumerate(action_catalog()+(donkey_case(),)):
         fighter=case['fighter'];path,_=animation(case['animation'])
         if path not in seen_files:
             output.append('#include "../src/relocData/'+path.name+'"');seen_files.add(path)
@@ -160,7 +161,7 @@ def main():
                 projectile_error=max(projectile_error,error)
                 assert error<0.003,(case['fighter'],case['air'],native,case['offset'],error)
     action_error=0;action_centers=0
-    for case in action_catalog():
+    for case in action_catalog()+(donkey_case(),):
         previous_trans=(0,0,0)
         poses=sample(case['fighter'],case['animation'],case['duration']+1,case['flags'])
         for frame,pose in enumerate(poses):
@@ -173,8 +174,9 @@ def main():
             centers=struct.unpack_from('<12f',raw,cursor);cursor+=48
             mask=struct.unpack_from('<I',raw,cursor)[0];cursor+=4
             expected_mask,expected_centers=case['frames'][frame]
-            assert mask&7==expected_mask,(case['fighter'],case['phase'],frame,mask,expected_mask)
-            for aid in range(3):
+            hand_slap=case['phase']=='HandSlap'
+            assert mask&(15 if hand_slap else 7)==expected_mask,(case['fighter'],case['phase'],frame,mask,expected_mask)
+            for aid in range(4 if hand_slap else 3):
                 if not expected_mask&(1<<aid):continue
                 error=max(abs(a-b) for a,b in zip(centers[aid*3:aid*3+3],expected_centers[aid]))
                 action_error=max(action_error,error);action_centers+=1
@@ -187,7 +189,7 @@ def main():
             if probe:
                 native=(centers[11],centers[10],-centers[9])
                 assert mask&8 and max(abs(a-b) for a,b in zip(native,probe[frame]))<0.003,(case['fighter'],case['phase'],'socket',frame,native,probe[frame])
-    print(f'PASS: all 30 remaining neutral phases, {action_centers} active centers, grounded root movement, charge/boomerang sockets and Yoshi capture anchors match original playback/matrices; max center error {action_error:.7f}.')
+    print(f'PASS: all 30 remaining neutral phases and DK Hand Slap, {action_centers} active centers, grounded root movement, charge/boomerang sockets and Yoshi capture anchors match original playback/matrices; max center error {action_error:.7f}.')
     assert cursor==len(raw),(cursor,len(raw))
     print(f'PASS: all eight projectile-neutral spawn poses match original animation/collision matrices; max error {projectile_error:.7f}.')
     print(f'PASS: {len(cases)} donor timelines, {comparisons} scalar samples match original ftAnimParseDObjFigatree and playback; max error {maximum:.7f}.')

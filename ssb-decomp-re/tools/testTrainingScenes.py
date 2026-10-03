@@ -10,6 +10,7 @@ import argparse, ctypes as C, threading, time, subprocess, struct
 from pathlib import Path
 from elfData import read_elf
 from auditNormalMoves import enum_values
+from hostFighterHeaders import prepare
 
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
@@ -20,17 +21,22 @@ parser.add_argument('--data',default='/usr/share/mupen64plus')
 parser.add_argument('--four-mb',action='store_true')
 parser.add_argument('--cases',type=int,default=12)
 parser.add_argument('--first-choice',type=int,default=0)
+parser.add_argument('--specials',action='store_true',help='Exercise borrowed DK Down B and Ness Up B instead of neutral actions')
 parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every body instead of cycling neutral choices')
 args=parser.parse_args()
 if not 0<=args.first_choice<12 or not 1<=args.cases<=12-args.first_choice:
     parser.error('Choose a contiguous range within the twelve neutral choices.')
 build=ROOT/'build/scene-smoke';build.mkdir(parents=True,exist_ok=True)
-subprocess.run(['clang','--target=mips-unknown-none','-c','-EB','-mabi=32','-march=mips2','-ffreestanding','-O1','-I'+str(ROOT/'include'),
+layout_headers=prepare(ROOT,build/'layout-headers')
+subprocess.run(['clang','--target=mips-unknown-none','-c','-EB','-mabi=32','-march=mips2','-ffreestanding','-O1','-I'+str(layout_headers),'-I'+str(ROOT/'include'),
                 '-I'+str(ROOT/'src'),'-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US',
                 str(ROOT/'tools/emulator/layout.c'),'-o',str(build/'layout.o')],check=True)
 data,sections,layout_symbols=read_elf(build/'layout.o','>')
 value,length,index=layout_symbols['sSceneSmokeLayout'];start=sections[index][4]+value-sections[index][3]
 layout=struct.unpack_from('>'+str(length//4)+'I',data,start)
+value,length,index=layout_symbols['sSceneSmokeFighterLayout'];start=sections[index][4]+value-sections[index][3]
+fighter_layout=struct.unpack_from('>'+str(length//4)+'I',data,start)
+ftsize,kind_off,port_off,gobj_off,status_off,motion_off,attack_off,attack_size,attack_state_off,passive_off,passive_size,generation_off,physics_off,vel_air_off,hitlag_off,gobj_frame_off=fighter_layout
 slot_size,neutral_field,players_field,player_size,pkind_field,fkind_field,man_field,cpu_field,reset_field,stage_field=layout
 for name in ('input','video'):
     subprocess.run(['gcc','-shared','-fPIC','-I'+args.headers,str(ROOT/'tools/emulator'/f'{name}.c'),
@@ -87,12 +93,27 @@ def heap_ok():
     start,end,ptr=(u32(heap+j) for j in (4,8,12))
     assert start==0x80400000 and end==0x80800000 and start<=ptr<=end,diagnostic()
     return end-ptr
+trace=[];last_trace=None
+@C.CFUNCTYPE(None,C.c_uint)
+def frame_callback(frame):
+    global last_trace
+    if not args.specials or u8(scene)!=54:return
+    fp=u32(addr('sFTManagerStructsAllocBuf'))
+    if not 0x80400000<=fp<0x80800000:return
+    if u8(fp+port_off)!=0:return
+    gobj=u32(fp+gobj_off)
+    if not 0x80400000<=gobj<0x80800000:return
+    source_frame=C.c_float.from_address(ram+((gobj+gobj_frame_off)&0x7fffff)).value
+    mask=sum(1<<i for i in range(4) if u32(fp+attack_off+i*attack_size+attack_state_off))
+    record=(u32(fp+status_off),u32(fp+motion_off),int(source_frame),mask)
+    if record!=last_trace:trace.append(record);last_trace=record
+check(core.CoreDoCommand(15,0,C.cast(frame_callback,C.c_void_p)))
 thread=threading.Thread(target=lambda:check(core.CoreDoCommand(5,0,None)),daemon=True)
 thread.start()
 try:
     wait(lambda:u32(0x80000318)==(0x400000 if args.four_mb else 0x800000),'Boot memory size')
     time.sleep(2)
-    check(core.CoreDoCommand(17,5,C.byref(C.c_int(0)))) # Disable core speed limiter.
+    check(core.CoreDoCommand(17,5,C.byref(C.c_int(0)))) # Run these timing tests at normal speed; other smoke tests run uncapped.
     # Skip the intro only. From Options onward, use the actual button handlers.
     w8(scene+1,u8(scene));w8(scene,57);w32(addr('sSYTaskmanStatus'),1)
     wait(lambda:u8(scene)==57 and u32(addr('sMNOptionTotalTimeTics'))>30,'Options load')
@@ -107,7 +128,7 @@ try:
         slot=addr('gSCManagerCharBuilderSlots')+preset*slot_size
         w8(slot,1);w8(slot+1,body)
         for i in range(16):w8(slot+2+i,body)
-        w8(slot+18,body);w8(slot+19,body);w8(slot+neutral_field,choice)
+        w8(slot+18,11 if args.specials else body);w8(slot+19,2 if args.specials else body);w8(slot+neutral_field,choice)
         pulse(0x80);wait(lambda:u32(addr('sMNOptionBuilderMode'))==2,'Build editor')
         w32(addr('sMNOptionBuilderEntry'),23);pulse(0x80)
         if args.four_mb:
@@ -118,9 +139,32 @@ try:
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Training stage select')
         pulse(0x80);wait(lambda:u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180,'Training match load')
         frames(30);minima.append(heap_ok())
-        pulse(0x40);frames(200) # Actual B input and recovery/charging.
+        if args.specials:
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            trace.clear();last_trace=None
+            pulse(0x40 | (176<<24));frames(200) # B + down, analog -80.
+            hits={(r[2],r[3]) for r in trace if r[0]==233 and r[3]}
+            assert hits=={(16,15),(17,15),(26,15),(27,15)},(body,'DK phase hit windows',hits,trace)
+            if body!=2:
+                wait_motion=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')['nFTCommonMotionWait']
+                assert all(r[1]==wait_motion for r in trace if 232<=r[0]<=234),(body,'Body special replay',trace)
+            print('PASS: DK Down B on body',body,'hits at phase frames 16-17/26-27; recovered.',flush=True)
+            trace.clear();last_trace=None
+            keys(0x40 | (176<<24));frames(4);keys(0);frames(8)
+            keys(0x40 | (176<<24));frames(3);keys(0);frames(120)
+            repeated=[r[2] for r in trace if r[0]==233 and r[3]]
+            assert repeated==[16,17,26,27]*2,(body,'Repeated DK cycle',repeated)
+            print('PASS: repeated DK cycle on body',body,'has both original slap windows twice.',flush=True)
+            trace.clear();last_trace=None
+            pulse(0x40 | (80<<24));frames(400) # B + up, analog +80.
+            phases={r[0] for r in trace}
+            assert {228,229,230}<=phases,(body,'Ness start/hold/end',phases)
+            assert not 228<=trace[-1][0]<=236,(body,'Ness recovery',trace[-1])
+            print('PASS: Ness Up B on body',body,'start -> hold/projectile expiry -> end/recovery, no freeze.',flush=True)
+        else:pulse(0x40);frames(200) # Actual B input and recovery/charging.
         pulse(0x20);frames(30) # Store a charge where supported.
         pulse(0x40);frames(120)
+        check(core.CoreDoCommand(17,5,C.byref(C.c_int(0))))
         pulse(0x10);frames(12) # Pause, then native Exit button handler.
         w32(addr('sSC1PTrainingModeMenu'),5);pulse(0x80)
         wait(lambda:u8(scene)==57 and u32(addr('sMNOptionBuilderMode'))==2,'Return to editor')

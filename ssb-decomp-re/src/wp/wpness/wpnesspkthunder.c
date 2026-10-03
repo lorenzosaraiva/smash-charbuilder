@@ -128,7 +128,7 @@ void wpNessPKThunderHeadSetDestroyTrails(GObj *weapon_gobj, sb32 is_destroy)
 
         if (fp->player_num == head_wp->player_num)
         {
-            fp->passive_vars.ness.is_thunder_destroy |= is_destroy;
+            ftMainCharBuilderGetNessPassive(fp)->is_thunder_destroy |= is_destroy;
         }
     }
     fp = ftGetStruct(head_wp->owner_gobj);
@@ -160,14 +160,14 @@ void wpNessPKThunderTrailUpdatePositions(GObj *weapon_gobj)
 
     if (fp->player_num == wp->player_num)
     {
-        s32 trail_id = fp->passive_vars.ness.pkthunder_trail_id - 1;
+        s32 trail_id = ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_id - 1;
 
         if (trail_id < 0)
         {
             trail_id += FTNESS_PKTHUNDER_TRAIL_POS_COUNT;
         }
-        fp->passive_vars.ness.pkthunder_trail_x[trail_id] = DObjGetStruct(weapon_gobj)->translate.vec.f.x;
-        fp->passive_vars.ness.pkthunder_trail_y[trail_id] = DObjGetStruct(weapon_gobj)->translate.vec.f.y;
+        ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_x[trail_id] = DObjGetStruct(weapon_gobj)->translate.vec.f.x;
+        ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_y[trail_id] = DObjGetStruct(weapon_gobj)->translate.vec.f.y;
     }
 }
 
@@ -360,29 +360,29 @@ sb32 wpNessPKThunderTrailProcUpdate(GObj *weapon_gobj)
     }
     fp = ftGetStruct(wp->owner_gobj);
 
-    trail_id = (fp->passive_vars.ness.pkthunder_trail_id - (wp->weapon_vars.pkthunder_trail.trail_id * 2)) - 2;
+    trail_id = (ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_id - (wp->weapon_vars.pkthunder_trail.trail_id * 2)) - 2;
 
     if (trail_id < 0)
     {
         trail_id += FTNESS_PKTHUNDER_TRAIL_POS_COUNT;
     }
-    DObjGetStruct(weapon_gobj)->translate.vec.f.x = fp->passive_vars.ness.pkthunder_trail_x[trail_id];
-    DObjGetStruct(weapon_gobj)->translate.vec.f.y = fp->passive_vars.ness.pkthunder_trail_y[trail_id];
+    DObjGetStruct(weapon_gobj)->translate.vec.f.x = ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_x[trail_id];
+    DObjGetStruct(weapon_gobj)->translate.vec.f.y = ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_y[trail_id];
 
     if (trail_id > 0)
     {
         DObjGetStruct(weapon_gobj)->rotate.vec.f.z = syUtilsArcTan2
         (
-            (fp->passive_vars.ness.pkthunder_trail_y[trail_id] - fp->passive_vars.ness.pkthunder_trail_y[trail_id - 1]),
-            (fp->passive_vars.ness.pkthunder_trail_x[trail_id] - fp->passive_vars.ness.pkthunder_trail_x[trail_id - 1])
+            (ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_y[trail_id] - ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_y[trail_id - 1]),
+            (ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_x[trail_id] - ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_x[trail_id - 1])
         );
     }
     else
     {
         DObjGetStruct(weapon_gobj)->rotate.vec.f.z = syUtilsArcTan2
         (
-            (fp->passive_vars.ness.pkthunder_trail_y[trail_id] - fp->passive_vars.ness.pkthunder_trail_y[FTNESS_PKTHUNDER_TRAIL_POS_COUNT - 1]),
-            (fp->passive_vars.ness.pkthunder_trail_x[trail_id] - fp->passive_vars.ness.pkthunder_trail_x[FTNESS_PKTHUNDER_TRAIL_POS_COUNT - 1])
+            (ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_y[trail_id] - ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_y[FTNESS_PKTHUNDER_TRAIL_POS_COUNT - 1]),
+            (ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_x[trail_id] - ftMainCharBuilderGetNessPassive(fp)->pkthunder_trail_x[FTNESS_PKTHUNDER_TRAIL_POS_COUNT - 1])
         );
     }
     DObjGetStruct(weapon_gobj)->rotate.vec.f.z -= F_CST_DTOR32(90.0F);

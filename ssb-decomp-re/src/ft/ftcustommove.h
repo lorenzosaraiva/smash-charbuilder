@@ -61,6 +61,8 @@ typedef struct FTCustomMoveDefinition
 
 #define FTCUSTOMMOVE_FLAG_FLAG1 1
 #define FTCUSTOMMOVE_FLAG_LOOP 2
+/* Repeat a donor special phase at its source animation boundary. */
+#define FTCUSTOMMOVE_FLAG_SPECIAL_CYCLE 4
 
 /* Numeric gameplay only: the victim's status remains the body's native one. */
 typedef struct FTCustomThrowDefinition
