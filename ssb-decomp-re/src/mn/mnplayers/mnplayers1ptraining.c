@@ -3274,5 +3274,6 @@ void mnPlayers1PTrainingStartScene(void)
 	syVideoInit(&dMNPlayers1PTrainingVideoSetup);
 
 	dMNPlayers1PTrainingTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl28_BSS_END);
+	syTaskmanUseExpansionArena(&dMNPlayers1PTrainingTaskmanSetup.scene_setup);
 	scManagerFuncUpdate(&dMNPlayers1PTrainingTaskmanSetup);
 }

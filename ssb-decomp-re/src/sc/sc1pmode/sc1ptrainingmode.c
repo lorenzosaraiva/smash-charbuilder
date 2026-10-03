@@ -1889,6 +1889,7 @@ void sc1PTrainingModeStartScene(void)
 	syVideoInit(&dSC1PTrainingModeVideoSetup);
 
 	dSC1PTrainingModeTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&gSYFramebufferSets - (uintptr_t)&ovl7_BSS_END);
+	syTaskmanUseExpansionArena(&dSC1PTrainingModeTaskmanSetup.scene_setup);
 	dSC1PTrainingModeTaskmanSetup.func_start = sc1PTrainingModeFuncStart;
 
 	do

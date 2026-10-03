@@ -7,6 +7,7 @@ from auditNormalMoves import arrays,us_text,ROSTER
 from customMoveCatalog import resolved_moves,source_scripts,MOTIONS
 from generateCustomMoves import expand
 from generateNeutralProjectiles import catalog as projectile_catalog
+from generateNeutralActions import catalog as action_catalog
 
 
 def function(text,name):
@@ -77,9 +78,37 @@ def main():
         setup,hidden,scales=attributes(fighter)
         scaling='sOracle'+fighter+'Scale' if scales and not case['flags']&4 else 'NULL'
         projectile_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{case["flags"]}U,{scaling},{case["firing"]+1},{events},{source_size(fighter)}F);')
+    action_calls=[]
+    for i,case in enumerate(action_catalog()):
+        fighter=case['fighter'];path,_=animation(case['animation'])
+        if path not in seen_files:
+            output.append('#include "../src/relocData/'+path.name+'"');seen_files.add(path)
+        event_symbol='sOracleNeutralAction'+str(i)
+        output.append('static const OracleEvent '+event_symbol+'[] = {')
+        probe = ('{3,0,3,16,{180,0,0},0},' if fighter=='Samus' else
+                 '{3,0,3,31,{0,0,0},0},' if fighter=='Yoshi' else
+                 '{3,0,3,0,{0,0,0},0},' if fighter=='Link' else '')
+        if probe:output.append(probe)
+        for op,a in case['events']:
+            kind=value=aid=joint=scaled=0;offset=(0,0,0)
+            if op=='ftMotionCommandWait':kind=1;value=int(a[0],0)
+            elif op=='ftMotionCommandWaitAsync':kind=2;value=int(a[0],0)
+            elif 'MakeAttackColl' in op:
+                a=[int(v,0) for v in a];kind=3;aid=a[0];joint=a[2];offset=a[7:10];scaled=int('Scaled' in op)
+            elif op=='ftMotionCommandClearAttackCollAll':kind=4
+            elif op=='ftMotionCommandClearAttackCollID':kind=5;aid=int(a[0],0)
+            elif op=='ftMotionCommandSetAttackCollOffset':kind=6;aid=int(a[0],0);offset=tuple(int(v,0) for v in a[1:])
+            else:continue
+            output.append('{ '+','.join(map(str,(kind,value,aid,joint)))+', { '+','.join(map(str,offset))+' }, '+str(scaled)+' },')
+            if kind==4 and probe:output.append(probe)
+        output.append('{0,0,0,0,{0,0,0},0} };')
+        table=next(iter(arrays(us_text(path.read_text()),r'AObjEvent32\s*\*')))
+        setup,hidden,scales=attributes(fighter)
+        scaling='sOracle'+fighter+'Scale' if scales and not case['flags']&4 else 'NULL'
+        action_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{case["flags"]}U,{scaling},{case["duration"]+1},{event_symbol},{source_size(fighter)}F);')
     output.append('static const f32 sOracleBodySizes[] = { '+', '.join(str(source_size(f))+'F' for f in ROSTER)+' };')
     (ROOT/'build/nativeAnimationOracle.inc').write_text('\n'.join(output)+'\n',encoding='utf-8')
-    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls)+'\n',encoding='utf-8')
+    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls+action_calls)+'\n',encoding='utf-8')
     subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protector','-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-O1','-Iinclude','-Isrc','-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US','tools/testNativeAnimation.c','-o','build/testNativeAnimation'],cwd=ROOT,check=True)
     raw=subprocess.check_output([str(ROOT/'build/testNativeAnimation')],cwd=ROOT)
     (ROOT/'build/native-animation-poses.bin').write_bytes(raw)
@@ -130,6 +159,35 @@ def main():
                 error=max(abs(a-b) for a,b in zip(native,case['offset']))
                 projectile_error=max(projectile_error,error)
                 assert error<0.003,(case['fighter'],case['air'],native,case['offset'],error)
+    action_error=0;action_centers=0
+    for case in action_catalog():
+        previous_trans=(0,0,0)
+        poses=sample(case['fighter'],case['animation'],case['duration']+1,case['flags'])
+        for frame,pose in enumerate(poses):
+            trans=(0,0,0)
+            for joint in sorted(pose):
+                native=struct.unpack_from('<9f',raw,cursor);cursor+=36
+                expected=pose[joint][:3]+pose[joint][4:]
+                assert max(abs(a-b) for a,b in zip(native,expected))<0.003,(case['fighter'],case['phase'],joint,frame)
+                if joint==1: trans=native[3:6]
+            centers=struct.unpack_from('<12f',raw,cursor);cursor+=48
+            mask=struct.unpack_from('<I',raw,cursor)[0];cursor+=4
+            expected_mask,expected_centers=case['frames'][frame]
+            assert mask&7==expected_mask,(case['fighter'],case['phase'],frame,mask,expected_mask)
+            for aid in range(3):
+                if not expected_mask&(1<<aid):continue
+                error=max(abs(a-b) for a,b in zip(centers[aid*3:aid*3+3],expected_centers[aid]))
+                action_error=max(action_error,error);action_centers+=1
+                assert error<0.003,(case['fighter'],case['phase'],frame,aid,error)
+            if case['fighter'] in ('Captain','Purin') and not case['air']:
+                movement=(0,0,0) if frame==0 else ((trans[2]-previous_trans[2])*source_size(case['fighter']),0,(trans[0]-previous_trans[0])*source_size(case['fighter']))
+                assert max(abs(a-b) for a,b in zip(movement,case['travel'][frame]))<0.003,(case['fighter'],'root movement',frame)
+            previous_trans=trans
+            probe=case['spawn'] or case['anchors']
+            if probe:
+                native=(centers[11],centers[10],-centers[9])
+                assert mask&8 and max(abs(a-b) for a,b in zip(native,probe[frame]))<0.003,(case['fighter'],case['phase'],'socket',frame,native,probe[frame])
+    print(f'PASS: all 30 remaining neutral phases, {action_centers} active centers, grounded root movement, charge/boomerang sockets and Yoshi capture anchors match original playback/matrices; max center error {action_error:.7f}.')
     assert cursor==len(raw),(cursor,len(raw))
     print(f'PASS: all eight projectile-neutral spawn poses match original animation/collision matrices; max error {projectile_error:.7f}.')
     print(f'PASS: {len(cases)} donor timelines, {comparisons} scalar samples match original ftAnimParseDObjFigatree and playback; max error {maximum:.7f}.')

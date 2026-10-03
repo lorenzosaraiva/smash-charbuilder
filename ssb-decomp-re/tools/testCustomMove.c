@@ -33,7 +33,7 @@ typedef struct FTTestAttributes
 } FTTestAttributes;
 struct FTStruct
 {
-    s32 fkind, pkind;
+    s32 fkind, pkind, hold_stick_x;
     u32 player;
     s32 status_id, motion_id;
     s32 motion_attack_id;
@@ -45,25 +45,31 @@ struct FTStruct
     s32 ga;
     f32 lr;
     struct { struct { s32 flag0, flag1, flag2; } flags; } motion_vars;
-    struct { struct { u32 button_tap; Vec2b stick_range, stick_prev; } pl; u32 button_mask_b, button_mask_a; } input;
-    struct { struct { f32 x; } vel_ground; } physics;
+    struct { struct { u32 button_tap; Vec2b stick_range, stick_prev; } pl; u32 button_mask_b, button_mask_a, button_mask_z; } input;
+    struct { struct { f32 x, z; } vel_ground; Vec3f vel_air; } physics;
     struct { struct { struct { sb32 is_turn; s32 turn_tics; } throwff;
-        struct { s32 throw_wait; } catchwait; } common; } status_vars;
+        struct { s32 throw_wait; } catchwait; struct { s32 stage; } captureyoshi; } common;     struct { struct { sb32 is_smash; } specialn; } link;
+    } status_vars;
+    GObj *search_gobj;
     GObj *catch_gobj;
     GObj *capture_gobj;
+    struct { struct { GObj *boomerang_gobj; } link; struct { GObj *copylink_boomerang_gobj; } kirby; } passive_vars;
+    sb32 is_invisible, is_shadow_hide, is_special_interrupt, is_catchstatus;
+    void (*proc_catch)(GObj*), (*proc_capture)(GObj*, GObj*);
     sb32 is_hitstun;
     sb32 is_ignore_dead;
     sb32 is_effect_attach;
     u8 capture_immune_mask;
     struct { u16 halfword; } stat_flags;
     void (*proc_update)(GObj*), (*proc_interrupt)(GObj*), (*proc_physics)(GObj*),
-        (*proc_map)(GObj*), (*proc_accessory)(GObj*);
+        (*proc_map)(GObj*), (*proc_accessory)(GObj*), (*proc_damage)(GObj*);
 };
 #include <sc/scdef.h>
 #include <sc/sccharbuilder.h>
 SCCharBuilderSlot gSCManagerCharBuilderSlots[4];
 s8 gSCManagerCharBuilderPlayerSlots[4] = { 0, 1, 2, 3 };
 static struct { s32 scene_curr; } gSCManagerSceneData;
+#define FTCHARBUILDER_NEUTRAL_EXTENDED
 #include "../src/ft/ftcustommove.c.inc"
 
 #define CHECK(expr) do { if (!(expr)) return __LINE__; } while (0)
@@ -366,6 +372,7 @@ static s32 testCustomAnimation(void)
 #include "testCharBuilderNeutral.c.inc"
 #include "testCharBuilderThrow.c.inc"
 #include "testCharBuilderProjectiles.c.inc"
+#include "testCharBuilderNeutralActions.c.inc"
 #include "testCustomCollision.c.inc"
 #include "testTrainingCombo.c.inc"
 void _start(void)
@@ -376,6 +383,7 @@ void _start(void)
     if (result == 0) result = testFullCollisionRoster();
     if (result == 0) result = testCharBuilderNeutral();
     if (result == 0) result = testCharBuilderProjectiles();
+    if (result == 0) result = testCharBuilderNeutralActions();
     if (result == 0) result = testCharBuilderThrow();
     if (result == 0) result = testTrainingCombo();
     if (result != 0)

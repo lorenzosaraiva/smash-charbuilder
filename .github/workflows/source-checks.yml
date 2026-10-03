@@ -27,9 +27,11 @@ jobs:
           python3 tools/generateCustomAnimations.py
           python3 tools/generateCustomCollisions.py
           python3 tools/generateNeutralProjectiles.py
+          python3 tools/generateNeutralActions.py
           git diff --exit-code -- src/ft/ftcustommoves.generated.inc \
             src/ft/ftcustomanimations.generated.inc src/ft/ftcustomcollisions.generated.inc \
-            src/ft/ftcustomcollisionregistry.generated.inc src/ft/ftneutralprojectiles.generated.inc
+            src/ft/ftcustomcollisionregistry.generated.inc src/ft/ftneutralprojectiles.generated.inc \
+            src/ft/ftneutralactions.generated.inc
       - name: Check move behavior and donor data
         run: |
           mkdir -p build
@@ -37,6 +39,7 @@ jobs:
             -Iinclude -Isrc -D__sgi -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DREGION_US \
             tools/testCustomMove.c -o build/testCustomMove
           build/testCustomMove
+          python3 tools/testNeutralLifecycle.py
           python3 - <<'PY'
           import sys
           from pathlib import Path

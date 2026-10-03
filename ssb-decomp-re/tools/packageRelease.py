@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.2',
+        'version': '0.1.3',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -68,7 +68,7 @@ Local uncommitted changes: {metadata['source_dirty'] if metadata['source_dirty']
 Mix normal attacks, grabs and throw parameters across the twelve original fighters.
 This is a work in progress: most animations still belong to the selected body.
 
-1. Open `character-lab.z64` in your N64 emulator. RMG-K has been used locally.
+1. Enable 8 MB RDRAM / Expansion Pak, then open `character-lab.z64`.
 2. Go to Options -> Character Lab and select a build with A.
 3. Choose a body and change attack donors with left/right.
 4. Use Test in Training, or assign a build to a player/CPU slot and choose Play VS.
@@ -79,10 +79,15 @@ Builds and player assignments last for the running ROM session.
 Training combo count/damage survive grabs, cargo holds and throw windup, then
 reset after release and hitstun end. A bare grab adds no hit or damage.
 Neutral B offers Body Move, Fox Laser, Mario Fireball, Luigi Fireball,
-Thunder Jolt and PK Fire. The four new projectiles keep native weapon behavior,
+Thunder Jolt, PK Fire, Falcon Punch, Pound, Giant Punch, Charge Shot, Boomerang
+and Egg Lay. The projectiles keep native weapon behavior,
 donor spawn positions and firing/recovery timing on all original bodies. Landing
 and edge transitions continue the clock without a second shot. Borrowed neutral
-animations and charge/boomerang/melee/capture adapters remain pending.
+animations, charge-orb visuals and donor effects/voices remain pending.
+Giant Punch/Charge Shot charge on ground: B/A releases, Z or a ground roll stores.
+A fully stored charge fires on the next B; airborne Charge Shot fires immediately.
+Boomerang returns/catches natively; Egg Lay captures into the native egg state.
+Training/VS now use the extra memory bank, fixing preview heap allocation freezes.
 These new choices are decomp only; rendered projectile acceptance is pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.

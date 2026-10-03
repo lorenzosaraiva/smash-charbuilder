@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.2 (experimental)** | **Last updated: 2026-10-03**
+**Project version: 0.1.3 (experimental)** | **Last updated: 2026-10-03**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -40,7 +40,7 @@ locally; automatic hosted Remix builds remain pending.
 
 ## Make your first Character Lab build
 
-1. Open the Character Lab ROM in your N64 emulator.
+1. Set your N64 emulator to **8 MB RDRAM / Expansion Pak**, then open the Character Lab ROM.
 2. Go to **Options -> Character Lab**, then select one of four builds with **A**.
 3. Choose a **Body** and change moves with **left/right**.
 4. Use **Test in Training**. Leaving the test returns to that build's editor.
@@ -51,10 +51,15 @@ Grabs preserve the current combo count and damage through the hold and throw.
 Presets in this version last for the running ROM session.
 
 Character Lab's **Neutral B** row now offers **Body Move**, **Fox Laser**,
-**Mario Fireball**, **Luigi Fireball**, **Thunder Jolt** and **PK Fire**.
-The four new projectile donors work across all twelve bodies with original
-firing/recovery timing and projectile behavior. Borrowed animations still use
-body poses. These new neutral choices are currently decomp only.
+**Mario Fireball**, **Luigi Fireball**, **Thunder Jolt**, **PK Fire**, **Falcon Punch**,
+**Pound**, **Giant Punch**, **Charge Shot**, **Boomerang** and **Egg Lay**.
+These donors work across all twelve bodies with source timing and collision data,
+charge storage, returning boomerangs and capture/egg handoff. Borrowed animations
+still use body poses; the new choices are decomp only. See the
+[neutral controls and limits](ssb-decomp-re/docs/neutral-specials.md).
+
+Training and VS now allocate their heaps in the Expansion Pak bank, fixing the
+character-selection allocation overflow behind the Test in Training freeze.
 
 Every normal donor attack now uses its original hitbox path, size, active timing,
 damage and knockback on the other bodies, including angled variants and landing

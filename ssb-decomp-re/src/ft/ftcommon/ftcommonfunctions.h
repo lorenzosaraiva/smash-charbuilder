@@ -560,6 +560,7 @@ void ftCommonThrownCopyStarSetStatus(GObj* fighter_gobj);
 void func_ovl3_8014C770(); // Unused
 void ftCommonCaptureYoshiProcPhysics(GObj* fighter_gobj);
 void ftCommonCaptureYoshiProcCapture(GObj* fighter_gobj, GObj* capture_gobj);
+void ftCommonCaptureYoshiProcCaptureWithPhysics(GObj* fighter_gobj, GObj* capture_gobj, void (*physics)(GObj*));
 void ftCommonYoshiEggMakeEffect(GObj* fighter_gobj);
 void ftCommonYoshiEggProcUpdate(GObj* fighter_gobj);
 void ftCommonYoshiEggProcInterrupt(GObj* fighter_gobj);

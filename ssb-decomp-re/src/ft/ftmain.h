@@ -84,4 +84,11 @@ extern sb32 ftMainCharBuilderIsImmediateDonkeyThrow(FTStruct* fp);
 extern DObj* ftMainCharBuilderGetSpecialJoint(FTStruct* fp, s32 joint_id);
 extern void ftMainSetStatus(GObj* fighter_gobj, s32 status_id, f32 frame_begin, f32 anim_speed, u32 flags);
 
+
+extern void ftMainCharBuilderResetNeutralAll(void);
+extern void ftMainCharBuilderResetNeutral(FTStruct* fp);
+extern sb32 ftMainCharBuilderBoomerangIsSmash(FTStruct* fp);
+extern sb32 ftMainCharBuilderBoomerangClear(FTStruct* fp, GObj* weapon);
+extern sb32 ftMainCharBuilderBoomerangCatch(GObj* fighter, GObj* weapon);
+
 #endif

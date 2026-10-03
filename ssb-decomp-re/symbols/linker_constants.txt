@@ -55,3 +55,5 @@ gspF3DEX2_fifoTextStart = 0x8003A320;
 
 gSYControllerMainButtonTap = 0x80045472;
 gSYControllerMainButtonUpdate = 0x80045474;
+/* libultra boot parameter: detected RDRAM bytes, initialized by the IPL. */
+osMemSize = 0x80000318;

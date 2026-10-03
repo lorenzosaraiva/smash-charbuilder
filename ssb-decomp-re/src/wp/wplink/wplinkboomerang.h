@@ -14,7 +14,7 @@ extern f32 wpLinkBoomerangSubVelSqrt(WPStruct *wp, f32 vel_sub);
 extern void wpLinkBoomerangUpdateVelLR(WPStruct *wp, f32 vel_mul);
 extern void wpLinkBoomerangClampAngleForward(f32 *angle);
 extern f32 wpLinkBoomerangGetDistUpdateAngle(GObj *weapon_gobj);
-extern void wpLinkBoomerangClearGObjs(WPStruct *wp);
+extern void wpLinkBoomerangClearGObjs(GObj *weapon_gobj, WPStruct *wp);
 extern void wpLinkBoomerangCheckOwnerCatch(GObj *weapon_gobj, f32 distance);
 extern sb32 wpLinkBoomerangCheckBound(WPStruct *wp, Vec3f *coll_angle);
 extern sb32 wpLinkBoomerangProcDead(GObj *weapon_gobj);

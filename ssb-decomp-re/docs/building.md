@@ -4,6 +4,9 @@ You need x86-64 Ubuntu 22.04, or Windows with WSL/Ubuntu, and the original US Sm
 ROM. Native Windows and macOS are not supported by the complete current toolchain.
 You do not need to build the project just to play a downloaded release.
 
+Enable **8 MB RDRAM / Expansion Pak** when playing the ROM. Full-roster Training
+and VS selection/match resources use the separate upper memory bank.
+
 ## First build
 
 1. Clone the public project repository with its submodules:

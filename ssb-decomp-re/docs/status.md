@@ -11,13 +11,15 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Independent grab, forward-throw and back-throw selections.
 - [x] Throw damage and knockback from the donor, with body capture/release animations.
 - [x] Non-DK forward throws on DK release directly instead of entering cargo carry.
-- [x] Neutral B: Body Move, Fox Laser, Mario/Luigi Fireball, Thunder Jolt and PK Fire.
+- [x] All eleven non-copy neutral donors plus Body Move, on every original body.
 - [x] Four native projectile adapters with donor timing/spawn geometry and ground/air continuation.
 - [x] Existing Up B/Down B adapters, still experimental and needing more playtesting.
 - [x] Assign builds to any human or CPU slot in VS, including two builds with the same body.
 - [x] Training HITBOX view for attack and hurtbox outlines.
 - [x] Training combo count/damage survive capture, cargo carry and throw windup.
 - [x] Return from a lab training test to the same build's editor.
+- [x] Training/VS selection and match heaps use separate Expansion Pak memory (8 MB required).
+- [x] Emulator CPU regression: twelve body/neutral choices, four preset returns, four-slot VS and the 4 MB launch guard (null rendering).
 - [x] The four unlockable characters and Item Switch enabled.
 - [x] Creator UI built with the game's existing font, colors and menu elements.
 - [x] Local build command with ROM and play package under `dist/`.
@@ -47,8 +49,8 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [ ] Tether grab reach, capture timing and visuals on other bodies.
 - [x] Native projectile neutral first batch on all bodies/four player slots; eight donor pose/matrix checks.
 - [ ] Rendered projectile contact, stage following, reflection/absorption and transition acceptance.
-- [ ] Falcon Punch/Pound hitbox and movement adapters.
-- [ ] DK/Samus charging, Link boomerang return/catch and Yoshi capture; Kirby copy excluded.
+- [x] Falcon Punch/Pound hitbox and movement adapters.
+- [x] DK/Samus charging, Link boomerang return/catch and Yoshi capture; Kirby copy excluded.
 - [ ] Donor neutral animations across bodies.
 - [ ] Donor movement/physics and move-specific behavior such as Link's down-air bounce.
 - [ ] Complete, consistent special-move compatibility across all bodies.

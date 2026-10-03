@@ -4860,5 +4860,6 @@ void mnPlayersVSStartScene(void)
 	syVideoInit(&dMNPlayersVSVideoSetup);
 
 	dMNPlayersVSTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl26_BSS_END);
+	syTaskmanUseExpansionArena(&dMNPlayersVSTaskmanSetup.scene_setup);
 	scManagerFuncUpdate(&dMNPlayersVSTaskmanSetup);
 }

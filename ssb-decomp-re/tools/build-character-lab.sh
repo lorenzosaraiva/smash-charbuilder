@@ -37,6 +37,7 @@ gcc -m32 -nostdlib -static -fno-pie -fno-stack-protector -O1 \
     -Iinclude -Isrc -D__sgi -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DREGION_US \
     tools/testCustomMove.c -o build/testCustomMove
 build/testCustomMove
+python3 tools/testNeutralLifecycle.py
 python3 tools/testNativeAnimation.py
 python3 tools/verifyCustomMoveRom.py
 python3 tools/packageRelease.py

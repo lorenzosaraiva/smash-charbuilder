@@ -985,7 +985,7 @@ void mnOptionBuilderMakeSlotList(GObj *gobj)
         if (value != NULL) mnOptionMakeString(gobj, value, MNOPTION_BUILDER_VALUE_X, MNOPTION_BUILDER_ROW_Y + i * MNOPTION_BUILDER_ROW_HEIGHT, gold, TRUE);
     }
     mnOptionMakeString(gobj, "A EDIT   B BACK", 38.0F, 198.0F, gold, FALSE);
-    mnOptionMakeString(gobj, "LR ASSIGN   HUMAN OR CPU", 38.0F, 212.0F, white, FALSE);
+    mnOptionMakeString(gobj, osMemSize < 0x800000 ? "SET EMULATOR MEMORY TO 8 MB" : "LR ASSIGN   HUMAN OR CPU", 38.0F, 212.0F, white, FALSE);
 }
 
 void mnOptionBuilderAssignPlayer(s32 add)
@@ -1055,7 +1055,7 @@ void mnOptionBuilderMakeEditor(GObj *gobj)
         }
         else if (i == 19)
         {
-            const char *neutral_names[6] = { "BODY MOVE", "FOX LASER", "MARIO FIREBALL", "LUIGI FIREBALL", "THUNDER JOLT", "PK FIRE" };
+            const char *neutral_names[nSCCharBuilderNeutralEnumCount] = { "BODY MOVE", "FOX LASER", "MARIO FIREBALL", "LUIGI FIREBALL", "THUNDER JOLT", "PK FIRE", "FALCON PUNCH", "POUND", "GIANT PUNCH", "CHARGE SHOT", "BOOMERANG", "EGG LAY" };
             value = neutral_names[slot->special_n < nSCCharBuilderNeutralEnumCount ? slot->special_n : 0];
         }
         else if (i == 20)
@@ -1071,7 +1071,7 @@ void mnOptionBuilderMakeEditor(GObj *gobj)
             mnOptionMakeString(gobj, value, MNOPTION_BUILDER_VALUE_X, MNOPTION_BUILDER_ROW_Y + ((i - start) * MNOPTION_BUILDER_ROW_HEIGHT), normal_color, TRUE);
         }
     }
-    mnOptionMakeString(gobj, "LR CHANGE   A OK   B BACK", 38.0F, 220.0F, title_color, FALSE);
+    mnOptionMakeString(gobj, osMemSize < 0x800000 ? "SET EMULATOR MEMORY TO 8 MB" : "LR CHANGE   A OK   B BACK", 38.0F, 220.0F, title_color, FALSE);
 }
 
 void mnOptionBuilderRedraw(void)
@@ -1175,6 +1175,7 @@ void mnOptionBuilderTestInTraining(void)
 {
     SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
 
+    if (osMemSize < 0x800000) return;
     slot->is_enabled = TRUE;
     gSCManagerCharBuilderTrainingSlot = sMNOptionBuilderSlot;
     gSCManagerCharBuilderPlayerSlots[0] = sMNOptionBuilderSlot;
@@ -1264,6 +1265,7 @@ void mnOptionBuilderRun(void)
         {
             if (sMNOptionBuilderSlot == 8)
             {
+                if (osMemSize < 0x800000) return;
                 mnOptionWriteBackup();
                 gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
                 gSCManagerSceneData.scene_curr = nSCKindPlayersVS;

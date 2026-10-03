@@ -35,6 +35,12 @@ typedef enum SCCharBuilderNeutral
     nSCCharBuilderNeutralLuigiFireball,
     nSCCharBuilderNeutralPikachuJolt,
     nSCCharBuilderNeutralNessPKFire,
+    nSCCharBuilderNeutralFalconPunch,
+    nSCCharBuilderNeutralPound,
+    nSCCharBuilderNeutralGiantPunch,
+    nSCCharBuilderNeutralChargeShot,
+    nSCCharBuilderNeutralBoomerang,
+    nSCCharBuilderNeutralEggLay,
     nSCCharBuilderNeutralEnumCount
 } SCCharBuilderNeutral;
 

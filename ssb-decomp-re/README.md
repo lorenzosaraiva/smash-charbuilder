@@ -45,7 +45,8 @@ Creator builds currently last for the running ROM session.
 - Custom grab and forward/back throw selections.
 - Four builds, assigned independently to human or CPU slots.
 - Training hitbox view, quick return to the editor, unlockable fighters and Item Switch.
-- Neutral B: **Body Move**, **Fox Laser**, **Mario Fireball**, **Luigi Fireball**, **Thunder Jolt** and **PK Fire**, with native projectile behavior and donor timing; experimental Up B/Down B adapters.
+- Neutral B: **Body Move** and every non-copy original neutral donor, including charging, returning boomerangs and Egg Lay. See [controls and limits](docs/neutral-specials.md); Up B/Down B remain experimental.
+- **8 MB RDRAM / Expansion Pak required**: Training/VS selection and match resources use the upper memory bank.
 - Three Mario animation pilots: Falcon down air, Fox straight forward tilt,
   DK straight forward smash.
 - Original donor hitbox paths for the complete normal roster on every foreign

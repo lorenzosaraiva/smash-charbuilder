@@ -145,6 +145,8 @@ void ftManagerAllocFighter(u32 data_flags, s32 allocs_num)
 
     bzero(sFTManagerStructsAllocBuf, sizeof(FTStruct) * allocs_num);
 
+    ftMainCharBuilderResetNeutralAll();
+
     for (i = 0; i < (allocs_num - 1); i++)
     {
         sFTManagerStructsAllocBuf[i].next = &sFTManagerStructsAllocBuf[i + 1];
@@ -208,6 +210,19 @@ void ftManagerAllocFighter(u32 data_flags, s32 allocs_num)
     if (data_flags & FTDATA_FLAG_SUBMOTION)
     {
         scSubsysFighterSetLightParams(45.0F, 45.0F, 0xFF, 0xFF, 0xFF, 0xFF);
+    }
+}
+
+/* Kept in the fighter overlay: extending the main segment would move the
+ * original fixed-address SDK/controller/ucode aliases. Full-roster previews
+ * and donor resources use the separate Expansion Pak bank, clear of the
+ * lower-bank overlays, subsystem and framebuffers. */
+void syTaskmanUseExpansionArena(SYTaskmanSceneSetup *scene)
+{
+    if (osMemSize >= 0x800000)
+    {
+        scene->arena_start = (void*)0x80400000;
+        scene->arena_size = 0x400000;
     }
 }
 
@@ -480,9 +495,19 @@ void ftManagerSetupFilesPlayablesAll(void)
                 /* Special3 supplies the surface-following jolt animation. */
                 ftManagerSetupFilesSpecialKind(nFTKindPikachu);
                 break;
+            case nSCCharBuilderNeutralChargeShot:
+                ftManagerSetupFilesSpecialKind(nFTKindSamus);
+                break;
+            case nSCCharBuilderNeutralBoomerang:
+                ftManagerSetupFilesSpecialKind(nFTKindLink);
+                break;
             case nSCCharBuilderNeutralNessPKFire:
                 /* Special1 includes both the spark and its flame pillar. */
                 ftManagerSetupFilesSpecialKind(nFTKindNess);
+                break;
+            case nSCCharBuilderNeutralEggLay:
+                /* Native egg shell and breakout effects live in Special3. */
+                ftManagerSetupFilesSpecialKind(nFTKindYoshi);
                 break;
             }
         }
@@ -807,6 +832,7 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
     ftParamClearAttackCollAll(fighter_gobj);
     ftParamSetHitStatusPartAll(fighter_gobj, nGMHitStatusNormal);
     ftParamResetFighterColAnim(fighter_gobj);
+    ftMainCharBuilderResetNeutral(fp);
 }
 
 // 0x800D7F3C

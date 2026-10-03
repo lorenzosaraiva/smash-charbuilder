@@ -80,7 +80,7 @@ void ftCommonCaptureYoshiProcPhysics(GObj *fighter_gobj)
 }
 
 // 0x8014C83C
-void ftCommonCaptureYoshiProcCapture(GObj *fighter_gobj, GObj *capture_gobj)
+void ftCommonCaptureYoshiProcCaptureWithPhysics(GObj *fighter_gobj, GObj *capture_gobj, void (*physics)(GObj*))
 {
     FTStruct *this_fp = ftGetStruct(fighter_gobj);
     FTStruct *capture_fp;
@@ -118,8 +118,16 @@ void ftCommonCaptureYoshiProcCapture(GObj *fighter_gobj, GObj *capture_gobj)
 
     ftParamSetCaptureImmuneMask(this_fp, FTCATCHKIND_MASK_ALL);
     ftPhysicsStopVelAll(fighter_gobj);
-    ftCommonCaptureYoshiProcPhysics(fighter_gobj);
+    /* A borrowed capture must use its donor socket from the first tick.
+     * Some body neutral poses do not instantiate the native heavy-item joint. */
+    this_fp->proc_physics = physics;
+    physics(fighter_gobj);
     mpCommonUpdateFighterProjectFloor(fighter_gobj);
+}
+
+void ftCommonCaptureYoshiProcCapture(GObj *fighter_gobj, GObj *capture_gobj)
+{
+    ftCommonCaptureYoshiProcCaptureWithPhysics(fighter_gobj, capture_gobj, ftCommonCaptureYoshiProcPhysics);
 }
 
 // 0x8014C958

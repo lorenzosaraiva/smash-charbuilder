@@ -1,5 +1,14 @@
 # Character Lab changes
 
+## 0.1.3 - 2026-10-03: remaining neutral donors and Training loading fix
+
+- Decomp: add Falcon Punch, Pound, Giant Punch, Charge Shot, Boomerang and Egg Lay on all original bodies. All eleven non-copy neutral donors are now selectable alongside Body Move.
+- Preserve source melee hitboxes/knockback/timing, ground travel and aerial boosts. Add independent charge/store/release state, native boomerang return/catch and Yoshi capture/egg handoff without borrowing another body's passive union.
+- Fix the Test in Training freeze: full-roster preview resources overflowed the original lower-bank heap. Training/VS selection and matches now use a separate Expansion Pak arena. The ROM requires 8 MB RDRAM; the editor displays this and blocks launching tests/VS with only 4 MB.
+- Check all 30 donor phases against original animation playback/matrices and all foreign bodies/four slots against the actual adapters. Linked-ROM checks include every phase pointer and packed source hitbox field.
+- Emulator CPU smoke tests exercise the full Training launch/return flow across twelve body/neutral choices, four presets, a four-slot VS match and the 4 MB launch guard. Borrowed Egg Lay initializes captured physics from the donor path, avoiding missing body sockets, and preloads native egg effects. These tests use null rendering; visual acceptance remains pending.
+- Visible neutral animations still belong to the body. Samus's held charge orb, donor effects/voices and exact captured-victim rotation remain pending, along with rendered contact/reflect/absorb acceptance. New adapters remain decomp only.
+
 ## 0.1.2 - 2026-10-03: projectile neutral specials
 
 Add Mario Fireball, Luigi Fireball, Pikachu Thunder Jolt and Ness PK Fire to the Neutral B selector and randomizer. Foreign bodies keep their own neutral poses, use donor firing/recovery clocks and donor spawn geometry, and call the native projectile constructors. No donor fighter status or passive union is transplanted. Matching donor bodies keep their native move.

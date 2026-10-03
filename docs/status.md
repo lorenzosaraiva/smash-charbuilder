@@ -31,11 +31,13 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Ground/air continuation, independent player state and duplicate/interruption guards.
 - [x] Host adapter tests, native spawn geometry checks and linked-ROM verification.
 - [ ] Rendered projectile/contact/reflect/absorb acceptance in Training and VS.
-- [ ] Falcon Punch and Jigglypuff Pound: dedicated hitbox and movement timelines.
-- [ ] DK Giant Punch and Samus Charge Shot: charge/store/release state.
-- [ ] Link Boomerang: return/catch lifecycle; Yoshi Egg Lay: paired capture state.
-- [ ] Borrowed neutral animations. Kirby copy remains outside this milestone.
-- [ ] Port these four projectile adapters to Remix.
+- [x] Falcon Punch and Jigglypuff Pound: dedicated hitbox and movement timelines.
+- [x] DK Giant Punch and Samus Charge Shot: charge/store/release state.
+- [x] Link Boomerang: return/catch lifecycle; Yoshi Egg Lay: paired capture state.
+- [ ] Borrowed neutral animations, charge orb, donor effects/voices and victim rotation. Kirby copy remains outside this milestone.
+- [ ] Port the ten new neutral adapters to Remix.
+- [x] Fix Training/VS heap overflow using separate Expansion Pak memory (8 MB required).
+- [x] Emulator CPU regression: twelve body/neutral choices, four preset returns, four-slot VS and the 4 MB launch guard (null rendering).
 
 ## Character Lab on Remix
 

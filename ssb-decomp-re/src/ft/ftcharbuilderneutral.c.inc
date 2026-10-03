@@ -94,6 +94,7 @@ static void ftMainCharBuilderStartNeutral(GObj *fighter_gobj, const FTCustomMove
 /* Remix imports the laser adapter separately; its menu still has two choices. */
 #ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
 #include "ftcharbuilderprojectiles.c.inc"
+#include "ftcharbuilderneutralactions.c.inc"
 #endif
 
 sb32 ftMainCharBuilderTrySpecialN(GObj *fighter_gobj)
@@ -104,8 +105,10 @@ sb32 ftMainCharBuilderTrySpecialN(GObj *fighter_gobj)
     ftMainCharBuilderClearSpecialDonor(fp);
 #ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
     if ((slot->special_n >= nSCCharBuilderNeutralMarioFireball) &&
-        (slot->special_n < nSCCharBuilderNeutralEnumCount))
+        (slot->special_n <= nSCCharBuilderNeutralNessPKFire))
         return ftMainCharBuilderTryProjectileNeutral(fighter_gobj, slot->special_n);
+    if ((slot->special_n >= nSCCharBuilderNeutralFalconPunch) && (slot->special_n < nSCCharBuilderNeutralEnumCount))
+        return ftMainCharBuilderTryNeutralAction(fighter_gobj, slot->special_n);
 #endif
     if ((slot->special_n != nSCCharBuilderNeutralFoxLaser) || (fp->fkind == nFTKindFox)) return FALSE;
     ftMainCharBuilderStartNeutral(fighter_gobj, &sFTCharBuilderLaserMoves[fp->ga == nMPKineticsAir], 0.0F);

@@ -5,6 +5,15 @@ typedef struct FTCustomCollisionTrajectory
     s32 first, count, loop_start, loop_period;
 } FTCustomCollisionTrajectory;
 
+#ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
+typedef struct FTCharBuilderNeutralActionDesc
+{
+    FTCustomMoveDefinition move;
+    FTCustomCollisionTrajectory trajectory;
+    const Vec3f *travel, *spawn, *anchor;
+} FTCharBuilderNeutralActionDesc;
+#include "ftneutralactions.generated.inc"
+#endif
 #include "ftcustomcollisions.generated.inc"
 #include "ftcustomcollisionregistry.generated.inc"
 static const FTCustomCollisionFrame sFTCustomCollisionInactive = { { { 0 } }, 0 };
@@ -25,6 +34,9 @@ static const FTCustomCollisionFrame* ftCustomCollisionGetFrame(FTStruct *fp)
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
     u32 offset, index;
     if ((clock == NULL) || (ftCustomMoveGetSlot(fp) == NULL)) return NULL;
+#ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
+    if (clock->trajectory != NULL) return ftCustomCollisionSample(clock->trajectory, (s32)clock->frame);
+#endif
     /* Integer bounds avoid subtracting pointers from different objects: grab
        and special definitions share the clock but are outside the normal table. */
     offset = (u32)clock->move - (u32)sFTCustomMoves;

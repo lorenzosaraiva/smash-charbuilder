@@ -5,7 +5,9 @@
 Download the latest play package, unzip it, and open `character-lab.z64` in an N64
 emulator. RMG-K has been used for local playtesting. Other emulator and real-hardware
 compatibility still need reports. If you already had an older ROM open, reopen it
-to load the new build.
+to load the new build. Set **8 MB RDRAM / Expansion Pak** in emulator settings.
+Training and VS use that extra bank for preview and match resources; the editor
+shows a memory requirement and blocks Test/Play VS on a 4 MB configuration.
 
 The ZIP's `build-info.json` identifies the source commit. Include that commit when
 reporting a bug; two downloads named `character-lab.z64` can be different builds.
@@ -21,7 +23,8 @@ attack values and timing you want to use.
 mix. **B** returns to the lab's main screen.
 
 Neutral B cycles through **Body Move**, **Fox Laser**, **Mario Fireball**,
-**Luigi Fireball**, **Thunder Jolt** and **PK Fire**. New projectile choices work
+**Luigi Fireball**, **Thunder Jolt**, **PK Fire**, **Falcon Punch**, **Pound**,
+**Giant Punch**, **Charge Shot**, **Boomerang** and **Egg Lay**. Donor choices work
 on any original body; selecting its own donor keeps the native move. Borrowed
 shots use original spawn positions, firing/recovery timing and native weapon
 behavior, while visible poses remain the body's. Landing or leaving an edge
@@ -34,9 +37,11 @@ continues the action without a second shot.
 | Thunder Jolt | 21 / 21 | 64 / 64 |
 | PK Fire | 20 / 20 | 72 / 60 |
 
-The remaining charge, boomerang, melee/movement and capture neutrals need their
-own adapters. Kirby's copy system is excluded. In-game projectile acceptance
-is pending; report body/donor, ground or air, and emulator when something breaks. Up B and Down B use earlier adapters
+Charge/store/release, returning boomerangs, donor melee paths/movement and Egg Lay
+capture/egg handoff now have dedicated adapters. See [neutral controls](neutral-specials.md)
+for charge controls and visual limits. Kirby's copy system is excluded. Rendered
+contact/reflection/absorption acceptance remains pending; report body/donor, ground
+or air, and emulator when something breaks. Up B and Down B use earlier adapters
 and may have rough combinations.
 
 ## Training

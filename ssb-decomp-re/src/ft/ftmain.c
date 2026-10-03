@@ -4,6 +4,7 @@
 #include <gr/ground.h>
 #include <sc/scene.h>
 #include <sys/controller.h>
+#define FTCHARBUILDER_NEUTRAL_EXTENDED
 #include "ftcustommove.c.inc"
 #include "fttrainingcombo.c.inc"
 
@@ -522,7 +523,6 @@ static void ftMainCharBuilderMakeSamusBomb(GObj *fighter_gobj)
     wpSamusBombMakeWeapon(fighter_gobj, &pos);
 }
 
-#define FTCHARBUILDER_NEUTRAL_EXTENDED
 #include "ftcharbuilderneutral.c.inc"
 
 // // // // // // // // // // // //

@@ -10,6 +10,8 @@ from elfData import read_elf
 from customMoveTiming import animation_duration
 from generateCustomCollisions import catalog, stored_frames
 from generateNeutralProjectiles import catalog as projectile_catalog, render as render_projectiles
+from generateNeutralActions import catalog as action_catalog, render as render_actions
+from auditNormalMoves import enum_values
 
 ROOT = Path(__file__).resolve().parents[1]
 rom = (ROOT/'build/smashbrothers.us.z64').read_bytes()
@@ -45,6 +47,8 @@ for name,format in (('sFTCustomGrabJointMap','B'),('sFTCustomGrabTimings','H')):
     values = struct.unpack_from('<'+str(count)+format,host,start)
     assert struct.pack('>'+str(count)+format,*values) in rom,name
 elf,sections,symbols = read_elf(ROOT/'build/smashbrothers.us.elf','>')
+assert symbols['syTaskmanMalloc'][0]==0x80004980,'Main SDK/controller/ucode address layout moved'
+assert symbols['osMemSize'][0]==0x80000318,'Incorrect IPL memory-size parameter'
 for name,expected in metadata.items():
     address,length,index = symbols[name]
     start = sections[index][4]+address-sections[index][3]
@@ -59,6 +63,15 @@ for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMain
              'ftManagerSetupFilesPlayablesAll','wpMarioFireballMakeWeapon',
              'wpPikachuThunderJoltAirMakeWeapon','wpPikachuThunderJoltGroundMakeWeapon',
              'wpNessPKFireMakeWeapon','itNessPKFireMakeItem',
+             'ftMainCharBuilderResetNeutralAll','ftMainCharBuilderResetNeutral',
+             'ftMainCharBuilderBoomerangIsSmash','ftMainCharBuilderBoomerangClear',
+             'ftMainCharBuilderBoomerangCatch','wpLinkBoomerangClearGObjs',
+             'wpLinkBoomerangMakeWeapon','wpLinkBoomerangCheckOwnerCatch',
+             'wpSamusChargeShotMakeWeapon','ftCommonCaptureYoshiProcCapture',
+             'ftCommonCaptureYoshiProcCaptureWithPhysics',
+             'ftCommonYoshiEggSetStatus','ftCommonThrownDecideFighterLoseGrip',
+             'ftManagerAllocFighter','ftManagerInitFighter','syTaskmanUseExpansionArena',
+             'mnPlayers1PTrainingStartScene','mnPlayersVSStartScene','scVSBattleStartScene',
              'ftCommonSpecialNCheckInterruptCommon','ftCommonSpecialAirCheckInterruptCommon',
              'ftCommonThrowSetStatus','ftDonkeyThrowFFProcUpdate','mnOptionBuilderChangeValue',
              'sc1PTrainingModeStartScene','mnPlayers1PTrainingBackTo1PMode',
@@ -140,6 +153,67 @@ for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
     if found:break
 assert found,'Projectile pointers/timing table missing from ROM'
 print('PASS: four selectable native projectiles, eight source timing/spawn definitions and resource preload code are linked in the ROM.')
+assert (ROOT/'src/ft/ftneutralactions.generated.inc').read_text() == render_actions(), 'Stale neutral action source data'
+action_records=host_words('sFTCharBuilderActions')
+assert len(action_records)==30*12
+ops=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTMotionEvent')
+for i,c in enumerate(action_catalog()):
+    expected=[];tick=wall=0
+    for op,args in c['events']:
+        if op in ('ftMotionCommandWait','ftMotionCommandWaitAsync'):
+            tick=int(args[0],0) if op.endswith('Async') else tick+int(args[0],0)
+            wall=max(wall,tick);continue
+        a=[int(v,0) for v in args] if 'AttackColl' in op or op.startswith('ftMotionCommandSetFlag') else []
+        if op=='ftMotionCommandMakeAttackColl':
+            aid,gid,jid,dmg,reb,element,size,x,y,z,angle,kbs,kbw,ga,sd,fl,fk,kbb=a
+            words=(ops['nFTMotionEventMakeAttackColl']<<26|aid<<23|gid<<20|dmg<<5|reb<<4|element,
+                   (size&65535)<<16|(x&65535),(y&65535)<<16|(z&65535),
+                   (angle&1023)<<22|kbs<<12|kbw<<2|ga,(sd&255)<<24|fl<<21|fk<<17|kbb<<7)
+        elif op=='ftMotionCommandClearAttackCollAll':words=(ops['nFTMotionEventClearAttackCollAll']<<26,)
+        elif op.startswith('ftMotionCommandSetFlag'):words=(ops['nFTMotionEvent'+op[len('ftMotionCommand'):]]<<26|a[0],)
+        else:continue
+        expected.append((wall,words))
+    words=host_words('sFTCharBuilderAction'+str(i)+'Script');actual=[];cursor=frame=0
+    while cursor<len(words):
+        word=words[cursor];opcode=word>>26;cursor+=1
+        if opcode==ops['nFTMotionEventAsyncWait']:frame=word&0x3ffffff
+        elif opcode==ops['nFTMotionEventEnd']:break
+        elif opcode==ops['nFTMotionEventMakeAttackColl']:
+            assert not word&(127<<13),'Foreign skeleton in neutral script'
+            actual.append((frame,(word,*words[cursor:cursor+4])));cursor+=4
+        else:actual.append((frame,(word,)))
+    assert actual==expected,'Neutral source hit/flag/timing mismatch: '+str(i)
+print('PASS: neutral damage, radii, offsets, angle, knockback, shield damage, hit groups and event timing match original packed source fields.')
+action_payloads={}
+for name,(address,length,index) in host_symbols.items():
+    if name.startswith('sFTCharBuilderAction') and name!='sFTCharBuilderActions':
+        words=host_words(name)
+        assert struct.pack('>'+str(len(words))+'I',*words) in rom,name+' missing'
+        action_payloads[address]=words
+def action_table_matches(table):
+    if table is None:return False
+    for i,c in enumerate(action_catalog()):
+        expected=action_records[i*12:(i+1)*12];actual=table[i*12:(i+1)*12]
+        if actual[1:4]!=expected[1:4] or actual[5:9]!=expected[5:9]:return False
+        if actual[2]!=c['duration']:return False
+        for field in (0,4,9,10,11):
+            pointer=expected[field]
+            if not pointer:
+                if actual[field]:return False
+            elif loaded_words(actual[field],len(action_payloads[pointer]))!=action_payloads[pointer]:return False
+    return True
+found=False
+suffix=struct.pack('>3I',*action_records[1:4])
+for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
+    if typ!=1:continue
+    pos=rom.find(suffix,paddr+4,paddr+filesz)
+    while pos!=-1:
+        if action_table_matches(loaded_words(vaddr+pos-paddr-4,30*12)):
+            found=True;break
+        pos=rom.find(suffix,pos+1,paddr+filesz)
+    if found:break
+assert found,'Neutral action pointers/collision paths/sockets missing from ROM'
+print('PASS: all 30 neutral phases and linked script, timing, collision, travel, projectile and capture pointers match host-tested data.')
 assert 'ftMainCharBuilderIsSpecialN' not in symbols  # Removed blanket laser interception.
 for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     name = 'sFTCustomAnimation'+donor

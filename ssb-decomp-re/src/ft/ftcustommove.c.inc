@@ -15,6 +15,10 @@ typedef struct FTCustomMoveClock
     s32 status_id, motion_id, duration;
     f32 frame, native_frame;
     u32 flags;
+#ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
+    const struct FTCustomCollisionTrajectory *trajectory;
+    f32 speed;
+#endif
 } FTCustomMoveClock;
 
 static FTCustomMoveClock sFTCustomMoveClocks[GMCOMMON_PLAYERS_MAX];
@@ -46,6 +50,10 @@ static void ftCustomMoveStartClock(FTStruct *fp, const FTCustomMoveDefinition *m
     clock->motion_id = fp->motion_id;
     clock->duration = move->duration;
     clock->flags = move->flags;
+#ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
+    clock->trajectory = NULL;
+    clock->speed = 1.0F;
+#endif
     clock->frame = frame_begin - 1.0F;
     clock->native_frame = frame_begin;
 }
@@ -56,7 +64,11 @@ static f32 ftCustomMoveAdvanceClock(FTStruct *fp, f32 native_frame)
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
     if (clock == NULL) return native_frame;
     clock->native_frame = native_frame;
+#ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
+    clock->frame += clock->speed;
+#else
     clock->frame += 1.0F;
+#endif
     if (clock->flags & FTCUSTOMMOVE_FLAG_LOOP) return native_frame;
     if (clock->frame >= clock->duration) return -1.0F;
     return (clock->frame > 0.0F) ? clock->frame : 0.001F;
@@ -72,7 +84,14 @@ static f32 ftCustomMoveEventFrame(FTStruct *fp, FTMotionScript *ms, f32 native_f
 static f32 ftCustomMoveEventSpeed(FTStruct *fp, FTMotionScript *ms, f32 anim_speed)
 {
     if ((ftCustomMoveGetClock(fp) != NULL) &&
-        ((ms == &fp->motion_scripts[0][2]) || (ms == &fp->motion_scripts[1][2]))) return 1.0F;
+        ((ms == &fp->motion_scripts[0][2]) || (ms == &fp->motion_scripts[1][2])))
+    {
+#ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
+        return ftCustomMoveGetClock(fp)->speed;
+#else
+        return 1.0F;
+#endif
+    }
     return anim_speed;
 }
 
