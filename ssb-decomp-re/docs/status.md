@@ -11,7 +11,8 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Independent grab, forward-throw and back-throw selections.
 - [x] Throw damage and knockback from the donor, with body capture/release animations.
 - [x] Non-DK forward throws on DK release directly instead of entering cargo carry.
-- [x] Neutral B choice: the body's move or Fox laser, with finite laser recovery on other bodies.
+- [x] Neutral B: Body Move, Fox Laser, Mario/Luigi Fireball, Thunder Jolt and PK Fire.
+- [x] Four native projectile adapters with donor timing/spawn geometry and ground/air continuation.
 - [x] Existing Up B/Down B adapters, still experimental and needing more playtesting.
 - [x] Assign builds to any human or CPU slot in VS, including two builds with the same body.
 - [x] Training HITBOX view for attack and hurtbox outlines.
@@ -44,7 +45,11 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [ ] Every donor attack animation on every body.
 - [ ] Paired donor throw/victim choreography, including special capture mechanics.
 - [ ] Tether grab reach, capture timing and visuals on other bodies.
-- [ ] Neutral-special donor roster beyond Body Move/Fox Laser, excluding Kirby copy.
+- [x] Native projectile neutral first batch on all bodies/four player slots; eight donor pose/matrix checks.
+- [ ] Rendered projectile contact, stage following, reflection/absorption and transition acceptance.
+- [ ] Falcon Punch/Pound hitbox and movement adapters.
+- [ ] DK/Samus charging, Link boomerang return/catch and Yoshi capture; Kirby copy excluded.
+- [ ] Donor neutral animations across bodies.
 - [ ] Donor movement/physics and move-specific behavior such as Link's down-air bounce.
 - [ ] Complete, consistent special-move compatibility across all bodies.
 - [ ] Save creator presets across ROM restarts; currently they last for the running session.

@@ -52,6 +52,14 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
+For a checked local Character Lab build, commit/push the exact source, refresh
+its package metadata with `python3 tools/packageRelease.py` inside
+`ssb-decomp-re/`, and copy those `dist/` files to root `dist/`. Then run
+`python tools/publish-character-lab.py` at the root. It validates the pushed
+commit, clean metadata, ZIP and hashes, publishes a new snapshot and checks
+public downloads. Published snapshots are never replaced; this updates the
+permanent Character Lab latest links while preserving Remix's preview.
+
 ## Local Remix preview
 
 The original-roster Remix port has separate moving preview downloads:

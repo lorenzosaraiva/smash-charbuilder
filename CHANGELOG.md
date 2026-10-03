@@ -1,5 +1,12 @@
 # Changes
 
+## 0.1.2 - 2026-10-03
+
+- Decomp: add Mario Fireball, Luigi Fireball, Pikachu Thunder Jolt and Ness PK Fire to Neutral B, alongside Body Move/Fox Laser.
+- Borrowed projectiles use native weapon behavior, donor spawn positions and original firing/recovery timing on every original body. Landing/edge transitions preserve progress and prevent duplicate shots.
+- Add all-body/four-slot adapter tests, original animation/matrix spawn checks and linked-ROM verification. Rendered gameplay acceptance remains pending.
+- Publish a new Character Lab ROM/package; new choices are not yet ported to Remix.
+
 ## 0.1.1 - Remix borrowed-special pose/timing fix - 2026-10-03
 
 - Replaced borrowed original-roster Up/Down B taunts with body idle/falling poses. Mario no

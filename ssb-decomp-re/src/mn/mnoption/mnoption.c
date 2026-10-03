@@ -1055,7 +1055,8 @@ void mnOptionBuilderMakeEditor(GObj *gobj)
         }
         else if (i == 19)
         {
-            value = (slot->special_n == nSCCharBuilderNeutralFoxLaser) ? "FOX LASER" : "BODY MOVE";
+            const char *neutral_names[6] = { "BODY MOVE", "FOX LASER", "MARIO FIREBALL", "LUIGI FIREBALL", "THUNDER JOLT", "PK FIRE" };
+            value = neutral_names[slot->special_n < nSCCharBuilderNeutralEnumCount ? slot->special_n : 0];
         }
         else if (i == 20)
         {
@@ -1102,7 +1103,7 @@ void mnOptionBuilderRandomize(void)
     }
     seed = (seed * 1103515245) + 12345;
     slot->special_hi = (seed >> 16) % (nFTKindPlayableEnd + 1);
-    slot->special_n = (seed >> 15) & 1;
+    slot->special_n = (seed >> 15) % nSCCharBuilderNeutralEnumCount;
     seed = (seed * 1103515245) + 12345;
     slot->special_lw = (seed >> 16) % (nFTKindPlayableEnd + 1);
 
@@ -1132,8 +1133,7 @@ void mnOptionBuilderChangeValue(s32 add)
     }
     else if (sMNOptionBuilderEntry == 19)
     {
-        slot->special_n = (slot->special_n == nSCCharBuilderNeutralFoxLaser) ?
-            nSCCharBuilderNeutralBody : nSCCharBuilderNeutralFoxLaser;
+        slot->special_n = (slot->special_n + (add > 0 ? 1 : nSCCharBuilderNeutralEnumCount - 1)) % nSCCharBuilderNeutralEnumCount;
         return;
     }
     else if (sMNOptionBuilderEntry == 20)

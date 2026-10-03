@@ -30,7 +30,12 @@ typedef enum SCCharBuilderAttack
 typedef enum SCCharBuilderNeutral
 {
     nSCCharBuilderNeutralBody,
-    nSCCharBuilderNeutralFoxLaser
+    nSCCharBuilderNeutralFoxLaser,
+    nSCCharBuilderNeutralMarioFireball,
+    nSCCharBuilderNeutralLuigiFireball,
+    nSCCharBuilderNeutralPikachuJolt,
+    nSCCharBuilderNeutralNessPKFire,
+    nSCCharBuilderNeutralEnumCount
 } SCCharBuilderNeutral;
 
 typedef struct SCCharBuilderSlot

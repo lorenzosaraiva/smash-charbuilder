@@ -1,5 +1,11 @@
 # Character Lab changes
 
+## 0.1.2 - 2026-10-03: projectile neutral specials
+
+Add Mario Fireball, Luigi Fireball, Pikachu Thunder Jolt and Ness PK Fire to the Neutral B selector and randomizer. Foreign bodies keep their own neutral poses, use donor firing/recovery clocks and donor spawn geometry, and call the native projectile constructors. No donor fighter status or passive union is transplanted. Matching donor bodies keep their native move.
+
+Ground/air transitions continue the clock without a second shot. Resource preload covers fireballs, jolt surface animation, PK Fire spark/pillar and particle banks. Actual adapter tests cover all bodies/four player slots, native fallbacks, transitions, interrupted actions and allocation failure. Native animation/matrix and linked-ROM checks validate all eight source definitions. Rendered gameplay/contact acceptance and retargeted animations remain pending; charge, return/catch, melee/movement and capture neutrals still need dedicated adapters. Kirby copy is excluded.
+
 ## Training grab combo continuity - 2026-10-02
 
 - Training preserves the existing combo count and damage through grabs, cargo

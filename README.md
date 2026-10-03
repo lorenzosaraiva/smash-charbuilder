@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.1 (experimental)** | **Last updated: 2026-10-03**
+**Project version: 0.1.2 (experimental)** | **Last updated: 2026-10-03**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -21,7 +21,7 @@ game engines or make features automatically carry between them.
 
 | Build | ROM last updated | ROM download | Play package | Source build |
 | --- | --- | --- | --- | --- |
-| **Character Lab** | 2026-10-02 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [`284aa9945`](https://github.com/lorenzosaraiva/smash-charbuilder/commit/284aa994579de291908c9c0411d6f5caa709be03) |
+| **Character Lab** | 2026-10-03 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
 | **Character Lab on Remix (preview)** | 2026-10-03 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
 
 Dates use Sao Paulo time and refer to the published ROMs. The project version
@@ -49,6 +49,12 @@ locally; automatic hosted Remix builds remain pending.
 In Training, press **Start -> View -> HITBOX** to see attack and hurtbox outlines.
 Grabs preserve the current combo count and damage through the hold and throw.
 Presets in this version last for the running ROM session.
+
+Character Lab's **Neutral B** row now offers **Body Move**, **Fox Laser**,
+**Mario Fireball**, **Luigi Fireball**, **Thunder Jolt** and **PK Fire**.
+The four new projectile donors work across all twelve bodies with original
+firing/recovery timing and projectile behavior. Borrowed animations still use
+body poses. These new neutral choices are currently decomp only.
 
 Every normal donor attack now uses its original hitbox path, size, active timing,
 damage and knockback on the other bodies, including angled variants and landing

@@ -23,7 +23,8 @@ static GObj* efManagerSamusGrappleBeamGlowMakeEffect(GObj *gobj) { return NULL; 
 void ftCommonThrownSetStatusQueue(GObj *gobj, s32 first, s32 second) { sTestThrowQueue = second; }
 void ftCommonThrownSetStatusImmediate(GObj *gobj, s32 status) { sTestThrowQueue = status; }
 static sb32 mpCommonProcFighterOnFloor(GObj *gobj, void (*callback)(GObj*)) { return TRUE; }
-static sb32 mpCommonProcFighterLanding(GObj *gobj, void (*callback)(GObj*)) { return FALSE; }
+static sb32 mpCommonProcFighterLanding(GObj *gobj, void (*callback)(GObj*))
+{ if (sTestNeutralLanding) callback(gobj); return sTestNeutralLanding; }
 #include "../src/ft/ftcommon/ftcommonthrow.c"
 #include "../src/ft/ftchar/ftdonkey/ftdonkeythrowff.c"
 

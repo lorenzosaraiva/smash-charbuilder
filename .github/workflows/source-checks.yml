@@ -20,15 +20,16 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-multilib
-      - name: Check generated normal data is reproducible
+      - name: Check generated donor data is reproducible
         run: |
           mkdir -p build
           python3 tools/generateCustomMoves.py
           python3 tools/generateCustomAnimations.py
           python3 tools/generateCustomCollisions.py
+          python3 tools/generateNeutralProjectiles.py
           git diff --exit-code -- src/ft/ftcustommoves.generated.inc \
             src/ft/ftcustomanimations.generated.inc src/ft/ftcustomcollisions.generated.inc \
-            src/ft/ftcustomcollisionregistry.generated.inc
+            src/ft/ftcustomcollisionregistry.generated.inc src/ft/ftneutralprojectiles.generated.inc
       - name: Check move behavior and donor data
         run: |
           mkdir -p build

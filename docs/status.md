@@ -23,6 +23,20 @@ grab-preserving combo counters, the animation pilots and remaining work.
 The [Remix guide](../remix/character_creator_guide.md) and
 [port checklist](../remix/docs/character-lab-status.md) cover the separate preview.
 
+## Character Lab neutral specials
+
+- [x] Body Move and Fox Laser.
+- [x] Mario/Luigi Fireball, Pikachu Thunder Jolt and Ness PK Fire on all original bodies.
+- [x] Donor firing/recovery timing, native projectile collision values and donor spawn geometry.
+- [x] Ground/air continuation, independent player state and duplicate/interruption guards.
+- [x] Host adapter tests, native spawn geometry checks and linked-ROM verification.
+- [ ] Rendered projectile/contact/reflect/absorb acceptance in Training and VS.
+- [ ] Falcon Punch and Jigglypuff Pound: dedicated hitbox and movement timelines.
+- [ ] DK Giant Punch and Samus Charge Shot: charge/store/release state.
+- [ ] Link Boomerang: return/catch lifecycle; Yoshi Egg Lay: paired capture state.
+- [ ] Borrowed neutral animations. Kirby copy remains outside this milestone.
+- [ ] Port these four projectile adapters to Remix.
+
 ## Character Lab on Remix
 
 - [x] Original-roster donor normal timing, collision paths and numeric values.

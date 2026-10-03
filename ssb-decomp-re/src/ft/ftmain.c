@@ -522,6 +522,7 @@ static void ftMainCharBuilderMakeSamusBomb(GObj *fighter_gobj)
     wpSamusBombMakeWeapon(fighter_gobj, &pos);
 }
 
+#define FTCHARBUILDER_NEUTRAL_EXTENDED
 #include "ftcharbuilderneutral.c.inc"
 
 // // // // // // // // // // // //
@@ -5387,7 +5388,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         {
             fp->motion_scripts[0][i].p_script = fp->motion_scripts[1][i].p_script = NULL;
         }
-        /* Laser poses must not run the body's charge/capture/projectile events. */
+        /* Borrowed neutral poses suppress native charge/capture/projectile events. */
         if (sFTCharBuilderNeutralStartingOwner == fp)
             fp->motion_scripts[0][0].p_script = fp->motion_scripts[1][0].p_script = NULL;
         if (ftCustomMoveGetDefinition(fp) != NULL)

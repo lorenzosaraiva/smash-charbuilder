@@ -4,7 +4,7 @@ The working Mario aerial was committed as `f0d2e1a6c` before this extension. The
 
 The editor also has independent **Grab**, **Forward Throw** and **Back Throw** donor rows after Down Air. Each accepts all twelve fighters and applies to assigned human or CPU slots. New presets start with their body's own grab and throw donors; Use Body For All and Randomize Attacks include these rows.
 
-**Neutral B** now switches between **BODY MOVE** and **FOX LASER** with left/right. Use Body For All restores the body's neutral special; randomization includes the two choices. The initial presets retain Fox laser. The full neutral-special donor roster is not implemented.
+**Neutral B** cycles through **BODY MOVE**, **FOX LASER**, **MARIO FIREBALL**, **LUIGI FIREBALL**, **THUNDER JOLT** and **PK FIRE** with left/right. Use Body For All restores the body's native neutral; randomization includes all six choices. Initial presets retain Fox laser. This first projectile batch is decomp only; the remaining neutral-special donors are unfinished.
 
 ## Playing
 
@@ -44,17 +44,23 @@ BODY MOVE now uses the body's ordinary neutral-special implementation and events
 
 Laser firing and recovery follow Fox's US source data: grounded shot on frame 25, repeat enabled on 29, recovery through frame 55; airborne shot/repeat on frame 15, recovery through frame 45. Hitlag pauses the clock. Landing, leaving a platform or taking damage can cancel the action normally. The projectile remains the native Fox blaster; its spawn uses the body's root position. The visual pose is still the body's, not a retargeted Fox animation.
 
+MARIO FIREBALL, LUIGI FIREBALL, THUNDER JOLT and PK FIRE use the same isolated body-pose entry, with dedicated bounded scripts and per-player firing state. Matching donor bodies use the ordinary native move. Foreign bodies spawn the actual native projectile, preserving weapon damage, size, knockback, lifetime, collision, bounce/stage following, reflection/absorption and PK Fire's spark-to-pillar behavior. Resource setup preloads their donor special files; all original particle banks are initialized by the existing playable-file setup. Projectile ownership/team/staleness remain with the borrowing player.
+
+Firing frames (ground/air) are 16/16 for both fireballs, 21/21 for jolt, 20/20 for PK Fire. Recovery durations are 46/46, 46/46, 64/64 and 72/60 respectively. Generated spawn offsets sample each donor's original US animation/rig at its firing frame and apply donor size, then translate/mirror at the borrowing body's root. Ness retains its explicit root offset and native air/ground angle/speed. The spawn is independent of body proportions or limb mapping. Landing/edge transitions preserve elapsed time and switch to the matching ground/air definition; a spent shot cannot replay. Interrupted actions reject stale accessory callbacks, and a failed weapon allocation consumes that action's shot just as the native flag does. Common body movement and native body hurtboxes remain; donor movement and retargeted neutral animations are separate work.
+
+Charge/store/release (DK/Samus), boomerang return/catch (Link), paired capture (Yoshi), melee/movement hitboxes (Falcon/Pound) and their visuals still need dedicated adapters. Kirby copy is excluded.
+
 The lab uses the game's existing option tabs, font sprites at readable 2x size, gold headings, red selection and purple/gray panels. The HITBOX label is composed from the same native alphabet, rather than an external font.
 
 ## Validation
 
-Generate the data with `python3 tools/generateCustomMoves.py`, `python3 tools/generateCustomGrabs.py` `python3 tools/generateCustomCollisions.py` and `python3 tools/generateTrainingHitboxLabel.py`. `tools/auditNormalMoves.py` remains a read-only census of the source moves.
+Generate the data with `python3 tools/generateCustomMoves.py`, `python3 tools/generateCustomGrabs.py` `python3 tools/generateCustomCollisions.py` and `python3 tools/generateTrainingHitboxLabel.py`. Projectile timing/spawn data use `python3 tools/generateNeutralProjectiles.py`; the verifier rejects stale output. `tools/auditNormalMoves.py` remains a read-only census of the source moves.
 
 The freestanding host test includes the actual runtime implementation. It checks all 12 × 12 × 33 = **4,752 body/donor/variant combinations**, per-player buffers, CPU/vanilla/demo/scene eligibility, native event suppression, local rapid-loop pointers, malformed definitions and the original Falcon aerial parameters. Frame-clock tests run every valid donor variant through its complete duration while simulating an already-ended body animation, and check expiry, reset and the independent script clock. It does not simulate N64 animations or collision detection.
 
 Grab coverage adds **144 body/donor combinations**, verifying donor timing and mapped capture joints. Descriptor tests cover **432 body/donor/grab-or-throw combinations**, preserve both native victim statuses, verify known Samus and Donkey Kong source values, and check independent player storage and eligibility guards.
 
-Neutral adapter tests cover all twelve bodies on ground/in air across four independent slots, including CPU assignment, body/native-Fox fallbacks, finite recovery despite an ended body pose, repeat input, interruption and duplicate-shot prevention. DK tests include actual common throw dispatch and DK release callbacks with engine services stubbed: all twelve forward donors, common victim queue for foreign throws, donor numeric properties, one release, capture cleanup, native cargo and back-throw dispatch. These tests do not render or simulate victim physics. The ROM verifier also checks the new dispatch functions, local laser scripts and source animation durations.
+Neutral adapter tests cover all twelve bodies on ground/in air across four independent slots, including CPU assignment, body/native-Fox fallbacks, finite recovery despite an ended body pose, repeat input, interruption and duplicate-shot prevention. DK tests include actual common throw dispatch and DK release callbacks with engine services stubbed: all twelve forward donors, common victim queue for foreign throws, donor numeric properties, one release, capture cleanup, native cargo and back-throw dispatch. These tests do not render or simulate victim physics. The four new projectile adapters add 352 foreign-body/ground-air/player-slot cases and 32 native fallbacks, with transition, interruption, duplicate-shot and allocation-failure checks. The native animation/matrix oracle independently checks all eight spawn definitions. The ROM verifier checks dispatch/resource code, linked projectile constructors, bounded scripts, exact pointer/duration records and spawn tables. These tests do not replace rendered projectile/contact acceptance.
 
 ```sh
 gcc -m32 -nostdlib -static -fno-pie -fno-stack-protector -O1 \

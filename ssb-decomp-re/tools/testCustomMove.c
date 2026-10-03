@@ -365,6 +365,7 @@ static s32 testCustomAnimation(void)
 }
 #include "testCharBuilderNeutral.c.inc"
 #include "testCharBuilderThrow.c.inc"
+#include "testCharBuilderProjectiles.c.inc"
 #include "testCustomCollision.c.inc"
 #include "testTrainingCombo.c.inc"
 void _start(void)
@@ -374,6 +375,7 @@ void _start(void)
     if (result == 0) result = testCustomCollision();
     if (result == 0) result = testFullCollisionRoster();
     if (result == 0) result = testCharBuilderNeutral();
+    if (result == 0) result = testCharBuilderProjectiles();
     if (result == 0) result = testCharBuilderThrow();
     if (result == 0) result = testTrainingCombo();
     if (result != 0)

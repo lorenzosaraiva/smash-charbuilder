@@ -9,6 +9,7 @@ from verifyCustomMoveData import verify_sources
 from elfData import read_elf
 from customMoveTiming import animation_duration
 from generateCustomCollisions import catalog, stored_frames
+from generateNeutralProjectiles import catalog as projectile_catalog, render as render_projectiles
 
 ROOT = Path(__file__).resolve().parents[1]
 rom = (ROOT/'build/smashbrothers.us.z64').read_bytes()
@@ -55,6 +56,9 @@ programs = [struct.unpack_from('>8I',elf,phoff+i*size) for i in range(count)]
 for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMainProcPhysicsMap','ftMainHasCustomAttackTimeline',
              'ftMainUpdateComboStats','ftMainProcUpdateInterrupt',
              'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
+             'ftManagerSetupFilesPlayablesAll','wpMarioFireballMakeWeapon',
+             'wpPikachuThunderJoltAirMakeWeapon','wpPikachuThunderJoltGroundMakeWeapon',
+             'wpNessPKFireMakeWeapon','itNessPKFireMakeItem',
              'ftCommonSpecialNCheckInterruptCommon','ftCommonSpecialAirCheckInterruptCommon',
              'ftCommonThrowSetStatus','ftDonkeyThrowFFProcUpdate','mnOptionBuilderChangeValue',
              'sc1PTrainingModeStartScene','mnPlayers1PTrainingBackTo1PMode',
@@ -100,6 +104,42 @@ assert records[6] == animation_duration('&llFTFoxAnimLaserAerialFileID') == 45
 # IDO omits local data names. Match the complete linked table with real script addresses.
 assert any(struct.pack('>8I',ground,*records[1:4],air,*records[5:8]) in rom
            for ground in laser_addresses[0] for air in laser_addresses[1]),'Laser pointers/durations missing'
+assert (ROOT/'src/ft/ftneutralprojectiles.generated.inc').read_text() == render_projectiles(), 'Stale projectile source data'
+def host_words(name):
+    address,length,index = host_symbols[name]
+    start = host_sections[index][4]+address-host_sections[index][3]
+    return struct.unpack_from('<'+str(length//4)+'I',host,start)
+def loaded_words(address, count):
+    for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
+        if typ == 1 and vaddr <= address and address+count*4 <= vaddr+filesz:
+            return struct.unpack_from('>'+str(count)+'I',rom,paddr+address-vaddr)
+    return None
+for name in ('sFTCharBuilderProjectileOffsets','sFTCharBuilderProjectileDonors'):
+    words=host_words(name)
+    assert struct.pack('>'+str(len(words))+'I',*words) in rom, name
+expected_scripts=[]
+for case in projectile_catalog():
+    words=host_words('sFTCharBuilderProjectile'+case['fighter']+str(case['air']))
+    assert len(words)==3 and words[0]&0x3FFFFFF==case['firing']
+    assert struct.pack('>3I',*words) in rom
+    expected_scripts.append(words)
+# Local symbol names may be stripped by IDO. Validate the full eight-definition
+# table and every linked pointer in loadable RAM instead of searching raw words.
+found=False
+suffix=struct.pack('>3I',3,projectile_catalog()[0]['duration'],0)
+for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
+    if typ!=1: continue
+    pos=rom.find(suffix,paddr+4,paddr+filesz)
+    while pos!=-1:
+        table=loaded_words(vaddr+pos-paddr-4,32)
+        if table and all(tuple(table[i*4+1:i*4+4])==(3,case['duration'],0)
+                         and loaded_words(table[i*4],3)==expected_scripts[i]
+                         for i,case in enumerate(projectile_catalog())):
+            found=True;break
+        pos=rom.find(suffix,pos+1,paddr+filesz)
+    if found:break
+assert found,'Projectile pointers/timing table missing from ROM'
+print('PASS: four selectable native projectiles, eight source timing/spawn definitions and resource preload code are linked in the ROM.')
 assert 'ftMainCharBuilderIsSpecialN' not in symbols  # Removed blanket laser interception.
 for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     name = 'sFTCustomAnimation'+donor

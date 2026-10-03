@@ -468,6 +468,23 @@ void ftManagerSetupFilesPlayablesAll(void)
             }
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_hi);
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_lw);
+            switch (gSCManagerCharBuilderSlots[i].special_n)
+            {
+            case nSCCharBuilderNeutralMarioFireball:
+                ftManagerSetupFilesSpecialKind(nFTKindMario);
+                break;
+            case nSCCharBuilderNeutralLuigiFireball:
+                ftManagerSetupFilesSpecialKind(nFTKindLuigi);
+                break;
+            case nSCCharBuilderNeutralPikachuJolt:
+                /* Special3 supplies the surface-following jolt animation. */
+                ftManagerSetupFilesSpecialKind(nFTKindPikachu);
+                break;
+            case nSCCharBuilderNeutralNessPKFire:
+                /* Special1 includes both the spark and its flame pillar. */
+                ftManagerSetupFilesSpecialKind(nFTKindNess);
+                break;
+            }
         }
     }
     ftManagerSetupFilesSpecialKind(nFTKindFox);

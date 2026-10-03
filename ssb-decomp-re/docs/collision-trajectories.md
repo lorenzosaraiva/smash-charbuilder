@@ -124,7 +124,8 @@ These are numeric/code checks, not rendered collision-detection acceptance.
 - [ ] Aerial landing/cancellation and actual jab-chain transitions.
 - [ ] Visible donor animation retargeting across the roster.
 - [ ] Donor-specific movement, callbacks/effects and hurtbox behavior.
-- [ ] Neutral specials beyond Body Move/Fox Laser, excluding Kirby copy.
+- [x] Projectile neutral first batch: Mario/Luigi Fireball, Thunder Jolt, PK Fire with donor timing and spawn geometry.
+- [ ] Remaining neutral charge/melee/movement/return/capture adapters, excluding Kirby copy.
 - [ ] Tether/paired grab and throw mechanics and choreography.
 
 See [building](../../docs/building.md) for ROM/release commands and the

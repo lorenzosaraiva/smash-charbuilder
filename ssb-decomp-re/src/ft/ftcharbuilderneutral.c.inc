@@ -66,24 +66,17 @@ static void ftMainCharBuilderNeutralProcInterrupt(GObj *fighter_gobj)
     }
 }
 
-sb32 ftMainCharBuilderTrySpecialN(GObj *fighter_gobj)
+static void ftMainCharBuilderStartNeutral(GObj *fighter_gobj, const FTCustomMoveDefinition *move, f32 frame_begin)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
-    const FTCustomMoveDefinition *move;
     s32 air, i;
-    if (slot == NULL) return FALSE;
-    ftMainCharBuilderClearSpecialDonor(fp);
-    if ((slot->special_n != nSCCharBuilderNeutralFoxLaser) ||
-        (fp->fkind == nFTKindFox)) return FALSE;
     air = (fp->ga == nMPKineticsAir);
-    move = &sFTCharBuilderLaserMoves[air];
     sFTCharBuilderNeutralStartingOwner = fp;
     ftMainSetStatus(fighter_gobj, sFTCharBuilderNeutralStatuses[fp->fkind][air],
-        0.0F, 1.0F, air ? FTSTATUS_PRESERVE_FASTFALL : FTSTATUS_PRESERVE_NONE);
+        frame_begin, 1.0F, air ? FTSTATUS_PRESERVE_FASTFALL : FTSTATUS_PRESERVE_NONE);
     sFTCharBuilderNeutralStartingOwner = NULL;
-    /* Frame zero of the body pose was already played by SetStatus. */
-    ftCustomMoveStartClock(fp, move, 1.0F);
+    /* SetStatus already played the first frame of the body pose. */
+    ftCustomMoveStartClock(fp, move, frame_begin + 1.0F);
     for (i = 0; i < 2; i++)
     {
         fp->motion_scripts[i][2].p_script = (ftMotionCommand*)move->events;
@@ -96,5 +89,25 @@ sb32 ftMainCharBuilderTrySpecialN(GObj *fighter_gobj)
     fp->proc_physics = air ? ftPhysicsApplyAirVelDrift : ftPhysicsApplyGroundVelFriction;
     fp->proc_map = air ? mpCommonProcFighterWaitOrLanding : mpCommonSetFighterFallOnEdgeBreak;
     fp->proc_accessory = ftMainCharBuilderMakeLaser;
+}
+
+/* Remix imports the laser adapter separately; its menu still has two choices. */
+#ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
+#include "ftcharbuilderprojectiles.c.inc"
+#endif
+
+sb32 ftMainCharBuilderTrySpecialN(GObj *fighter_gobj)
+{
+    FTStruct *fp = ftGetStruct(fighter_gobj);
+    SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
+    if (slot == NULL) return FALSE;
+    ftMainCharBuilderClearSpecialDonor(fp);
+#ifdef FTCHARBUILDER_NEUTRAL_EXTENDED
+    if ((slot->special_n >= nSCCharBuilderNeutralMarioFireball) &&
+        (slot->special_n < nSCCharBuilderNeutralEnumCount))
+        return ftMainCharBuilderTryProjectileNeutral(fighter_gobj, slot->special_n);
+#endif
+    if ((slot->special_n != nSCCharBuilderNeutralFoxLaser) || (fp->fkind == nFTKindFox)) return FALSE;
+    ftMainCharBuilderStartNeutral(fighter_gobj, &sFTCharBuilderLaserMoves[fp->ga == nMPKineticsAir], 0.0F);
     return TRUE;
 }

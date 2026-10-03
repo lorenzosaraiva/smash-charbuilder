@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Package a checked US build; use fixed asset names for permanent download links."""
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -52,7 +53,8 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': 'experimental',
+        'version': '0.1.2',
+        'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
     output.mkdir(exist_ok=True)
@@ -76,7 +78,13 @@ This is a work in progress: most animations still belong to the selected body.
 Builds and player assignments last for the running ROM session.
 Training combo count/damage survive grabs, cargo holds and throw windup, then
 reset after release and hitstun end. A bare grab adds no hit or damage.
-Neutral B currently offers Body Move or Fox Laser. Throws use donor damage and
+Neutral B offers Body Move, Fox Laser, Mario Fireball, Luigi Fireball,
+Thunder Jolt and PK Fire. The four new projectiles keep native weapon behavior,
+donor spawn positions and firing/recovery timing on all original bodies. Landing
+and edge transitions continue the clock without a second shot. Borrowed neutral
+animations and charge/boomerang/melee/capture adapters remain pending.
+These new choices are decomp only; rendered projectile acceptance is pending.
+Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 Three Mario animation pilots are implemented; full animation coverage is pending.
 Original donor collision paths now cover every normal attack on every foreign

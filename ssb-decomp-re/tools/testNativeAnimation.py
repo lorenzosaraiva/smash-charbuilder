@@ -6,6 +6,7 @@ from generateCustomCollisions import catalog,case_frames,stored_frames
 from auditNormalMoves import arrays,us_text,ROSTER
 from customMoveCatalog import resolved_moves,source_scripts,MOTIONS
 from generateCustomMoves import expand
+from generateNeutralProjectiles import catalog as projectile_catalog
 
 
 def function(text,name):
@@ -65,9 +66,20 @@ def main():
         pose_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{case["flags"]}U,{scaling},{frames},{event_symbol},{source_size(fighter)}F);')
         if stored_frames(case_id)[1]:
             symbol='sFTCustomCollision'+case['label'];placement_calls.append('dumpRootPlacement('+symbol+',ARRAY_COUNT('+symbol+'));')
+    projectile_calls=[]
+    for i,case in enumerate(projectile_catalog()):
+        fighter=case['fighter'];path,_=animation(case['animation'])
+        if path not in seen_files:
+            output.append('#include "../src/relocData/'+path.name+'"');seen_files.add(path)
+        events='sOracleProjectile'+str(i)
+        output.append('static const OracleEvent '+events+'[] = { {2,'+str(case['firing'])+',0,0,{0,0,0},0}, {3,0,0,'+str(case['joint'])+',{0,0,0},0}, {0,0,0,0,{0,0,0},0} };')
+        table=next(iter(arrays(us_text(path.read_text()),r'AObjEvent32\s*\*')))
+        setup,hidden,scales=attributes(fighter)
+        scaling='sOracle'+fighter+'Scale' if scales and not case['flags']&4 else 'NULL'
+        projectile_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{case["flags"]}U,{scaling},{case["firing"]+1},{events},{source_size(fighter)}F);')
     output.append('static const f32 sOracleBodySizes[] = { '+', '.join(str(source_size(f))+'F' for f in ROSTER)+' };')
     (ROOT/'build/nativeAnimationOracle.inc').write_text('\n'.join(output)+'\n',encoding='utf-8')
-    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls)+'\n',encoding='utf-8')
+    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls)+'\n',encoding='utf-8')
     subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protector','-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-O1','-Iinclude','-Isrc','-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US','tools/testNativeAnimation.c','-o','build/testNativeAnimation'],cwd=ROOT,check=True)
     raw=subprocess.check_output([str(ROOT/'build/testNativeAnimation')],cwd=ROOT)
     (ROOT/'build/native-animation-poses.bin').write_bytes(raw)
@@ -105,7 +117,21 @@ def main():
                         expected=struct.unpack_from('<3f',raw,cursor);cursor+=12
                         error=max(abs(a-b) for a,b in zip(actual,expected));placement_error=max(placement_error,error);placements+=1
                         assert error<0.001,(case['label'],body,facing,frame,aid,actual,expected)
+    projectile_error=0
+    for case in projectile_catalog():
+        poses=sample(case['fighter'],case['animation'],case['firing']+1,case['flags'])
+        for frame,pose in enumerate(poses):
+            cursor+=len(pose)*36
+            centers=struct.unpack_from('<12f',raw,cursor);cursor+=48
+            mask=struct.unpack_from('<I',raw,cursor)[0];cursor+=4
+            assert mask==int(frame==case['firing'])
+            if mask and case['joint']:
+                native=(centers[2],centers[1],-centers[0])
+                error=max(abs(a-b) for a,b in zip(native,case['offset']))
+                projectile_error=max(projectile_error,error)
+                assert error<0.003,(case['fighter'],case['air'],native,case['offset'],error)
     assert cursor==len(raw),(cursor,len(raw))
+    print(f'PASS: all eight projectile-neutral spawn poses match original animation/collision matrices; max error {projectile_error:.7f}.')
     print(f'PASS: {len(cases)} donor timelines, {comparisons} scalar samples match original ftAnimParseDObjFigatree and playback; max error {maximum:.7f}.')
     print(f'PASS: {centers_checked} active centers/masks match original collision matrices and native wait scheduling; max error {geometry_error:.7f} engine units.')
     print(f'PASS: {placements} world positions at all twelve body sizes/both facings; max error {placement_error:.7f}.')

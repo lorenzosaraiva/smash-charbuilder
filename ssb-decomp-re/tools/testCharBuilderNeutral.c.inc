@@ -34,6 +34,25 @@ static void ftParamSetMotionID(FTStruct *fp, s32 id) {}
 static void ftParamSetStatUpdate(FTStruct *fp, u16 flags) {}
 static void ftParamUpdate1PGameAttackStats(FTStruct *fp, s32 unused) {}
 static void ftMainCharBuilderClearSpecialDonor(FTStruct *fp) {}
+static s32 sTestProjectileShots, sTestProjectileKind;
+static sb32 sTestProjectileFailure, sTestNeutralLanding, sTestNeutralEdge;
+static Vec3f sTestProjectilePosition, sTestProjectileVelocity;
+static f32 sTestProjectileAngle;
+static f32 __sinf(f32 v) { f32 r; __asm__("fsin" : "=t"(r) : "0"(v)); return r; }
+static f32 __cosf(f32 v) { f32 r; __asm__("fcos" : "=t"(r) : "0"(v)); return r; }
+static void ftPhysicsClampAirVelXMax(FTStruct *fp) {}
+static void mpCommonSetFighterAir(FTStruct*);
+static void mpCommonSetFighterGround(FTStruct*);
+static sb32 mpCommonProcFighterLanding(GObj*, void (*)(GObj*));
+static sb32 mpCommonProcFighterOnEdge(GObj *g, void (*callback)(GObj*))
+{ if (sTestNeutralEdge) callback(g); return !sTestNeutralEdge; }
+static GObj *wpMarioFireballMakeWeapon(GObj *g, Vec3f *p, s32 kind)
+{ sTestProjectileShots++; sTestProjectileKind = kind; sTestProjectilePosition = *p; return sTestProjectileFailure ? NULL : g; }
+static GObj *wpPikachuThunderJoltAirMakeWeapon(GObj *g, Vec3f *p, Vec3f *v)
+{ sTestProjectileVelocity = *v; return wpMarioFireballMakeWeapon(g, p, 2); }
+static GObj *wpNessPKFireMakeWeapon(GObj *g, Vec3f *p, Vec3f *v, f32 a)
+{ sTestProjectileVelocity = *v; sTestProjectileAngle = a; return wpMarioFireballMakeWeapon(g, p, 3); }
+#define FTCHARBUILDER_NEUTRAL_EXTENDED
 sb32 ftMainCharBuilderTrySpecialN(GObj*);
 #include "../src/ft/ftcharbuilderneutral.c.inc"
 static void ftMainSetStatus(GObj *gobj, s32 status, f32 frame, f32 speed, u32 flags)

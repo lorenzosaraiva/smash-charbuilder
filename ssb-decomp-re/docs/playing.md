@@ -20,8 +20,23 @@ attack values and timing you want to use.
 **Use Body For All** restores that body's moves. **Randomize Attacks** makes a
 mix. **B** returns to the lab's main screen.
 
-Neutral B currently switches between **Body Move** and **Fox Laser**. The full
-neutral-special donor roster is unfinished. Up B and Down B use earlier adapters
+Neutral B cycles through **Body Move**, **Fox Laser**, **Mario Fireball**,
+**Luigi Fireball**, **Thunder Jolt** and **PK Fire**. New projectile choices work
+on any original body; selecting its own donor keeps the native move. Borrowed
+shots use original spawn positions, firing/recovery timing and native weapon
+behavior, while visible poses remain the body's. Landing or leaving an edge
+continues the action without a second shot.
+
+| Projectile | Ground/air firing frame | Ground/air recovery duration |
+| --- | --- | --- |
+| Mario Fireball | 16 / 16 | 46 / 46 |
+| Luigi Fireball | 16 / 16 | 46 / 46 |
+| Thunder Jolt | 21 / 21 | 64 / 64 |
+| PK Fire | 20 / 20 | 72 / 60 |
+
+The remaining charge, boomerang, melee/movement and capture neutrals need their
+own adapters. Kirby's copy system is excluded. In-game projectile acceptance
+is pending; report body/donor, ground or air, and emulator when something breaks. Up B and Down B use earlier adapters
 and may have rough combinations.
 
 ## Training
