@@ -1,9 +1,11 @@
 # Smash Character Builder
 
+**Project version: 0.1.0 (experimental)** | **Last updated: 2026-10-03**
+
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
 
-| Version | Where it lives | What to expect |
+| Edition | Where it lives | What to expect |
 | --- | --- | --- |
 | **Character Lab** | [ssb-decomp-re/](ssb-decomp-re/README.md) | Our current original-roster build: twelve bodies, editable normal attacks, grabs/throws, VS assignments and Training hitbox view. |
 | **Character Lab on Remix** | [remix/](remix/README.md) | Original-roster donor paths/timing, grabs/throws, laser choice, saved recipes and Training return on Smash Remix +EXTRA. Expanded-roster fidelity remains pending. |
@@ -17,21 +19,19 @@ game engines or make features automatically carry between them.
 
 ## Downloads
 
-The permanent Character Lab links are:
+| Build | ROM last updated | ROM download | Play package | Source build |
+| --- | --- | --- | --- | --- |
+| **Character Lab** | 2026-10-02 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [`284aa9945`](https://github.com/lorenzosaraiva/smash-charbuilder/commit/284aa994579de291908c9c0411d6f5caa709be03) |
+| **Character Lab on Remix (preview)** | 2026-10-03 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [`72234eea8`](https://github.com/lorenzosaraiva/smash-charbuilder/commit/72234eea80da43b597155da1dbd20f2ee9d1497c) |
 
-- [Play package: character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip)
-- [ROM only: character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64)
-- [All releases](https://github.com/lorenzosaraiva/smash-charbuilder/releases)
+Dates use Sao Paulo time and refer to the published ROMs. The project version
+above tracks this repository; each source build identifies the exact ROM.
+[Browse all releases](https://github.com/lorenzosaraiva/smash-charbuilder/releases).
 
 The ZIP includes a play guide, feature checklist, changelog and commit/checksum
 information. The first release was built and checked locally. Automatic updates
 after successful pushes to `main` still need the one-time
 [original-ROM build-source setup](docs/releases.md).
-
-The separate **Remix preview** downloads are:
-
-- [Remix play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
-- [Remix ROM](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64)
 
 Open **Settings -> CHARACTER LAB** and keep **Original 12 Only** on. See the
 [Remix play guide](remix/character_creator_guide.md) and

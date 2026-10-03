@@ -35,6 +35,12 @@ replace the previous release.
 
 ## Local packages and named releases
 
+The root README shows the project version and its last-updated date, plus each
+published ROM's date and exact source build. Bump the project version when
+publishing a feature or fix release, and update the relevant download row after
+publication succeeds. Documentation edits can update the README date without
+changing a ROM's published date or source build. Use Sao Paulo dates.
+
 Run the root [build command](building.md). Its files in `dist/` can also be
 attached to a release manually, with the package's exact source commit recorded.
 

@@ -1,5 +1,12 @@
 # Changes
 
+## Download/version information - 2026-10-03
+
+- Put both ROM and play-package downloads together in the root README.
+- Added project version 0.1.0, a last-updated date and each published ROM's date
+  and exact source build.
+- Documented how to keep these fields current when publishing releases.
+
 ## Character Lab on Remix preview - 2026-10-03
 
 - Ported original-roster donor normal values, timing and root-relative collision
