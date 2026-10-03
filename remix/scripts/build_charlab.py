@@ -66,7 +66,8 @@ Source commit: `{info['commit']}`; uncommitted changes: {info['source_dirty']}.
 
 Original donor collision paths/timing, normal values, grab/throw choices,
 Body Move/Fox Laser, Mario animation pilots and return from Training to the
-tested editor. Use Settings -> CHARACTER LAB; keep Original 12 Only enabled.
+tested editor. Borrowed Up/Down B uses body idle/falling poses, original-roster
+donor phase clocks and recovery transform guards. Use Settings -> CHARACTER LAB; keep Original 12 Only enabled.
 Assign Custom Build in the VS/Training CSS Player Settings for human/CPU slots.
 Remix's existing HITBOX/HITBOX+ display and improved combo meter remain available.
 

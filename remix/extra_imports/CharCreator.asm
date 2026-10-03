@@ -51,8 +51,8 @@ scope CharCreator {
 
     // Donor animations are authored for the donor's joint tree and cannot be
     // installed on an unrelated body safely. During borrowed specials, the
-    // parameter-record hook below substitutes a finite, body-owned animation
-    // while retaining the donor's command stream and action flags.
+    // parameter-record hook below substitutes body Idle/Fall. The shared
+    // runtime supplies the donor phase clock independently of that pose.
     special_parameter_records:
     fill SLOT_COUNT * 0x000C
 
@@ -1739,10 +1739,9 @@ scope CharCreator {
     // ftMainSetStatus has resolved the selected action parameter record here.
     // Shared normals combine the body's animation and flags with the donor's
     // command stream. Borrowed specials instead copy the donor record and
-    // replace its animation with the body's Taunt animation. Taunt is a
-    // shared, finite action available to every supported body, so donor command
-    // timing can advance without applying a donor figatree to an incompatible
-    // skeleton.
+    // replace its animation with body Idle/Fall. A separate donor phase clock
+    // supplies event time and recovery without applying the donor figatree to
+    // an incompatible skeleton or running taunt growth/root displacement.
     scope parameter_record_hook_: {
         OS.patch_start(0x62D54, 0x800E7554)
         j       parameter_record_hook_
@@ -1873,11 +1872,25 @@ scope CharCreator {
         sw      t7, 0x0004(t4)
         sw      t8, 0x0008(t4)
 
-        // Resolve the body's shared Taunt parameter index and animation ID.
+        // Idle/Fall have no taunt growth or root displacement. Donor phase
+        // timing is supplied separately by ccPrepare/ccAdvance.
         // Character.SHARED_ACTION_ARRAY is a ROM offset; this routine needs
         // the stock array's runtime address.
         li      t6, 0x80128DD8
-        lli     t7, 0x00BD                  // Action.Taunt
+        // Expanded donors do not yet have a compiled phase clock. Preserve
+        // their finite legacy pose rather than giving them an endless idle.
+        li      t7, active_special_donor
+        addu    t7, t7, t1
+        lw      t7, 0x0000(t7)
+        sltiu   t8, t7, 12
+        beqz    t8, _body_pose_ready
+        lli     t7, 0x00BD                  // legacy Action.Taunt
+        lli     t7, 0x000A                  // Action.Idle
+        lw      t8, 0x014C(s1)              // ground = 0, air = 1
+        beqz    t8, _body_pose_ready
+        nop
+        lli     t7, 0x001A                  // Action.Fall
+        _body_pose_ready:
         sll     t8, t7, 0x0002
         addu    t8, t8, t7                  // action * 5
         sll     t8, t8, 0x0002              // action * 20
@@ -1894,7 +1907,7 @@ scope CharCreator {
 
         // Animation flags are meaningful only together with their animation.
         // In particular, Fox's aerial Up-B uses 0x40000000; retaining that
-        // flag with Mario's Taunt makes the animation walker treat figatree
+        // flag with a body pose makes the animation walker treat figatree
         // data as a node pointer. Use the complete body flag word.
         lw      t6, 0x0008(t6)
         sw      t6, 0x0008(t4)

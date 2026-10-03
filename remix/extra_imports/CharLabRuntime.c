@@ -51,6 +51,26 @@ void ccSync(FTStruct *fp, s32 **entries, s32 scene)
 }
 
 static FTMotionScript sCCMotionScripts[4];
+#include "../build/char_creator/runtime/special-timings.inc"
+extern s32 ccSpecialDonor(FTStruct*);
+typedef struct CCSpecialClock
+{
+    FTStruct *owner;
+    s32 status, motion, donor;
+    u32 timing;
+    f32 frame;
+} CCSpecialClock;
+static CCSpecialClock sCCSpecialClocks[4];
+
+static CCSpecialClock* ccSpecialClock(FTStruct *fp)
+{
+    CCSpecialClock *clock;
+    if (fp->player >= 4) return NULL;
+    clock = &sCCSpecialClocks[fp->player];
+    if (clock->owner != fp || clock->status != fp->status_id ||
+        clock->motion != fp->motion_id || clock->donor != ccSpecialDonor(fp)) return NULL;
+    return clock;
+}
 extern s32 **ccGetEntries(s32 player);
 extern void ccOriginalParse(GObj*, FTStruct*, FTMotionScript*, u32);
 extern void ccRestoreBody(FTStruct*);
@@ -64,6 +84,7 @@ void ccReset(void)
         sFTCustomLastAirAttack[i] = -1;
         gSCManagerCharBuilderSlots[i].is_enabled = FALSE;
         sCCMotionScripts[i].p_script = NULL;
+        sCCSpecialClocks[i].owner = NULL;
     }
 }
 
@@ -92,6 +113,17 @@ void ccStart(FTStruct *fp, f32 frame_begin)
 void ccAdvance(GObj *gobj)
 {
     FTStruct *fp = gobj->user_data.p;
+    CCSpecialClock *special = ccSpecialClock(fp);
+    if (special != NULL)
+    {
+        f32 duration = special->timing & 0x7FFFFFFF;
+        special->frame += ((DObj*)gobj->obj)->anim_speed;
+        if ((special->timing & 0x80000000) && special->frame >= duration)
+            special->frame -= duration;
+        gobj->anim_frame = (!(special->timing & 0x80000000) && special->frame >= duration) ?
+            -1.0F : (special->frame > 0.0F ? special->frame : 0.001F);
+        return;
+    }
     gobj->anim_frame = ftCustomMoveAdvanceClock(fp, gobj->anim_frame);
     ftCustomAnimationApplyPose(fp);
 }
@@ -138,8 +170,22 @@ static void ccSyncCurrent(FTStruct *fp)
 void ccPrepare(GObj *gobj, f32 frame_begin)
 {
     FTStruct *fp = gobj->user_data.p;
+    s32 donor;
+    CCSpecialClock *clock;
     ccSyncCurrent(fp);
     ccStart(fp, frame_begin);
+    if (fp->player >= 4) return;
+    clock = &sCCSpecialClocks[fp->player];
+    clock->owner = NULL;
+    donor = ccSpecialDonor(fp);
+    if ((u32)donor >= 12 || (u32)fp->motion_id >= 276 ||
+        fp->status_id < 0xDC || !sCCSpecialTimings[donor][fp->motion_id]) return;
+    clock->owner = fp;
+    clock->status = fp->status_id;
+    clock->motion = fp->motion_id;
+    clock->donor = donor;
+    clock->timing = sCCSpecialTimings[donor][fp->motion_id];
+    clock->frame = frame_begin - ((DObj*)gobj->obj)->anim_speed;
 }
 
 #define ftGetStruct(gobj) ((FTStruct*)(gobj)->user_data.p)
@@ -183,4 +229,11 @@ const u32 ccLayout[] = {
     nSCKindVSBattle, nSCKind1PTrainingMode, nMPKineticsAir,
     OFF(FTAttributes, thrown_status), OFF(FTStruct, input.pl.stick_range),
     OFF(FTStruct, input.pl.button_tap), OFF(FTStruct, input.button_mask_b)
+};
+
+const u32 ccSpecialLayout[] = {
+    OFF(FTStruct, status_vars), OFF(FTStruct, physics.vel_air),
+    OFF(FTStruct, physics.vel_ground), OFF(FTStruct, joints),
+    nFTPikachuStatusSpecialHi, nFTPikachuStatusSpecialHiEnd,
+    nFTPikachuStatusSpecialAirHi, nFTPikachuStatusSpecialAirHiEnd
 };

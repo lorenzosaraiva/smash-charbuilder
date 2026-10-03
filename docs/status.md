@@ -28,6 +28,8 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Original-roster donor normal timing, collision paths and numeric values.
 - [x] Grab/throw selectors, donor throw values and DK foreign forward release.
 - [x] Body Move/Fox Laser and the three Mario animation pilots.
+- [x] Borrowed-special idle/falling poses, original-roster phase clocks and recovery transform guards.
+- [ ] Full special hitbox/projectile/capture fidelity and rendered two-dash acceptance.
 - [x] Existing SRAM recipes and human/CPU assignments integrated with the port.
 - [x] Training exit/CSS Back return to the tested editor.
 - [x] Native hitbox display, improved grab-aware combo meter and unlocks retained.

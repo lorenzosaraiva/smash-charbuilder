@@ -8,6 +8,11 @@ pose pilots, human/CPU preset assignments and return from Training to the editor
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
+**0.1.1 (2026-10-03):** borrowed Up/Down B uses body idle/falling poses and
+independent original-roster donor phase clocks. This removes the taunt growth
+and guards donor recovery pitching/stretching. Special retargeting and rendered
+acceptance remain on the [checklist](docs/character-lab-status.md).
+
 Open **Settings -> CHARACTER LAB** and keep **Original 12 Only** enabled. The
 expanded roster stays playable, with its earlier experimental creator adapters;
 full donor fidelity for those fighters remains pending. Old Remix settings and

@@ -17,6 +17,36 @@ LAB = ROOT.parent / 'ssb-decomp-re'
 OUT = ROOT / 'build/char_creator/runtime'
 
 
+def special_timings():
+    """Read US donor phase durations/loops without installing donor skeletons."""
+    import sys
+    sys.path.insert(0, str(LAB / 'tools'))
+    from auditNormalMoves import ROSTER, us_text
+    from customMoveCatalog import motion_descriptors
+    from customMoveTiming import animation_duration
+    rows = []
+    paths = {re.sub(r'^\d+_', '', p.stem): p for p in (LAB/'src/relocData').glob('*.c')}
+    for fighter in ROSTER:
+        _, descriptors = motion_descriptors(fighter)
+        row = [0] * 276
+        for motion, desc in enumerate(descriptors):
+            # Unique specials follow the shared 0..194 motion catalog.
+            match = re.fullmatch(r'&ll(\w+)FileID', desc[0])
+            if motion < 195 or not match:
+                continue
+            duration = animation_duration(desc[0])
+            if duration > 4096:  # Entry assets are not fighter special phases.
+                continue
+            loop = bool(re.search(r'ftAnimLoop\(', us_text(paths[match[1]].read_text())))
+            row[motion] = duration | (0x80000000 if loop else 0)
+        rows.append(row)
+    (OUT/'special-timings.inc').write_text(
+        '/* Generated from original US motion/animation sources. */\n'
+        'static const u32 sCCSpecialTimings[12][276] = {\n' +
+        '\n'.join('    { '+', '.join(hex(v) for v in row)+' },' for row in rows) + '\n};\n',
+        encoding='utf-8')
+
+
 def prepare_headers():
     include = OUT / 'include'
     include.mkdir(parents=True, exist_ok=True)
@@ -67,6 +97,7 @@ def object_to_bass(path):
         'ccGetEntries': 'CharCreator.get_slot_',
         'ccRestoreBody': 'CharLab.restore_body_',
         'ccMappedThrownKind': 'CharLab.mapped_thrown_kind_',
+        'ccSpecialDonor': 'CharLab.special_donor_',
         'wpFoxBlasterMakeWeapon': 'CharCreator.neutral_make_weapon_',
         'func_800269C0_275C0': '0x800269C0',
     }
@@ -150,6 +181,7 @@ def object_to_bass(path):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     prepare_headers()
+    special_timings()
     command = ['clang', '-target', 'mips-unknown-none', '-march=mips2', '-mabi=32',
                '-mno-abicalls', '-fno-pic', '-G0', '-O2', '-ffreestanding', '-fno-builtin',
                '-fno-stack-protector', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',

@@ -2,6 +2,55 @@
 if !{defined __CHAR_LAB__} {
 define __CHAR_LAB__()
 scope CharLab {
+    // Donor recovery callbacks address their own base bone (joint 4).
+    // That bone is not the same part of another body. Keep the actual
+    // movement/velocity callbacks, but suppress donor-only pitching/stretch.
+    macro special_pose_guard(offset, address, name) {
+        scope {name}: {
+            OS.patch_start({offset}, {address})
+            j {name}
+            nop
+            OS.patch_end()
+            lw v0, 0x0084(a0)
+            lbu t0, 0x000D(v0)
+            sltiu t1, t0, 4
+            beqz t1, _native
+            sll t0, t0, 2
+            li t1, CharCreator.body_character_data
+            addu t1, t1, t0
+            lw t1, 0x0000(t1)
+            beqz t1, _native
+            nop
+            jr ra
+            nop
+            _native:
+            OS.copy_segment({offset}, 8)
+            j {address} + 8
+            nop
+        }
+    }
+    special_pose_guard(0xCD4E0, 0x80152AA0, pikachu_pitch_scale_)
+    special_pose_guard(0xD6A94, 0x8015C054, fox_pitch_)
+    special_pose_guard(0xCF198, 0x80154758, ness_pitch_)
+
+    scope special_donor_: {
+        lbu t0, 0x000D(a0)
+        sltiu t1, t0, 4
+        beqz t1, _none
+        sll t0, t0, 2
+        li t1, CharCreator.body_character_data
+        addu t1, t1, t0
+        lw t1, 0x0000(t1)
+        beqz t1, _none
+        nop
+        li t1, CharCreator.active_special_donor
+        addu t1, t1, t0
+        jr ra
+        lw v0, 0x0000(t1)
+        _none:
+        jr ra
+        addiu v0, r0, -1
+    }
     macro save_fpu() {
         addiu sp, sp, -0x0080
         sdc1 f0, 0x0010(sp); sdc1 f2, 0x0018(sp)

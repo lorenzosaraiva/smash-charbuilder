@@ -1,5 +1,19 @@
 # Changes
 
+## 0.1.1 - Remix borrowed-special pose/timing fix - 2026-10-03
+
+- Replaced borrowed original-roster Up/Down B taunts with body idle/falling poses. Mario no
+  longer uses his growing taunt or its root displacement for these moves.
+- Added independent original-roster donor phase clocks, including frozen dash
+  phases, animation speed, loops and ground/air continuation frames.
+- Suppressed Pikachu Quick Attack stretching and Fox/Ness recovery pitching on
+  foreign bodies; donor movement callbacks remain active.
+- Added production MIPS regressions for pose selection and transform guards on
+  all twelve bodies/four ports, Quick Attack recovery and its second-dash event.
+- Preserved finite legacy poses for expanded donors without compiled phase clocks.
+- Borrowed specials still need rendered playtesting; full donor poses, special
+  hitbox paths, projectiles and paired/capture mechanics remain unfinished.
+
 ## Download/version information - 2026-10-03
 
 - Put both ROM and play-package downloads together in the root README.

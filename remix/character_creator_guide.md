@@ -78,8 +78,21 @@ have the shared original-roster trajectory fidelity. Original bodies safely
 fall back to their own normal when a donor outside the original twelve is
 selected. Grab/throw donors stay limited to the original twelve.
 
-Up/Down Special mixing still temporarily borrows donor code/resources and uses
-the earlier compatibility guards. It needs per-pair playtesting. Original-roster
+Up/Down Special mixing temporarily borrows donor code/resources. Borrowed
+phases with original-roster donors use body idle/falling poses instead of taunts, avoiding Mario growth
+and taunt displacement. Original-roster donors have separate phase clocks
+for recovery/events, respecting frozen dash phases and animation speed.
+Pikachu stretching and Fox/Ness recovery pitching are suppressed on borrowed
+bodies while their movement callbacks remain active.
+
+Expanded Remix donors retain the earlier finite taunt fallback because their
+phase clocks are not yet compiled.
+
+This is a compatibility fix, not full special retargeting. Donor special hitbox
+paths, projectile placement, model changes and capture mechanics still need
+work and per-pair playtesting. In particular, check Mario with Pikachu Up B:
+first dash, direction change for a second dash, recovery, interruption and
+landing. The body should keep its size and finish at the position it moved to. Original-roster
 normals use compiled data without consuming donor-file cache slots; legacy
 expanded normals and specials keep the bounded pre-match cache.
 

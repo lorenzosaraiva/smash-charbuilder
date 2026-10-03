@@ -115,6 +115,8 @@ class Runtime:
         # Mirror initial ROM data in the physical alias as well.
         self.uc.mem_write(0x400000, rom[0x3800000:0x3800000+0x400000])
         self.uc.mem_write(0xD6490, rom[0x51C90:0xAC540])
+        self.uc.mem_write(0x131B00, rom[0xAC540:0x109FB0])
+        self.uc.mem_write(0x80131B00, rom[0xAC540:0x109FB0])
         self.uc.reg_write(UC_MIPS_REG_CP0_STATUS, 0x20000000)
         self.services = {}
         self.calls = []
@@ -407,8 +409,8 @@ def test_specials_and_return(r):
     # for a victim outside the original roster instead of indexing past it.
     victim_gobj, victim_fp, thrown = 0x80215000, 0x80216000, 0x80218000
     r.services[0x800E0830] = lambda: 0
-    r.services[0x8014AB64] = lambda: 0
-    r.services[0x8014AFD0] = lambda: 0
+    r.services[0x8014AC0C] = lambda: 0
+    r.services[0x8014ACB4] = lambda: 0
     r.services[0x80101E80] = lambda: 0
     for body, donor in ((2, 7), (2, 2), (0, 7)):
         r.setup(body, donor)
@@ -422,7 +424,7 @@ def test_specials_and_return(r):
         r.calls.clear()
         assert r.call('ccThrow', r.GOBJ, 1) == 1
         assert r.u32(r.FP+0x24) == (r.layout['dk_throw_ff'] if body == 2 and donor != 2 else r.layout['throw_status'])
-        queued = [args[1] for addr, args in r.calls if addr == 0x8014AFD0]
+        queued = [args[1] for addr, args in r.calls if addr == 0x8014ACB4]
         assert queued == [r.layout['thrown_common'] if body == 2 and donor != 2 else r.layout['shouldered']], queued
     print('PASS: 432 body/donor grab and throw numeric selections preserve victim statuses; DK release/cargo selection uses Remix extended-victim mapping.')
 
@@ -457,6 +459,169 @@ def test_specials_and_return(r):
     print('PASS: Training exit and CSS Back return all four tested presets to the correct editor page; ordinary Training retains its CSS destination.')
 
 
+def test_borrowed_specials(r):
+    """Execute pose selection, donor clocks and native Quick Attack callbacks.
+
+    Rendering/status setup and the directional input predicate are isolated;
+    the native dash/end callbacks, event parser and owned hooks are real MIPS.
+    """
+    special = struct.unpack('>8I', r.read(r.addr('ccSpecialLayout'), 32))
+    variables, air_velocity, ground_velocity, joints, hi, end, air_hi, air_end = special
+    body_data, body_params = 0x80220000, 0x80221000
+    donor_data, donor_params = 0x80224000, 0x80225000
+    donor_actions = 0x80228000
+    table = r.labels['Character.ACTION_ARRAY_TABLE']
+    saved_actions = r.u32(table+9*4)
+    r.u32(table+9*4, donor_actions)
+    r.u32(body_data+0x64, body_params)
+    r.u32(donor_data+0x64, donor_params)
+    for action, motion in ((hi, 207), (end, 208), (air_hi, 209), (air_end, 210)):
+        r.u32(donor_actions+(action-0xDC)*20, motion << 22)
+        r.write(donor_params+motion*12, struct.pack('>3I', 0x1234, 0x5678, 0x40000000))
+    idle_index = r.u32(0x80128DD8+0xA*20) >> 22
+    fall_index = r.u32(0x80128DD8+0x1A*20) >> 22
+    r.write(body_params+idle_index*12, struct.pack('>3I', 0x111, 0, 0x222))
+    r.write(body_params+fall_index*12, struct.pack('>3I', 0x333, 0, 0x444))
+    for body in range(12):
+        for player in range(4):
+            r.setup(body, 9, player)
+            r.u32(r.FP+8, 9)  # Native donor identity during borrowed chain.
+            r.u32(r.FP+0x9C4, donor_data)
+            r.u32(r.labels['CharCreator.body_character_data']+player*4, body_data)
+            r.u32(r.labels['CharCreator.active_special_donor']+player*4, 9)
+            for air, action, motion in ((0, hi, 207), (1, air_hi, 209)):
+                r.u32(r.FP+0x24, action)
+                r.u32(r.FP+r.layout['ga'], air)
+                r.uc.reg_write(UC_MIPS_REG_S1, r.FP)
+                r.uc.reg_write(UC_MIPS_REG_T2, motion*12)
+                r.call('parameter_record_hook_', donor_params, namespace='CharCreator', end=0x800E7560)
+                record = r.reg(UC_MIPS_REG_T3)
+                expected = (0x333, 0x5678, 0x444) if air else (0x111, 0x5678, 0x222)
+                assert struct.unpack('>3I', r.read(record, 12)) == expected
+                assert r.reg(UC_MIPS_REG_V1) == body_data
+                assert r.u32(r.FP+0x28) == motion
+            # Donor model transforms must not touch scale, root position or
+            # velocity on any borrowed body/port.
+            r.f32(r.JOINTS+r.layout['translate'], 1234.0)
+            r.f32(r.FP+air_velocity, 45.0)
+            before = r.read(r.JOINTS, 37*0x100)
+            for name in ('pikachu_pitch_scale_', 'fox_pitch_', 'ness_pitch_'):
+                r.call(name, r.GOBJ, namespace='CharLab')
+            assert r.read(r.JOINTS, 37*0x100) == before
+            assert r.f32(r.FP+air_velocity) == 45.0
+            # A zero-speed Quick Attack dash must hold its clock until the
+            # native counter changes state, despite the idle pose looping.
+            r.f32(r.JOINTS+r.layout['speed'], 0)
+            r.call('ccPrepare', r.GOBJ, 0)
+            for _ in range(12):
+                assert r.advance(-1) > 0
+            # Each end phase uses Pikachu's 46 frames, not the pose duration.
+            r.u32(r.FP+0x24, air_end)
+            r.u32(r.FP+0x28, 210)
+            r.f32(r.JOINTS+r.layout['speed'], 1)
+            r.call('ccPrepare', r.GOBJ, 0)
+            for tick in range(47):
+                assert (r.advance(-1) < 0) == (tick == 46)
+            assert r.f32(r.JOINTS+r.layout['translate']) == 1234.0
+            # Shared interruption immediately invalidates the special clock.
+            r.u32(r.FP+0x24, 0xA)
+            assert r.advance(19.0) == 19.0
+            r.u32(r.labels['CharCreator.body_character_data']+player*4, 0)
+            r.u32(r.labels['CharCreator.active_special_donor']+player*4, -1)
+            for name, address in (('pikachu_pitch_scale_', 0x80152AA0),
+                                  ('fox_pitch_', 0x8015C054), ('ness_pitch_', 0x80154758)):
+                r.call(name, r.GOBJ, namespace='CharLab', end=address+8)
+                assert r.reg(UC_MIPS_REG_SP) == r.STACK-0x20
+    r.u32(table+9*4, saved_actions)
+    # Expanded donors keep their finite legacy pose until their phase clocks
+    # are supported. A looping idle must not trap animation-ended callbacks.
+    saved_expanded = r.u32(table+12*4)
+    r.u32(table+12*4, donor_actions)
+    taunt_index = r.u32(0x80128DD8+0xBD*20) >> 22
+    r.write(body_params+taunt_index*12, struct.pack('>3I', 0x555, 0, 0x666))
+    r.setup(0, 9)
+    r.u32(r.FP+0x9C4, donor_data)
+    r.u32(r.FP+0x24, hi)
+    r.u32(r.labels['CharCreator.body_character_data'], body_data)
+    r.u32(r.labels['CharCreator.active_special_donor'], 12)
+    r.uc.reg_write(UC_MIPS_REG_S1, r.FP)
+    r.uc.reg_write(UC_MIPS_REG_T2, 207*12)
+    r.call('parameter_record_hook_', donor_params, namespace='CharCreator', end=0x800E7560)
+    assert struct.unpack('>3I', r.read(r.reg(UC_MIPS_REG_T3), 12)) == (0x555, 0x5678, 0x666)
+    r.u32(table+12*4, saved_expanded)
+    # Test all generated donor phases at accelerated speed, including held
+    # loops and forwarded ground/air continuation frames. Native pose ending
+    # early (-1) must not end the donor's recovery.
+    phases = 0
+    for donor in range(12):
+        r.setup((donor+1) % 12, donor)
+        r.u32(r.FP+8, donor)
+        r.u32(r.labels['CharCreator.body_character_data'], body_data)
+        r.u32(r.labels['CharCreator.active_special_donor'], donor)
+        for motion in range(195, 276):
+            timing = r.u32(r.addr('sCCSpecialTimings')+(donor*276+motion)*4)
+            duration = timing & 0x7FFFFFFF
+            if not duration:
+                continue
+            r.u32(r.FP+0x24, 0xDC)
+            r.u32(r.FP+0x28, motion)
+            r.f32(r.JOINTS+r.layout['speed'], 2)
+            begin = duration-2
+            r.call('ccPrepare', r.GOBJ, struct.unpack('>I', struct.pack('>f', begin))[0])
+            assert abs(r.advance(-1)-max(0.001, begin)) < 0.001
+            assert (r.advance(-1) > 0) == bool(timing & 0x80000000)
+            phases += 1
+    r.call('ccReset')
+    assert r.advance(13) == 13
+    # Exercise the actual Quick Attack end update with the second-dash input
+    # predicate accepted, then ensure one subsequent dash and finite recovery.
+    r.setup(0, 9)
+    r.u32(r.FP+8, 9)
+    r.u32(r.labels['CharCreator.body_character_data'], body_data)
+    r.u32(r.labels['CharCreator.active_special_donor'], 9)
+    r.services[0x801531AC] = lambda: 1  # Direction change input/collision gate.
+    r.services[0x80152FEC] = lambda: 0  # Status setup/rendering for second dash.
+    r.labels['Test.pika_end_update'] = 0x80153340
+    # Run the production native parser for the donor end script's 9-frame
+    # wait and flag1 event before invoking the actual second-dash update.
+    from auditNormalMoves import enum_values
+    opcodes = enum_values((LAB/'src/ft/ftdef.h').read_text(), 'FTMotionEvent')
+    script = r.FP+0x868
+    words = 0x80229000
+    r.write(words, struct.pack('>3I', opcodes['nFTMotionEventSyncWait'] << 26 | 9,
+                              opcodes['nFTMotionEventSetFlag1'] << 26 | 1, 0))
+    r.u32(script+4, words)
+    r.f32(script, 1)
+    r.u32(r.FP+r.layout['flags']+4, 0)
+    for frame in range(10):
+        r.f32(r.GOBJ+r.layout['frame'], frame)
+        r.f32(script, r.f32(script)-1)
+        while r.u32(script+4) and r.f32(script) <= 0:
+            opcode = r.u32(r.u32(script+4)) >> 26
+            r.call('ccParse', r.GOBJ, r.FP, script, opcode)
+        assert r.u32(r.FP+r.layout['flags']+4) == (1 if frame == 9 else 0)
+    r.u32(r.FP+variables+4, 0)
+    r.call('pika_end_update', r.GOBJ, namespace='Test')
+    assert r.u32(r.FP+r.layout['flags']+4) == 0
+    assert r.u32(r.FP+variables+4) == 1
+    assert sum(address == 0x80152FEC for address, _ in r.calls) == 1
+    del r.services[0x801531AC]
+    del r.services[0x80152FEC]
+    # Native endpoint backs up and attenuates velocity, not world position.
+    r.labels['Test.pika_end_velocity'] = 0x801535C4
+    r.f32(r.FP+air_velocity, 90)
+    r.f32(r.FP+air_velocity+4, 60)
+    r.f32(r.JOINTS+r.layout['translate'], 1800)
+    r.call('pika_end_velocity', r.GOBJ, namespace='Test')
+    assert r.f32(r.FP+variables+24) == 90
+    assert r.f32(r.FP+variables+28) == 60
+    assert r.f32(r.FP+air_velocity) == r.f32(r.FP+air_velocity+4) == 0
+    assert r.f32(r.JOINTS+r.layout['translate']) == 1800
+    r.u32(r.labels['CharCreator.body_character_data'], 0)
+    r.u32(r.labels['CharCreator.active_special_donor'], -1)
+    print(f'PASS: borrowed special Idle/Fall records, frozen dash/46-frame end clocks and transform guards on 12 bodies x 4 ports; {phases} donor phase speed/loop/continuation checks; native second-dash event/update and endpoint position preservation. Rendering/status setup and direction predicate are stubbed.')
+
+
 def main():
     rom = (ROOT / 'ssb64asm_extra.z64').read_bytes()
     labels = {name: int(address, 16) for address, name in re.findall(r'^([0-9a-fA-F]{8}) (.+)$', (ROOT/'logfile.log').read_text(), re.M)}
@@ -467,6 +632,8 @@ def main():
              0x5C068: 'CharLab.events_forward_', 0x5DC4C: 'CharLab.collisions_',
              0xC4C28: 'CharLab.throw_', 0x116ED4: 'CharLab.training_exit_',
              0x13D9CC: 'CharLab.training_css_back_'}
+    hooks.update({0xCD4E0: 'CharLab.pikachu_pitch_scale_', 0xD6A94: 'CharLab.fox_pitch_',
+                  0xCF198: 'CharLab.ness_pitch_'})
     for offset, label in hooks.items():
         word = struct.unpack_from('>I', rom, offset)[0]
         assert word >> 26 in (2, 3) and word & 0x3FFFFFF == (labels[label] >> 2) & 0x3FFFFFF, label
@@ -476,6 +643,7 @@ def main():
     linked_object(rom, labels)
     runtime = test_runtime(rom, labels)
     test_specials_and_return(runtime)
+    test_borrowed_specials(runtime)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')
 
 
