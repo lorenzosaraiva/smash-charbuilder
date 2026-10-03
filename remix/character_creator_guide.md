@@ -1,129 +1,116 @@
-# In-game Character Creator
+# Character Lab on Smash Remix
 
-Character Creator builds a playable recipe from fighters already compiled into
-the ROM. It does not add a new CSS slot or duplicate character assets. Instead,
-the selected body remains the real fighter and the runtime redirects selected
-normal-action command streams and special-action ownership to donor fighters.
+Our current Character Lab features now have an original-roster Remix preview.
+It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
+for the shared donor timing and collision system. Most visible poses still
+belong to the body; the [checklist](docs/character-lab-status.md) tracks what remains.
 
-## Build and open the menu
+## Make a build and fight with it
 
-Build the ROM normally:
+1. Open `remix-character-lab.z64` in your emulator.
+2. Open **Settings -> CHARACTER LAB** and choose BUILD 1, 2, 3 or 4.
+3. Edit the name, **Body** and attack donors with the native menu controls.
+4. **USE BODY FOR ALL MOVES** gives you a native starting point.
+5. Change any jab, dash attack, tilt, smash, aerial, grab or throw donor.
+6. Neutral Special offers **Body Move** or **Fox Laser**. Up/Down Special
+   retain the earlier experimental adapters; leave them on the body initially.
+7. Select **TEST IN TRAINING**, then select the preset's Body on the Training CSS.
+8. Exit Training, or press Back on its CSS, to reopen the same preset editor.
 
-```text
-patch_extra.bat
+On the VS or Training character-select screen, open **Player Settings -> Custom
+Build** for each player. Choose Off or any saved build for human and CPU slots.
+The selected fighter must match the build's Body. All four ports can use builds
+independently, including different recipes with the same body.
+
+In Training, press **D-pad Down** to cycle Model Display through **HITBOX**,
+**HITBOX+**, ECB and normal rendering. Its **Improved Combo Meter** is enabled by default and includes grabs
+and wall bounces. The four unlockable fighters and Item Switch remain unlocked.
+
+## Saved presets
+
+Four presets start enabled with mixed normals; their bodies are Mario, Fox,
+Link and Kirby. Names and move selections use Remix's native SRAM serializer.
+**TEST IN TRAINING** saves before leaving the editor. Per-port Custom Build
+assignments are match settings rather than part of a recipe.
+
+This preview changes the SRAM layout/revision, so older Remix recipes and
+settings reset once. Keep emulator saves separate from other Remix versions.
+Changing the compiled roster later can change selector indexes.
+
+## What the moves inherit
+
+For original-roster normals, the body keeps native fighter data, hurtboxes,
+action callbacks and usually its animation. A separate per-player move clock
+supplies donor startup, active frames, hitbox clears and total recovery. It
+advances with the native animation update, so hitlag pauses it too.
+
+Attack events supply donor damage, radius, angle, knockback parameters, element
+and other numeric collision values. Donor collision centers follow original
+root-relative trajectories, compensated for body size. They no longer depend
+on whatever limb the body happens to animate. The engine still owns contact
+detection, staling, hit records and swept collision history.
+
+The tables use vanilla US donor values, matching Character Lab. Remix balance
+changes and enabled gameplay modifiers can affect the resulting battle. This
+ports our current donor system; fighter movement and mechanics are unfinished.
+Jab phases must exist on the body. Donor physics, some followups and landing
+behavior remain on the roadmap.
+
+Grab choices borrow donor hitbox events and timing. Throw choices borrow
+numeric damage/knockback while preserving body capture, victim statuses and
+release choreography. DK skips cargo for a foreign forward throw. Tether reach,
+paired animation and complete donor throw choreography remain unfinished.
+
+Fox Laser uses its original firing frames (25 ground / 15 air), repeat flags
+and finite recovery (55 / 45). DK and Samus use finite neutral end poses instead
+of staying in a charge loop. Body Move restores native neutral behavior. Fox
+itself retains its native laser callbacks.
+
+Three Mario-only pose pilots are carried over: Falcon down-air, Fox straight
+forward tilt and DK straight forward smash. Broader animation retargeting and
+rendered acceptance of these pilots remain pending.
+
+## Expanded roster and experimental specials
+
+Turning off Original 12 Only exposes the earlier expanded-roster creator.
+Remix-exclusive bodies retain its legacy normal/special adapters. They do not
+have the shared original-roster trajectory fidelity. Original bodies safely
+fall back to their own normal when a donor outside the original twelve is
+selected. Grab/throw donors stay limited to the original twelve.
+
+Up/Down Special mixing still temporarily borrows donor code/resources and uses
+the earlier compatibility guards. It needs per-pair playtesting. Original-roster
+normals use compiled data without consuming donor-file cache slots; legacy
+expanded normals and specials keep the bounded pre-match cache.
+
+## Build and verify
+
+From the repository root on Windows/WSL:
+
+```powershell
+.\tools\build-remix-character-lab.ps1
 ```
 
-A successful build is also copied automatically to `dist/char_builder.z64`
-inside the Remix folder. Set `SMASH_EXTRA_ROM_DIR` to copy it to your emulator's
-ROM folder instead. See the [shared build guide](../docs/building.md).
+See [building.md](../docs/building.md) for dependencies and the original ROM.
+The command generates assets, compiles the shared runtime, assembles, checks
+production code and packages `dist/remix-character-lab.z64` and `.zip`. It copies
+the ROM to the requested Desktop ROM folder as `smash-character-lab-remix.z64`.
 
-In game, open `Settings -> CHAR CREATOR`. There are four SRAM-backed build
-slots. Each slot contains:
-
-- an editable 20-character name;
-- an Enabled switch and Body selector;
-- Jab, Dash Attack, tilts, smashes, and all five aerials;
-- Fox's locked Neutral Special, plus editable Up and Down Special;
-- `USE BODY FOR ALL MOVES`, which creates a safe baseline;
-- `TEST IN TRAINING`, which saves the recipe, selects it for player 1, and
-  opens the Training character-select screen.
-
-All four slots start enabled with mixed normal attacks already selected. Their
-default bodies are Mario, Fox, Link, and Kirby. Each preset uses a bounded
-group of original-roster donors, while Up and Down Special initially stay on
-the body. `USE BODY FOR ALL MOVES` preserves Fox's Neutral Special lock.
-
-The creator hub also has an `Original 12 Only` switch. Turn it on to limit
-every Body and move selector to the original US roster (Mario through Ness).
-Selections outside that roster are safely changed to the current body. The
-switch is saved with the other creator data.
-
-The selectors contain the normal playable roster that was actually compiled
-by `character_appender.py`, including +EXTRA characters. Debug polygons,
-boss-only forms, and other unsafe/non-playable forms are intentionally omitted.
-
-## Recommended first recipe
-
-1. Open a build slot and edit its name with the same keyboard used by Player
-   Tags.
-2. Select a Body.
-3. Adjust any preselected moves you want to change.
-4. Choose `TEST IN TRAINING`.
-5. On the Training CSS, select the same fighter as the recipe's Body.
-6. Open `Player Settings` on the CSS if you later want to choose another saved
-   build for that port; use the `Custom Build` option.
-
-The body check is deliberate: a recipe only activates when the selected CSS
-fighter matches its Body. This makes stale per-port settings fall back to stock
-behavior instead of unexpectedly changing another fighter.
-
-## What is saved
-
-Names and recipes are stored in four dedicated 0x30-byte SRAM blocks through
-the native Settings serializer. `TEST IN TRAINING` explicitly saves before it
-changes screens. The per-port `Custom Build` selection is a match setting, not
-part of the recipe itself.
-
-Changing the compiled roster can change catalog indexes. Recreate or verify
-saved recipes after adding, removing, or reordering characters in the ROM.
-
-## Compatibility model
-
-Normal attacks retain the body's animation and action callbacks while borrowing
-the donor's complete motion-command stream. That stream supplies startup and
-active timing, hitbox clears, damage, angle, knockback growth, fixed/base
-knockback, shield damage, hitbox size and offsets, sound, and element. Hitstun
-is then calculated normally by the engine from the borrowed knockback data.
-The body's animation still determines the move's total recovery in this first
-pass, so a donor command that extends past a shorter body animation is cut off.
-
-Hitbox bone IDs are interpreted on the body's skeleton. Very different rigs
-can therefore place hitboxes incorrectly. If a borrowed script names a joint
-the body does not have, the hitbox is attached to the body's top joint instead
-of dereferencing a null joint and crashing.
-
-Neutral Special is locked to Fox so every custom build creates his laser
-directly from the body's native Neutral-B action. This avoids applying Fox's
-fighter state, skeleton assumptions, and accessory callback to another body.
-Up and Down Special remain selectable and are broader bundles: they include
-character-specific executable code,
-state fields, physics, projectiles, model parts, and follow-up actions. The
-special adapter keeps the selected body model and attributes, but temporarily
-activates the donor's character ID, FTData, unique-action table, motion-command
-base, and special-file globals for the whole special chain. Donor animation
-data uses a separately sized pre-match buffer so it cannot overflow the body's
-animation heap. Direct accesses to a joint absent from the body resolve to its
-top joint for the duration of the special. The complete body context is
-restored before a shared action begins.
-
-Special mixing is experimental and each body/donor pairing needs an emulator
-runtime test. A successful ROM build proves that the assembly and resource
-layout are valid; it does not prove that a donor callback never touches an
-incompatible body joint, model part, state field, or follow-up action. The
-animation is also being applied to a different skeleton, so proportions and
-attachment positions can look unusual. Highly coupled mechanics such as
-captures and body-part swaps are especially likely to need a move-specific
-visual or state adapter. Kirby's Neutral and Down Special behavior is not a
-supported compatibility target in this pass.
-
-The runtime caches at most eight donor moveset files per port per match. These
-files are loaded during the engine's pre-match character-loading phase rather
-than during an attack transition. A recipe using more donors falls back to the
-body for donors that cannot be cached. Keeping a first build to a small donor
-set is recommended.
+Automated checks cover actual compiled MIPS routines, linked bytes, tables and
+CRC. They do not replace an emulator playtest of visuals, input and contact.
+Report body, donor, move, emulator, enabled Remix settings and source commit.
 
 ## Implementation map
 
-- `extra_imports/CharCreatorMenu.inc` declares the native Settings pages.
-- `extra_toggles/css/CharCreator.asm` exposes saved builds per player on the
-  VS and Training CSS Player Settings panel.
-- `extra_imports/CharCreator.asm` owns recipe lookup, caches, normal command
-  redirection, special dispatch, and Training handoff.
-- `smashremix_overwrite/Character.asm` supplies the action/special hooks.
-- `smashremix_overwrite/command.asm` keeps `GO_TO_FILE` commands on the active
-  donor moveset file.
-- `character_appender.py` discovers the compiled CSS roster, generates the
-  selector catalog, injects the menu, and allocates the SRAM blocks.
+- `extra_imports/CharCreatorMenu.inc`: native Settings pages and SRAM fields.
+- `extra_toggles/css/CharCreator.asm`: human/CPU preset assignments.
+- `extra_imports/CharCreator.asm`: recipe lookup, resource cache and special dispatch.
+- `extra_imports/CharLab.asm`: native engine, parser, clock, collision and Training hooks.
+- `extra_imports/CharLabRuntime.c`: shared donor runtime with the native Remix ABI.
+- `scripts/build_charlab_runtime.py`: freestanding MIPS compilation and ELF relocation import.
+- `scripts/verify_charlab_rom.py`: ROM/data checks and production MIPS execution tests.
+- `scripts/build_charlab.py`: asset generation, build, verification and packaging.
+- `character_appender.py`: generated source/catalog, owned overrides and menu injection.
 
-Generated files under `build/char_creator/` should not be edited. Change the
-source files above and rebuild instead.
+Change owned sources, then rebuild. Files under `src/`, `main.asm` and `build/`
+are generated; `smashremix/` is a pinned dependency.

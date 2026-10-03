@@ -2,7 +2,7 @@
 // Included inside scope Toggles by character_appender.py.
 
 head_char_creator:
-cc_original_12_only:; Menu.entry("Original 12 Only", Menu.type.BOOL, OS.FALSE, 0, 1, OS.NULL, OS.NULL, Menu.bool_string_table, OS.NULL, cc_hub_slot_1)
+cc_original_12_only:; Menu.entry("Original 12 Only", Menu.type.BOOL, OS.TRUE, 0, 1, OS.NULL, OS.NULL, Menu.bool_string_table, OS.NULL, cc_hub_slot_1)
 cc_hub_slot_1:; Menu.entry_title("BUILD 1", show_char_creator_slot_1_, cc_hub_slot_2)
 cc_hub_slot_2:; Menu.entry_title("BUILD 2", show_char_creator_slot_2_, cc_hub_slot_3)
 cc_hub_slot_3:; Menu.entry_title("BUILD 3", show_char_creator_slot_3_, cc_hub_slot_4)
@@ -27,9 +27,8 @@ macro char_creator_name_entry(slot, next) {
     OS.align(4)
 }
 
-// The four calls below provide ready-to-play mixed recipes. Each recipe uses
-// at most six normal-move donors so it stays below the per-port cache limit.
-// Fox is catalog index 1 and Neutral Special is intentionally locked to him.
+// Four ready-to-play mixed recipes. Original-roster normals use compiled
+// donor tables; Neutral Special defaults to the body's own move.
 macro char_creator_slot(slot, next_slot, body, jab, dash, ftilt, utilt, dtilt, fsmash, usmash, dsmash, nair, fair, bair, uair, dair) {
     head_char_creator_slot_{slot}:; char_creator_name_entry({slot}, cc_slot_{slot}_enabled)
     cc_slot_{slot}_enabled:; Menu.entry("Enabled", Menu.type.BOOL, OS.TRUE, 0, 1, OS.NULL, OS.NULL, Menu.bool_string_table, OS.NULL, cc_slot_{slot}_body)
@@ -47,8 +46,11 @@ macro char_creator_slot(slot, next_slot, body, jab, dash, ftilt, utilt, dtilt, f
     cc_slot_{slot}_fair:; Menu.entry("Forward Air", Menu.type.INT, {fair}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_bair)
     cc_slot_{slot}_bair:; Menu.entry("Back Air", Menu.type.INT, {bair}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_uair)
     cc_slot_{slot}_uair:; Menu.entry("Up Air", Menu.type.INT, {uair}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_dair)
-    cc_slot_{slot}_dair:; Menu.entry("Down Air", Menu.type.INT, {dair}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_nsp)
-    cc_slot_{slot}_nsp:; Menu.entry("Neutral Special", Menu.type.INT, 1, 1, 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_usp)
+    cc_slot_{slot}_dair:; Menu.entry("Down Air", Menu.type.INT, {dair}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_grab)
+    cc_slot_{slot}_grab:; Menu.entry("Grab", Menu.type.INT, {body}, 0, 11, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_throwf)
+    cc_slot_{slot}_throwf:; Menu.entry("Forward Throw", Menu.type.INT, {body}, 0, 11, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_throwb)
+    cc_slot_{slot}_throwb:; Menu.entry("Back Throw", Menu.type.INT, {body}, 0, 11, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_nsp)
+    cc_slot_{slot}_nsp:; Menu.entry("Neutral Special", Menu.type.INT, 0, 0, 1, OS.NULL, OS.NULL, CharCreator.neutral_strings, OS.NULL, cc_slot_{slot}_usp)
     cc_slot_{slot}_usp:; Menu.entry("Up Special", Menu.type.INT, {body}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_dsp)
     cc_slot_{slot}_dsp:; Menu.entry("Down Special", Menu.type.INT, {body}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_test)
     cc_slot_{slot}_test:; Menu.entry_title_with_extra("TEST IN TRAINING", CharCreator.test_in_training_, {slot}, OS.NULL)

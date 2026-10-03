@@ -480,6 +480,13 @@ class CharacterAppender:
         )
         toggles.write_text(source, encoding="utf-8")
 
+        # Reopen the tested page after Settings rebuilds its menu objects.
+        source = toggles.read_text(encoding="utf-8")
+        source = source.replace('        Render.register_routine(run_)',
+                                '        jal CharLab.resume_editor_\n        nop\n\n        Render.register_routine(run_)', 1)
+        source = source.replace('"CHAR CREATOR"', '"CHARACTER LAB"')
+        toggles.write_text(source, encoding="utf-8")
+
         # Donor files must be loaded in the established pre-match preload
         # phase, after the dynamic character heaps have been reserved. Loading
         # them lazily while ftMainSetStatus installs an attack can re-enter the
@@ -561,7 +568,7 @@ class CharacterAppender:
         revision_match = re.search(revision_pattern, sram_source)
         if not revision_match:
             raise RuntimeError("Could not locate SRAM.REVISION for Character Creator")
-        revision = (int(revision_match.group(1), 16) + 2) & 0xFFFF
+        revision = (int(revision_match.group(1), 16) + 3) & 0xFFFF
         sram_source = re.sub(
             revision_pattern,
             f"constant REVISION(0x{revision:04X})",
@@ -571,6 +578,8 @@ class CharacterAppender:
         sram_path.write_text(sram_source, encoding="utf-8")
 
         print(f"Character Creator catalog: {len(roster)} selectable fighters")
+        from scripts.build_charlab_runtime import main as build_charlab_runtime
+        build_charlab_runtime()
 
     def _patch_src_paths(self, original_size):
         # main.asm

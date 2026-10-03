@@ -21,6 +21,12 @@ For gameplay work:
   neutral specials excluding Kirby copy, and tether/paired grab and throw mechanics.
 - Preserve donor sizes/reach independently of body proportions. Body hurtboxes
   remain native for the first collision milestones.
+- Remix gameplay uses `tools/build-remix-character-lab.ps1` on Windows/WSL,
+  or `python scripts/build_charlab.py` from its Python environment in `remix/`.
+  This builds/checks the shared original-roster port and packages separate
+  `dist/remix-character-lab.*` files. Copy its ROM to
+  `C:\Users\Lorenzo\Desktop\Smash 64\roms\smash-character-lab-remix.z64`.
+  Preserve the existing Character Lab ROM and its download links.
 
 The Makefile's vanilla comparison prints `FAILURE` for a modified ROM. Compilation,
 host checks and `tools/verifyCustomMoveRom.py` must succeed; do not interpret the

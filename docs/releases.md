@@ -2,7 +2,7 @@
 
 Destination: [lorenzosaraiva/smash-charbuilder](https://github.com/lorenzosaraiva/smash-charbuilder).
 The active workflow is `.github/workflows/character-lab-release.yml` at the root.
-It builds Character Lab; Remix releases remain a separate future step.
+It builds Character Lab; the Remix preview uses a separate local publication command.
 The first public download was built and checked locally. Automatic updates
 still need the setup below; until then, pushes run the source checks and the
 release workflow reports the missing configuration without replacing downloads.
@@ -45,6 +45,24 @@ Tags named `v*` publish archived snapshots without replacing the automatic
 git tag v0.1.0
 git push origin v0.1.0
 ```
+
+## Local Remix preview
+
+The original-roster Remix port has separate moving preview downloads:
+
+- [Remix ROM](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64)
+- [Remix play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
+
+Build/check with `tools/build-remix-character-lab.ps1`, commit and push the exact
+source, then refresh clean package metadata with `-PackageOnly`. Publish with
+`python tools/publish-remix-preview.py`. It checks the destination, pushed
+commit, clean source, ZIP and checksums before uploading, then verifies public
+downloads. This is an explicit local publication command; a push alone does
+not update the Remix preview. The `remix-preview` tag moves when republished;
+the package records the exact source commit.
+
+The preview is a prerelease and leaves Character Lab's latest-release download
+links intact. Automatic hosted Remix builds remain on the checklist.
 
 ## Troubleshooting
 

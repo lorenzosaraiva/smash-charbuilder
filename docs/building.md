@@ -42,25 +42,45 @@ The Makefile's vanilla comparison prints `FAILURE` for an intentionally modified
 ROM; the dedicated verifier must pass. See the
 [detailed toolchain guide](../ssb-decomp-re/docs/building.md).
 
-## Remix creator
+## Character Lab on Remix
 
-This produces a separate ROM using the existing +EXTRA build system. Put the
-original ROM at `remix/smashremix/roms/ssb.rom`. On Windows with Python 3.12+:
+Use Python 3.12+ on Windows with WSL/Ubuntu. In Ubuntu install `clang`,
+`gcc-multilib` and `build-essential`. Put the original US ROM (the SHA-1 above)
+at `remix/smashremix/roms/ssb.rom`. Initialize the pinned submodules first.
 
 ```powershell
-Set-Location remix
-.\build.bat
+.\tools\build-remix-character-lab.ps1 -Setup
 ```
 
-The build applies the versioned source overrides, including the Sonic creator
-hook, during source generation. Its Python environment is recreated locally.
-The ROM output is `remix/ssb64asm_extra.z64`.
+Setup installs the locked Remix Python dependencies and the pinned Unicorn
+execution-test dependency. Later omit Setup. `-Distribution` selects WSL;
+`-RomDirectory` changes the Desktop copy destination. By default it is
+`C:\Users\Lorenzo\Desktop\Smash 64\roms\smash-character-lab-remix.z64`.
 
-`patch_extra.bat` also copies the result to `remix/dist/char_builder.z64`. To
-add your own emulator folder, set `SMASH_EXTRA_ROM_DIR` before building.
-See the [original Remix build guide](../remix/README.md) for Linux/Wine and the
-[creator guide](../remix/character_creator_guide.md) for that version's menu.
+The full build regenerates assets/catalog/menu, applies owned overrides, compiles
+the shared MIPS runtime, assembles, updates CRC, runs shared host and production
+MIPS tests, then packages the separate ROM/ZIP. Logs are `remix/charlab-*.log`.
 
-Original/generated ROMs, tools, extraction assets and environments stay out of
-Git. The two source folders share one root Git repository; do not initialize
-new project repositories inside them.
+| File | Purpose |
+| --- | --- |
+| `dist/remix-character-lab.z64` | Checked Remix preview ROM. |
+| `dist/remix-character-lab.zip` | ROM, guide, checklist, changelog and metadata. |
+| `dist/remix-build-info.json` | Commit, source/ROM checksums and pending acceptance. |
+| `dist/remix-SHA256SUMS.txt` | Published-file checksums. |
+
+Use `-Incremental` only for runtime/ASM edits when generated assets and menus are
+current. After committing an unchanged build, `-PackageOnly` rechecks its source
+receipt and ROM and refreshes clean commit metadata. Changing source after
+assembly requires a rebuild. These flags do not replace full generation after
+catalog, menu or appender changes.
+
+Linux uses a Remix Python environment with `pipenv sync`,
+`pipenv run python -m pip install -r scripts/requirements-test.txt`, then
+`pipenv run python scripts/build_charlab.py` from `remix/`. Install Wine for the
+pinned Windows assembler/CRC tool, plus Clang and gcc-multilib. Windows is the
+locally exercised build path. The older `build.bat` / `patch_extra.bat` asset
+pipeline remains available but does not perform the new checked packaging.
+
+Original/generated ROMs, extraction assets and environments stay out of Git.
+The two source folders share one root Git repository; do not initialize new
+project repositories inside them.

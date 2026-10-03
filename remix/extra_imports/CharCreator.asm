@@ -95,6 +95,9 @@ scope CharCreator {
     // republishing the resource behind the projectile descriptor.
     laser_file_pointer:; dw 0
     catalog_mode_last:; dw 0xFFFFFFFF
+    neutral_strings:; dw neutral_body, neutral_fox
+    neutral_body:; String.insert("Body Move")
+    neutral_fox:; String.insert("Fox Laser")
 
     // Runtime breadcrumbs used to verify that the pre-match loader runs after
     // the final cache reset. They are intentionally outside recipe SRAM.
@@ -130,7 +133,10 @@ scope CharCreator {
     constant FIELD_NSP(15)
     constant FIELD_USP(16)
     constant FIELD_DSP(17)
-    constant FIELD_COUNT(18)
+    constant FIELD_GRAB(18)
+    constant FIELD_THROWF(19)
+    constant FIELD_THROWB(20)
+    constant FIELD_COUNT(21)
 
     macro slot_entry_table(slot) {
         slot_{slot}_entries:
@@ -152,6 +158,9 @@ scope CharCreator {
         dw Toggles.cc_slot_{slot}_nsp + 0x4
         dw Toggles.cc_slot_{slot}_usp + 0x4
         dw Toggles.cc_slot_{slot}_dsp + 0x4
+        dw Toggles.cc_slot_{slot}_grab + 0x4
+        dw Toggles.cc_slot_{slot}_throwf + 0x4
+        dw Toggles.cc_slot_{slot}_throwb + 0x4
     }
 
     slot_entry_table(1)
@@ -166,6 +175,12 @@ scope CharCreator {
     // Clears the donor file cache. Loaded files are owned by the game's heap;
     // this only forgets pointers when moving between screens/builds.
     scope reset_cache_: {
+        addiu sp, sp, -0x0020
+        sw ra, 0x0014(sp)
+        jal CharLab.reset_
+        nop
+        lw ra, 0x0014(sp)
+        addiu sp, sp, 0x0020
         li      t0, diagnostic_reset_calls
         lw      t1, 0x0000(t0)
         addiu   t1, t1, 0x0001
@@ -331,6 +346,13 @@ scope CharCreator {
     // Returns donor character ID in v0, or -1 when the body move should be used.
     // a0 = player struct, a1 = action ID
     scope get_normal_donor_: {
+        lw t0, 0x0008(a0)
+        sltiu t0, t0, 12
+        beqz t0, _legacy
+        nop
+        jr ra
+        addiu v0, r0, -1 // Original bodies use compiled donor tables.
+        _legacy:
         addiu   sp, sp, -0x0020
         sw      ra, 0x0004(sp)
         sw      a0, 0x0008(sp)
@@ -586,6 +608,14 @@ scope CharCreator {
         lli     s3, FIELD_JAB               // first donor field
 
         _field_loop:
+        sltiu t0, s3, FIELD_GRAB
+        beqz t0, _next_field
+        sltiu t0, s2, 12
+        beqz t0, _legacy_field
+        sltiu t0, s3, FIELD_NSP
+        bnez t0, _next_field // Original normal/grab tables need no donor cache.
+        nop
+        _legacy_field:
         lli     t1, FIELD_NSP
         beq     s3, t1, _fox_nsp
         nop
@@ -599,6 +629,10 @@ scope CharCreator {
         nop
 
         _fox_nsp:
+        lw t0, FIELD_NSP * 4(s1)
+        lw t0, 0x0000(t0)
+        beqz t0, _next_field
+        nop
         // Neutral-B owns only Fox's projectile attributes. Loading Fox's
         // complete main/special bundle wastes heap space and leaves the stock
         // constructor dependent on shared globals that later loaders mutate.
@@ -1074,7 +1108,7 @@ scope CharCreator {
         lw      t0, 0x001C(sp)
         lw      t1, 0x000C(sp)
         lli     t2, FIELD_NSP
-        beq     t1, t2, _body              // Neutral-B uses the safe laser dispatcher below
+        beq     t1, t2, _neutral_choice
         sll     t1, t1, 0x0002
         addu    t0, t0, t1
         lw      t0, 0x0000(t0)
@@ -1263,6 +1297,20 @@ scope CharCreator {
 
         _no_player:
         or      t9, r0, r0
+        b _end
+        nop
+        _neutral_choice:
+        lw t0, FIELD_NSP * 4(t0)
+        lw t0, 0x0000(t0)
+        beqz t0, _body
+        lw t1, 0x0020(sp)
+        sltiu t2, t1, 12
+        beqz t2, _body
+        lli t2, Character.id.FOX
+        beq t1, t2, _body
+        nop
+        lui t9, CharLabRuntime.ccNeutral >> 16
+        ori t9, t9, CharLabRuntime.ccNeutral & 0xFFFF
         _end:
         lw      a0, 0x0008(sp)
         lw      ra, 0x0004(sp)
@@ -1323,13 +1371,21 @@ scope CharCreator {
         lw      t0, 0x0084(a0)             // fighter struct
         beqz    t0, _no
         sw      t0, 0x000C(sp)
-        lw      t1, 0x028C(t0)             // motion_attack_id
+        lw      t1, 0x0288(t0)             // motion_attack_id (0x28C is motion_count)
+        lw t2, 0x0008(t0)
+        sltiu t2, t2, 12
+        bnez t2, _no // The shared adapter owns original-body laser callbacks.
+        nop
         lli     t2, 0x0012                 // nFTMotionAttackIDSpecialN
         bne     t1, t2, _no
         lbu     a0, 0x000D(t0)             // port
         jal     get_slot_
         nop
         beqz    v0, _no
+        nop
+        lw t0, FIELD_NSP * 4(v0)
+        lw t0, 0x0000(t0)
+        beqz t0, _no
         nop
         lw      t0, 0x0004(v0)             // configured body entry
         jal     catalog_id_
@@ -2304,20 +2360,31 @@ scope CharCreator {
         lli     at, FIELD_NSP
         beq     t8, at, _lock_nsp
         nop
-        sw      t7, 0x0008(t1)
+        or t9, t7, r0
+        sltiu at, t8, FIELD_GRAB
+        bnez at, _set_max
+        nop
+        lli t9, 11 // Grab/throw data is original-roster only.
+        _set_max:
+        sw      t9, 0x0008(t1)
         lw      t0, 0x0000(t1)
-        sltu    at, t7, t0
+        sltu    at, t9, t0
         beqzl   at, _field_next
         nop
+        sltu at, t9, t2
+        beqz at, _fallback_body
+        nop
+        b _field_next
+        sw r0, 0x0000(t1)
+        _fallback_body:
         sw      t2, 0x0000(t1)             // filtered donor becomes the body
         b       _field_next
         nop
 
         _lock_nsp:
-        lli     t0, 0x0001                 // catalog index 1 is Fox
-        sw      t0, 0x0000(t1)
-        sw      t0, 0x0004(t1)
-        sw      t0, 0x0008(t1)
+        sw r0, 0x0004(t1)
+        lli t0, 1
+        sw t0, 0x0008(t1)
 
         _field_next:
         addiu   t4, t4, 0x0004
@@ -2367,12 +2434,19 @@ scope CharCreator {
         beq     t3, t4, _set_fox_nsp
         nop
         lw      t0, 0x000C(sp)
+        sltiu t4, t3, FIELD_GRAB
+        bnez t4, _write_body
+        nop
+        sltiu t4, t0, 12
+        bnez t4, _write_body
+        nop
+        or t0, r0, r0
+        _write_body:
         b       _update
         sw      t0, 0x0000(v0)
 
         _set_fox_nsp:
-        lli     t0, 0x0001                 // catalog index 1 is Fox
-        sw      t0, 0x0000(v0)
+        sw r0, 0x0000(v0) // Body Move is the baseline.
 
         _update:
         sw      t1, 0x0010(sp)
@@ -2423,6 +2497,9 @@ scope CharCreator {
         li      t1, selected_builds
         lw      t0, 0x0008(sp)
         sw      t0, 0x0000(t1)
+        lui t1, CharLab.training_slot >> 16
+        ori t1, t1, CharLab.training_slot & 0xFFFF
+        sw t0, 0x0000(t1)
         jal     reset_cache_
         nop
         jal     Menu.change_screen_

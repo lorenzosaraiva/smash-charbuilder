@@ -1,3 +1,25 @@
+# Character Lab on Remix
+
+An original-roster preview of our current Character Lab features inside Smash
+Remix +EXTRA: donor hitbox paths/timing, grabs/throws, Body Move/Fox Laser, Mario
+pose pilots, human/CPU preset assignments and return from Training to the editor.
+
+- [Download ROM](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64)
+- [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
+- [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
+
+Open **Settings -> CHARACTER LAB** and keep **Original 12 Only** enabled. The
+expanded roster stays playable, with its earlier experimental creator adapters;
+full donor fidelity for those fighters remains pending. Old Remix settings and
+recipes reset once for the new SRAM layout. Rendered gameplay acceptance remains
+pending even though the compiled runtime passes automated checks.
+
+From the root on Windows/WSL, build and package with
+`tools/build-remix-character-lab.ps1`. ROM/ZIP files appear in root `dist/`, with a
+separate Desktop ROM copy. The original +EXTRA tools and documentation follow.
+
+---
+
 <p align="center">
  <img width="320" alt="Smash Remix +EXTRA" src=".github/sr-extra.png">
 </p>

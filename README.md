@@ -6,7 +6,7 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 | Version | Where it lives | What to expect |
 | --- | --- | --- |
 | **Character Lab** | [ssb-decomp-re/](ssb-decomp-re/README.md) | Our current original-roster build: twelve bodies, editable normal attacks, grabs/throws, VS assignments and Training hitbox view. |
-| **Remix creator** | [remix/](remix/README.md) | The earlier Smash Remix +EXTRA experiment, with its larger compiled roster and saved creator recipes. Its compatibility rules differ from Character Lab. |
+| **Character Lab on Remix** | [remix/](remix/README.md) | Original-roster donor paths/timing, grabs/throws, laser choice, saved recipes and Training return on Smash Remix +EXTRA. Expanded-roster fidelity remains pending. |
 
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
@@ -27,6 +27,16 @@ The ZIP includes a play guide, feature checklist, changelog and commit/checksum
 information. The first release was built and checked locally. Automatic updates
 after successful pushes to `main` still need the one-time
 [original-ROM build-source setup](docs/releases.md).
+
+The separate **Remix preview** downloads are:
+
+- [Remix play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
+- [Remix ROM](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64)
+
+Open **Settings -> CHARACTER LAB** and keep **Original 12 Only** on. See the
+[Remix play guide](remix/character_creator_guide.md) and
+[port checklist](remix/docs/character-lab-status.md). The preview is published
+locally; automatic hosted Remix builds remain pending.
 
 ## Make your first Character Lab build
 
@@ -70,7 +80,8 @@ Or from Windows PowerShell with WSL/Ubuntu:
 
 Put the original US ROM at `ssb-decomp-re/baserom.us.z64` first. The checked ROM
 and shareable ZIP appear in **dist/**. For later builds, omit Setup/Init. The
-[build guide](docs/building.md) also covers the separate Remix build.
+[build guide](docs/building.md) also covers the separate Remix build, using
+`tools/build-remix-character-lab.ps1`.
 
 ## Bugs and ideas
 

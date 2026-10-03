@@ -1,5 +1,17 @@
 # Changes
 
+## Character Lab on Remix preview - 2026-10-03
+
+- Ported original-roster donor normal values, timing and root-relative collision
+  paths through Remix native engine hooks, using the shared Character Lab tables.
+- Added grab/throw selections, donor throw values, DK direct foreign throw,
+  Body Move/Fox Laser, Mario animation pilots and return from Training to the editor.
+- Preserved SRAM presets, human/CPU assignments, native display/unlocks and
+  the improved combo meter. Expanded-roster fidelity remains a future task.
+- Added checked build/ROM/ZIP packaging and production MIPS execution tests;
+  rendered gameplay acceptance remains pending. Older Remix SRAM resets once.
+- Updated play/build guides and both feature checklists.
+
 ## Training grab combo continuity - 2026-10-02
 
 - Training keeps combo count and damage during capture, cargo carry and throw

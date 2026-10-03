@@ -20,27 +20,26 @@ Character Lab's [detailed feature checklist](../ssb-decomp-re/docs/status.md)
 covers normal attacks, grabs/throws, human/CPU assignments, Training HITBOX view,
 grab-preserving combo counters, the animation pilots and remaining work.
 
-The [Remix creator guide](../remix/character_creator_guide.md) describes that
-version's SRAM recipes, compiled roster and experimental adapters. Its moves
-and animations do not have Character Lab's full donor timing/trajectory system.
+The [Remix guide](../remix/character_creator_guide.md) and
+[port checklist](../remix/docs/character-lab-status.md) cover the separate preview.
 
-## Future Remix port
+## Character Lab on Remix
 
-- [ ] Port Character Lab's donor timing and collision paths to Remix.
+- [x] Original-roster donor normal timing, collision paths and numeric values.
+- [x] Grab/throw selectors, donor throw values and DK foreign forward release.
+- [x] Body Move/Fox Laser and the three Mario animation pilots.
+- [x] Existing SRAM recipes and human/CPU assignments integrated with the port.
+- [x] Training exit/CSS Back return to the tested editor.
+- [x] Native hitbox display, improved grab-aware combo meter and unlocks retained.
+- [x] Compiled MIPS execution, linked-data/CRC checks and separate ROM/ZIP packaging.
+- [ ] Rendered emulator acceptance and contact/interrupt comparison.
+- [ ] Full animation retargeting, broader neutral specials and tether choreography.
+- [ ] Shared donor fidelity for Remix-exclusive fighters.
 
-This is feasible, but a substantial integration rather than a source-folder copy.
-The original twelve fighters can reuse the generated donor data and conversion
-tools. Remix needs assembly hooks for the independent move clock, safe attack
-events and root-relative collision placement, integrated with its existing
-creator adapters and gameplay patches. Its current normal adapter borrows raw
-donor scripts while retaining body animation timing and bone placement.
-
-Start with the original twelve behind Remix's existing Original 12 Only option,
-then add animation pilots, grab/throw selections and special adapters. Extending
-the same fidelity to Remix-exclusive fighters needs their own move, rig and
-collision data, plus compatibility checks for their mechanics. The existing
-Remix UI and saved recipes provide a useful starting point. No port is implemented
-by the Training counter fix; Remix already has its own improved combo meter.
+The port uses the same generated vanilla US donor data as Character Lab and
+hooks Remix's native animation clock, motion parser and swept collision engine.
+Original bodies keep native fighter data and hurtboxes. Expanded-roster creator
+adapters remain legacy; their fidelity is a separate future effort.
 
 ## Gameplay order
 
