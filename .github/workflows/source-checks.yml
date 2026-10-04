@@ -30,7 +30,8 @@ jobs:
           python3 tools/generateNeutralActions.py
           python3 tools/generateSpecialTiming.py
           git diff --exit-code -- src/ft/ftcustommoves.generated.inc \
-            src/ft/ftcustomanimations.generated.inc src/ft/ftcustomcollisions.generated.inc \
+            src/ft/ftcustomanimations.generated.inc src/ft/ftcustomanimationshared.generated.inc \
+            src/ft/ftcustomcollisions.generated.inc \
             src/ft/ftcustomcollisionregistry.generated.inc src/ft/ftneutralprojectiles.generated.inc \
             src/ft/ftneutralactions.generated.inc src/ft/ftspecialtiming.generated.inc
       - name: Check move behavior and donor data

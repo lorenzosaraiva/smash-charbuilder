@@ -211,7 +211,7 @@ def main():
     print(f'PASS: {placements} world positions at all twelve body sizes/both facings; max error {placement_error:.7f}.')
     from verifyCustomCollisionData import verify_compiled_collisions
     verify_compiled_collisions(native_geometry)
-    from verifyMarioAnimationData import verify_mario_poses
-    verify_mario_poses(native_poses)
+    from verifySharedAnimationData import verify_shared_poses
+    verify_shared_poses(native_poses)
 
 if __name__=='__main__':main()

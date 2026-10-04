@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.6',
+        'version': '0.1.7',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -63,10 +63,12 @@ def package():
     notes = f'''# Smash 64 Character Lab — experimental build
 
 Source commit: `{metadata['commit']}`
+Version: {metadata['version']} | Built (UTC): {metadata['built_at'][:10]}
 Local uncommitted changes: {metadata['source_dirty'] if metadata['source_dirty'] is not None else 'unknown'}
 
 Mix normal attacks, grabs and throw parameters across the twelve original fighters.
-This is a work in progress: most animations still belong to the selected body.
+Normal animations follow the selected donor on every body. Special and paired
+throw animations still need work.
 
 1. Enable 8 MB RDRAM / Expansion Pak, then open `character-lab.z64`.
 2. Go to Options -> Character Lab and select a build with A.
@@ -100,13 +102,14 @@ Ness uses its source projectile socket and native 28-tick self-launch clock.
 Other Up/Down B paths/effects and rendered acceptance remain pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
-Mario now performs Fox, DK, Luigi and Falcon normal attacks, including angled
-variants and aerial landing poses. Other donor/body animations remain pending.
+All twelve bodies now perform all twelve donor normal attacks, including angled
+variants, aerial landings and body-supported jab phases. Shared curves adapt
+motion to the body skeleton. Special, tether and paired throw animations remain pending.
 Original donor collision paths now cover every normal attack on every foreign
 body, including angled variants, weapon/tail paths, multihits, landing collisions
 and body-supported jab phases. Size, timing, damage and knockback follow the donor.
 Try Kirby Body -> Up Air: Falcon -> Test in Training -> View: HITBOX, or change
-any normal donor. The visible animation usually stays the body's own.
+any normal donor. The visible normal animation now follows the donor on the selected body.
 Full native-code geometry checks pass; in-game acceptance remains pending.
 
 See the repository README, docs/status.md and CHANGELOG.md for scope and known gaps.

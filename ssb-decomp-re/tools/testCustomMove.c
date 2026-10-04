@@ -70,6 +70,9 @@ SCCharBuilderSlot gSCManagerCharBuilderSlots[4];
 s8 gSCManagerCharBuilderPlayerSlots[4] = { 0, 1, 2, 3 };
 static struct { s32 scene_curr; } gSCManagerSceneData;
 #define FTCHARBUILDER_NEUTRAL_EXTENDED
+static f32 __sinf(f32), __cosf(f32);
+f32 sqrtf(f32 x) { f32 v; __asm__("fsqrt":"=t"(v):"0"(x)); return v; }
+#include "../build/shared-animation-math.inc"
 #include "../src/ft/ftcustommove.c.inc"
 
 #define CHECK(expr) do { if (!(expr)) return __LINE__; } while (0)
@@ -368,95 +371,74 @@ static s32 testCustomAnimation(void)
     ftCustomMoveStartClock(&players[1],&sFTCustomMoves[nFTKindFox][4],0);
     ftCustomMoveAdvanceClock(&players[1],0);
     CHECK(ftCustomAnimationGetFrame(&players[1]) == NULL);
-    CHECK(ftCustomAnimationGetPackedFrame(&players[1]) != NULL);
+    { s32 frame; CHECK(ftCustomAnimationGetClip(&players[1], &frame) != NULL); }
     return 0;
 }
 
-static s32 testExpandedMarioAnimation(void)
+static s32 testSharedAnimations(void)
 {
-    FTStruct players[4] = { 0 }, preview;
-    DObj joints[4][28] = { 0 };
-    const FTCustomAnimationPackedClip *clip;
-    const FTCustomAnimationPackedFrame *pose;
-    const s32 donors[4] = { nFTKindFox, nFTKindDonkey, nFTKindLuigi, nFTKindCaptain };
+    FTStruct fp = { 0 }, preview;
+    DObj joints[FTPARTS_JOINT_NUM_MAX] = { 0 };
     FTCustomMoveDefinition special = { NULL, 0, 10, 0 };
-    s32 player, donor, variant, frame, i, count = 0;
+    const FTCustomAnimationClip *clip;
+    s32 body, donor, variant, frame, selected, i;
     f32 saved;
-    CHECK(sizeof(FTCustomAnimationPackedFrame) == 150);
-    gSCManagerSceneData.scene_curr = nSCKind1PTrainingMode;
-    for (player = 0; player < 4; player++)
-    {
-        players[player].player = player;
-        players[player].fkind = nFTKindMario;
-        players[player].pkind = nFTPlayerKindCom;
-        gSCManagerCharBuilderPlayerSlots[player] = 0;
-        gSCManagerCharBuilderSlots[0].body = nFTKindMario;
-        gSCManagerCharBuilderSlots[0].is_enabled = TRUE;
-        for (i = 0; i < 28; i++) players[player].joints[i] = &joints[player][i];
-        ftCustomMoveStartClock(&players[player], &sFTCustomMoves[donors[player]][2], player + 1);
-        ftCustomMoveAdvanceClock(&players[player],0);
-    }
-    for (player = 0; player < 4; player++)
-        CHECK(ftCustomAnimationGetPackedFrame(&players[player]) == &sFTCustomAnimationPackedClips[donors[player]][2].frames[player + 1]);
-    preview = players[0];
-    CHECK(ftCustomAnimationGetPackedFrame(&preview) == NULL);
-    for (donor = 0; donor < 12; donor++) for (variant = 0; variant < 33; variant++)
-    {
-        FTStruct *fp = &players[0];
-        clip = &sFTCustomAnimationPackedClips[donor][variant];
-        ftCustomMoveStartClock(fp,&sFTCustomMoves[donor][variant],0);
-        if (clip->frames == NULL)
-        {
-            CHECK(ftCustomAnimationGetPackedFrame(fp) == NULL);
-            continue;
-        }
-        count++;
-        CHECK(clip->count == sFTCustomMoves[donor][variant].duration + 1);
-        for (frame = 0; frame < clip->count; frame++)
-        {
-            ftCustomMoveAdvanceClock(fp,-1);
-            pose = &clip->frames[frame];
-            CHECK(ftCustomAnimationGetPackedFrame(fp) == pose);
-            joints[0][2].rotate.vec.f.x = 1.5F;
-            joints[0][3].translate.vec.f.x = 123;
-            joints[0][0].rotate.vec.f.y = -1.5F;
-            joints[0][1].translate.vec.f.x = 17;
-            ftCustomAnimationApplyPose(fp);
-            CHECK(joints[0][2].rotate.vec.f.x == 0 && joints[0][3].translate.vec.f.x == 0);
-            CHECK(joints[0][0].rotate.vec.f.y == -1.5F && joints[0][1].translate.vec.f.x == 17);
-            for (i = 0; i < 24; i++)
-            {
-                CHECK(joints[0][i + 4].rotate.vec.f.x == pose->rotate[i][0] * (1.0F / 4096));
-                CHECK(joints[0][i + 4].rotate.vec.f.y == pose->rotate[i][1] * (1.0F / 4096));
-                CHECK(joints[0][i + 4].rotate.vec.f.z == pose->rotate[i][2] * (1.0F / 4096));
-                CHECK(joints[0][i + 4].translate.vec.f.y == (i ? sFTCustomAnimationMarioBind[i].y : pose->root_translate[1] * (1.0F / 16)));
-                CHECK(joints[0][i + 4].scale.vec.f.x == 1.0F);
-            }
-            ftCustomAnimationApplyPose(fp);
-            CHECK(ftCustomAnimationGetPackedFrame(fp) == pose); /* Frozen clock. */
-        }
-        ftCustomMoveStartClock(fp,&sFTCustomMoves[donor][variant],clip->count + 10);
-        ftCustomMoveAdvanceClock(fp,0);
-        CHECK(ftCustomAnimationGetPackedFrame(fp) == &clip->frames[clip->count - 1]);
-    }
-    CHECK(count == 115);
-    ftCustomMoveStartClock(&players[0],&sFTCustomMoves[nFTKindFox][2],0);
-    ftCustomMoveAdvanceClock(&players[0],0);
-    players[0].status_id++; CHECK(ftCustomAnimationGetPackedFrame(&players[0]) == NULL); players[0].status_id--;
-    players[0].motion_id++; CHECK(ftCustomAnimationGetPackedFrame(&players[0]) == NULL); players[0].motion_id--;
-    players[0].fkind = nFTKindKirby; CHECK(ftCustomAnimationGetPackedFrame(&players[0]) == NULL); players[0].fkind = nFTKindMario;
-    players[0].pkind = nFTPlayerKindDemo; CHECK(ftCustomAnimationGetPackedFrame(&players[0]) == NULL); players[0].pkind = nFTPlayerKindCom;
-    gSCManagerSceneData.scene_curr = nSCKindTitle; CHECK(ftCustomAnimationGetPackedFrame(&players[0]) == NULL);
+    CHECK(sizeof(FTCustomAnimationKey) == 3 && sizeof(FTCustomAnimationCurve) == 8);
+    CHECK(sizeof(FTCustomAnimationBone) == 60 && sizeof(FTCustomAnimationSourceBone) == 20);
     gSCManagerSceneData.scene_curr = nSCKindVSBattle;
-    saved = joints[0][4].rotate.vec.f.x;
-    players[0].joints[27] = NULL;
-    ftCustomAnimationApplyPose(&players[0]);
-    CHECK(joints[0][4].rotate.vec.f.x == saved);
-    ftCustomMoveStartClock(&players[0],&special,0);
-    CHECK(ftCustomAnimationGetPackedFrame(&players[0]) == NULL);
-    ftCustomMoveResetClock(&players[0]); CHECK(ftCustomAnimationGetPackedFrame(&players[0]) == NULL);
-    for (player = 1; player < 4; player++)
-        CHECK(ftCustomAnimationGetPackedFrame(&players[player]) == &sFTCustomAnimationPackedClips[donors[player]][2].frames[player + 1]);
+    fp.player = 0; fp.pkind = nFTPlayerKindMan;
+    for (i = 0; i < FTPARTS_JOINT_NUM_MAX; i++) fp.joints[i] = &joints[i];
+    for (body = 0; body < 12; body++)
+    {
+        fp.fkind = body;
+        gSCManagerCharBuilderSlots[0].is_enabled = TRUE;
+        gSCManagerCharBuilderSlots[0].body = body;
+        gSCManagerCharBuilderPlayerSlots[0] = 0;
+        for (donor = 0; donor < 12; donor++) for (variant = 0; variant < 33; variant++)
+        {
+            clip = sFTCustomAnimationClips[donor][variant];
+            ftCustomMoveStartClock(&fp,&sFTCustomMoves[donor][variant],0);
+            if (clip == NULL) { CHECK(ftCustomAnimationGetClip(&fp,&selected) == NULL); continue; }
+            for (frame = 0; frame < clip->count; frame++)
+            {
+                ftCustomMoveAdvanceClock(&fp,-1);
+                CHECK(ftCustomAnimationGetClip(&fp,&selected) == clip);
+                CHECK(selected == ((clip->loop_period && frame >= clip->loop_start) ?
+                    clip->loop_start + (frame-clip->loop_start)%clip->loop_period : frame));
+                joints[0].rotate.vec.f.y = -1.5F; joints[1].translate.vec.f.x = 17;
+                ftCustomAnimationSharedPose(&fp,clip,selected);
+                CHECK(joints[0].rotate.vec.f.y == -1.5F && joints[1].translate.vec.f.x == 17);
+                for (i = 0; i < sFTCustomAnimationRigs[body].count; i++)
+                {
+                    const FTCustomAnimationBone *bone = &sFTCustomAnimationRigs[body].bones[i];
+                    Vec3f r = joints[bone->joint].rotate.vec.f;
+                    CHECK(r.x == r.x && r.y == r.y && r.z == r.z);
+                    CHECK(r.x >= -3.142F && r.x <= 3.142F && r.y >= -1.571F && r.y <= 1.571F && r.z >= -3.142F && r.z <= 3.142F);
+                    CHECK(joints[bone->joint].scale.vec.f.y == bone->scale.y);
+                }
+                saved = joints[4].rotate.vec.f.x;
+                ftCustomAnimationSharedPose(&fp,clip,selected);
+                CHECK(joints[4].rotate.vec.f.x == saved); /* Frozen source frame. */
+            }
+            ftCustomMoveStartClock(&fp,&sFTCustomMoves[donor][variant],3);
+            ftCustomMoveAdvanceClock(&fp,0);
+            CHECK(ftCustomAnimationGetClip(&fp,&selected) == clip && selected ==
+                ((clip->loop_period && 3 >= clip->loop_start) ? clip->loop_start+(3-clip->loop_start)%clip->loop_period : 3));
+        }
+        clip = sFTCustomAnimationClips[nFTKindCaptain][22];
+        saved = joints[4].rotate.vec.f.x; fp.joints[5] = NULL;
+        ftCustomAnimationSharedPose(&fp,clip,0);
+        CHECK(joints[4].rotate.vec.f.x == saved); fp.joints[5] = &joints[5];
+    }
+    ftCustomMoveStartClock(&fp,&special,0);
+    CHECK(ftCustomAnimationGetClip(&fp,&selected) == NULL);
+    ftCustomMoveStartClock(&fp,&sFTCustomMoves[nFTKindCaptain][22],0);
+    preview = fp; CHECK(ftCustomAnimationGetClip(&preview,&selected) == NULL);
+    fp.status_id++; CHECK(ftCustomAnimationGetClip(&fp,&selected) == NULL); fp.status_id--;
+    fp.motion_id++; CHECK(ftCustomAnimationGetClip(&fp,&selected) == NULL); fp.motion_id--;
+    fp.pkind = nFTPlayerKindDemo; CHECK(ftCustomAnimationGetClip(&fp,&selected) == NULL); fp.pkind = nFTPlayerKindMan;
+    gSCManagerSceneData.scene_curr = nSCKindTitle; CHECK(ftCustomAnimationGetClip(&fp,&selected) == NULL);
+    ftCustomMoveResetClock(&fp);
     return 0;
 }
 #include "testCharBuilderNeutral.c.inc"
@@ -469,7 +451,7 @@ void _start(void)
 {
     s32 result = testCustomMove();
     if (result == 0) result = testCustomAnimation();
-    if (result == 0) result = testExpandedMarioAnimation();
+    if (result == 0) result = testSharedAnimations();
     if (result == 0) result = testCustomCollision();
     if (result == 0) result = testFullCollisionRoster();
     if (result == 0) result = testCharBuilderNeutral();

@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.6 (experimental)** | **Last updated: 2026-10-03**
+**Project version: 0.1.7 (experimental)** | **Last updated: 2026-10-04**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -21,7 +21,7 @@ game engines or make features automatically carry between them.
 
 | Build | ROM last updated | ROM download | Play package | Source build |
 | --- | --- | --- | --- | --- |
-| **Character Lab** | 2026-10-03 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
+| **Character Lab** | 2026-10-04 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
 | **Character Lab on Remix (preview)** | 2026-10-03 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
 
 Dates use Sao Paulo time and refer to the published ROMs. The project version
@@ -71,9 +71,11 @@ character-selection allocation overflow behind the Test in Training freeze.
 
 Every normal donor attack now uses its original hitbox path, size, active timing,
 damage and knockback on the other bodies, including angled variants and landing
-hitboxes. **Mario now performs Fox, DK, Luigi and Falcon normal attacks**, including
-angled variants and aerial landings. Other bodies/donors still use body poses.
-See the [Mario animation guide](ssb-decomp-re/docs/mario-animations.md), the
+hitboxes. **All twelve bodies now perform all twelve donors' normal attacks**,
+including angled variants, aerial landings and body-supported jab phases. Shared
+donor curves adapt to each body's skeleton and proportions. Specials and throws
+still need their borrowed animations. See the
+[full animation guide](ssb-decomp-re/docs/full-roster-animations.md), the
 [collision guide](ssb-decomp-re/docs/collision-trajectories.md) and
 [checklist](ssb-decomp-re/docs/status.md). Broader in-game acceptance is pending.
 

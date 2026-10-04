@@ -80,22 +80,22 @@ same body, or share a build.
 ## Expectations
 
 Normal attacks now follow their donor collision paths on every body, including
-angled variants, weapon/tail attacks, multihits and landing hitboxes. The body
-keeps its visible pose outside the [four donor normal catalogs on Mario](mario-animations.md).
+angled variants, weapon/tail attacks, multihits and landing hitboxes. All twelve bodies now visibly follow all twelve donors'
+normal poses; see the [animation coverage](full-roster-animations.md).
 
 For an easy comparison, choose **DK Body -> Up Tilt: Kirby**, then
 **Test in Training -> View: HITBOX**. The two hitboxes follow Kirby's original
-up-tilt path and duration while DK keeps his own pose. The same donor path also
+up-tilt path and duration while DK performs the retargeted Kirby pose. The same donor path also
 works on the other bodies. Compare with a vanilla Kirby up-tilt at the same
 fighter position and facing; visual acceptance is still pending. See the
 [coverage and comparison guide](collision-trajectories.md).
 
 Also try **Kirby Body -> Up Air: Falcon -> Test in Training -> View: HITBOX**.
-The hitboxes follow Falcon's original upward kick while Kirby keeps his own
-up-air pose. The same Falcon path works on every foreign body.
+The hitboxes follow Falcon's original upward kick while Kirby performs the
+retargeted Falcon pose. The same Falcon path works on every foreign body.
 
 Builds and assignments last for the running ROM session and reset when the ROM
-restarts. Most attack animations still come from the body. Throws copy donor
+restarts. Specials still use body or temporary poses. Throws copy donor
 damage/knockback but retain body choreography; DK skips cargo when another fighter's
 forward throw is selected. The [checklist](status.md) explains the remaining gaps.
 

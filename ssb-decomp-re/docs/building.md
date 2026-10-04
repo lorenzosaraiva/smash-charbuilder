@@ -80,7 +80,7 @@ someone else's desktop by this portable build command.
 ## What the command checks
 
 The build runs the actual custom-move host tests and verifies linked code, donor
-tables, Mario pilot/compact-pose bytes and registry pointers, and N64 checksum
+tables, shared donor curves, all twelve rig maps, relocated registry pointers and N64 checksum
 in the ROM before packaging it.
 These automated checks do not replace in-emulator playtesting.
 

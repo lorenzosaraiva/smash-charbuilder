@@ -303,33 +303,51 @@ for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     assert pattern in rom,name+' missing from ROM'
     animation_bytes += length
 print('PASS: all three linked Mario animation pilots match host-tested poses and donor hitbox trajectories ('+str(animation_bytes)+' bytes).')
-from generateCustomAnimations import pose_catalog
-pose_cases,pose_rows=pose_catalog()
-packed_bytes=0
-for case in pose_cases:
-    name=case['symbol']
+from sharedAnimation import catalog as animation_catalog
+pose_cases,pose_rows=animation_catalog()
+animation_names={name for name in host_symbols if name.startswith('sFTCustomAnimation')}
+host_targets={host_symbols[name][0]:name for name in animation_names}
+shared_bytes=0
+for name in sorted(animation_names-{'sFTCustomAnimationCaptain','sFTCustomAnimationFox','sFTCustomAnimationDonkey'}):
     address,length,index=host_symbols[name]
-    assert length==case['frames']*150
     start=host_sections[index][4]+address-host_sections[index][3]
-    values=struct.unpack_from('<'+str(length//2)+'h',host,start)
-    pattern=struct.pack('>'+str(length//2)+'h',*values)
-    address,linked_length,index=symbols[name]
-    start=sections[index][4]+address-sections[index][3]
-    assert linked_length==length and elf[start:start+length]==pattern and pattern in rom,name
-    packed_bytes+=length
-registry=loaded_words(symbols['sFTCustomAnimationPackedClips'][0],12*33*2)
-for donor,row in enumerate(pose_rows):
-    for variant,case_id in enumerate(row):
-        expected=(0,0) if case_id is None else (symbols[pose_cases[case_id]['symbol']][0],pose_cases[case_id]['frames'])
-        index=(donor*33+variant)*2
-        assert tuple(registry[index:index+2])==expected,('Mario pose registry',donor,variant)
-print(f'PASS: {len(pose_cases)} shared packed Mario clips and all 396 guarded registry pointers/counts match checked data ({packed_bytes} pose bytes).')
-address,length,index=host_symbols['sFTCustomAnimationMarioBind']
-start=host_sections[index][4]+address-host_sections[index][3]
-pattern=struct.pack('>72I',*struct.unpack_from('<72I',host,start))
-address,linked_length,index=symbols['sFTCustomAnimationMarioBind']
-start=sections[index][4]+address-sections[index][3]
-assert length==linked_length==288 and elf[start:start+length]==pattern and pattern in rom,'Mario bind translations'
+    raw=host[start:start+length]
+    if name=='sFTCustomAnimationKeys':pattern=raw
+    elif name=='sFTCustomAnimationCurves':
+        pattern=b''.join(struct.pack('>IHH',*v) for v in struct.iter_unpack('<IHH',raw))
+    elif name.endswith(('Curves','Root')):
+        pattern=struct.pack('>'+str(length//2)+'H',*struct.unpack('<'+str(length//2)+'H',raw))
+    elif name.startswith('sFTCustomAnimationSourceRig') and name.endswith('Bones'):
+        pattern=b''.join(v[:4]+struct.pack('>4I',*struct.unpack('<4I',v[4:])) for v in (raw[i:i+20] for i in range(0,length,20)))
+    elif name.startswith('sFTCustomAnimationSourceRig'):
+        pointer,count=struct.unpack_from('<2I',raw)
+        pattern=struct.pack('>2I',symbols[host_targets[pointer]][0],count)+raw[8:]
+    elif name.startswith('sFTCustomAnimationRig') and name!='sFTCustomAnimationRigs':
+        pattern=b''.join(v[:4]+struct.pack('>14I',*struct.unpack('<14I',v[4:])) for v in (raw[i:i+60] for i in range(0,length,60)))
+    elif name=='sFTCustomAnimationRigs':
+        pattern=b''.join(struct.pack('>2I',symbols[host_targets[pointer]][0],count) for pointer,count in struct.iter_unpack('<2I',raw))
+    elif name=='sFTCustomAnimationClips':
+        pointers=struct.unpack('<396I',raw)
+        pattern=struct.pack('>396I',*(symbols[host_targets[p]][0] if p else 0 for p in pointers))
+        for donor,row in enumerate(pose_rows):
+            for variant,case_id in enumerate(row):
+                expected=0 if case_id is None else host_symbols[pose_cases[case_id]['symbol']][0]
+                assert pointers[donor*33+variant]==expected,('Animation registry',donor,variant)
+    else:
+        assert length==24,('Unexpected animation data',name,length)
+        fields=list(struct.unpack('<6I',raw))
+        fields[:3]=[symbols[host_targets[p]][0] for p in fields[:3]]
+        pattern=struct.pack('>6I',*fields)
+    linked_address,linked_length,index=symbols[name]
+    start=sections[index][4]+linked_address-sections[index][3]
+    assert linked_length==length and elf[start:start+length]==pattern,name+' linked data'
+    for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
+        if typ==1 and vaddr<=linked_address and linked_address+length<=vaddr+filesz:
+            assert rom[paddr+linked_address-vaddr:paddr+linked_address-vaddr+length]==pattern,name+' ROM data'
+            break
+    else:raise AssertionError(name+' not loaded from ROM')
+    shared_bytes+=length
+print(f'PASS: {len(pose_cases)} shared normal clips, all 12 body rigs and 396 registry pointers match host-tested data ({shared_bytes} bytes).')
 collision_bytes=0
 cases,rows=catalog()
 for case_id,case in enumerate(cases):

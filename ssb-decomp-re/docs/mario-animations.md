@@ -1,5 +1,9 @@
 # More donor animations on Mario
 
+> Current coverage: version 0.1.7 extends normal animations to all twelve bodies
+> and donors. See [full-roster animations](full-roster-animations.md). The report
+> below records the earlier milestone; its packed format has been replaced.
+
 Version 0.1.6, 2026-10-03. This expansion is decomp only. Remix retains the three
 earlier Mario pilots. Rendered mesh/contact acceptance remains pending.
 

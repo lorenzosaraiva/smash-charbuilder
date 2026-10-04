@@ -3,10 +3,10 @@
 Pick a fighter's body, mix in moves from the other Smash 64 characters, and try
 your creation against friends or a CPU. A little experiment that got out of hand.
 
-This is a fun project, and it is still rough around the edges. Most combinations
-use the selected body's animations with the donor's attack values and timing.
-Full donor animations on other bodies are the dream; three Mario moves have an
-initial animation pilot so far.
+Version **0.1.7**, updated **2026-10-04**. All twelve bodies now perform all twelve
+donors' normal attacks through shared motion curves and body skeleton maps.
+Hitboxes and timing follow the donor independently of body proportions. This is
+still experimental; special, tether and paired throw animations need more work.
 
 **[How to play](docs/playing.md)** | **[Done / not done](docs/status.md)** |
 **[Build it yourself](docs/building.md)** | **[What's changed](CHANGELOG.md)**
@@ -15,15 +15,14 @@ initial animation pilot so far.
 
 This codebase is part of [Smash Character Builder](../README.md). Downloads use
 the combined project's [releases](https://github.com/lorenzosaraiva/smash-charbuilder/releases)
-and the root workflow described in the [download setup](../docs/releases.md). Once enabled, every
-successful push to `main` publishes a new build with the same download filenames.
+and the root workflow described in the [download setup](../docs/releases.md).
+The checked local release is available now. Automatic releases after pushes
+still require the original-ROM build-source setup.
 
-Grab **character-lab.zip** for the ROM, a quick play guide, the feature checklist
-and build information. If you only need the ROM, use **character-lab.z64**.
-The permanent links are shown in each successful release workflow's summary.
-
-The existing Google Drive copy can stay available while GitHub downloads are
-being set up.
+Grab [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip)
+for the ROM, a quick play guide, checklist and build information, or download
+[character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64)
+directly. These permanent links follow the latest checked release.
 
 ## Make your first character
 
@@ -48,15 +47,16 @@ Creator builds currently last for the running ROM session.
 - Neutral B: **Body Move** and every non-copy original neutral donor, including charging, returning boomerangs and Egg Lay. See [controls and limits](docs/neutral-specials.md); Up B/Down B remain experimental.
 - Up/Down B: donor timing, DK slaps/spin, Mario/Luigi Tornado and Falcon Kick collision paths/movement, and Ness projectile socket/self-launch timing. See [coverage and limits](docs/special-timing.md).
 - **8 MB RDRAM / Expansion Pak required**: Training/VS selection and match resources use the upper memory bank.
-- Three Mario animation pilots: Falcon down air, Fox straight forward tilt,
-  DK straight forward smash.
+- All twelve donor normal animations on all twelve bodies, angled variants,
+  aerial landings and body-supported jab phases. See the
+  [animation guide](docs/full-roster-animations.md).
 - Original donor hitbox paths for the complete normal roster on every foreign
   body, including angled variants, weapon/tail attacks, multihits and landing
   hitboxes. See the [collision guide](docs/collision-trajectories.md).
 
 The [checkbox list](docs/status.md) covers what is implemented, what still needs
 playtesting and what is missing. In particular, throws currently copy donor
-damage/knockback with body choreography, and most donor animations are unfinished.
+damage/knockback with body choreography; donor special animations remain unfinished.
 
 ## Build a ROM inside this repo
 

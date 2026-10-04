@@ -1,5 +1,23 @@
 # Character Lab changes
 
+## 0.1.7 - 2026-10-04: normal animations for everyone
+
+- Decomp: all twelve donor normal catalogs now animate all twelve bodies, including
+  angled variants, aerial landings and body-supported third/rapid jab phases.
+- Share 293 compact donor clips and twelve skeleton maps instead of storing every
+  body/donor combination. Preserve body meshes, bone lengths and bind scales;
+  collapse shared semantic joints on compact rigs and retain native accessories.
+- Keep the three established Mario pilots; normal hitbox trajectories, damage,
+  knockback and donor clocks remain independent of cosmetic poses.
+- Compare actual runtime output for every clip/frame/body against original C
+  playback: 3,626,238 joint-world orientations, maximum matrix error 0.0007014.
+- Update generators, runtime guards, source/ROM checks and play documentation.
+- Live ROM CPU checks: all 132 foreign donor/body pairs, 15,248 pose samples,
+  twelve Training/editor returns and four assigned VS builds. Minimum measured
+  Training heap headroom is 1,971,044 bytes.
+- Specials, tethers, paired throws and rendered full-roster acceptance remain
+  pending. This expansion is decomp only.
+
 ## 0.1.6 - 2026-10-03: more Mario donor animations
 
 - Mario now performs Fox, DK, Luigi and Falcon normal attacks, including angled

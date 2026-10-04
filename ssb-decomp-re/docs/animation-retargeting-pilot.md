@@ -1,5 +1,9 @@
 # Mario donor animation pilot
 
+> Current coverage: version 0.1.7 extends normal animations to all twelve bodies
+> and donors. See [full-roster animations](full-roster-animations.md). The report
+> below records the earlier milestone; its packed format has been replaced.
+
 Historical report for the original three moves. Version 0.1.6 expands Mario to
 Fox/DK/Luigi/Falcon normals, angled variants and aerial landings; see
 [current coverage and verification](mario-animations.md). The pilot tables remain

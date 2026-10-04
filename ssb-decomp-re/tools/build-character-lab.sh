@@ -33,6 +33,7 @@ if ((initialize)) || [[ ! -f .splat/us/smashbrothers.ld ]]; then
     make extract VERSION=us COLOR=0
 fi
 make -j"$jobs" VERSION=us COLOR=0
+python3 tools/prepareSharedAnimationTest.py
 gcc -m32 -nostdlib -static -fno-pie -fno-stack-protector -O1 \
     -Iinclude -Isrc -D__sgi -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DREGION_US \
     tools/testCustomMove.c -o build/testCustomMove

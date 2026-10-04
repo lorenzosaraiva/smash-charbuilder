@@ -18,11 +18,13 @@ Checkboxes mean implemented, not tested in every matchup.
 
 Character Lab's [detailed feature checklist](../ssb-decomp-re/docs/status.md)
 covers normal attacks, grabs/throws, human/CPU assignments, Training HITBOX view,
-grab-preserving combo counters, expanded Mario animations and remaining work.
+grab-preserving combo counters, full-roster normal animations and remaining work.
 
-- [x] Decomp Mario normal animations for Fox/DK/Luigi/Falcon, angled variants and aerial landings.
-- [x] Shared compact pose tables with native-source and linked-ROM checks.
-- [ ] Remaining Mario donor rigs, other bodies and rendered animation acceptance.
+- [x] All twelve decomp donor normal animations on all twelve bodies, angled variants, aerial landings and supported jab phases.
+- [x] Shared compact donor curves and body maps with native-source and linked-ROM checks.
+- [x] Live ROM CPU checks: 132 foreign donor/body pairs, 15,248 poses, twelve editor returns and four assigned VS builds.
+- [ ] Rendered animation/contact acceptance across the full roster.
+- [ ] Borrowed special, tether and paired throw animations.
 
 The [Remix guide](../remix/character_creator_guide.md) and
 [port checklist](../remix/docs/character-lab-status.md) cover the separate preview.

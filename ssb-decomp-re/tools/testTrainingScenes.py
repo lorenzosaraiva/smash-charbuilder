@@ -28,6 +28,7 @@ parser.add_argument('--specials',action='store_true',help='Exercise borrowed DK 
 parser.add_argument('--path-donor',type=int,choices=(0,2,4,7,11),help='Exercise donor special paths, movement, or Ness steering/self-contact')
 parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every body instead of cycling neutral choices')
 parser.add_argument('--mario-animations',action='store_true',help='Check four Mario donor catalogs using real attack inputs and RAM poses')
+parser.add_argument('--roster-animations',action='store_true',help='Check every donor/body pair, live poses, recovery and Training return')
 args=parser.parse_args()
 if not 0<=args.first_choice<12 or not 1<=args.cases<=12-args.first_choice:
     parser.error('Choose a contiguous range within the twelve neutral choices.')
@@ -115,40 +116,65 @@ motion_ids=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
 animation_variants={motion_ids['nFTCommonMotion'+m]:i for i,m in enumerate(MOTIONS[:29])}
 animation_variants[extra_ids('Mario')[0]]=29
 animation_rows=[next(i for i,family in enumerate(SLOTS.values()) if m in family) for m in MOTIONS[:24]]+list(range(8,13))+[0]
+if args.mario_animations or args.roster_animations:
+    from sharedAnimation import catalog as pose_catalog,body_rig,qmul,quaternion,rotation,qmatrix
+    pose_cases,pose_rows=pose_catalog()
+    pose_data=(ROOT/'build/shared-animation-poses.bin').read_bytes()
+    pose_offsets={};cursor=0
+    for case_id,case in enumerate(pose_cases):
+        for body_id,body_name in enumerate(ROSTER):
+            pose_offsets[case_id,body_id]=cursor
+            cursor+=case['frames']*(len(body_rig(body_name))*16+12)
+    assert cursor==len(pose_data),'Run tools/testNativeAnimation.py for current runtime pose references.'
+    body_variants=[]
+    for name in ROSTER:
+        variants=dict(animation_variants)
+        for variant,motion in enumerate(extra_ids(name),29):
+            if motion>=0:variants[motion]=variant
+        body_variants.append(variants)
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
     global last_trace,animation_samples
-    if args.mario_animations:
+    if args.mario_animations or args.roster_animations:
         if u8(scene)!=54:return
         fp=fighter()
         if not 0x80400000<=fp<0x80800000:return
-        variant=animation_variants.get(u32(fp+motion_off))
+        body=u32(fp+kind_off)
+        if body>=12:return
+        variant=body_variants[body].get(u32(fp+motion_off))
         if variant is None:return
+        if variant>=30:return # Rapid states have a separate looping source clock.
         preset=u8(addr('gSCManagerCharBuilderPlayerSlots'))
         if preset>=4:return
         slot=addr('gSCManagerCharBuilderSlots')+preset*slot_size
         donor=u8(slot+2+animation_rows[variant])
-        if donor>=12:return
-        clip=addr('sFTCustomAnimationPackedClips')+(donor*33+variant)*8
-        pointer,count=u32(clip),u32(clip+4)
-        if not pointer or not count:return
+        if donor>=12 or donor==body:return
+        case_id=pose_rows[donor][variant]
+        if case_id is None:return
+        count=pose_cases[case_id]['frames']
         source_frame=f32(u32(fp+gobj_off)+gobj_frame_off)
         # Normal animation frames are supplied by the donor clock; -1 is its
         # native completion sentinel, after applying the final pose sample.
-        sample=pointer+(count-1 if source_frame<0 else min(int(source_frame),count-1))*150
-        def s16(a):
-            value=(u8(a)<<8)|u8(a+1)
-            return value-65536 if value&32768 else value
+        sample_frame=count-1 if source_frame<0 else min(int(source_frame),count-1)
+        rig=body_rig(ROSTER[body]);stride=len(rig)*16+12
+        sample=pose_offsets[case_id,body]+sample_frame*stride
         # Native ground slope contour may adjust leg chains after pose playback.
         # Check all limbs in aerials, and the root/torso/arms/head on ground.
-        for joint in range(24 if 19<=variant<=23 else 14):
-            obj=u32(fp+joints_off+(joint+4)*4)
-            if not obj:return
-            for channel in range(3):
-                expected=s16(sample+(joint*3+channel)*2)/4096
-                actual=f32(obj+rotation_off+channel*4)
-                if abs(expected-actual)>0.00001 and len(animation_errors)<10:
-                    animation_errors.append((donor,variant,source_frame,joint+4,channel,expected,actual))
+        worlds={0:(0,0,0,1)}
+        for i,bone in enumerate(rig):
+            joint=bone['joint'];obj=u32(fp+joints_off+joint*4)
+            if not obj:continue
+            if bone['parent'] not in worlds:continue
+            local=quaternion(rotation(tuple(f32(obj+rotation_off+axis*4) for axis in range(3))))
+            worlds[joint]=qmul(worlds[bone['parent']],local)
+            if not bone['required'] or bone['role']<0 or (variant not in range(19,24) and bone['role']>=14):continue
+            # Keep the three visually approved float pilots; all other paths use shared curves.
+            if body==0 and (donor,variant) in ((7,23),(1,5),(2,14)):continue
+            expected=struct.unpack_from('<4f',pose_data,sample+i*16)
+            a,b=qmatrix(worlds[joint]),qmatrix(expected)
+            error=max(abs(a[x][y]-b[x][y]) for x in range(3) for y in range(3))
+            if error>0.003 and len(animation_errors)<10:
+                animation_errors.append((body,donor,variant,source_frame,joint,error))
         animation_seen.add((donor,variant));animation_samples+=1
         return
     if (not args.specials and args.path_donor is None) or u8(scene)!=54:return
@@ -181,12 +207,15 @@ try:
         if u32(addr('sMNOptionBuilderMode'))==2:pulse(0x40)
         preset=case%4;body=(case+2)%12
         if args.mario_animations:body=0
+        if args.roster_animations:body=case
         w32(addr('sMNOptionBuilderSlot'),preset)
         slot=addr('gSCManagerCharBuilderSlots')+preset*slot_size
         w8(slot,1);w8(slot+1,body)
         for i in range(16):w8(slot+2+i,body)
         if args.mario_animations:
             for i in range(13):w8(slot+2+i,(1,2,4,7)[case])
+        if args.roster_animations:
+            for i in range(13):w8(slot+2+i,(body+1)%12)
         w8(slot+18,11 if args.specials else args.path_donor if args.path_donor in (2,11) else body)
         w8(slot+19,2 if args.specials else args.path_donor if args.path_donor in (0,4,7) else body)
         w8(slot+neutral_field,0 if args.path_donor is not None else choice)
@@ -200,7 +229,7 @@ try:
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Training stage select')
         pulse(0x80);wait(lambda:u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180,'Training match load')
         frames(30);minima.append(heap_ok())
-        if args.mario_animations:
+        if args.mario_animations or args.roster_animations:
             check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
             animation_seen.clear();animation_errors.clear();animation_samples=0
             def act(value,ticks=3,recovery=90):
@@ -213,10 +242,18 @@ try:
             keys(stick(80));frames(12);act(stick(80)|0x80)
             for x,y in ((0,0),(50,0),(-50,0),(0,50),(0,-50)):
                 act(0x0800,3,10);act(stick(x,y)|0x80,3,100)
-            assert not animation_errors,('Mario ROM pose mismatch',animation_errors)
-            assert animation_samples>=30 and len(animation_seen)>=7,('Mario attack coverage',animation_samples,animation_seen)
+            if args.roster_animations:
+                for donor in range(12):
+                    if donor==body:continue
+                    for i in range(13):w8(slot+2+i,donor)
+                    # Tilt and aerial exercise grounded and airborne reconstruction for every pair.
+                    keys(stick(0,35));frames(5);act(stick(0,35)|0x80,3,75)
+                    act(0x0800,3,10);act(0x80,3,85)
+                    assert any(d==donor for d,v in animation_seen),('Unexercised donor/body',body,donor,animation_seen)
+            assert not animation_errors,('ROM pose mismatch',animation_errors)
+            assert animation_samples>=30 and len(animation_seen)>=7,('Attack coverage',animation_samples,animation_seen)
             assert u32(addr('gFTCustomAnimationValidationFailures'))==0
-            print(f'PASS: Mario donor {(1,2,4,7)[case]}, {animation_samples} live compact poses, variants {sorted(v for _,v in animation_seen)}.',flush=True)
+            print(f'PASS: body {body}, {animation_samples} live shared poses, donor/variants {sorted(animation_seen)}.',flush=True)
         elif args.path_donor is not None:
             check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
             donor=args.path_donor;name=ROSTER[donor]
@@ -314,10 +351,10 @@ try:
             assert not 228<=trace[-1][0]<=236,(body,'Ness recovery',trace[-1])
             print('PASS: Ness Up B on body',body,'start -> hold/projectile expiry -> end/recovery, no freeze.',flush=True)
         else:pulse(0x40);frames(200) # Actual B input and recovery/charging.
-        if args.path_donor is None and not args.mario_animations:
+        if args.path_donor is None and not (args.mario_animations or args.roster_animations):
             pulse(0x20);frames(30) # Store a charge where supported.
             pulse(0x40);frames(120)
-        if args.path_donor is not None or args.mario_animations:
+        if args.path_donor is not None or args.mario_animations or args.roster_animations:
             paused=enum_values((ROOT/'src/sc/scdef.h').read_text(),'SCBattleGameStatus')['nSCBattleGameStatusPause']
             # Native Training ignores Start during KO/respawn. Wait for a legal
             # pause instead of firing Exit at an unopened menu.
@@ -333,7 +370,7 @@ try:
         w32(addr('sSC1PTrainingModeMenu'),5);pulse(0x80)
         wait(lambda:u8(scene)==57 and u32(addr('sMNOptionBuilderMode'))==2,'Return to editor')
         assert u32(addr('sMNOptionBuilderSlot'))==preset and u32(addr('sMNOptionBuilderEntry'))==23
-        action_label='Mario normal poses' if args.mario_animations else 'donor special' if args.path_donor is not None else 'B/store/B'
+        action_label='normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None else 'B/store/B'
         print(f'PASS: body {body}, neutral {choice}, preset {preset}: Test -> CSS -> stage -> Training -> {action_label} -> same editor.',flush=True)
     if not args.four_mb:
         print('PASS: Training heap headroom at least',min(minima),'bytes.',flush=True)
@@ -346,6 +383,8 @@ try:
             w8(slot,1);w8(slot+1,body)
             for attack in range(16):w8(slot+2+attack,body)
             if args.mario_animations:
+                for attack in range(13):w8(slot+2+attack,(1,2,4,7)[player])
+            if args.roster_animations:
                 for attack in range(13):w8(slot+2+attack,(1,2,4,7)[player])
             w8(slot+18,body);w8(slot+19,body);w8(slot+neutral_field,(9,10,11,6)[player])
             record=transfer+players_field+player*player_size

@@ -25,7 +25,7 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Local build command with ROM and play package under `dist/`.
 - [x] GitHub build/release workflow prepared; needs the one-time setup in [releases.md](releases.md).
 
-## Mario animations
+## Normal animations across the roster
 
 - [x] Mario body + Captain Falcon down-air poses and donor hitbox trajectory.
 - [x] Mario body + Fox straight forward-tilt poses and donor hitbox trajectory.
@@ -35,9 +35,13 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Aerial landing poses and body-supported Falcon/Luigi third jabs on Mario.
 - [x] Shared compact clips, native-source orientation checks and guarded per-player playback.
 - [x] ROM CPU pose checks for all four Mario donors, editor returns and four-Mario VS loading (null rendering).
-- [ ] Remaining donor rigs on Mario; rendered acceptance of the expanded catalog.
+- [x] All twelve donor normal catalogs on all twelve bodies through shared curves and semantic rig maps.
+- [x] Native C donor playback versus actual runtime orientations for every clip/frame/body.
+- [x] Live ROM CPU checks: 132 foreign donor/body pairs, 15,248 poses, twelve editor returns and four assigned VS builds.
+- [ ] Rendered acceptance of the full catalog and mesh-specific polish.
 
-See the [expanded Mario animation guide](mario-animations.md).
+See the [full-roster animation guide](full-roster-animations.md); the
+[Mario expansion report](mario-animations.md) documents the preceding milestone.
 
 ## Still to do
 
@@ -50,7 +54,8 @@ See the [expanded Mario animation guide](mario-animations.md).
 - [ ] Rendered acceptance of collision paths, actual hits/shields and interruptions.
 - [ ] Validate donor startup, active frames, recovery, landing lag and hitlag in-game.
 - [ ] Full donor jab-chain capabilities and repeat-hit/refresh behavior.
-- [ ] Every donor attack animation on every body.
+- [x] Every donor normal attack animation on every body.
+- [ ] Every donor special and grab/throw animation on every body.
 - [ ] Paired donor throw/victim choreography, including special capture mechanics.
 - [ ] Tether grab reach, capture timing and visuals on other bodies.
 - [x] Native projectile neutral first batch on all bodies/four player slots; eight donor pose/matrix checks.
@@ -71,15 +76,17 @@ and tether/paired capture mechanics. Keep the selected body's hurtboxes initiall
 
 ## Known rough edges
 
-Most attacks still show the body's animation. That can look odd even when the donor's
-numbers and timing are in use. All normal donor choices now use original collision
-paths across bodies, independently of those visible poses. See the
+Normal attacks now show body-adapted donor poses. Compact bodies merge some
+semantic joints; accessories keep native bind poses and no foreign weapon mesh
+is added. Donor reach remains independent of limb length, so hitboxes may extend
+beyond a small body's limbs. See the
 [collision coverage and test guide](collision-trajectories.md). Throws keep body poses and release timing; changing
 the donor does not yet reproduce its full choreography. Tether-grab animation/reach
 and fighter-specific effects, movement or capture behavior are not universally copied.
 
-Mario's four donor normal catalogs have automated numeric checks. The rest of the roster,
-special adapters and transitions need more gameplay reports. You may run into bugs.
+All twelve normal catalogs and bodies have automated numeric checks. Rendered
+appearance, special adapters and transitions need more gameplay reports. You may
+run into bugs.
 
 For a useful report, include the build/commit, emulator, body, donor, attack and steps
 to reproduce it. A short clip helps. Ideas and casual feedback are welcome too.
