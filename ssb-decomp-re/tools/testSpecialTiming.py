@@ -23,6 +23,9 @@ air = physics[physics.index('void ftPhysicsGetAirVelTransN('):physics.index('// 
 source = r'''
 #include <ft/fighter.h>
 #include <ft/ftcustommove.h>
+static FTAttributes* ftCustomNormalGetAttributes(FTStruct *fp) { return fp->attr; }
+static sb32 ftCustomNormalGetTravel(FTStruct *fp,Vec3f *v,sb32 ground) { return FALSE; }
+
 #define FTCHARBUILDER_NEUTRAL_EXTENDED
 typedef struct FTCustomCollisionTrajectory {
     const FTCustomCollisionFrame *frames; s32 first, count, loop_start, loop_period;

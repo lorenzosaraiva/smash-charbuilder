@@ -3,7 +3,7 @@
 Pick a fighter's body, mix in moves from the other Smash 64 characters, and try
 your creation against friends or a CPU. A little experiment that got out of hand.
 
-Version **0.1.11**, updated **2026-10-04**. All twelve bodies now perform all twelve
+Version **0.1.12**, updated **2026-10-04**. All twelve bodies now perform all twelve
 donors' normal attacks through shared motion curves and body skeleton maps.
 Hitboxes and timing follow the donor independently of body proportions. This is
 still experimental; special, tether and paired throw animations need more work.
@@ -17,6 +17,9 @@ paths, timing, movement and recovery. See [coverage and testing](docs/direct-spe
 Bombs, eggs, Thunder, Fire Fox, Quick Attack, Reflector, PSI Magnet, Sing,
 Falcon Dive, Final Cutter and Stone now use native mechanics with donor clocks,
 paths and sockets on other bodies. See [controls and checks](docs/remaining-special-mechanics.md).
+
+Donor jab chains, Link down-air bounce, Ness bat reflection and normal movement
+now work across the roster. See [controls and verification](docs/normal-mechanics.md).
 
 **[How to play](docs/playing.md)** | **[Done / not done](docs/status.md)** |
 **[Build it yourself](docs/building.md)** | **[What's changed](CHANGELOG.md)**
@@ -58,7 +61,7 @@ Creator builds currently last for the running ROM session.
 - Up/Down B: donor clocks, collision paths, projectile/capture mechanics, movement, absorption/reflection and Stone armor. Special poses and rendered acceptance remain pending. See [coverage and limits](docs/special-timing.md).
 - **8 MB RDRAM / Expansion Pak required**: Training/VS selection and match resources use the upper memory bank.
 - All twelve donor normal animations on all twelve bodies, angled variants,
-  aerial landings and body-supported jab phases. See the
+  aerial landings and donor jab phases on every body. See the
   [animation guide](docs/full-roster-animations.md).
 - Original donor hitbox paths for the complete normal roster on every foreign
   body, including angled variants, weapon/tail attacks, multihits and landing

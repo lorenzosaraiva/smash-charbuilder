@@ -1,4 +1,6 @@
 #include <ft/fighter.h>
+#include <ft/ftcustommove.h>
+#include <sc/scene.h>
 #include <it/item.h>
 // // // // // // // // // // // //
 //                               //
@@ -8,17 +10,17 @@
 
 #define ftCommonAttack13CheckFighterKind(fp)\
 (                                           \
-    ((fp)->fkind == nFTKindMario)   ||      \
-    ((fp)->fkind == nFTKindMMario)  ||      \
-    ((fp)->fkind == nFTKindNMario)  ||      \
-    ((fp)->fkind == nFTKindLuigi)   ||      \
-    ((fp)->fkind == nFTKindNLuigi)  ||      \
-    ((fp)->fkind == nFTKindCaptain) ||      \
-    ((fp)->fkind == nFTKindNCaptain)||      \
-    ((fp)->fkind == nFTKindLink)    ||      \
-    ((fp)->fkind == nFTKindNLink)   ||      \
-    ((fp)->fkind == nFTKindNess)    ||      \
-    ((fp)->fkind == nFTKindNNess)           \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindMario)   ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindMMario)  ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNMario)  ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindLuigi)   ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNLuigi)  ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindCaptain) ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNCaptain)||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindLink)    ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNLink)   ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNess)    ||      \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNNess)           \
 )
 
 // // // // // // // // // // // //
@@ -34,7 +36,7 @@ void ftCommonAttack11ProcUpdate(GObj *fighter_gobj)
 
     if ((fp->motion_vars.flags.flag1 != 0) && (fp->status_vars.common.attack1.is_goto_followup != FALSE))
     {
-        if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindNPikachu))
+        if ((ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindPikachu) || (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindNPikachu))
         {
             ftCommonAttack11SetStatus(fighter_gobj);
         }
@@ -48,7 +50,7 @@ void ftCommonAttack12ProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if ((fp->fkind != nFTKindCaptain) && (fp->fkind != nFTKindNCaptain) && (fp->motion_vars.flags.flag1 != 0) && (fp->is_goto_attack100))
+    if ((ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) != nFTKindCaptain) && (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) != nFTKindNCaptain) && (fp->motion_vars.flags.flag1 != 0) && (fp->is_goto_attack100))
     {
         ftCommonAttack100StartSetStatus(fighter_gobj);
     }
@@ -64,7 +66,7 @@ void ftCommonAttack13ProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if (((fp->fkind == nFTKindCaptain) || (fp->fkind == nFTKindNCaptain)) && (fp->motion_vars.flags.flag1 != 0) && (fp->is_goto_attack100))
+    if (((ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindCaptain) || (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindNCaptain)) && (fp->motion_vars.flags.flag1 != 0) && (fp->is_goto_attack100))
     {
         ftCommonAttack100StartSetStatus(fighter_gobj);
     }
@@ -87,7 +89,7 @@ void ftCommonAttack11ProcInterrupt(GObj *fighter_gobj)
     }
     if (ftCommonAttack100StartCheckInterruptCommon(fighter_gobj) == FALSE)
     {
-        if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindNPikachu))
+        if ((ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindPikachu) || (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindNPikachu))
         {
             if (ftCommonAttack11CheckGoto(fighter_gobj) != FALSE)
             {
@@ -127,7 +129,7 @@ void ftCommonAttack11ProcStatus(GObj *fighter_gobj)
 void ftCommonAttack11SetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetAttackAttributes(fp, nSCCharBuilderAttackJab);
 
     if (ftCommonGetCheckInterruptCommon(fighter_gobj) == FALSE)
     {
@@ -164,7 +166,7 @@ void ftCommonAttack12SetStatus(GObj *fighter_gobj)
 
         fp->attack1_status_id = fp->status_id;
 
-        switch (fp->fkind)
+        switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab))
         {
         case nFTKindMario:
         case nFTKindMMario:
@@ -203,7 +205,7 @@ void ftCommonAttack13SetStatus(GObj *fighter_gobj)
 
     if (ftCommonGetCheckInterruptCommon(fighter_gobj) == FALSE)
     {
-        switch (fp->fkind)
+        switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab))
         {
         case nFTKindMario:
         case nFTKindMMario:
@@ -231,7 +233,7 @@ void ftCommonAttack13SetStatus(GObj *fighter_gobj)
             status_id = nFTNessStatusAttack13;
             break;
         }
-        ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+        ftMainSetStatus(fighter_gobj, ftMainCharBuilderGetJabStatus(fp, status_id, 0), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
         ftMainPlayAnimEventsAll(fighter_gobj);
 
         fp->motion_vars.flags.flag1 = 0;
@@ -244,7 +246,7 @@ void ftCommonAttack13SetStatus(GObj *fighter_gobj)
 sb32 ftCommonAttack1CheckInterruptCommon(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetAttackAttributes(fp, nSCCharBuilderAttackJab);
 
     if (fp->input.pl.button_tap & fp->input.button_mask_a)
     {
@@ -278,7 +280,7 @@ sb32 ftCommonAttack1CheckInterruptCommon(GObj *fighter_gobj)
             switch (fp->attack1_status_id)
             {
             case nFTCommonStatusAttack11:
-                if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindNPikachu))
+                if ((ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindPikachu) || (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindNPikachu))
                 {
                     if (attr->is_have_attack11)
                     {
@@ -328,7 +330,7 @@ sb32 ftCommonAttack1CheckInterruptCommon(GObj *fighter_gobj)
 sb32 ftCommonAttack11CheckGoto(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetAttackAttributes(fp, nSCCharBuilderAttackJab);
 
     if (fp->attack1_followup_frames != 0.0F)
     {
@@ -352,7 +354,7 @@ sb32 ftCommonAttack11CheckGoto(GObj *fighter_gobj)
 sb32 ftCommonAttack12CheckGoto(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetAttackAttributes(fp, nSCCharBuilderAttackJab);
 
     if (fp->attack1_followup_frames != 0.0F)
     {

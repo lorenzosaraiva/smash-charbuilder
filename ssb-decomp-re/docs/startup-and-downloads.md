@@ -1,6 +1,6 @@
 # Startup and download checks
 
-Version 0.1.11, updated 2026-10-04. Enable **8 MB RDRAM / Expansion Pak**.
+Version 0.1.12, updated 2026-10-04. Enable **8 MB RDRAM / Expansion Pak**.
 
 The public `character-lab.z64`, root `dist/character-lab.z64` and Desktop
 `smash-character-lab-full-roster.z64` are copies of one checked build. The release
@@ -28,6 +28,33 @@ Training/VS heap helper. The original framebuffers, lower-bank overlays, SDK
 addresses and normal animation/collision tables are preserved.
 
 ## Regression checks
+
+The 0.1.12 normal-mechanics build passed uninterrupted boot through all nineteen
+opening scenes, title and Start into the main menu. Opening heap headroom
+remains at least 2,309,952 bytes. Its normal-mechanics CPU sweep passed all 144
+donor/body jab chains, twelve controlled Link bounces/Ness bat reflections,
+editor returns and four assigned VS builds. Training retained at least
+1,641,264 bytes of headroom with all twelve normal donor files selected.
+
+The new donor attribute/model preloads exposed the old 100-entry Training/VS
+asset-cache limit, which stopped loading before the first Training update.
+Both caches now have 512 entries. With 4 MB, startup skips the resource-heavy
+intro to keep menus and their existing 8 MB requirement reachable. The 4 MB
+Test in Training guard passed without a heap overflow. With 8 MB, the full
+intro still plays. The native allocator/SDK addresses remain
+unchanged; selected donor files and Ness's bat motion file fit without cache
+exhaustion. These are CPU execution checks with null rendering; rendered
+acceptance remains pending.
+
+The final build also passed four Mario donor animation catalogs, Mario Up B
+ground/air paths and recovery, Ness steering/self-contact/recovery, editor
+returns and assigned four-player VS. These regressions caught an interrupted
+Egg Lay release reading a missing throw descriptor; its original donor
+escape values are now generated and installed before capture. Customized
+grabs retain the body script that provides native release setup.
+
+The 0.1.12 ROM is 18,491,024 bytes, with SHA-256
+`adc5910f7ae81bbf23b067170dc460a3b446fa925447225b7446aa47772036b7`.
 
 The 0.1.11 mechanics build also moves stage selection into the Expansion Pak
 arena. It passed uninterrupted boot through all nineteen opening scenes, title

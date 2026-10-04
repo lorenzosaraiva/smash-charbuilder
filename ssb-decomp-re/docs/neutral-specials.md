@@ -71,3 +71,9 @@ and return to the same editor across twelve bodies/choices and four presets.
 It also checks four assigned builds through VS loading. The 4 MB run checks the
 launch guard; `--egg-lay` repeats that neutral across all twelve bodies.
 Null rendering does not verify appearance.
+
+Version 0.1.12 fixes borrowed Egg Lay interruption: the native throw/escape
+descriptors are installed on entry and retained through catch/release phases.
+Third-party damage during a capture uses the original 5-damage escape values
+instead of reading a missing descriptor. The original two records are generated
+from the US source and checked in the linked ROM.

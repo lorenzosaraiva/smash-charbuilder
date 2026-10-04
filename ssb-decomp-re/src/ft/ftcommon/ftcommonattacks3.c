@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+#include <sc/scene.h>
 #include <it/item.h>
 
 // // // // // // // // // // // //
@@ -16,7 +17,7 @@ void ftCommonAttackS3SetStatus(GObj *fighter_gobj)
 
     if (ftCommonGetCheckInterruptCommon(fighter_gobj) == FALSE)
     {
-        if (fp->data->mainmotion->motion_desc[nFTCommonMotionAttackS3HiS].anim_file_id != 0)
+        if (ftMainCharBuilderHasNormalMotion(fp, nSCCharBuilderAttackFTilt, nFTCommonMotionAttackS3HiS))
         {
             stick_angle = ftParamGetStickAngleRads(fp);
 
@@ -26,7 +27,7 @@ void ftCommonAttackS3SetStatus(GObj *fighter_gobj)
                         (stick_angle < FTCOMMON_ATTACKS3_5ANGLE_LWS_MIN) ? nFTCommonStatusAttackS3LwS : // Middle Low-Angled Forward Tilt
                                                                            nFTCommonStatusAttackS3;     // Default Forward Tilt
         }
-        else if (fp->data->mainmotion->motion_desc[nFTCommonMotionAttackS3Hi].anim_file_id != 0)
+        else if (ftMainCharBuilderHasNormalMotion(fp, nSCCharBuilderAttackFTilt, nFTCommonMotionAttackS3Hi))
         {
             stick_angle = ftParamGetStickAngleRads(fp);
 

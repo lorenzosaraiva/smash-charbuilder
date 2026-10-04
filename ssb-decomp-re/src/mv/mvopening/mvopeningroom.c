@@ -1412,6 +1412,14 @@ SYTaskmanSetup dMVOpeningRoomTaskmanSetup =
 // 0x801349BC
 void mvOpeningRoomStartScene(void)
 {
+    /* The expanded lab needs 8 MB. Keep menus and their memory guard reachable
+     * without allocating intro assets into the smaller lower-bank arena. */
+    if (osMemSize < 0x800000)
+    {
+        gSCManagerSceneData.scene_prev = gSCManagerSceneData.scene_curr;
+        gSCManagerSceneData.scene_curr = nSCKindTitle;
+        return;
+    }
 	dMVOpeningRoomVideoSetup.zbuffer = SYVIDEO_ZBUFFER_START(320, 240, 0, 10, u16);
 	syVideoInit(&dMVOpeningRoomVideoSetup);
 

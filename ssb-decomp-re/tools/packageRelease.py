@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.11',
+        'version': '0.1.12',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -118,15 +118,22 @@ source hit paths/timing, capture/absorb/reflect behavior and donor recovery work
 on original bodies. Link's second Down B toss keeps its frame-8 release and throw
 values. Thunder trails are preloaded; owned weapons survive status-union changes.
 Stage selection uses the Expansion Pak arena too.
+Normal mechanics now include donor jab chains on every body, Link down-air
+bounce, Ness bat reflection and donor root travel/attack physics. Angle and
+landing availability follow the donor. Training/VS caches hold 512 assets for
+mixed builds. Part-intangibility follows donor timing on native body hurtboxes.
+Grabs keep native release setup, and interrupted Egg Lay uses original escape
+descriptors. With 4 MB, startup skips the intro and lab gameplay stays blocked.
+
 Special animations and rendered contact acceptance remain pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 All twelve bodies now perform all twelve donor normal attacks, including angled
-variants, aerial landings and body-supported jab phases. Shared curves adapt
+variants, aerial landings and donor jab phases on every body. Shared curves adapt
 motion to the body skeleton. Special, tether and paired throw animations remain pending.
 Original donor collision paths now cover every normal attack on every foreign
 body, including angled variants, weapon/tail paths, multihits, landing collisions
-and body-supported jab phases. Size, timing, damage and knockback follow the donor.
+and donor jab phases on every body. Size, timing, damage and knockback follow the donor.
 Try Kirby Body -> Up Air: Falcon -> Test in Training -> View: HITBOX, or change
 any normal donor. The visible normal animation now follows the donor on the selected body.
 Full native-code geometry checks pass; in-game acceptance remains pending.

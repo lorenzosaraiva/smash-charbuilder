@@ -1,6 +1,8 @@
 # Animation work: current milestone and next steps
 
-Version 0.1.7 implements normal donor poses for all twelve bodies and donors.
+Version 0.1.12 includes normal donor poses and gameplay mechanics on all twelve
+bodies and donors. See [normal mechanics](normal-mechanics.md) for jab chains,
+bounce, reflection and source attack movement.
 The shared curve format, skeleton maps, preserved body proportions and native
 verification are documented in [full-roster animations](full-roster-animations.md).
 The [Mario report](mario-animations.md) and [three-move pilot](animation-retargeting-pilot.md)
@@ -10,12 +12,13 @@ record earlier milestones.
 
 - Independent original donor normal collision paths, numeric attack values and
   donor clocks for all 396 resolved entries.
-- Shared normal pose curves, angled variants, aerial landings and body-supported
-  third/rapid jab phases across all twelve skeletons.
+- Shared normal pose curves, angled variants, aerial landings and donor
+  third/rapid jab phases on every body across all twelve skeletons.
 - Native C playback/matrix comparisons, actual C retargeter checks for every
   clip/frame/body, per-player/lifecycle guards and linked ROM data verification.
-- Body meshes, bone lengths, bind scales, TopN/facing and detached TransN physics
-  remain native. Collision reach is independent of retargeted limb positions.
+- Body meshes, bone lengths, bind scales and TopN/facing remain native. Attack
+  root travel uses the donor; collision reach stays independent of retargeted
+  limb positions.
 
 ## Next work
 

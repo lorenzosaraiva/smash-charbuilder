@@ -64,6 +64,10 @@ typedef struct FTCustomMoveDefinition
 /* Repeat a donor special phase at its source animation boundary. */
 #define FTCUSTOMMOVE_FLAG_SPECIAL_CYCLE 4
 
+/* Private normal phases: never index a body's special-status table with these. */
+#define FTCUSTOMMOVE_JAB_STATUS_START 0xF00
+#define FTCUSTOMMOVE_JAB_STATUS_END 0xF03
+
 /* Numeric gameplay only: the victim's status remains the body's native one. */
 typedef struct FTCustomThrowDefinition
 {

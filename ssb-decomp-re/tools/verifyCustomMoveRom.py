@@ -10,9 +10,10 @@ from elfData import read_elf
 from customMoveTiming import animation_duration
 from generateCustomCollisions import catalog, stored_frames
 from generateNeutralProjectiles import catalog as projectile_catalog, render as render_projectiles
-from generateNeutralActions import catalog as action_catalog, render as render_actions
+from generateNeutralActions import catalog as action_catalog, render as render_actions, yoshi_interrupt_throws
 from generateSpecialTiming import catalog as special_catalog, render as render_specials, donkey_frames, path_catalog, GAMEPLAY_OPS, superjump_landing_duration, direct_landing_duration
 from auditNormalMoves import enum_values
+from generateNormalMechanics import catalog as normal_mechanics_catalog, render as render_normal_mechanics
 
 ROOT = Path(__file__).resolve().parents[1]
 rom = (ROOT/'build/smashbrothers.us.z64').read_bytes()
@@ -50,6 +51,8 @@ for name,format in (('sFTCustomGrabJointMap','B'),('sFTCustomGrabTimings','H')):
 elf,sections,symbols = read_elf(ROOT/'build/smashbrothers.us.elf','>')
 assert symbols['syTaskmanMalloc'][0]==0x80004980,'Main SDK/controller/ucode address layout moved'
 assert symbols['osMemSize'][0]==0x80000318,'Incorrect IPL memory-size parameter'
+for name in ('sSC1PTrainingModeStatusBuffer','sSCVSBattleStatusBuffer'):
+    assert symbols[name][1] == 512*8, 'Full-roster donor asset cache: '+name
 assert (ROOT/'src/ft/ftspecialtiming.generated.inc').read_text()==render_specials()
 special_words=[v for donor,motion,duration,cycle,_ in special_catalog()
                for v in (donor,motion,0,0,duration,4 if cycle else 0)]
@@ -116,6 +119,12 @@ for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMain
              'mnPlayers1PTrainingInitVars','gSCManagerCharBuilderTrainingSlot',
              'mnOptionBuilderTestInTraining','mnOptionInitVars','mnOptionFuncStart',
              'ftCommonAttackAirLwProcHit','ftCommonAttackAirLwProcUpdate',
+             'ftMainCharBuilderGetNormalKind','ftMainCharBuilderGetAttackAttributes',
+             'ftMainCharBuilderGetJabStatus','ftMainCharBuilderHasNormalMotion',
+             'ftMainCharBuilderGetNormalSphere','ftMainCharBuilderUsesNormalTransN',
+             'ftCommonAttack11ProcUpdate','ftCommonAttack12ProcUpdate','ftCommonAttack13ProcUpdate',
+             'ftCommonAttack100StartCheckInterruptCommon','ftCommonAttack100LoopProcUpdate',
+             'ftCommonAttackS4SetStatus','ftCommonAttackS4ProcUpdate',
              'sc1PTrainingModeUpdateViewOption','mnOptionBuilderAssignPlayer','mnOptionBuilderRun',*opening_names,*metadata):
     value,length,index = symbols[name]
     assert length>0,name
@@ -171,6 +180,20 @@ def loaded_words(address, count):
         if typ == 1 and vaddr <= address and address+count*4 <= vaddr+filesz:
             return struct.unpack_from('>'+str(count)+'I',rom,paddr+address-vaddr)
     return None
+assert (ROOT/'src/ft/ftnormalmechanics.generated.inc').read_text()==render_normal_mechanics()
+assert loaded_words(symbols['sFTCharBuilderYoshiInterruptThrows'][0],14) == tuple(v & 0xffffffff for row in yoshi_interrupt_throws() for v in row), 'Linked Egg Lay interrupted-release descriptors'
+normal_records=loaded_words(symbols['sFTCustomNormalMechanics'][0],12*33*4)
+assert normal_records is not None
+for donor,row in enumerate(normal_mechanics_catalog()):
+    for variant,c in enumerate(row):
+        travel,socket,count,flags=normal_records[(donor*33+variant)*4:(donor*33+variant+1)*4]
+        assert (count,flags)==(c['duration']+1,c['flags']),(donor,variant,'normal mechanics metadata')
+        for pointer,points in ((travel,c['travel']),(socket,c['socket'])):
+            if not points:assert pointer==0;continue
+            words=loaded_words(pointer,len(points)*3);assert words is not None
+            expected=struct.pack('>'+str(len(points)*3)+'f',*(v for p in points for v in p))
+            assert struct.pack('>'+str(len(words))+'I',*words)==expected,(donor,variant,'normal source travel/socket')
+print('PASS: 396 normal movement records, source root travel and Ness bat sockets match generated donor data in the ROM.')
 for name in ('sFTCharBuilderProjectileOffsets','sFTCharBuilderProjectileDonors'):
     words=host_words(name)
     assert struct.pack('>'+str(len(words))+'I',*words) in rom, name

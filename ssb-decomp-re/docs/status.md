@@ -34,7 +34,7 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Mario body + DK straight forward-smash poses and donor hitbox trajectory.
 - [ ] Rendered emulator acceptance of all three pilot combinations.
 - [x] Fox/DK/Luigi/Falcon normal attack families and angled tilt/smash variants on Mario.
-- [x] Aerial landing poses and body-supported Falcon/Luigi third jabs on Mario.
+- [x] Aerial landing poses and Falcon/Luigi third jabs on Mario.
 - [x] Shared compact clips, native-source orientation checks and guarded per-player playback.
 - [x] ROM CPU pose checks for all four Mario donors, editor returns and four-Mario VS loading (null rendering).
 - [x] All twelve donor normal catalogs on all twelve bodies through shared curves and semantic rig maps.
@@ -49,13 +49,13 @@ See the [full-roster animation guide](full-roster-animations.md); the
 
 - [x] Original donor hitbox trajectories on every body for all normal attacks.
 - [x] Grounded/aerial/angled/weapon/tail and multihit trajectory coverage.
-- [x] Landing collision paths and body-supported third/rapid-jab timelines.
+- [x] Landing collision paths and donor third/rapid-jab timelines on every body.
 - [x] Shared descriptor/fallback catalog for scripts, trajectories and verification.
 - [x] Native geometry checks for all 293 resolved timelines and all 396 registry entries.
 - [x] Body-size/facing compensation, per-player lifecycle and repeated-loop tests.
 - [ ] Rendered acceptance of collision paths, actual hits/shields and interruptions.
 - [ ] Validate donor startup, active frames, recovery, landing lag and hitlag in-game.
-- [ ] Full donor jab-chain capabilities and repeat-hit/refresh behavior.
+- [x] Full donor jab-chain availability, input buffering, rapid thresholds and repeat-hit/refresh timelines on all original bodies.
 - [x] Every donor normal attack animation on every body.
 - [ ] Every donor special and grab/throw animation on every body.
 - [ ] Paired donor throw/victim choreography, including special capture mechanics.
@@ -65,7 +65,7 @@ See the [full-roster animation guide](full-roster-animations.md); the
 - [x] Falcon Punch/Pound hitbox and movement adapters.
 - [x] DK/Samus charging, Link boomerang return/catch and Yoshi capture; Kirby copy excluded.
 - [ ] Donor neutral animations across bodies.
-- [ ] Donor movement/physics and move-specific behavior such as Link's down-air bounce.
+- [x] Donor normal movement/physics, angled/landing availability, Link down-air bounce and Ness bat reflection.
 - [ ] Complete, consistent special-move compatibility across all bodies.
 - [ ] Save creator presets across ROM restarts; currently they last for the running session.
 - [ ] Wider emulator and real-hardware testing.
@@ -132,3 +132,20 @@ distinction, independent player counters and vanilla resets outside Training.
 - [ ] Rendered projectile/contact, sleep/capture, slopes/ledges, interruption and visual acceptance across bodies and stages.
 - [ ] Retarget borrowed special animations and mesh-specific effects; port this batch to Remix.
 - [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.
+
+## Decomp normal-specific mechanics
+
+- [x] Donor jab chains, third/rapid phases, source buffering and native loop endings on every original body.
+- [x] Pikachu repeats jab one; Jigglypuff retains its native two-jab chain (unused rapid descriptors stay unreachable).
+- [x] Link down-air contact bounce, fastfall cancellation, late-hit rewind and 30-tick rehit timer.
+- [x] Ness bat source reflector window/socket/size and native projectile/item reflection.
+- [x] Donor root travel, attack traction/air physics, angled variants and landing fallback selection.
+- [x] Donor part-intangibility timing mapped onto native body hurtboxes; body script suppression and status cleanup.
+- [x] Training/VS 512-entry asset caches for all twelve selected donor files.
+- [x] Production callbacks on twelve donors/bodies/four slots and all 396 movement records verified in the ROM.
+- [x] Live ROM CPU checks: all 144 donor/body jab chains, twelve controlled Link
+  bounces and Ness bat reflections, editor returns and four assigned VS builds.
+- [ ] Rendered contact/shield, slopes/edges, interruptions and part-intangibility acceptance.
+- [ ] Normal mesh/effect/audio polish and port this mechanics batch to Remix.
+
+See the [normal mechanics guide](normal-mechanics.md).

@@ -121,11 +121,16 @@ static s32 testCustomMove(void)
                         CHECK(fp.joints[(word >> 13) & 127] != NULL);
                     }
                     else if (opcode == nFTMotionEventSetAttackCollOffset) count = 2;
+                    else if (opcode == nFTMotionEventSetHitStatusPartID)
+                    {
+                        CHECK(((word >> 19) & 127) < FTPARTS_JOINT_NUM_MAX);
+                        CHECK(fp.joints[(word >> 19) & 127] != NULL);
+                    }
                     else if (opcode == nFTMotionEventGoto)
                     {
                         count = 2; CHECK(script[cursor + 1] == (uintptr_t)script);
                     }
-                    else CHECK(opcode == nFTMotionEventEnd || opcode == nFTMotionEventSyncWait || opcode == nFTMotionEventAsyncWait || opcode == nFTMotionEventPauseScript || opcode == nFTMotionEventClearAttackCollAll || opcode == nFTMotionEventClearAttackCollID || opcode == nFTMotionEventRefreshAttackCollID || opcode == nFTMotionEventSetAttackCollDamage || opcode == nFTMotionEventSetAttackCollSize || opcode == nFTMotionEventSetAttackCollSoundLevel || opcode == nFTMotionEventSetFlag1);
+                    else CHECK(opcode == nFTMotionEventEnd || opcode == nFTMotionEventSyncWait || opcode == nFTMotionEventAsyncWait || opcode == nFTMotionEventPauseScript || opcode == nFTMotionEventClearAttackCollAll || opcode == nFTMotionEventClearAttackCollID || opcode == nFTMotionEventRefreshAttackCollID || opcode == nFTMotionEventSetAttackCollDamage || opcode == nFTMotionEventSetAttackCollSize || opcode == nFTMotionEventSetAttackCollSoundLevel || opcode == nFTMotionEventSetFlag1 || opcode == nFTMotionEventSetHitStatusPartAll);
                     cursor += count;
                 }
                 CHECK(cursor == sFTCustomMoves[donor][i].word_count);

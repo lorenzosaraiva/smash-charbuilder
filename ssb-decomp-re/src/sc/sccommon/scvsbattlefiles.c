@@ -8,7 +8,8 @@
 // // // // // // // // // // // //
 
 // 0x8018E480
-LBFileNode sSCVSBattleStatusBuffer[100];
+/* Four mixed builds can reference every original donor's gameplay assets. */
+LBFileNode sSCVSBattleStatusBuffer[512];
 
 // 0x8018E7A0
 LBFileNode sSCVSBattleForceStatusBuffer[7];

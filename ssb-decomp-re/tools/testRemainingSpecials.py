@@ -31,6 +31,9 @@ source=r'''
 #include <wp/weapon.h>
 #include <it/item.h>
 #include <ft/ftcustommove.h>
+static FTAttributes* ftCustomNormalGetAttributes(FTStruct *fp) { return fp->attr; }
+static sb32 ftCustomNormalGetTravel(FTStruct *fp,Vec3f *v,sb32 ground) { return FALSE; }
+
 #include <sc/scene.h>
 static SCBattleState battle;SCBattleState *gSCManagerBattleState=&battle;
 MPGroundData *gMPCollisionGroundData;

@@ -1,7 +1,7 @@
 #include <ft/fighter.h>
 #include <it/item.h>
 
-extern sb32 ftMainHasCustomAttackTimeline(FTStruct*);
+#include <sc/scene.h>
 
 // // // // // // // // // // // //
 //                               //
@@ -14,8 +14,8 @@ void ftCommonAttackAirLwProcHit(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if (((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink)) &&
-        (ftMainHasCustomAttackTimeline(fp) == FALSE))
+    if ((ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackDAir) == nFTKindLink) ||
+        (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackDAir) == nFTKindNLink))
     {
         ftParamClearAttackCollAll(fighter_gobj);
 
@@ -36,8 +36,8 @@ void ftCommonAttackAirLwProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if (((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink)) &&
-        (ftMainHasCustomAttackTimeline(fp) == FALSE))
+    if ((ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackDAir) == nFTKindLink) ||
+        (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackDAir) == nFTKindNLink))
     {
         if (fp->status_vars.common.attackair.rehit_timer != 0)
         {
@@ -64,7 +64,7 @@ void ftCommonAttackAirProcMap(GObj *fighter_gobj)
         {
             s32 landing_motion_id = nFTCommonMotionLandingAirStart - nFTCommonMotionAttackAirStart;
 
-            if (fp->data->mainmotion->motion_desc[fp->motion_id + landing_motion_id].anim_file_id != 0)
+            if (ftMainCharBuilderHasNormalMotion(fp, nSCCharBuilderAttackNAir + fp->status_id - nFTCommonStatusAttackAirN, fp->motion_id + landing_motion_id))
             {
                 ftCommonLandingAirSetStatus(fighter_gobj);
             }

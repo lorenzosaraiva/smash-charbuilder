@@ -161,8 +161,10 @@ static const ftMotionCommand sFTCustomMarioAttackS4Lw[] = {
 };
 static const ftMotionCommand sFTCustomMarioAttackHi4[] = {
     ftMotionCommandWaitAsync(7),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,19,1,0,380,0,100,0,85,120,0,3,0,2,0,26),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandWait(5),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
@@ -490,10 +492,12 @@ static const ftMotionCommand sFTCustomFoxAttackS4Lw[] = {
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomFoxAttackHi4[] = {
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandWaitAsync(6),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointKneeR,16,1,0,200,0,0,0,80,140,0,3,0,2,1,25),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointKneeR,16,1,0,280,70,0,0,80,140,0,3,0,2,1,25),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointKneeR,8,1,0,200,0,0,0,361,100,0,3,0,1,1,10),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointKneeR,8,1,0,230,70,0,0,361,100,0,3,0,1,1,10),
     ftMotionCommandWait(12),
@@ -502,11 +506,16 @@ static const ftMotionCommand sFTCustomFoxAttackHi4[] = {
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomFoxAttackLw4[] = {
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointKneeR,3),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointKneeL,3),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointKneeR,3),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointKneeL,3),
     ftMotionCommandWaitAsync(4),
     ftMotionCommandWaitAsync(6),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointKneeR,14,1,0,260,90,0,0,25,80,0,3,0,2,1,35),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointKneeL,14,1,0,260,90,0,0,25,80,0,3,0,2,1,35),
     ftMotionCommandWait(1),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandWait(4),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandWaitAsync(28),
@@ -838,11 +847,15 @@ static const ftMotionCommand sFTCustomDonkeyAttackS4Lw[] = {
 static const ftMotionCommand sFTCustomDonkeyAttackHi4[] = {
     ftMotionCommandWait(4),
     ftMotionCommandWait(10),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointElbowR,3),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointElbowL,3),
     ftMotionCommandWait(2),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointElbowR,21,1,0,480,180,0,0,90,100,0,3,4,2,0,40),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointElbowL,21,1,0,480,180,0,0,90,100,0,3,4,2,0,40),
     ftMotionCommandWait(3),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandWait(20),
     ftMotionCommandEnd()
 };
@@ -1483,8 +1496,10 @@ static const ftMotionCommand sFTCustomLuigiAttackS4Lw[] = {
 };
 static const ftMotionCommand sFTCustomLuigiAttackHi4[] = {
     ftMotionCommandWaitAsync(7),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,19,1,0,400,0,100,0,85,120,0,3,0,2,0,26),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandWait(5),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
@@ -2087,10 +2102,12 @@ static const ftMotionCommand sFTCustomYoshiAttack12[] = {
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomYoshiAttackDash[] = {
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandWait(8),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointRoot,12,1,0,280,0,180,280,361,100,0,3,0,2,1,10),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointRoot,12,1,0,200,0,180,30,361,100,0,3,0,2,1,10),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandSetAttackCollDamage(0,8),
     ftMotionCommandSetAttackCollDamage(1,8),
     ftMotionCommandWait(10),
@@ -2140,25 +2157,31 @@ static const ftMotionCommand sFTCustomYoshiAttackS3Lw[] = {
 };
 static const ftMotionCommand sFTCustomYoshiAttackHi3F[] = {
     ftMotionCommandWait(7),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,12,1,0,390,0,40,40,100,100,130,3,0,1,1,0),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,12,1,0,240,0,0,0,100,100,130,3,0,1,1,0),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomYoshiAttackHi3[] = {
     ftMotionCommandWait(7),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,12,1,0,390,0,40,40,100,100,130,3,0,1,1,0),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,12,1,0,240,0,0,0,100,100,130,3,0,1,1,0),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomYoshiAttackHi3B[] = {
     ftMotionCommandWait(7),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,12,1,0,390,0,40,40,100,100,130,3,0,1,1,0),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,12,1,0,240,0,0,0,100,100,130,3,0,1,1,0),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
@@ -2172,51 +2195,62 @@ static const ftMotionCommand sFTCustomYoshiAttackLw3[] = {
 };
 static const ftMotionCommand sFTCustomYoshiAttackS4Hi[] = {
     ftMotionCommandWaitAsync(6),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,18,1,0,380,0,40,40,361,100,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,18,1,0,200,0,0,0,361,100,0,3,0,2,1,20),
     ftMotionCommandWait(7),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomYoshiAttackS4HiS[] = {
     ftMotionCommandWaitAsync(6),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,18,1,0,380,0,40,40,361,100,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,18,1,0,200,0,0,0,361,100,0,3,0,2,1,20),
     ftMotionCommandWait(7),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomYoshiAttackS4[] = {
     ftMotionCommandWaitAsync(6),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,18,1,0,380,0,40,40,361,100,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,18,1,0,200,0,0,0,361,100,0,3,0,2,1,20),
     ftMotionCommandWait(7),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomYoshiAttackS4LwS[] = {
     ftMotionCommandWaitAsync(6),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,18,1,0,380,0,40,40,361,100,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,18,1,0,200,0,0,0,361,100,0,3,0,2,1,20),
     ftMotionCommandWait(7),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomYoshiAttackS4Lw[] = {
     ftMotionCommandWaitAsync(6),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,18,1,0,380,0,40,40,361,100,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,18,1,0,200,0,0,0,361,100,0,3,0,2,1,20),
     ftMotionCommandWait(7),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomYoshiAttackHi4[] = {
     ftMotionCommandWaitAsync(6),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandWaitAsync(9),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,18,1,0,320,0,40,40,361,118,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,18,1,0,210,0,0,0,361,118,0,3,0,2,1,20),
@@ -2227,6 +2261,7 @@ static const ftMotionCommand sFTCustomYoshiAttackHi4[] = {
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,18,1,0,320,0,40,40,80,110,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointTorso,18,1,0,210,0,0,0,80,110,0,3,0,2,1,20),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
 };
@@ -2924,6 +2959,8 @@ static const ftMotionCommand sFTCustomKirbyAttackHi4[] = {
 };
 static const ftMotionCommand sFTCustomKirbyAttackLw4[] = {
     ftMotionCommandWaitAsync(7),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointFootR,3),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointFootL,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointFootR,18,1,0,300,180,0,0,34,75,0,3,0,2,1,30),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointFootL,18,1,0,300,180,0,0,34,75,0,3,0,2,1,30),
     ftMotionCommandMakeAttackColl(2,0,nFTCustomJointTorso,18,1,0,180,0,0,0,35,75,0,3,0,2,1,30),
@@ -2932,6 +2969,7 @@ static const ftMotionCommand sFTCustomKirbyAttackLw4[] = {
     ftMotionCommandSetAttackCollDamage(1,10),
     ftMotionCommandSetAttackCollDamage(2,10),
     ftMotionCommandWait(16),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandWaitAsync(34),
     ftMotionCommandEnd()
@@ -3831,6 +3869,8 @@ static const ftMotionCommand sFTCustomPurinAttackHi4[] = {
 };
 static const ftMotionCommand sFTCustomPurinAttackLw4[] = {
     ftMotionCommandWaitAsync(7),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointFootR,3),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointFootL,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointFootR,16,1,0,260,200,0,0,40,100,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointFootL,16,1,0,260,200,0,0,40,100,0,3,0,2,1,20),
     ftMotionCommandMakeAttackColl(2,0,nFTCustomJointTorso,16,1,0,160,100,0,0,40,100,0,3,0,2,1,20),
@@ -3839,6 +3879,7 @@ static const ftMotionCommand sFTCustomPurinAttackLw4[] = {
     ftMotionCommandSetAttackCollDamage(1,10),
     ftMotionCommandSetAttackCollDamage(2,10),
     ftMotionCommandWait(16),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandWaitAsync(34),
     ftMotionCommandEnd()
@@ -4062,26 +4103,32 @@ static const ftMotionCommand sFTCustomNessAttackS3Lw[] = {
 };
 static const ftMotionCommand sFTCustomNessAttackHi3F[] = {
     ftMotionCommandWaitAsync(5),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHandL,7,1,0,370,0,0,0,100,40,0,3,0,1,0,80),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointHandR,7,1,0,370,0,0,0,100,40,0,3,0,1,0,80),
     ftMotionCommandWait(15),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomNessAttackHi3[] = {
     ftMotionCommandWaitAsync(5),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHandL,7,1,0,370,0,0,0,100,40,0,3,0,1,0,80),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointHandR,7,1,0,370,0,0,0,100,40,0,3,0,1,0,80),
     ftMotionCommandWait(15),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomNessAttackHi3B[] = {
     ftMotionCommandWaitAsync(5),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHandL,7,1,0,370,0,0,0,100,40,0,3,0,1,0,80),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointHandR,7,1,0,370,0,0,0,100,40,0,3,0,1,0,80),
     ftMotionCommandWait(15),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomNessAttackLw3[] = {
@@ -4098,55 +4145,65 @@ static const ftMotionCommand sFTCustomNessAttackS4Hi[] = {
     ftMotionCommandWaitAsync(2),
     ftMotionCommandWaitAsync(10),
     ftMotionCommandWaitAsync(16),
+    ftMotionCommandSetFlag1(1),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHandR,18,1,0,200,0,280,0,361,65,0,3,0,2,7,70),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointHandR,18,1,0,180,0,60,0,361,65,0,3,0,2,7,70),
     ftMotionCommandWait(4),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetFlag1(0),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomNessAttackS4HiS[] = {
     ftMotionCommandWaitAsync(2),
     ftMotionCommandWaitAsync(10),
     ftMotionCommandWaitAsync(16),
+    ftMotionCommandSetFlag1(1),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHandR,18,1,0,200,0,280,0,361,65,0,3,0,2,7,70),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointHandR,18,1,0,180,0,60,0,361,65,0,3,0,2,7,70),
     ftMotionCommandWait(4),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetFlag1(0),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomNessAttackS4[] = {
     ftMotionCommandWaitAsync(2),
     ftMotionCommandWaitAsync(10),
     ftMotionCommandWaitAsync(16),
+    ftMotionCommandSetFlag1(1),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHandR,18,1,0,200,0,280,0,361,65,0,3,0,2,7,70),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointHandR,18,1,0,180,0,60,0,361,65,0,3,0,2,7,70),
     ftMotionCommandWait(4),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetFlag1(0),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomNessAttackS4LwS[] = {
     ftMotionCommandWaitAsync(2),
     ftMotionCommandWaitAsync(10),
     ftMotionCommandWaitAsync(16),
+    ftMotionCommandSetFlag1(1),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHandR,18,1,0,200,0,280,0,361,65,0,3,0,2,7,70),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointHandR,18,1,0,180,0,60,0,361,65,0,3,0,2,7,70),
     ftMotionCommandWait(4),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetFlag1(0),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomNessAttackS4Lw[] = {
     ftMotionCommandWaitAsync(2),
     ftMotionCommandWaitAsync(10),
     ftMotionCommandWaitAsync(16),
+    ftMotionCommandSetFlag1(1),
     ftMotionCommandWaitAsync(18),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHandR,18,1,0,200,0,280,0,361,65,0,3,0,2,7,70),
     ftMotionCommandMakeAttackColl(1,0,nFTCustomJointHandR,18,1,0,180,0,60,0,361,65,0,3,0,2,7,70),
     ftMotionCommandWait(4),
     ftMotionCommandClearAttackCollAll(),
+    ftMotionCommandSetFlag1(0),
     ftMotionCommandEnd()
 };
 static const ftMotionCommand sFTCustomNessAttackHi4[] = {
@@ -4211,8 +4268,10 @@ static const ftMotionCommand sFTCustomNessAttackAirB[] = {
 };
 static const ftMotionCommand sFTCustomNessAttackAirHi[] = {
     ftMotionCommandWaitAsync(8),
+    ftMotionCommandSetHitStatusPartID(nFTCustomJointHead,3),
     ftMotionCommandMakeAttackColl(0,0,nFTCustomJointHead,15,1,0,350,0,100,0,85,110,0,3,0,2,0,10),
     ftMotionCommandWait(4),
+    ftMotionCommandSetHitStatusPartAll(1),
     ftMotionCommandWait(5),
     ftMotionCommandClearAttackCollAll(),
     ftMotionCommandEnd()
@@ -4284,7 +4343,7 @@ const FTCustomMoveDefinition sFTCustomMoves[12][33] = {
     { { sFTCustomKirbyAttack11, ARRAY_COUNT(sFTCustomKirbyAttack11), 18, 1 }, { sFTCustomKirbyAttack12, ARRAY_COUNT(sFTCustomKirbyAttack12), 20, 1 }, { sFTCustomKirbyAttackDash, ARRAY_COUNT(sFTCustomKirbyAttackDash), 40, 0 }, { sFTCustomKirbyAttackS3Hi, ARRAY_COUNT(sFTCustomKirbyAttackS3Hi), 28, 0 }, { sFTCustomKirbyAttackS3HiS, ARRAY_COUNT(sFTCustomKirbyAttackS3HiS), 28, 0 }, { sFTCustomKirbyAttackS3, ARRAY_COUNT(sFTCustomKirbyAttackS3), 28, 0 }, { sFTCustomKirbyAttackS3LwS, ARRAY_COUNT(sFTCustomKirbyAttackS3LwS), 28, 0 }, { sFTCustomKirbyAttackS3Lw, ARRAY_COUNT(sFTCustomKirbyAttackS3Lw), 28, 0 }, { sFTCustomKirbyAttackHi3F, ARRAY_COUNT(sFTCustomKirbyAttackHi3F), 18, 0 }, { sFTCustomKirbyAttackHi3, ARRAY_COUNT(sFTCustomKirbyAttackHi3), 18, 0 }, { sFTCustomKirbyAttackHi3B, ARRAY_COUNT(sFTCustomKirbyAttackHi3B), 18, 0 }, { sFTCustomKirbyAttackLw3, ARRAY_COUNT(sFTCustomKirbyAttackLw3), 30, 1 }, { sFTCustomKirbyAttackS4Hi, ARRAY_COUNT(sFTCustomKirbyAttackS4Hi), 40, 0 }, { sFTCustomKirbyAttackS4HiS, ARRAY_COUNT(sFTCustomKirbyAttackS4HiS), 40, 0 }, { sFTCustomKirbyAttackS4, ARRAY_COUNT(sFTCustomKirbyAttackS4), 40, 0 }, { sFTCustomKirbyAttackS4LwS, ARRAY_COUNT(sFTCustomKirbyAttackS4LwS), 40, 0 }, { sFTCustomKirbyAttackS4Lw, ARRAY_COUNT(sFTCustomKirbyAttackS4Lw), 40, 0 }, { sFTCustomKirbyAttackHi4, ARRAY_COUNT(sFTCustomKirbyAttackHi4), 50, 0 }, { sFTCustomKirbyAttackLw4, ARRAY_COUNT(sFTCustomKirbyAttackLw4), 56, 0 }, { sFTCustomKirbyAttackAirN, ARRAY_COUNT(sFTCustomKirbyAttackAirN), 50, 1 }, { sFTCustomKirbyAttackAirF, ARRAY_COUNT(sFTCustomKirbyAttackAirF), 40, 1 }, { sFTCustomKirbyAttackAirB, ARRAY_COUNT(sFTCustomKirbyAttackAirB), 40, 1 }, { sFTCustomKirbyAttackAirHi, ARRAY_COUNT(sFTCustomKirbyAttackAirHi), 80, 1 }, { sFTCustomKirbyAttackAirLw, ARRAY_COUNT(sFTCustomKirbyAttackAirLw), 50, 1 }, { sFTCustomKirbyLandingAirN, ARRAY_COUNT(sFTCustomKirbyLandingAirN), 16, 0 }, { sFTCustomKirbyLandingAirF, ARRAY_COUNT(sFTCustomKirbyLandingAirF), 30, 0 }, { sFTCustomKirbyLandingAirB, ARRAY_COUNT(sFTCustomKirbyLandingAirB), 30, 0 }, { sFTCustomKirbyLandingAirHi, ARRAY_COUNT(sFTCustomKirbyLandingAirHi), 20, 0 }, { sFTCustomKirbyLandingAirLw, ARRAY_COUNT(sFTCustomKirbyLandingAirLw), 37, 0 }, { sFTCustomKirbyJab3, ARRAY_COUNT(sFTCustomKirbyJab3), 18, 1 }, { sFTCustomKirbyRapidStart, ARRAY_COUNT(sFTCustomKirbyRapidStart), 8, 1 }, { sFTCustomKirbyRapidLoop, ARRAY_COUNT(sFTCustomKirbyRapidLoop), 25, 3 }, { sFTCustomKirbyRapidEnd, ARRAY_COUNT(sFTCustomKirbyRapidEnd), 10, 1 } },
     { { sFTCustomPikachuAttack11, ARRAY_COUNT(sFTCustomPikachuAttack11), 34, 1 }, { sFTCustomPikachuAttack12, ARRAY_COUNT(sFTCustomPikachuAttack12), 34, 1 }, { sFTCustomPikachuAttackDash, ARRAY_COUNT(sFTCustomPikachuAttackDash), 57, 0 }, { sFTCustomPikachuAttackS3Hi, ARRAY_COUNT(sFTCustomPikachuAttackS3Hi), 30, 0 }, { sFTCustomPikachuAttackS3HiS, ARRAY_COUNT(sFTCustomPikachuAttackS3HiS), 30, 0 }, { sFTCustomPikachuAttackS3, ARRAY_COUNT(sFTCustomPikachuAttackS3), 30, 0 }, { sFTCustomPikachuAttackS3LwS, ARRAY_COUNT(sFTCustomPikachuAttackS3LwS), 30, 0 }, { sFTCustomPikachuAttackS3Lw, ARRAY_COUNT(sFTCustomPikachuAttackS3Lw), 30, 0 }, { sFTCustomPikachuAttackHi3F, ARRAY_COUNT(sFTCustomPikachuAttackHi3F), 26, 0 }, { sFTCustomPikachuAttackHi3, ARRAY_COUNT(sFTCustomPikachuAttackHi3), 26, 0 }, { sFTCustomPikachuAttackHi3B, ARRAY_COUNT(sFTCustomPikachuAttackHi3B), 26, 0 }, { sFTCustomPikachuAttackLw3, ARRAY_COUNT(sFTCustomPikachuAttackLw3), 26, 1 }, { sFTCustomPikachuAttackS4Hi, ARRAY_COUNT(sFTCustomPikachuAttackS4Hi), 62, 0 }, { sFTCustomPikachuAttackS4HiS, ARRAY_COUNT(sFTCustomPikachuAttackS4HiS), 62, 0 }, { sFTCustomPikachuAttackS4, ARRAY_COUNT(sFTCustomPikachuAttackS4), 62, 0 }, { sFTCustomPikachuAttackS4LwS, ARRAY_COUNT(sFTCustomPikachuAttackS4LwS), 62, 0 }, { sFTCustomPikachuAttackS4Lw, ARRAY_COUNT(sFTCustomPikachuAttackS4Lw), 62, 0 }, { sFTCustomPikachuAttackHi4, ARRAY_COUNT(sFTCustomPikachuAttackHi4), 40, 0 }, { sFTCustomPikachuAttackLw4, ARRAY_COUNT(sFTCustomPikachuAttackLw4), 54, 0 }, { sFTCustomPikachuAttackAirN, ARRAY_COUNT(sFTCustomPikachuAttackAirN), 37, 1 }, { sFTCustomPikachuAttackAirF, ARRAY_COUNT(sFTCustomPikachuAttackAirF), 40, 1 }, { sFTCustomPikachuAttackAirB, ARRAY_COUNT(sFTCustomPikachuAttackAirB), 42, 1 }, { sFTCustomPikachuAttackAirHi, ARRAY_COUNT(sFTCustomPikachuAttackAirHi), 34, 1 }, { sFTCustomPikachuAttackAirLw, ARRAY_COUNT(sFTCustomPikachuAttackAirLw), 45, 1 }, { sFTCustomPikachuLandingAirN, ARRAY_COUNT(sFTCustomPikachuLandingAirN), 16, 0 }, { sFTCustomPikachuLandingAirF, ARRAY_COUNT(sFTCustomPikachuLandingAirF), 16, 0 }, { sFTCustomPikachuLandingAirB, ARRAY_COUNT(sFTCustomPikachuLandingAirB), 16, 0 }, { sFTCustomPikachuLandingAirHi, ARRAY_COUNT(sFTCustomPikachuLandingAirHi), 8, 0 }, { sFTCustomPikachuLandingAirLw, ARRAY_COUNT(sFTCustomPikachuLandingAirLw), 40, 0 }, { sFTCustomPikachuJab3, ARRAY_COUNT(sFTCustomPikachuJab3), 34, 1 }, { sFTCustomPikachuRapidStart, ARRAY_COUNT(sFTCustomPikachuRapidStart), 0, 1 }, { sFTCustomPikachuRapidLoop, ARRAY_COUNT(sFTCustomPikachuRapidLoop), 34, 3 }, { sFTCustomPikachuRapidEnd, ARRAY_COUNT(sFTCustomPikachuRapidEnd), 0, 1 } },
     { { sFTCustomPurinAttack11, ARRAY_COUNT(sFTCustomPurinAttack11), 18, 1 }, { sFTCustomPurinAttack12, ARRAY_COUNT(sFTCustomPurinAttack12), 20, 1 }, { sFTCustomPurinAttackDash, ARRAY_COUNT(sFTCustomPurinAttackDash), 40, 0 }, { sFTCustomPurinAttackS3Hi, ARRAY_COUNT(sFTCustomPurinAttackS3Hi), 28, 0 }, { sFTCustomPurinAttackS3HiS, ARRAY_COUNT(sFTCustomPurinAttackS3HiS), 28, 0 }, { sFTCustomPurinAttackS3, ARRAY_COUNT(sFTCustomPurinAttackS3), 28, 0 }, { sFTCustomPurinAttackS3LwS, ARRAY_COUNT(sFTCustomPurinAttackS3LwS), 28, 0 }, { sFTCustomPurinAttackS3Lw, ARRAY_COUNT(sFTCustomPurinAttackS3Lw), 28, 0 }, { sFTCustomPurinAttackHi3F, ARRAY_COUNT(sFTCustomPurinAttackHi3F), 24, 0 }, { sFTCustomPurinAttackHi3, ARRAY_COUNT(sFTCustomPurinAttackHi3), 24, 0 }, { sFTCustomPurinAttackHi3B, ARRAY_COUNT(sFTCustomPurinAttackHi3B), 24, 0 }, { sFTCustomPurinAttackLw3, ARRAY_COUNT(sFTCustomPurinAttackLw3), 40, 1 }, { sFTCustomPurinAttackS4Hi, ARRAY_COUNT(sFTCustomPurinAttackS4Hi), 40, 0 }, { sFTCustomPurinAttackS4HiS, ARRAY_COUNT(sFTCustomPurinAttackS4HiS), 40, 0 }, { sFTCustomPurinAttackS4, ARRAY_COUNT(sFTCustomPurinAttackS4), 40, 0 }, { sFTCustomPurinAttackS4LwS, ARRAY_COUNT(sFTCustomPurinAttackS4LwS), 40, 0 }, { sFTCustomPurinAttackS4Lw, ARRAY_COUNT(sFTCustomPurinAttackS4Lw), 40, 0 }, { sFTCustomPurinAttackHi4, ARRAY_COUNT(sFTCustomPurinAttackHi4), 55, 0 }, { sFTCustomPurinAttackLw4, ARRAY_COUNT(sFTCustomPurinAttackLw4), 55, 0 }, { sFTCustomPurinAttackAirN, ARRAY_COUNT(sFTCustomPurinAttackAirN), 50, 1 }, { sFTCustomPurinAttackAirF, ARRAY_COUNT(sFTCustomPurinAttackAirF), 40, 1 }, { sFTCustomPurinAttackAirB, ARRAY_COUNT(sFTCustomPurinAttackAirB), 40, 1 }, { sFTCustomPurinAttackAirHi, ARRAY_COUNT(sFTCustomPurinAttackAirHi), 40, 1 }, { sFTCustomPurinAttackAirLw, ARRAY_COUNT(sFTCustomPurinAttackAirLw), 50, 1 }, { sFTCustomPurinLandingAirN, ARRAY_COUNT(sFTCustomPurinLandingAirN), 16, 0 }, { sFTCustomPurinLandingAirF, ARRAY_COUNT(sFTCustomPurinLandingAirF), 30, 0 }, { sFTCustomPurinLandingAirB, ARRAY_COUNT(sFTCustomPurinLandingAirB), 30, 0 }, { sFTCustomPurinLandingAirHi, ARRAY_COUNT(sFTCustomPurinLandingAirHi), 20, 0 }, { sFTCustomPurinLandingAirLw, ARRAY_COUNT(sFTCustomPurinLandingAirLw), 8, 0 }, { sFTCustomPurinJab3, ARRAY_COUNT(sFTCustomPurinJab3), 18, 1 }, { sFTCustomPurinRapidStart, ARRAY_COUNT(sFTCustomPurinRapidStart), 8, 1 }, { sFTCustomPurinRapidLoop, ARRAY_COUNT(sFTCustomPurinRapidLoop), 25, 3 }, { sFTCustomPurinRapidEnd, ARRAY_COUNT(sFTCustomPurinRapidEnd), 10, 1 } },
-    { { sFTCustomNessAttack11, ARRAY_COUNT(sFTCustomNessAttack11), 18, 1 }, { sFTCustomNessAttack12, ARRAY_COUNT(sFTCustomNessAttack12), 20, 1 }, { sFTCustomNessAttackDash, ARRAY_COUNT(sFTCustomNessAttackDash), 37, 0 }, { sFTCustomNessAttackS3Hi, ARRAY_COUNT(sFTCustomNessAttackS3Hi), 35, 0 }, { sFTCustomNessAttackS3HiS, ARRAY_COUNT(sFTCustomNessAttackS3HiS), 35, 0 }, { sFTCustomNessAttackS3, ARRAY_COUNT(sFTCustomNessAttackS3), 35, 0 }, { sFTCustomNessAttackS3LwS, ARRAY_COUNT(sFTCustomNessAttackS3LwS), 35, 0 }, { sFTCustomNessAttackS3Lw, ARRAY_COUNT(sFTCustomNessAttackS3Lw), 35, 0 }, { sFTCustomNessAttackHi3F, ARRAY_COUNT(sFTCustomNessAttackHi3F), 35, 0 }, { sFTCustomNessAttackHi3, ARRAY_COUNT(sFTCustomNessAttackHi3), 35, 0 }, { sFTCustomNessAttackHi3B, ARRAY_COUNT(sFTCustomNessAttackHi3B), 35, 0 }, { sFTCustomNessAttackLw3, ARRAY_COUNT(sFTCustomNessAttackLw3), 14, 1 }, { sFTCustomNessAttackS4Hi, ARRAY_COUNT(sFTCustomNessAttackS4Hi), 50, 0 }, { sFTCustomNessAttackS4HiS, ARRAY_COUNT(sFTCustomNessAttackS4HiS), 50, 0 }, { sFTCustomNessAttackS4, ARRAY_COUNT(sFTCustomNessAttackS4), 50, 0 }, { sFTCustomNessAttackS4LwS, ARRAY_COUNT(sFTCustomNessAttackS4LwS), 50, 0 }, { sFTCustomNessAttackS4Lw, ARRAY_COUNT(sFTCustomNessAttackS4Lw), 50, 0 }, { sFTCustomNessAttackHi4, ARRAY_COUNT(sFTCustomNessAttackHi4), 40, 0 }, { sFTCustomNessAttackLw4, ARRAY_COUNT(sFTCustomNessAttackLw4), 55, 0 }, { sFTCustomNessAttackAirN, ARRAY_COUNT(sFTCustomNessAttackAirN), 40, 1 }, { sFTCustomNessAttackAirF, ARRAY_COUNT(sFTCustomNessAttackAirF), 42, 1 }, { sFTCustomNessAttackAirB, ARRAY_COUNT(sFTCustomNessAttackAirB), 40, 1 }, { sFTCustomNessAttackAirHi, ARRAY_COUNT(sFTCustomNessAttackAirHi), 42, 1 }, { sFTCustomNessAttackAirLw, ARRAY_COUNT(sFTCustomNessAttackAirLw), 30, 1 }, { sFTCustomNessLandingAirN, ARRAY_COUNT(sFTCustomNessLandingAirN), 14, 0 }, { sFTCustomNessLandingAirF, ARRAY_COUNT(sFTCustomNessLandingAirF), 16, 0 }, { sFTCustomNessLandingAirB, ARRAY_COUNT(sFTCustomNessLandingAirB), 15, 0 }, { sFTCustomNessLandingAirHi, ARRAY_COUNT(sFTCustomNessLandingAirHi), 7, 0 }, { sFTCustomNessLandingAirLw, ARRAY_COUNT(sFTCustomNessLandingAirLw), 7, 0 }, { sFTCustomNessJab3, ARRAY_COUNT(sFTCustomNessJab3), 25, 1 }, { sFTCustomNessRapidStart, ARRAY_COUNT(sFTCustomNessRapidStart), 0, 1 }, { sFTCustomNessRapidLoop, ARRAY_COUNT(sFTCustomNessRapidLoop), 18, 3 }, { sFTCustomNessRapidEnd, ARRAY_COUNT(sFTCustomNessRapidEnd), 0, 1 } },
+    { { sFTCustomNessAttack11, ARRAY_COUNT(sFTCustomNessAttack11), 18, 1 }, { sFTCustomNessAttack12, ARRAY_COUNT(sFTCustomNessAttack12), 20, 1 }, { sFTCustomNessAttackDash, ARRAY_COUNT(sFTCustomNessAttackDash), 37, 0 }, { sFTCustomNessAttackS3Hi, ARRAY_COUNT(sFTCustomNessAttackS3Hi), 35, 0 }, { sFTCustomNessAttackS3HiS, ARRAY_COUNT(sFTCustomNessAttackS3HiS), 35, 0 }, { sFTCustomNessAttackS3, ARRAY_COUNT(sFTCustomNessAttackS3), 35, 0 }, { sFTCustomNessAttackS3LwS, ARRAY_COUNT(sFTCustomNessAttackS3LwS), 35, 0 }, { sFTCustomNessAttackS3Lw, ARRAY_COUNT(sFTCustomNessAttackS3Lw), 35, 0 }, { sFTCustomNessAttackHi3F, ARRAY_COUNT(sFTCustomNessAttackHi3F), 35, 0 }, { sFTCustomNessAttackHi3, ARRAY_COUNT(sFTCustomNessAttackHi3), 35, 0 }, { sFTCustomNessAttackHi3B, ARRAY_COUNT(sFTCustomNessAttackHi3B), 35, 0 }, { sFTCustomNessAttackLw3, ARRAY_COUNT(sFTCustomNessAttackLw3), 14, 1 }, { sFTCustomNessAttackS4Hi, ARRAY_COUNT(sFTCustomNessAttackS4Hi), 50, 1 }, { sFTCustomNessAttackS4HiS, ARRAY_COUNT(sFTCustomNessAttackS4HiS), 50, 1 }, { sFTCustomNessAttackS4, ARRAY_COUNT(sFTCustomNessAttackS4), 50, 1 }, { sFTCustomNessAttackS4LwS, ARRAY_COUNT(sFTCustomNessAttackS4LwS), 50, 1 }, { sFTCustomNessAttackS4Lw, ARRAY_COUNT(sFTCustomNessAttackS4Lw), 50, 1 }, { sFTCustomNessAttackHi4, ARRAY_COUNT(sFTCustomNessAttackHi4), 40, 0 }, { sFTCustomNessAttackLw4, ARRAY_COUNT(sFTCustomNessAttackLw4), 55, 0 }, { sFTCustomNessAttackAirN, ARRAY_COUNT(sFTCustomNessAttackAirN), 40, 1 }, { sFTCustomNessAttackAirF, ARRAY_COUNT(sFTCustomNessAttackAirF), 42, 1 }, { sFTCustomNessAttackAirB, ARRAY_COUNT(sFTCustomNessAttackAirB), 40, 1 }, { sFTCustomNessAttackAirHi, ARRAY_COUNT(sFTCustomNessAttackAirHi), 42, 1 }, { sFTCustomNessAttackAirLw, ARRAY_COUNT(sFTCustomNessAttackAirLw), 30, 1 }, { sFTCustomNessLandingAirN, ARRAY_COUNT(sFTCustomNessLandingAirN), 14, 0 }, { sFTCustomNessLandingAirF, ARRAY_COUNT(sFTCustomNessLandingAirF), 16, 0 }, { sFTCustomNessLandingAirB, ARRAY_COUNT(sFTCustomNessLandingAirB), 15, 0 }, { sFTCustomNessLandingAirHi, ARRAY_COUNT(sFTCustomNessLandingAirHi), 7, 0 }, { sFTCustomNessLandingAirLw, ARRAY_COUNT(sFTCustomNessLandingAirLw), 7, 0 }, { sFTCustomNessJab3, ARRAY_COUNT(sFTCustomNessJab3), 25, 1 }, { sFTCustomNessRapidStart, ARRAY_COUNT(sFTCustomNessRapidStart), 0, 1 }, { sFTCustomNessRapidLoop, ARRAY_COUNT(sFTCustomNessRapidLoop), 18, 3 }, { sFTCustomNessRapidEnd, ARRAY_COUNT(sFTCustomNessRapidEnd), 0, 1 } },
 };
 static const s32 sFTCustomMotionIDs[] = { nFTCommonMotionAttack11, nFTCommonMotionAttack12, nFTCommonMotionAttackDash, nFTCommonMotionAttackS3Hi, nFTCommonMotionAttackS3HiS, nFTCommonMotionAttackS3, nFTCommonMotionAttackS3LwS, nFTCommonMotionAttackS3Lw, nFTCommonMotionAttackHi3F, nFTCommonMotionAttackHi3, nFTCommonMotionAttackHi3B, nFTCommonMotionAttackLw3, nFTCommonMotionAttackS4Hi, nFTCommonMotionAttackS4HiS, nFTCommonMotionAttackS4, nFTCommonMotionAttackS4LwS, nFTCommonMotionAttackS4Lw, nFTCommonMotionAttackHi4, nFTCommonMotionAttackLw4, nFTCommonMotionAttackAirN, nFTCommonMotionAttackAirF, nFTCommonMotionAttackAirB, nFTCommonMotionAttackAirHi, nFTCommonMotionAttackAirLw, nFTCommonMotionLandingAirN, nFTCommonMotionLandingAirF, nFTCommonMotionLandingAirB, nFTCommonMotionLandingAirHi, nFTCommonMotionLandingAirLw };
 static const s32 sFTCustomBodyExtraMotionIDs[12][4] = {

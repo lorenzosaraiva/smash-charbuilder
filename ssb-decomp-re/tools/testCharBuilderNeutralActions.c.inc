@@ -110,8 +110,11 @@ static s32 testCharBuilderNeutralActions(void)
         ftMainCharBuilderResetNeutralAll(); CHECK(ftMainCharBuilderTrySpecialN(&g));
         for (tick = 0; tick < 18; tick++) testActionTick(&g);
         CHECK(fp.is_catchstatus && fp.proc_capture == ftMainCharBuilderYoshiCapture);
+        CHECK(fp.throw_desc == sFTCharBuilderYoshiInterruptThrows);
+        CHECK(fp.throw_desc[1].damage == 5 && fp.throw_desc[1].angle == 361 && fp.throw_desc[1].knockback_scale == 100);
         fp.search_gobj = &v; fp.proc_catch(&g); fp.proc_capture(&v, &g);
         CHECK(fp.catch_gobj == &v && victim.capture_gobj == &g && fp.capture_immune_mask == FTCATCHKIND_MASK_ALL);
+        CHECK(fp.throw_desc == sFTCharBuilderYoshiInterruptThrows);
         before = sTestEggs;
         for (tick = 0; tick < 30; tick++)
         {

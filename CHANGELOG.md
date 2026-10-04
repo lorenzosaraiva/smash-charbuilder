@@ -1,5 +1,31 @@
 # Changes
 
+## 0.1.12 - 2026-10-04: Donor normal mechanics
+
+- Make jab-chain availability, buffering and third/rapid phases follow the donor
+  on every original body. Preserve native thresholds, loop/end timing and refresh
+  groups; Pikachu repeats jab one and Puff's unused rapid states stay unreachable.
+- Add Link down-air's original contact bounce, frame-35 rewind, 30-tick rehit
+  timer and fastfall cancellation to borrowed down-air.
+- Add Ness bat reflection with source frame-16/22 window, socket/size and native
+  projectile/item ownership behavior. Foreign normals suppress body gameplay events.
+- Use donor root travel, normal traction/air physics, angled variant availability,
+  aerial landing selection and mapped part-intangibility timing. Body hurtbox
+  shapes, jump inventory and movement outside attacks stay native.
+- Keep donor normal collision scripts valid on bodies missing a corresponding
+  joint, including Samus's absent right hand; donor world paths keep the hitbox.
+- Expand Training/VS asset caches to 512 entries so all twelve normal donor
+  attribute/model files can load without the old cache-full freeze.
+- Skip the resource-heavy intro with 4 MB memory so menus can show the existing
+  8 MB gameplay requirement instead of overflowing before that guard.
+- Keep native release setup for customized grabs. Fix an Egg Lay interruption
+  crash by installing the original donor escape-damage descriptors on every body.
+- Add production normal callback, source data and linked-ROM checks. Live CPU
+  tests pass for all 144 donor/body jab chains, twelve Link bounces/Ness bat
+  reflections, editor returns and four assigned VS builds (null rendering).
+  Rendered contact/stage/interrupt acceptance and visual/audio polish remain open.
+  This milestone is decomp only; Remix is unchanged.
+
 ## 0.1.11 - 2026-10-04: Remaining special mechanics
 
 - Add source paths/events/sockets for bombs, eggs, Thunder, Fire Fox, Quick

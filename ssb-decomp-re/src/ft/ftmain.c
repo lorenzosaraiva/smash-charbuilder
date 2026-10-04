@@ -6,7 +6,9 @@
 #include <sys/controller.h>
 #define FTCHARBUILDER_NEUTRAL_EXTENDED
 #define FTCHARBUILDER_SPECIAL_MECHANICS
+#define FTCHARBUILDER_NORMAL_MECHANICS
 #include "ftcustommove.c.inc"
+#include "ftnormalmechanics.c.inc"
 #include "fttrainingcombo.c.inc"
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -216,7 +218,7 @@ FTAttributes* ftMainCharBuilderGetSpecialAttributes(FTStruct *fp)
 {
     s32 donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
     FTData *data;
-    if (donor < 0) return fp->attr;
+    if (donor < 0) return ftCustomNormalGetAttributes(fp);
     data = dFTManagerDataFiles[donor];
     if ((data == NULL) || (data->p_file_main == NULL) || (*data->p_file_main == NULL)) return fp->attr;
     return lbRelocGetFileData(FTAttributes*, *data->p_file_main, data->o_attributes);
@@ -278,7 +280,8 @@ sb32 ftMainCharBuilderGetSpecialTravel(FTStruct *fp, Vec3f *out, sb32 ground)
     const FTCharBuilderSpecialPath *path = ftMainCharBuilderActivePath(fp);
     s32 frame;
     f32 angle, x, y;
-    if ((path == NULL) || (path->travel == NULL)) return FALSE;
+    if (path == NULL) return ftCustomNormalGetTravel(fp, out, ground);
+    if (path->travel == NULL) return FALSE;
     frame = (s32)ftCustomMoveGetClock(fp)->frame;
     if (frame < 0) frame = 0;
     if (frame >= path->trajectory.count) frame = path->trajectory.count - 1;
@@ -5202,6 +5205,8 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     s32 charbuilder_donor;
     s32 charbuilder_motion_id;
     sb32 is_charbuilder_special_status;
+    sb32 is_charbuilder_jab_status;
+    s32 charbuilder_jab_donor;
     void *event_script_ptr;
     void *charbuilder_script_ptr;
     DObjDesc *dobjdesc;
@@ -5239,6 +5244,8 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     charbuilder_donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
     charbuilder_motion_id = -1;
     is_charbuilder_special_status = FALSE;
+    is_charbuilder_jab_status = (status_id >= FTCUSTOMMOVE_JAB_STATUS_START) && (status_id <= FTCUSTOMMOVE_JAB_STATUS_END);
+    charbuilder_jab_donor = ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab);
 
     status_flags = fp->stat_flags;
 
@@ -5413,6 +5420,12 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         opening_struct = &D_ovl1_80390BE8;
         status_struct_id = status_id - FTSTAT_OPENING2_START;
     }
+    else if (is_charbuilder_jab_status != FALSE)
+    {
+        status_struct = dFTMainSpecialStatusDescs[charbuilder_jab_donor];
+        status_struct_id = status_id - FTCUSTOMMOVE_JAB_STATUS_START;
+        if (sFTCustomBodyExtraMotionIDs[charbuilder_jab_donor][0] < 0) status_struct_id--;
+    }
     else if (status_id >= nFTCommonStatusSpecialStart)
     {
         if (charbuilder_donor != -1)
@@ -5479,10 +5492,16 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             /* Temporary safe pose: no body special root movement or phase replay. */
             motion_id = (fp->ga == nMPKineticsAir) ? nFTCommonMotionFall : nFTCommonMotionWait;
         }
+        else if (is_charbuilder_jab_status != FALSE) motion_id = nFTCommonMotionAttack11;
         else motion_id = charbuilder_motion_id;
 
-        fp->motion_id = motion_id;
+        fp->motion_id = (is_charbuilder_jab_status != FALSE) ?
+            sFTCustomBodyExtraMotionIDs[charbuilder_jab_donor][status_id - FTCUSTOMMOVE_JAB_STATUS_START] : motion_id;
         script_array = fp->data->mainmotion;
+        /* Donor angle/landing variants can exist even when this body lacks a clip. */
+        if ((ftCustomMoveGetDefinition(fp) != NULL) &&
+            (script_array->motion_desc[motion_id].anim_file_id == 0))
+            motion_id = (fp->ga == nMPKineticsAir) ? nFTCommonMotionFall : nFTCommonMotionWait;
     }
     else
     {
@@ -5685,6 +5704,10 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             fp->motion_scripts[0][0].p_script = fp->motion_scripts[1][0].p_script = NULL;
         if (ftCustomMoveGetDefinition(fp) != NULL)
         {
+            /* Normals own their gameplay events. Grabs retain native release
+             * descriptors and capture choreography in the body's script. */
+            if (ftCustomMoveIsNormalDefinition(ftCustomMoveGetDefinition(fp)))
+                fp->motion_scripts[0][0].p_script = fp->motion_scripts[1][0].p_script = NULL;
             fp->motion_scripts[0][2].p_script = fp->motion_scripts[1][2].p_script =
                 ftCustomMoveBuildScript(fp, ftCustomMoveGetDefinition(fp));
             fp->motion_scripts[0][2].script_wait = fp->motion_scripts[1][2].script_wait = anim_frame;

@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+#include <sc/scene.h>
 #include <it/item.h>
 #include <reloc_data.h>
 
@@ -14,11 +15,12 @@ void ftCommonAttackS4ProcUpdate(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     Vec3f offset;
 
-    switch (fp->fkind)
+    switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackFSmash))
     {
     case nFTKindPikachu:
     case nFTKindNPikachu:
-        if ((fp->motion_vars.flags.flag1 != 0) || (fp->motion_vars.flags.flag2 != 0))
+        if (((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindNPikachu)) &&
+            ((fp->motion_vars.flags.flag1 != 0) || (fp->motion_vars.flags.flag2 != 0)))
         {
             fp->status_vars.common.attack4.gfx_id += syUtilsRandIntRange((FTCOMMON_ATTACKS4_THUNDERSHOCK_GFX_ID_MAX - 1)) + 1;
 
@@ -51,7 +53,7 @@ void ftCommonAttackS4ProcUpdate(GObj *fighter_gobj)
                 fp->is_effect_attach = TRUE;
             }
         }
-        // Fallthrough, should break here for efficiency
+        break; /* Pikachu effects must never activate Ness's reflector. */
     case nFTKindNess:
     case nFTKindNNess:
         if ((fp->motion_vars.flags.flag1 != 0) && !(fp->is_reflect))
@@ -74,7 +76,7 @@ void ftCommonAttackS4SetStatus(GObj *fighter_gobj)
     f32 stick_angle;
     s32 status_id;
 
-    if (fp->data->mainmotion->motion_desc[nFTCommonMotionAttackS4HiS].anim_file_id != 0)
+    if (ftMainCharBuilderHasNormalMotion(fp, nSCCharBuilderAttackFSmash, nFTCommonMotionAttackS4HiS))
     {
         stick_angle = ftParamGetStickAngleRads(fp);
 
@@ -84,7 +86,7 @@ void ftCommonAttackS4SetStatus(GObj *fighter_gobj)
                     (stick_angle < FTCOMMON_ATTACKS4_5ANGLE_LWS_MIN) ? nFTCommonStatusAttackS4LwS :
                                                                        nFTCommonStatusAttackS4;
     }
-    else if (fp->data->mainmotion->motion_desc[nFTCommonMotionAttackS4Hi].anim_file_id != 0)
+    else if (ftMainCharBuilderHasNormalMotion(fp, nSCCharBuilderAttackFSmash, nFTCommonMotionAttackS4Hi))
     {
         stick_angle = ftParamGetStickAngleRads(fp);
 
@@ -94,7 +96,7 @@ void ftCommonAttackS4SetStatus(GObj *fighter_gobj)
     }
     else status_id = nFTCommonStatusAttackS4;
 
-    switch (fp->fkind)
+    switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackFSmash))
     {
     case nFTKindPikachu:
     case nFTKindNPikachu:
@@ -110,7 +112,7 @@ void ftCommonAttackS4SetStatus(GObj *fighter_gobj)
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 
-    switch (fp->fkind)
+    switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackFSmash))
     {
     case nFTKindPikachu:
     case nFTKindNPikachu:

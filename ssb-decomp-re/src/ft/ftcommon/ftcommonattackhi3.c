@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+#include <sc/scene.h>
 
 // // // // // // // // // // // //
 //                               //
@@ -13,7 +14,7 @@ void ftCommonAttackHi3SetStatus(GObj *fighter_gobj)
     f32 stick_angle;
     s32 status_id;
 
-    if (fp->data->mainmotion->motion_desc[nFTCommonMotionAttackHi3F].anim_file_id != 0)
+    if (ftMainCharBuilderHasNormalMotion(fp, nSCCharBuilderAttackUTilt, nFTCommonMotionAttackHi3F))
     {
         stick_angle = syUtilsArcTan2(fp->input.pl.stick_range.y, fp->input.pl.stick_range.x * fp->lr);
 

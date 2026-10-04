@@ -9,7 +9,7 @@ full original roster. Rendered emulator and real-hardware acceptance remain pend
 - All twelve donors on all eleven foreign original-roster bodies.
 - All thirteen normal families: jab, dash, three tilts, three smashes, five aerials.
 - Available angled variants, weapon and tail geometry, phased hits and multihits.
-- Donor landing collisions and third/rapid-jab phases in states supported by the body.
+- Donor landing collisions and third/rapid-jab phases on every original body.
 - Original radius, damage, angle, knockback, collision masks, groups, refresh and
   create/change/clear operations remain in the donor scripts.
 - Startup, active windows and recovery use the donor clock; hitlag pauses it.
@@ -20,11 +20,11 @@ aliases, landing fallbacks, empty setup/end definitions and repeated-jab fallbac
 fallback as the event compiler. Vanilla/unassigned fighters and donor-equals-body
 choices keep native behavior.
 
-Most visible animations remain the body's own. Only Mario + Falcon down-air,
-Fox straight forward tilt and DK straight forward smash have retargeted poses.
-The body keeps its hurtboxes, locomotion and state-specific mechanics. A donor
-choice does not add an unsupported jab-chain state, Link's bounce, Ness's bat
-reflector, special effects, or a new grab/capture implementation.
+All original donor normal poses are retargeted to all twelve bodies. The body
+keeps its hurtbox geometry and movement outside attacks. Donor jab chains,
+Link's bounce, Ness's bat field and normal travel/physics are now implemented;
+see [normal mechanics](normal-mechanics.md). Special effects and tether/paired
+grab choreography remain separate work.
 
 ## Try it
 

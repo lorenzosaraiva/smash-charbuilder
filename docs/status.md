@@ -71,7 +71,7 @@ adapters remain legacy; their fidelity is a separate future effort.
 
 - [x] Shared collision trajectories independent of visible body animations.
 - [x] Complete normal-attack path catalog for all twelve donors and bodies,
-  including angled variants, landing collisions and body-supported jab phases.
+  including angled variants, landing collisions and donor jab phases on every body.
 - [x] Direct donor/variant registry with shared trajectory data and loop handling.
 - [x] Original animation/matrix checks for every resolved donor timeline.
 - [ ] In-game comparison with vanilla donors, including contact and interruptions.
@@ -89,8 +89,9 @@ Also track multihits/refresh rules, jab chains, aerial landing lag, hitlag and
 interruption cleanup, donor movement and move-specific behavior such as Link's
 down-air bounce. Body hurtboxes remain the initial policy.
 
-Normal trajectory generation is complete. Visible animations, donor-specific
-mechanics and in-game acceptance remain on the detailed checklist.
+Normal trajectories, retargeted poses and donor-specific gameplay mechanics are
+implemented. Rendered acceptance, visual polish and the Remix mechanics port
+remain on the detailed checklist.
 
 ## Decomp Up/Down B timing fixes
 
@@ -126,3 +127,20 @@ mechanics and in-game acceptance remain on the detailed checklist.
 - [ ] Rendered projectile/contact, sleep/capture, slopes/ledges, interruption and visual acceptance across bodies and stages.
 - [ ] Retarget borrowed special animations and mesh-specific effects; port this batch to Remix.
 - [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.
+
+## Decomp normal-specific mechanics
+
+- [x] Donor jab chains, third/rapid phases, source buffering and native loop endings on every original body.
+- [x] Pikachu repeats jab one; Jigglypuff retains its native two-jab chain (unused rapid descriptors stay unreachable).
+- [x] Link down-air contact bounce, fastfall cancellation, late-hit rewind and 30-tick rehit timer.
+- [x] Ness bat source reflector window/socket/size and native projectile/item reflection.
+- [x] Donor root travel, attack traction/air physics, angled variants and landing fallback selection.
+- [x] Donor part-intangibility timing mapped onto native body hurtboxes; body script suppression and status cleanup.
+- [x] Training/VS 512-entry asset caches for all twelve selected donor files.
+- [x] Production callbacks on twelve donors/bodies/four slots and all 396 movement records verified in the ROM.
+- [x] Live ROM CPU checks: all 144 donor/body jab chains, twelve controlled Link
+  bounces and Ness bat reflections, editor returns and four assigned VS builds.
+- [ ] Rendered contact/shield, slopes/edges, interruptions and part-intangibility acceptance.
+- [ ] Normal mesh/effect/audio polish and port this mechanics batch to Remix.
+
+See the [normal mechanics guide](../ssb-decomp-re/docs/normal-mechanics.md).

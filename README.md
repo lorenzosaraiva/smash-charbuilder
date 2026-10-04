@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.11 (experimental)** | **Last updated: 2026-10-04**
+**Project version: 0.1.12 (experimental)** | **Last updated: 2026-10-04**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -13,11 +13,11 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
 
-The latest decomp update adds the remaining special mechanics: bombs, eggs,
-Thunder, Fire Fox, Quick Attack, Reflector, PSI Magnet, Sing, Falcon Dive,
-Final Cutter and Stone. Original timing and gameplay come first; special poses
-and rendered playtesting still need work. See
-[controls and checks](ssb-decomp-re/docs/remaining-special-mechanics.md).
+The latest decomp update adds donor jab chains on every body, Link's down-air
+bounce, Ness's bat reflection, and donor normal movement/angle/landing behavior.
+See [normal mechanics and checks](ssb-decomp-re/docs/normal-mechanics.md).
+The [remaining special mechanics](ssb-decomp-re/docs/remaining-special-mechanics.md)
+are also implemented; special poses and rendered playtesting still need work.
 
 **[How to play Character Lab](ssb-decomp-re/docs/playing.md)** |
 **[Done / not done](docs/status.md)** | **[Build guide](docs/building.md)** |

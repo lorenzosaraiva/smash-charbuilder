@@ -60,6 +60,9 @@ source=r'''
 #include <ft/fighter.h>
 #include <wp/weapon.h>
 #include <ft/ftcustommove.h>
+static FTAttributes* ftCustomNormalGetAttributes(FTStruct *fp) { return fp->attr; }
+static sb32 ftCustomNormalGetTravel(FTStruct *fp,Vec3f *v,sb32 ground) { return FALSE; }
+
 #define FTCHARBUILDER_NEUTRAL_EXTENDED
 #define FTPURIN_SPECIALLW_STATUS_FLAGS (FTSTATUS_PRESERVE_TEXTUREPART | FTSTATUS_PRESERVE_HITSTATUS | FTSTATUS_PRESERVE_COLANIM)
 typedef struct FTCustomCollisionTrajectory { const FTCustomCollisionFrame *frames; s32 first,count,loop_start,loop_period; } FTCustomCollisionTrajectory;

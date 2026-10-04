@@ -458,7 +458,7 @@ static sb32 ftManagerCharBuilderSpecialLwNeedsMain(s32 fkind)
 // 0x800D782C
 void ftManagerSetupFilesPlayablesAll(void)
 {
-    s32 i;
+    s32 i, j, donor;
 
     for (i = 0; i <= nFTKindPlayableEnd; i++)
     {
@@ -469,6 +469,13 @@ void ftManagerSetupFilesPlayablesAll(void)
     {
         if (ftManagerIsCharBuilderSlotActive(i) != FALSE)
         {
+            for (j = 0; j < nSCCharBuilderAttackGrab; j++)
+            {
+                donor = gSCManagerCharBuilderSlots[i].attacks[j];
+                if ((donor >= 0) && (donor < 12)) ftManagerSetupFileMainKind(donor);
+            }
+            if (gSCManagerCharBuilderSlots[i].attacks[nSCCharBuilderAttackFSmash] == nFTKindNess)
+                ftManagerSetupFilesMotionKind(nFTKindNess);
             ftManagerSetupFilesMotionKind(gSCManagerCharBuilderSlots[i].special_hi);
             ftManagerSetupFilesMotionKind(gSCManagerCharBuilderSlots[i].special_lw);
             if (ftManagerCharBuilderSpecialHiNeedsMain(gSCManagerCharBuilderSlots[i].special_hi) != FALSE)

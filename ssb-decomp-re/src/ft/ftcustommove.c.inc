@@ -1,4 +1,4 @@
-/* Compiled in ftmain's overlay; no runtime donor file/script is needed. */
+/* Generated events compiled in ftmain's overlay; no runtime donor scripts needed. */
 #include <ft/ftcustommove.h>
 #include "ftcustommoves.generated.inc"
 #include "ftcustomgrabs.generated.inc"
@@ -72,7 +72,15 @@ static f32 ftCustomMoveAdvanceClock(FTStruct *fp, f32 native_frame)
 #else
     clock->frame += 1.0F;
 #endif
-    if (clock->flags & FTCUSTOMMOVE_FLAG_LOOP) return native_frame;
+    if (clock->flags & FTCUSTOMMOVE_FLAG_LOOP)
+    {
+#ifdef FTCHARBUILDER_NORMAL_MECHANICS
+        f32 phase = clock->frame - ((s32)(clock->frame / clock->duration) * clock->duration);
+        return (phase > 0.0F) ? phase : 0.001F;
+#else
+        return native_frame;
+#endif
+    }
     if (clock->flags & FTCUSTOMMOVE_FLAG_SPECIAL_CYCLE)
     {
         if (clock->frame >= clock->duration) clock->frame = 0.0F;
@@ -143,6 +151,13 @@ static const FTCustomMoveDefinition* ftCustomMoveGetDefinition(FTStruct *fp)
     SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
     s32 attack, i, donor;
     if (slot == NULL) return NULL;
+    if ((fp->status_id >= FTCUSTOMMOVE_JAB_STATUS_START) && (fp->status_id <= FTCUSTOMMOVE_JAB_STATUS_END))
+    {
+        donor = slot->attacks[nSCCharBuilderAttackJab];
+        if ((donor >= 0) && (donor < 12) && (donor != fp->fkind))
+            return &sFTCustomMoves[donor][29 + fp->status_id - FTCUSTOMMOVE_JAB_STATUS_START];
+        return NULL;
+    }
     if ((fp->status_id == nFTCommonStatusCatch) && (fp->motion_id == nFTCommonMotionCatch))
     {
         donor = slot->attacks[nSCCharBuilderAttackGrab];
@@ -213,6 +228,11 @@ static void ftCustomMoveApplyThrow(FTStruct *fp)
     fp->throw_desc = sFTCustomThrowDescs[fp->player];
 }
 
+static sb32 ftCustomMoveIsNormalDefinition(const FTCustomMoveDefinition *move)
+{
+    return (move != NULL) && (((u32)move - (u32)sFTCustomMoves) < sizeof(sFTCustomMoves));
+}
+
 static ftMotionCommand* ftCustomMoveBuildScript(FTStruct *fp, const FTCustomMoveDefinition *move)
 {
     ftMotionCommand *script;
@@ -235,6 +255,13 @@ static ftMotionCommand* ftCustomMoveBuildScript(FTStruct *fp, const FTCustomMove
             count = 5;
             if (((word >> 23) & 7) >= ARRAY_COUNT(fp->attack_colls)) goto invalid;
             joint_id = ftCustomJointResolve(fp, (word >> 13) & 127);
+#ifdef FTCHARBUILDER_NORMAL_MECHANICS
+            /* Donor world paths own normal geometry. Some bodies have no
+             * corresponding joint (Samus has a cannon, no right hand). */
+            if ((joint_id == -1) && (((word >> 13) & 127) < nFTCustomJointEnumCount) &&
+                ftCustomMoveIsNormalDefinition(move) &&
+                (fp->joints[nFTPartsJointTopN] != NULL)) joint_id = nFTPartsJointTopN;
+#endif
             if (joint_id == -1) goto invalid;
             word = (word & ~(127 << 13)) | (joint_id << 13);
             break;
@@ -249,10 +276,16 @@ static ftMotionCommand* ftCustomMoveBuildScript(FTStruct *fp, const FTCustomMove
             if (((word >> 23) & 7) >= ARRAY_COUNT(fp->attack_colls)) goto invalid;
             break;
         case nFTMotionEventClearAttackCollAll:
+        case nFTMotionEventSetHitStatusPartAll:
         case nFTMotionEventSyncWait:
         case nFTMotionEventAsyncWait:
         case nFTMotionEventPauseScript:
         case nFTMotionEventEnd:
+            break;
+        case nFTMotionEventSetHitStatusPartID:
+            joint_id = ftCustomJointResolve(fp, (word >> 19) & 127);
+            if (joint_id == -1) goto invalid;
+            word = (word & ~(127 << 19)) | (joint_id << 19);
             break;
         case nFTMotionEventSetFlag1:
             if (!(move->flags & FTCUSTOMMOVE_FLAG_FLAG1)) goto invalid;

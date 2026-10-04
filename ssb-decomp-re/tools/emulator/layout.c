@@ -22,6 +22,15 @@ const u32 sSceneSmokeFighterLayout[] = {
 
 #include <wp/weapon.h>
 #include <it/item.h>
+const u32 sSceneSmokeNormalLayout[] = {
+    __builtin_offsetof(FTStruct, proc_hit), __builtin_offsetof(FTStruct, motion_vars.flags.flag1),
+    __builtin_offsetof(FTStruct, status_vars.common.attackair.rehit_timer),
+    __builtin_offsetof(FTStruct, pkind), __builtin_offsetof(FTStruct, special_coll),
+    __builtin_offsetof(WPStruct, reflect_gobj), __builtin_offsetof(struct FTPhysics, vel_ground),
+    __builtin_offsetof(SCCommonData, training_com_fkind),
+    __builtin_offsetof(FTStruct, coll_data.pos_prev), __builtin_offsetof(FTStruct, coll_data.floor_line_id)
+};
+const FTStruct sSceneSmokeReflectFlags = { .is_reflect = TRUE };
 const u32 sSceneSmokeMechanicLayout[] = {
     __builtin_offsetof(GObj, link_next), __builtin_offsetof(WPStruct, owner_gobj),
     __builtin_offsetof(FTStruct, item_gobj), __builtin_offsetof(ITStruct, kind),

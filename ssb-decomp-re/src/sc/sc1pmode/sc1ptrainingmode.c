@@ -169,7 +169,8 @@ SCBattleState sSC1PTrainingModeBattleState;
 SC1PTrainingModeMenu sSC1PTrainingModeMenu;
 
 // 0x80190C40
-LBFileNode sSC1PTrainingModeStatusBuffer[100];
+/* Mixed normal/special donors can load all twelve source attribute/model files. */
+LBFileNode sSC1PTrainingModeStatusBuffer[512];
 
 // 0x80190F60
 LBFileNode sSC1PTrainingModeForceStatusBuffer[7];

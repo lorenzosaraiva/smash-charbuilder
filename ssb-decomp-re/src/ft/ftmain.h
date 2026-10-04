@@ -9,6 +9,12 @@
 #include <gm/gmdef.h>
 
 extern FTAttributes* ftMainCharBuilderGetSpecialAttributes(FTStruct *fp);
+extern s32 ftMainCharBuilderGetNormalKind(FTStruct *fp, s32 attack);
+extern FTAttributes* ftMainCharBuilderGetAttackAttributes(FTStruct *fp, s32 attack);
+extern s32 ftMainCharBuilderGetJabStatus(FTStruct *fp, s32 native_status, s32 phase);
+extern sb32 ftMainCharBuilderHasNormalMotion(FTStruct *fp, s32 attack, s32 motion);
+extern sb32 ftMainCharBuilderGetNormalSphere(FTStruct *fp, Mtx44f matrix, Vec3f *size);
+extern sb32 ftMainCharBuilderUsesNormalTransN(FTStruct *fp);
 extern FTAttributes* ftMainCharBuilderGetSuperJumpAttributes(FTStruct *fp);
 extern f32 ftMainCharBuilderGetSpecialTravelAngle(FTStruct *fp);
 extern sb32* ftMainCharBuilderGetTornadoExpend(FTStruct *fp);

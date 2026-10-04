@@ -127,3 +127,8 @@ Fire Fox, Quick Attack, Reflector, PSI Magnet, Sing, Falcon Dive, Final Cutter
 and Stone. Hold B for egg charge/Reflector/PSI Magnet; change direction for
 Quick Attack's second zip; tap B after Stone's minimum hold to release. Special
 poses remain temporary. See [controls and checks](remaining-special-mechanics.md).
+
+Normal donors also choose their complete jab chains, angled variants and landing
+behavior. Link down-air bounces on contact; Ness forward-smash reflects during
+its native bat window. Donor movement/attack physics and part-intangibility
+timing follow the move. See [controls and checks](normal-mechanics.md).

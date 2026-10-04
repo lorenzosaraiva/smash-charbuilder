@@ -1,6 +1,6 @@
 # Normal animations on all twelve bodies
 
-Introduced in version 0.1.7; current version 0.1.11, updated 2026-10-04. This expansion is decomp only; the separate
+Introduced in version 0.1.7; current version 0.1.12, updated 2026-10-04. This expansion is decomp only; the separate
 Remix preview retains its previous animation coverage.
 
 All twelve original donors now supply normal attack poses to all twelve bodies.
@@ -12,9 +12,9 @@ Enable Training's HITBOX view to compare the visible motion and donor reach.
 
 The shared descriptor catalog resolves 293 distinct clips and all 396
 donor/variant entries: jabs, dash attacks, tilts, smashes, five aerials, angled
-variants, aerial landings and body-supported third/rapid jab phases. Empty
-rapid start/end descriptors remain empty. Selecting a donor does not add jab
-states that the body cannot enter. Matching body/donor attacks remain native.
+variants, aerial landings and donor third/rapid jab phases. Empty
+rapid start/end descriptors remain empty. Donor chains now work independently of
+body support; see [normal mechanics](normal-mechanics.md). Matching body/donor attacks remain native.
 The three established Mario float pilots stay unchanged.
 
 All normal hitbox paths, sizes, damage, knockback, active frames and recovery

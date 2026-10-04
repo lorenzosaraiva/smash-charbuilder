@@ -37,7 +37,7 @@ Codes overlap; S can coexist with C/K/L/H because collision parameters alone can
 
 **Simple source timelines: 134/230 unique descriptor-selected script entries (58.3%).** Angled variants and distinct byte-offset entries are separate; duplicate references are counted once per fighter. This measures simple source timelines, not runtime coverage or complete donor-move portability. The expanded runtime now has joint maps for all twelve bodies and collision timelines for all 156 families. See `custom-move-roster.md` for implemented behavior and limits.
 
-The generic layer supports phased hits, clears, refreshes, group transitions, offset mutations, landing collisions and collision data in body-supported jab states. The full trajectory converter now evaluates original donor weapon/tail/limb paths on all bodies, independently of semantic event maps. Recovery follows the donor clock. Body animations, hurtboxes, movement and state callbacks remain native. A donor does not add new jab-chain states, Link down-air bounce, Ness bat reflector, Pikachu effects or Kirby rapid-jab accessories to another body.
+The generic layer supports phased hits, clears, refreshes, group transitions, offset mutations, landing collisions and donor jab phases on every body. The full trajectory converter now evaluates original donor weapon/tail/limb paths on all bodies, independently of semantic event maps. Recovery follows the donor clock. Donor normal poses, jab chains, Link bounce, Ness bat reflection and normal travel/physics are adapted on every original body. Body hurtbox shapes remain native. See [normal mechanics](normal-mechanics.md); mesh effects and accessory polish remain deferred.
 
 ## Per-script evidence
 

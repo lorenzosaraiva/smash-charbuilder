@@ -6,7 +6,7 @@ Uses an isolated configuration/save directory; never touches a running emulator.
 See docs/neutral-specials.md. The native API is documented at
 https://mupen64plus.org/wiki/index.php/Mupen64Plus_v2.0_Core_Front-End
 """
-import argparse, ctypes as C, threading, time, subprocess, struct
+import argparse, ctypes as C, threading, time, subprocess, struct, re
 from pathlib import Path
 from elfData import read_elf
 from auditNormalMoves import enum_values,us_text
@@ -33,6 +33,7 @@ parser.add_argument('--direct-special',type=int,choices=(3,5,10),help='Check Sam
 parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every body instead of cycling neutral choices')
 parser.add_argument('--mario-animations',action='store_true',help='Check four Mario donor catalogs using real attack inputs and RAM poses')
 parser.add_argument('--roster-animations',action='store_true',help='Check every donor/body pair, live poses, recovery and Training return')
+parser.add_argument('--normal-mechanics',action='store_true',help='Check all donor jab chains, Link bounce and Ness bat windows on each body')
 parser.add_argument('--mechanic',type=int,choices=(1,3,5,6,7,8,9,10,11),help='Exercise remaining special mechanics across bodies')
 parser.add_argument('--mechanic-kind',choices=('hi','lw'),default='hi')
 parser.add_argument('--thunder-contact',action='store_true',help='Place the live native Thunder head in its owner-contact box to check the hit branch')
@@ -65,6 +66,11 @@ value,length,index=layout_symbols['sSceneSmokeAnimationLayout'];start=sections[i
 rotation_off,scale_off=struct.unpack_from('>2I',data,start)
 value,length,index=layout_symbols['sSceneSmokeMechanicLayout'];start=sections[index][4]+value-sections[index][3]
 link_next_off,wp_owner_off,item_off,it_kind_off,it_owner_off,link_bomb_kind,fox_angle_off,percent_off,ga_off,air_kind=struct.unpack_from('>10I',data,start)
+value,length,index=layout_symbols['sSceneSmokeNormalLayout'];start=sections[index][4]+value-sections[index][3]
+proc_hit_off,flag1_off,rehit_off,pkind_off,special_coll_off,wp_reflect_off,vel_ground_off,training_cpu_kind_off,coll_prev_off,floor_line_off=struct.unpack_from('>10I',data,start)
+value,length,index=layout_symbols['sSceneSmokeReflectFlags'];start=sections[index][4]+value-sections[index][3]
+reflect_bits=[(i,b) for i,b in enumerate(data[start:start+length]) if b]
+assert len(reflect_bits)==1;reflect_flag_off,reflect_flag_mask=reflect_bits[0]
 ftsize,kind_off,port_off,gobj_off,status_off,motion_off,attack_off,attack_size,attack_state_off,passive_off,passive_size,generation_off,physics_off,vel_air_off,hitlag_off,gobj_frame_off=fighter_layout
 slot_size,neutral_field,players_field,player_size,pkind_field,fkind_field,man_field,cpu_field,reset_field,stage_field=layout
 for name in ('input','video'):
@@ -97,6 +103,7 @@ for typ,path in ((2,build/'video.so'),(3,None),(4,build/'input.so'),(1,Path(args
     check(plugin.PluginStartup(core._handle,None,log));check(core.CoreAttachPlugin(typ,plugin._handle))
     plugins.append(plugin)
 keys=plugins[1].LabKeys
+keys_port=plugins[1].LabKeysPort
 _,_,symbols=read_elf(ROOT/'build/smashbrothers.us.elf','>')
 def addr(name):return symbols[name][0]
 scene=addr('gSCManagerSceneData');heap=addr('gSYTaskmanGeneralHeap')
@@ -132,7 +139,7 @@ def wait(predicate,label,seconds=15):
     deadline=time.monotonic()+seconds
     while not predicate():
         if time.monotonic()>deadline:raise AssertionError((label,diagnostic()))
-        time.sleep(.001 if args.mechanic is not None else .01)
+        time.sleep(.001 if args.mechanic is not None or args.normal_mechanics else .01)
 def frames(count=12):
     initial=u32(addr('dSYTaskmanUpdateCount'))
     wait(lambda:u32(addr('dSYTaskmanUpdateCount'))>=initial+count,'Game stopped updating')
@@ -147,6 +154,8 @@ weapon_seen=set();item_seen=set();pitch_trace=[]
 thunder_contact_done=False
 falcon_contact_done=False
 falcon_flight_statuses=set()
+normal_trace=[];normal_contact=False;normal_bounced=False;normal_reflect_contact=False;normal_reflected=False
+FT_LINK_REHIT=int(re.search(r'#define FTCOMMON_ATTACKAIRLW_LINK_REHIT_TIMER\s+(\d+)',(ROOT/'src/ft/ftcommon.h').read_text())[1])
 animation_seen=set();animation_samples=0;animation_errors=[]
 motion_ids=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
 animation_variants={motion_ids['nFTCommonMotion'+m]:i for i,m in enumerate(MOTIONS[:29])}
@@ -170,7 +179,38 @@ if args.mario_animations or args.roster_animations:
         body_variants.append(variants)
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
-    global last_trace,animation_samples,thunder_contact_done,falcon_contact_done
+    global last_trace,animation_samples,thunder_contact_done,falcon_contact_done,normal_bounced,normal_reflected
+    if args.normal_mechanics:
+        if u8(scene)!=54:return
+        fp=fighter()
+        if not 0x80400000<=fp<0x80800000:return
+        gobj=u32(fp+gobj_off);status=u32(fp+status_off)
+        root=u32(gobj+obj_off)+position_off
+        mask=sum(1<<i for i in range(4) if u32(fp+attack_off+i*attack_size+attack_state_off))
+        record=(status,u32(fp+motion_off),f32(gobj+gobj_frame_off),mask,u32(fp+flag1_off),f32(fp+physics_off+vel_air_off+4),u32(fp+rehit_off),u32(fp+special_coll_off),bool(u8(fp+reflect_flag_off)&reflect_flag_mask))
+        normal_trace.append(record)
+        if normal_contact and status==common_statuses['nFTCommonStatusAttackAirLw'] and mask and not normal_bounced:
+            cpu=opponent();cg=u32(cpu+gobj_off) if cpu else 0
+            if cg:
+                target=u32(cg+obj_off)+position_off;center=fp+attack_off+center_off
+                wf32(target,f32(center));wf32(target+4,f32(center+4)-200);wf32(target+8,0);w32(cpu+ga_off,air_kind)
+        if normal_contact and record[6]==FT_LINK_REHIT:normal_bounced=True
+        if normal_reflect_contact:
+            cpu=opponent();cg=u32(cpu+gobj_off) if cpu else 0
+            node=u32(addr('gGCCommonLinks')+5*4)
+            for _ in range(64):
+                if not 0x80000000<=node<0x80800000:break
+                wp=u32(node+user_off)
+                if 0x80000000<=wp<0x80800000:
+                    if u32(wp+wp_reflect_off)==gobj or u32(wp+wp_owner_off)==gobj:normal_reflected=True
+                    if cg and u32(wp+wp_owner_off)==cg:
+                        point=u32(node+obj_off)+position_off
+                        # Hold the controlled projectile outside contact until
+                        # the native source reflector window opens.
+                        wf32(point,f32(root) if record[8] else f32(root)+2500)
+                        wf32(point+4,f32(root+4)+157.5);wf32(point+8,0)
+                node=u32(node+link_next_off)
+        return
     if args.mario_animations or args.roster_animations:
         if u8(scene)!=54:return
         fp=fighter()
@@ -323,6 +363,9 @@ try:
         slot=addr('gSCManagerCharBuilderSlots')+preset*slot_size
         w8(slot,1);w8(slot+1,body)
         for i in range(16):w8(slot+2+i,body)
+        if args.normal_mechanics:
+            for i in range(13):w8(slot+2+i,i%12)
+            w8(slot+2+5,11);w8(slot+2+12,5) # Preload all donor attributes and Ness's bat file.
         if args.mario_animations:
             for i in range(13):w8(slot+2+i,(1,2,4,7)[case])
         if args.roster_animations:
@@ -341,13 +384,89 @@ try:
         wait(lambda:u8(scene)==18 and u32(addr('sMNPlayers1PTrainingTotalTimeTics'))>70,'Training character select')
         frames(30);minima.append(heap_ok());pulse(0x10)
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Training stage select')
-        if args.direct_special is not None or args.mechanic is not None:
+        if args.direct_special is not None or args.mechanic is not None or args.normal_mechanics:
             # Dream Land avoids Castle's bumper/other stage attacks interrupting
             # the scripted rise before source timing/recovery can be measured.
             w32(addr('sMNMapsCursorSlot'),6)
+        if args.normal_mechanics:w8(scene+training_cpu_kind_off,0)
         pulse(0x80);wait(lambda:u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180,'Training match load')
         frames(30);minima.append(heap_ok())
-        if args.mario_animations or args.roster_animations:
+        if args.normal_mechanics:
+            # Cap input sampling so short pulses cannot disappear between
+            # Python's polls on fast hosts. Speed affects wall time only.
+            check(core.CoreDoCommand(17,4,C.byref(C.c_int(300))))
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            fp=fighter();cpu=opponent();cg=u32(cpu+gobj_off);cpu_root=u32(cg+obj_off)+position_off
+            human_root=u32(u32(fp+gobj_off)+obj_off)+position_off
+            spawn=tuple(f32(human_root+j) for j in (0,4,8));spawn_floor=u32(fp+floor_line_off)
+            def recenter():
+                # Start each independent donor trial at the native ground spawn.
+                # Repeated jab root travel otherwise accumulates toward a ledge.
+                for j,value in zip((0,4,8),spawn):
+                    wf32(human_root+j,value);wf32(fp+coll_prev_off+j,value)
+                w32(fp+floor_line_off,spawn_floor)
+                for j in (0,4,8):wf32(fp+physics_off+vel_air_off+j,0)
+                wf32(fp+physics_off+vel_ground_off,0)
+            def park_cpu():
+                wf32(cpu_root,3000);wf32(cpu_root+4,500);w32(cpu+ga_off,air_kind)
+            for donor in range(12):
+                for i in range(13):w8(slot+2+i,donor)
+                recenter();normal_trace.clear();park_cpu()
+                for tap in range(24):
+                    keys(0x80);frames(3);keys(0);frames(3)
+                keys(0);frames(140)
+                if donor==5:
+                    # Slower presses choose the third slash; mashing chooses
+                    # Link's native rapid-jab fork before that follow-up window.
+                    check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+                    for gap in (9,12,75):
+                        keys(0x80);frames(3);keys(0);frames(gap)
+                seen={r[0] for r in normal_trace}
+                assert common_statuses['nFTCommonStatusAttack11'] in seen,(body,donor,'jab one',seen)
+                if donor==9:
+                    assert common_statuses['nFTCommonStatusAttack12'] not in seen,(body,donor,'Pikachu must repeat jab one',seen)
+                else:assert common_statuses['nFTCommonStatusAttack12'] in seen,(body,donor,'jab two',seen)
+                name=ROSTER[donor];header=(ROOT/'src/ft/ftchar'/('ft'+name.lower())/('ft'+name.lower()+'.h')).read_text()
+                statuses=enum_values(header.replace('nFTCommonStatusSpecialStart',str(common_statuses['nFTCommonStatusSpecialStart'])),'ft'+name+'Status')
+                if donor in (0,4,5,7,11):
+                    third=0xF00 if donor!=body else common_statuses['nFTCommonStatusSpecialStart']
+                    assert third in seen,(body,donor,'third jab',seen)
+                if donor in (1,5,7,8):
+                    loop=0xF02 if donor!=body else statuses['nFT'+name+'StatusAttack100Loop']
+                    end=0xF03 if donor!=body else statuses['nFT'+name+'StatusAttack100End']
+                    assert loop in seen and end in seen,(body,donor,'rapid loop/release',seen,normal_trace[:32],u32(addr('gFTCustomMoveValidationFailures')),[i for i in range(40) if u32(fp+joints_off+i*4)])
+                elif donor==10:
+                    # Vanilla Puff has unused rapid descriptors, but jab two
+                    # never opens their flag1 gate. Do not invent a new chain.
+                    unused={statuses['nFTPurinStatusAttack100'+phase] for phase in ('Start','Loop','End')} if donor==body else set(range(0xF01,0xF04))
+                    assert not seen&unused,(body,'Puff native two-jab chain',seen)
+                assert u32(fp+status_off)==common_statuses['nFTCommonStatusWait'],(body,donor,'jab recovery',normal_trace[-8:])
+                print('PASS: normal jabs body',body,'donor',donor,'native chain, loop/release and recovery',flush=True)
+            for i in range(13):w8(slot+2+i,5)
+            keys(0);frames(240)
+            normal_trace.clear();normal_contact=True;normal_bounced=False
+            keys(0x0800);frames(3);keys(0);frames(10);keys(0x80|(176<<24));frames(3);keys(0);frames(140)
+            normal_contact=False
+            assert normal_bounced,(body,'controlled Link down-air contact/bounce',normal_trace[-12:])
+            assert any(r[5]>=39 and r[6] for r in normal_trace),(body,'source bounce velocity/timer')
+            print('PASS: body',body,'Link down-air native contact -> bounce/rehit timer',flush=True)
+            keys(0);frames(240)
+            wait(lambda:u32(fp+status_off)==common_statuses['nFTCommonStatusWait'],'Ground recovery before bat reflection')
+            for i in range(13):w8(slot+2+i,11)
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            park_cpu();w32(cpu+pkind_off,0)
+            normal_reflect_contact=True;normal_reflected=False
+            keys_port(u8(cpu+port_off),0x40);frames(3);keys_port(u8(cpu+port_off),0);frames(24)
+            normal_trace.clear()
+            keys(0x80|(80<<16));frames(3);keys(0);frames(65)
+            normal_reflect_contact=False;w32(cpu+pkind_off,1)
+            bat_rows=[r for r in normal_trace if r[0]==common_statuses['nFTCommonStatusAttackS4']]
+            assert any(r[8] and r[7] for r in bat_rows),(body,'Ness bat source reflector window',bat_rows,{r[0] for r in normal_trace})
+            assert not normal_trace[-1][8],(body,'Ness bat reflector cleanup')
+            assert normal_reflected,(body,'controlled native fireball reflection')
+            assert u32(addr('gFTCustomMoveValidationFailures'))==0 and u32(addr('gFTCustomAnimationValidationFailures'))==0
+            print('PASS: body',body,'Ness bat source window/native fireball reflection/cleanup',flush=True)
+        elif args.mario_animations or args.roster_animations:
             check(core.CoreDoCommand(17,5,C.byref(C.c_int(0 if args.mechanic is not None else 1))))
             animation_seen.clear();animation_errors.clear();animation_samples=0
             def act(value,ticks=3,recovery=90):
@@ -643,10 +762,10 @@ try:
             assert not 228<=trace[-1][0]<=236,(body,'Ness recovery',trace[-1])
             print('PASS: Ness Up B on body',body,'start -> hold/projectile expiry -> end/recovery, no freeze.',flush=True)
         else:pulse(0x40);frames(200) # Actual B input and recovery/charging.
-        if args.path_donor is None and args.superjump is None and not (args.mario_animations or args.roster_animations):
+        if args.path_donor is None and args.superjump is None and not (args.mario_animations or args.roster_animations or args.normal_mechanics):
             pulse(0x20);frames(30) # Store a charge where supported.
             pulse(0x40);frames(120)
-        if args.path_donor is not None or args.superjump is not None or args.mario_animations or args.roster_animations:
+        if args.path_donor is not None or args.superjump is not None or args.mario_animations or args.roster_animations or args.normal_mechanics:
             paused=enum_values((ROOT/'src/sc/scdef.h').read_text(),'SCBattleGameStatus')['nSCBattleGameStatusPause']
             # Native Training ignores Start during KO/respawn. Wait for a legal
             # pause instead of firing Exit at an unopened menu.
@@ -662,7 +781,7 @@ try:
         w32(addr('sSC1PTrainingModeMenu'),5);pulse(0x80)
         wait(lambda:u8(scene)==57 and u32(addr('sMNOptionBuilderMode'))==2,'Return to editor')
         assert u32(addr('sMNOptionBuilderSlot'))==preset and u32(addr('sMNOptionBuilderEntry'))==23
-        action_label='normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None or args.superjump is not None else 'B/store/B'
+        action_label='normal mechanics' if args.normal_mechanics else 'normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None or args.superjump is not None else 'B/store/B'
         print(f'PASS: body {body}, neutral {choice}, preset {preset}: Test -> CSS -> stage -> Training -> {action_label} -> same editor.',flush=True)
     if not args.four_mb:
         print('PASS: Training heap headroom at least',min(minima),'bytes.',flush=True)
@@ -678,6 +797,8 @@ try:
                 for attack in range(13):w8(slot+2+attack,(1,2,4,7)[player])
             if args.roster_animations:
                 for attack in range(13):w8(slot+2+attack,(1,2,4,7)[player])
+            if args.normal_mechanics:
+                for attack in range(13):w8(slot+2+attack,(1,5,7,11)[player])
             w8(slot+18,args.superjump if args.direct_special in (3,5) else (0,4,0,4)[player] if args.superjump is not None and args.superjump!=10 else body);w8(slot+19,10 if args.superjump==10 else body);w8(slot+neutral_field,(9,10,11,6)[player])
             if args.mechanic is not None:
                 w8(slot+18,args.mechanic if args.mechanic_kind=='hi' else body)

@@ -197,7 +197,7 @@ void ftPhysicsApplyGroundFrictionOrTransN(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if (fp->anim_desc.flags.is_use_transn_joint)
+    if (ftMainCharBuilderUsesNormalTransN(fp))
     {
         ftPhysicsApplyGroundVelTransN(fighter_gobj);
     }
@@ -359,7 +359,7 @@ void ftPhysicsApplyAirVelXFriction(FTStruct *fp, FTAttributes *attr)
 void ftPhysicsApplyAirVelDrift(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     (fp->is_fastfall) ? ftPhysicsApplyFastFall(fp, attr) : ftPhysicsApplyGravityDefault(fp, attr);
 
@@ -374,7 +374,7 @@ void ftPhysicsApplyAirVelDrift(GObj *fighter_gobj)
 void ftPhysicsApplyAirVelDriftFastFall(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftPhysicsCheckSetFastFall(fp);
 

@@ -1,4 +1,6 @@
 #include <ft/fighter.h>
+#include <ft/ftcustommove.h>
+#include <sc/scene.h>
 #include <reloc_data.h>
 
 // // // // // // // // // // // //
@@ -9,16 +11,16 @@
 
 #define ftCommonAttack100CheckFighterKind(fp) \
 (                                             \
-    ((fp)->fkind == nFTKindFox)        ||  \
-    ((fp)->fkind == nFTKindNFox)    ||  \
-    ((fp)->fkind == nFTKindLink)       ||  \
-    ((fp)->fkind == nFTKindNLink)   ||  \
-    ((fp)->fkind == nFTKindKirby)      ||  \
-    ((fp)->fkind == nFTKindNKirby)  ||  \
-    ((fp)->fkind == nFTKindPurin)      ||  \
-    ((fp)->fkind == nFTKindNPurin)  ||  \
-    ((fp)->fkind == nFTKindCaptain)    ||  \
-    ((fp)->fkind == nFTKindNCaptain)    \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindFox)        ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNFox)    ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindLink)       ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNLink)   ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindKirby)      ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNKirby)  ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindPurin)      ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNPurin)  ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindCaptain)    ||  \
+    (ftMainCharBuilderGetNormalKind((fp), nSCCharBuilderAttackJab) == nFTKindNCaptain)    \
 )
 
 // // // // // // // // // // // //
@@ -41,7 +43,7 @@ void ftCommonAttack100StartSetStatus(GObj *fighter_gobj)
 
     if (ftCommonGetCheckInterruptCommon(fighter_gobj) == FALSE)
     {
-        switch (fp->fkind)
+        switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab))
         {
         case nFTKindFox:
         case nFTKindNFox:
@@ -68,7 +70,7 @@ void ftCommonAttack100StartSetStatus(GObj *fighter_gobj)
             status_id = nFTCaptainStatusAttack100Start;
             break;
         }
-        ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+        ftMainSetStatus(fighter_gobj, ftMainCharBuilderGetJabStatus(fp, status_id, 1), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
         ftMainPlayAnimEventsAll(fighter_gobj);
 
         fp->status_vars.common.attack100.is_anim_end = FALSE;
@@ -84,7 +86,7 @@ void ftCommonAttack100LoopKirbyUpdateEffect(FTStruct *fp)
 {
     Vec3f pos;
 
-    if (fp->fkind == nFTKindKirby)
+    if ((fp->fkind == nFTKindKirby) && (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab) == nFTKindKirby))
     {
         if (fp->motion_vars.flags.flag2 != 0)
         {
@@ -152,7 +154,7 @@ void ftCommonAttack100LoopSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 status_id;
 
-    switch (fp->fkind)
+    switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab))
     {
     case nFTKindFox:
     case nFTKindNFox:
@@ -179,7 +181,7 @@ void ftCommonAttack100LoopSetStatus(GObj *fighter_gobj)
         status_id = nFTCaptainStatusAttack100Loop;
         break;
     }
-    ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+    ftMainSetStatus(fighter_gobj, ftMainCharBuilderGetJabStatus(fp, status_id, 2), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftCommonAttack100LoopKirbyUpdateEffect(fp);
 }
 
@@ -189,7 +191,7 @@ void ftCommonAttack100EndSetStatus(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     s32 status_id;
 
-    switch (fp->fkind)
+    switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab))
     {
     case nFTKindFox:
     case nFTKindNFox:
@@ -216,7 +218,7 @@ void ftCommonAttack100EndSetStatus(GObj *fighter_gobj)
         status_id = nFTCaptainStatusAttack100End;
         break;
     }
-    ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
+    ftMainSetStatus(fighter_gobj, ftMainCharBuilderGetJabStatus(fp, status_id, 3), 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
 }
 
 // 0x8014F4EC
@@ -239,7 +241,7 @@ sb32 ftCommonAttack100StartCheckInterruptCommon(GObj *fighter_gobj)
 
         fp->attack1_input_count++;
 
-        switch (fp->fkind)
+        switch (ftMainCharBuilderGetNormalKind(fp, nSCCharBuilderAttackJab))
         {
         case nFTKindFox:
         case nFTKindNFox:
@@ -268,7 +270,7 @@ sb32 ftCommonAttack100StartCheckInterruptCommon(GObj *fighter_gobj)
         case nFTKindCaptain:
         case nFTKindNCaptain:
             inputs_min = 6;
-            status_id = nFTCaptainStatusAttack13;
+            status_id = ftMainCharBuilderGetJabStatus(fp, nFTCaptainStatusAttack13, 0);
             break;
         }
         if (fp->attack1_input_count >= inputs_min)

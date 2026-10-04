@@ -78,6 +78,8 @@ static void ftMainCharBuilderStartAction(GObj *g, s32 pair, f32 frame)
     fp->proc_accessory = ftMainCharBuilderActionAccessory;
     fp->proc_damage = ftMainCharBuilderActionDamage;
     for (i = 0; i < 2; i++) fp->motion_scripts[i][2].script_wait = 1.0F - frame;
+    /* Native interrupted Egg Lay release reads descriptor 1 before proc_damage. */
+    if (pair >= 24) fp->throw_desc = sFTCharBuilderYoshiInterruptThrows;
     if (pair >= 26 && fp->catch_gobj != NULL) ftParamSetCaptureImmuneMask(fp, FTCATCHKIND_MASK_ALL);
     if (pair == 24) ftParamSetCatchParams(fp, FTCATCHKIND_MASK_YOSHISPECIALN, ftMainCharBuilderActionCatch, ftMainCharBuilderYoshiCapture);
     if (pair == 20) fp->is_special_interrupt = TRUE;

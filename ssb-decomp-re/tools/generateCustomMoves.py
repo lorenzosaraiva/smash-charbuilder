@@ -105,7 +105,7 @@ def main():
         body_extra.append(extra_ids(fighter))
         for motion,desc,duration in resolved_moves(fighter):
             source_commands=[] if desc[1]=='dCustomEmpty' else expand(desc[1],scripts)
-            gameplay_flag1 = motion in ('Attack11','Attack12','AttackLw3','Jab3','RapidStart','RapidLoop','RapidEnd') or motion.startswith('AttackAir')
+            gameplay_flag1 = motion in ('Attack11','Attack12','AttackLw3','Jab3','RapidStart','RapidLoop','RapidEnd') or motion.startswith('AttackAir') or (fighter=='Ness' and motion.startswith('AttackS4'))
             commands=[];words=0
             frame = 0
             for op,args in source_commands:
@@ -121,6 +121,11 @@ def main():
                         frame = value if op.endswith('Async') else frame+value
                     words+=1
                 elif op == 'ftMotionCommandSetFlag1' and gameplay_flag1:
+                    commands.append(op+'('+','.join(args)+')');words+=1
+                elif op == 'ftMotionCommandSetHitStatusPartID':
+                    joint='nFTCustomJoint'+SEM[semantic(fighter,int(args[0],0))]
+                    commands.append(op+'('+joint+','+args[1]+')');words+=1
+                elif op == 'ftMotionCommandSetHitStatusPartAll':
                     commands.append(op+'('+','.join(args)+')');words+=1
                 elif 'AttackColl' in op:
                     nums=[int(x,0) for x in args]

@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+extern sb32 ftMainHasCustomAttackTimeline(FTStruct*);
 #include <wp/weapon.h>
 #include <it/item.h>
 
@@ -1155,7 +1156,7 @@ sb32 gmCollisionCheckWeaponInFighterRange(WPAttackColl *attack_coll, s32 attack_
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
 
-    if ((fp->is_reflect || fp->is_absorb) && ftMainCharBuilderIsSpecialAdapter(fighter_gobj)) return TRUE;
+    if ((fp->is_reflect || fp->is_absorb) && (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) || ftMainHasCustomAttackTimeline(fp))) return TRUE;
 
     if (attack_coll->attack_state == nGMAttackStateTransfer)
     {
@@ -1178,7 +1179,7 @@ sb32 gmCollisionCheckItemInFighterRange(ITAttackColl *attack_coll, s32 attack_id
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
 
-    if ((fp->is_reflect || fp->is_absorb) && ftMainCharBuilderIsSpecialAdapter(fighter_gobj)) return TRUE;
+    if ((fp->is_reflect || fp->is_absorb) && (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) || ftMainHasCustomAttackTimeline(fp))) return TRUE;
 
     if (attack_coll->attack_state == nGMAttackStateTransfer)
     {
@@ -1567,7 +1568,8 @@ sb32 gmCollisionCheckWeaponAttackSpecialCollide(WPAttackColl *attack_coll, s32 a
     Vec3f donor_size, zero = { 0.0F, 0.0F, 0.0F }, scale = { 1.0F, 1.0F, 1.0F };
     DObj *dobj;
     FTParts *parts;
-    if (ftMainCharBuilderGetSpecialSphere(fp, donor_matrix, &donor_size) != FALSE)
+    if ((ftMainCharBuilderGetSpecialSphere(fp, donor_matrix, &donor_size) != FALSE) ||
+        (ftMainCharBuilderGetNormalSphere(fp, donor_matrix, &donor_size) != FALSE))
         return gmCollisionTestSphere(&attack_coll->attack_pos[attack_id].pos_curr,
             &attack_coll->attack_pos[attack_id].pos_prev, attack_coll->size,
             attack_coll->attack_state, donor_matrix, &zero, &donor_size, &scale, 2, NULL, NULL);
@@ -1801,7 +1803,8 @@ sb32 gmCollisionCheckItemAttackSpecialCollide(ITAttackColl *attack_coll, s32 att
     Vec3f donor_size, zero = { 0.0F, 0.0F, 0.0F }, scale = { 1.0F, 1.0F, 1.0F };
     DObj *dobj;
     FTParts *parts;
-    if (ftMainCharBuilderGetSpecialSphere(fp, donor_matrix, &donor_size) != FALSE)
+    if ((ftMainCharBuilderGetSpecialSphere(fp, donor_matrix, &donor_size) != FALSE) ||
+        (ftMainCharBuilderGetNormalSphere(fp, donor_matrix, &donor_size) != FALSE))
         return gmCollisionTestSphere(&attack_coll->attack_pos[attack_id].pos_curr,
             &attack_coll->attack_pos[attack_id].pos_prev, attack_coll->size,
             attack_coll->attack_state, donor_matrix, &zero, &donor_size, &scale, 2, NULL, NULL);
