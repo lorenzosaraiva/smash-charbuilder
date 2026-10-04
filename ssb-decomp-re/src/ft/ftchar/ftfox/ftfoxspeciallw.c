@@ -63,7 +63,7 @@ void ftFoxSpecialLwStartProcUpdate(GObj *fighter_gobj)
 void ftFoxSpecialAirLwCommonProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (fp->status_vars.fox.speciallw.gravity_delay != 0)
     {
@@ -284,7 +284,7 @@ void ftFoxSpecialLwStartInitStatusVars(GObj *fighter_gobj)
     fp->motion_vars.flags.flag2 = 4;
     fp->status_vars.fox.speciallw.gravity_delay = FTFOX_REFLECTOR_GRAVITY_DELAY;
 
-    fp->status_vars.fox.speciallw.effect_gobj = efManagerFoxReflectorMakeEffect(fighter_gobj);
+    fp->status_vars.fox.speciallw.effect_gobj = (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE) ? NULL : efManagerFoxReflectorMakeEffect(fighter_gobj);
 
     if (fp->status_vars.fox.speciallw.effect_gobj != NULL)
     {

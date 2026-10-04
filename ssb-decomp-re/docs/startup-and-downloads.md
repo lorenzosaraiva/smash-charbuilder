@@ -1,6 +1,6 @@
 # Startup and download checks
 
-Version 0.1.8, updated 2026-10-04. Enable **8 MB RDRAM / Expansion Pak**.
+Version 0.1.11, updated 2026-10-04. Enable **8 MB RDRAM / Expansion Pak**.
 
 The public `character-lab.z64`, root `dist/character-lab.z64` and Desktop
 `smash-character-lab-full-roster.z64` are copies of one checked build. The release
@@ -28,6 +28,15 @@ Training/VS heap helper. The original framebuffers, lower-bank overlays, SDK
 addresses and normal animation/collision tables are preserved.
 
 ## Regression checks
+
+The 0.1.11 mechanics build also moves stage selection into the Expansion Pak
+arena. It passed uninterrupted boot through all nineteen opening scenes, title
+and Start into the main menu, the 4 MB Training guard, Mario and Ness Up B
+regressions, four Mario normal-animation catalogs, editor returns and four-slot
+VS. Its opening heap retained at least 2,309,952 bytes of headroom. These are
+CPU execution checks with null rendering; rendered acceptance remains pending.
+The ROM is 18,473,952 bytes, with SHA-256
+`e3746a295b5b33973ffd0ae5c24881813112b642471efdd0c042fc13fe40c56b`.
 
 The 0.1.8 ROM passed uninterrupted boot through all nineteen opening scenes,
 the title screen and Start into the main menu. The opening heap retained at

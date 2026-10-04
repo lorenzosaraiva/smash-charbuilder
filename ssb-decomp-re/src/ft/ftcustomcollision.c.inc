@@ -51,6 +51,7 @@ static void ftCustomCollisionApply(FTStruct *fp)
     FTAttackColl *attack;
     f32 inverse_size;
     s32 i;
+    Vec3f center;
     if ((frame == NULL) || (fp->joints[nFTPartsJointTopN] == NULL) ||
         (fp->attr == NULL) || (fp->attr->size <= 0.0F)) return;
     inverse_size = 1.0F / fp->attr->size;
@@ -60,9 +61,13 @@ static void ftCustomCollisionApply(FTStruct *fp)
         if ((attack->attack_state == nGMAttackStateOff) || !(frame->active_mask & (1 << i))) continue;
         attack->joint_id = nFTPartsJointTopN;
         attack->joint = fp->joints[nFTPartsJointTopN];
-        attack->offset.x = frame->centers[i].x * inverse_size;
-        attack->offset.y = frame->centers[i].y * inverse_size;
-        attack->offset.z = frame->centers[i].z * inverse_size;
+        center = frame->centers[i];
+#ifdef FTCHARBUILDER_SPECIAL_MECHANICS
+        ftMainCharBuilderAdjustSpecialCollision(fp, &center);
+#endif
+        attack->offset.x = center.x * inverse_size;
+        attack->offset.y = center.y * inverse_size;
+        attack->offset.z = center.z * inverse_size;
         attack->is_scale_pos = FALSE;
         /* The engine owns radius, hit records, damage, state and swept history. */
     }

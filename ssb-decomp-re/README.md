@@ -3,7 +3,7 @@
 Pick a fighter's body, mix in moves from the other Smash 64 characters, and try
 your creation against friends or a CPU. A little experiment that got out of hand.
 
-Version **0.1.10**, updated **2026-10-04**. All twelve bodies now perform all twelve
+Version **0.1.11**, updated **2026-10-04**. All twelve bodies now perform all twelve
 donors' normal attacks through shared motion curves and body skeleton maps.
 Hitboxes and timing follow the donor independently of body proportions. This is
 still experimental; special, tether and paired throw animations need more work.
@@ -13,6 +13,10 @@ and helpless/landing recovery. See [coverage and testing](docs/super-jump-punch.
 
 Link Spin Attack, Samus Screw Attack and Jigglypuff Rest now keep donor collision
 paths, timing, movement and recovery. See [coverage and testing](docs/direct-specials.md).
+
+Bombs, eggs, Thunder, Fire Fox, Quick Attack, Reflector, PSI Magnet, Sing,
+Falcon Dive, Final Cutter and Stone now use native mechanics with donor clocks,
+paths and sockets on other bodies. See [controls and checks](docs/remaining-special-mechanics.md).
 
 **[How to play](docs/playing.md)** | **[Done / not done](docs/status.md)** |
 **[Build it yourself](docs/building.md)** | **[What's changed](CHANGELOG.md)**
@@ -51,7 +55,7 @@ Creator builds currently last for the running ROM session.
 - Four builds, assigned independently to human or CPU slots.
 - Training hitbox view, quick return to the editor, unlockable fighters and Item Switch.
 - Neutral B: **Body Move** and every non-copy original neutral donor, including charging, returning boomerangs and Egg Lay. See [controls and limits](docs/neutral-specials.md); Up B/Down B remain experimental.
-- Up/Down B: donor timing, DK slaps/spin, Mario/Luigi Tornado and Falcon Kick collision paths/movement, and Ness projectile socket/self-launch timing. See [coverage and limits](docs/special-timing.md).
+- Up/Down B: donor clocks, collision paths, projectile/capture mechanics, movement, absorption/reflection and Stone armor. Special poses and rendered acceptance remain pending. See [coverage and limits](docs/special-timing.md).
 - **8 MB RDRAM / Expansion Pak required**: Training/VS selection and match resources use the upper memory bank.
 - All twelve donor normal animations on all twelve bodies, angled variants,
   aerial landings and body-supported jab phases. See the

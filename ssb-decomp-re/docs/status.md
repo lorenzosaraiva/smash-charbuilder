@@ -119,7 +119,16 @@ distinction, independent player counters and vanilla resets outside Training.
 - [x] Falcon Kick: source collision paths and movement for all five phases.
 - [x] Foreign Tornado state isolated from body passives; landing/respawn reset.
 - [x] Ness source projectile socket and 28-tick self-launch gameplay clock.
-- [x] Original C playback/matrix comparisons and packed-field/linked-pointer checks for all 30 collision/travel/socket phases.
+- [x] Original C playback/matrix comparisons and packed-field/linked-pointer checks for all 96 collision/travel/socket phases.
 - [x] ROM CPU regressions across all twelve bodies: grounded/aerial spin, Tornado B-tap rise, Kick travel, Ness steering/controlled self-contact/recovery, editor returns and four-slot VS.
-- [ ] Complete donor paths/sockets, movement and effects for every Up/Down B.
+- [x] Remaining special mechanics: bombs/eggs/Thunder, Fire Fox/Quick Attack, Reflector/PSI Magnet/Sing, Falcon Dive, Final Cutter and Stone on original bodies.
+- [x] Link held-bomb Down B toss keeps source release timing, socket and throw values.
+- [x] Donor reflection/absorption fields; native ownership and PSI healing rules.
+- [x] Independent held egg/Thunder ownership and interruption/generation cleanup; required Thunder trail models preloaded.
+- [x] Stone selection, native US armor/minimum hold/timeout; Cutter travel without body rescaling.
+- [x] 99 donor clocks and 96 source collision/travel/socket phases, original-C geometry and linked-ROM checks.
+- [x] Production callback checks across twelve bodies/four slots for movement, zip gate, ownership, healing, capture/release, armor and bomb throw values.
+- [x] Live CPU checks for thirteen donor specials on all twelve bodies: 312 ground/air casts, native projectile creation, recovery, reset/editor return and four-slot VS; controlled Falcon Dive capture/throw and Thunder owner contact included (null rendering).
+- [ ] Rendered projectile/contact, sleep/capture, slopes/ledges, interruption and visual acceptance across bodies and stages.
+- [ ] Retarget borrowed special animations and mesh-specific effects; port this batch to Remix.
 - [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.

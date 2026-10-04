@@ -13,8 +13,8 @@ DONORS = ('Mario', 'Luigi', 'Pikachu', 'Ness')
 JOINTS = (16, 16, 11, 0)
 
 
-def commands(name):
-    scripts = source_scripts()
+def commands(name, scripts=None):
+    if scripts is None:scripts = source_scripts()
     names = tuple(scripts)
     result = []
     # Some native descriptor offsets point into the following adjacent array.

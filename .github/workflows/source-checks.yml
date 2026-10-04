@@ -46,6 +46,7 @@ jobs:
           python3 tools/testSpecialTiming.py
           python3 tools/testSuperJump.py
           python3 tools/testDirectSpecials.py
+          python3 tools/testRemainingSpecials.py
           python3 - <<'PY'
           import sys
           from pathlib import Path

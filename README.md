@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.10 (experimental)** | **Last updated: 2026-10-04**
+**Project version: 0.1.11 (experimental)** | **Last updated: 2026-10-04**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -13,9 +13,11 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
 
-The latest decomp update completes gameplay adapters for Link Spin Attack, Samus
-Screw Attack and Jigglypuff Rest. Special animations and rendered playtesting are
-still pending; see [coverage and checks](ssb-decomp-re/docs/direct-specials.md).
+The latest decomp update adds the remaining special mechanics: bombs, eggs,
+Thunder, Fire Fox, Quick Attack, Reflector, PSI Magnet, Sing, Falcon Dive,
+Final Cutter and Stone. Original timing and gameplay come first; special poses
+and rendered playtesting still need work. See
+[controls and checks](ssb-decomp-re/docs/remaining-special-mechanics.md).
 
 **[How to play Character Lab](ssb-decomp-re/docs/playing.md)** |
 **[Done / not done](docs/status.md)** | **[Build guide](docs/building.md)** |
@@ -67,7 +69,8 @@ DK Down B, DK Up B, Mario/Luigi Tornado and Falcon Kick now have source collisio
 paths and numeric attack values independent of the body pose. Falcon Kick uses
 source movement; spin/Tornado physics use donor values. Ness Up B uses its donor
 spawn socket and 28-tick self-launch timeline, with independent weapon state.
-Other specials and visible animations need more work; see the
+The remaining specials now use native mechanics and source paths/sockets too;
+visible animations and rendered acceptance need more work. See the
 [special timing notes](ssb-decomp-re/docs/special-timing.md).
 
 Mario/Luigi **Up B** now use their original ground/air collision paths, distinct

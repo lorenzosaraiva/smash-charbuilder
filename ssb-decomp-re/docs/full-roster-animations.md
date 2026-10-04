@@ -1,6 +1,6 @@
 # Normal animations on all twelve bodies
 
-Introduced in version 0.1.7; current version 0.1.10, updated 2026-10-04. This expansion is decomp only; the separate
+Introduced in version 0.1.7; current version 0.1.11, updated 2026-10-04. This expansion is decomp only; the separate
 Remix preview retains its previous animation coverage.
 
 All twelve original donors now supply normal attack poses to all twelve bodies.

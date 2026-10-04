@@ -23,7 +23,12 @@ void ftSamusSpecialLwMakeBomb(GObj *fighter_gobj)
 
         joint = fp->joints[nFTPartsJointTopN]; // Not required but stack frame might be suggesting they wrote it like this
 
-        gmCollisionGetFighterPartsWorldPosition(joint, &pos);
+        if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE)
+        {
+            pos = DObjGetStruct(fighter_gobj)->translate.vec.f;
+            pos.y += FTSAMUS_BOMB_OFF_Y * ftMainCharBuilderGetSpecialAttributes(fp)->size;
+        }
+        else gmCollisionGetFighterPartsWorldPosition(joint, &pos);
         wpSamusBombMakeWeapon(fighter_gobj, &pos);
     }
 }
@@ -53,7 +58,7 @@ void ftSamusSpecialAirLwProcUpdate(GObj *fighter_gobj)
 void ftSamusSpecialLwProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (fp->motion_vars.flags.flag3 != FALSE)
     {
@@ -67,7 +72,7 @@ void ftSamusSpecialLwProcPhysics(GObj *fighter_gobj)
 void ftSamusSpecialAirLwProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftPhysicsApplyGravityDefault(fp, attr);
 
@@ -105,13 +110,13 @@ void ftSamusSpecialAirLwSwitchStatusGround(GObj *fighter_gobj)
 void ftSamusSpecialLwTransferStatusAir(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     mpCommonSetFighterAir(fp);
     ftMainSetStatus(fighter_gobj, nFTSamusStatusSpecialAirLw, fighter_gobj->anim_frame, 1.0F, FTSTATUS_PRESERVE_NONE);
 
     fp->physics.vel_air.y = FTSAMUS_BOMB_VEL_Y_BASE;
-    fp->jumps_used = attr->jumps_max;
+    fp->jumps_used = fp->attr->jumps_max;
 }
 
 // 0x8015E1DC
@@ -145,7 +150,7 @@ void ftSamusSpecialLwSetStatus(GObj *fighter_gobj)
 void ftSamusSpecialAirLwSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftMainSetStatus(fighter_gobj, nFTSamusStatusSpecialAirLw, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
@@ -155,7 +160,7 @@ void ftSamusSpecialAirLwSetStatus(GObj *fighter_gobj)
 
     ftPhysicsClampAirVelX(fp, attr->air_speed_max_x * FTSAMUS_BOMB_DRIFT);
 
-    fp->jumps_used = attr->jumps_max; // Why tho
+    fp->jumps_used = fp->attr->jumps_max; // Why tho
 
     fp->status_vars.samus.speciallw.unused = TRUE;
 }

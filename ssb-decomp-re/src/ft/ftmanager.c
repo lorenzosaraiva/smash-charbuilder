@@ -447,16 +447,12 @@ static sb32 ftManagerIsCharBuilderSlotActive(s32 slot_id)
 
 static sb32 ftManagerCharBuilderSpecialHiNeedsMain(s32 fkind)
 {
-    return (fkind == nFTKindMario) || (fkind == nFTKindLuigi) ||
-           (fkind == nFTKindLink) || (fkind == nFTKindSamus) || (fkind == nFTKindYoshi) ||
-           (fkind == nFTKindKirby) || (fkind == nFTKindNess) || (fkind == nFTKindDonkey);
+    return (fkind >= nFTKindPlayableStart) && (fkind <= nFTKindPlayableEnd);
 }
 
 static sb32 ftManagerCharBuilderSpecialLwNeedsMain(s32 fkind)
 {
-    return (fkind == nFTKindMario) || (fkind == nFTKindLuigi) ||
-           (fkind == nFTKindSamus) || (fkind == nFTKindLink) ||
-           (fkind == nFTKindYoshi) || (fkind == nFTKindPikachu) || (fkind == nFTKindCaptain) || (fkind == nFTKindPurin);
+    return (fkind >= nFTKindPlayableStart) && (fkind <= nFTKindPlayableEnd);
 }
 
 // 0x800D782C
@@ -488,6 +484,12 @@ void ftManagerSetupFilesPlayablesAll(void)
                 /* PK Thunder trail/wave models live in Ness's model file, not Main/Special. */
                 FTData *ness_data = dFTManagerDataFiles[nFTKindNess];
                 ftManagerSetupFileSpecial(ness_data->p_file_model, ness_data->file_model_id);
+            }
+            if (gSCManagerCharBuilderSlots[i].special_lw == nFTKindPikachu)
+            {
+                /* Native Thunder trail effects use Pikachu Model even on a foreign body. */
+                FTData *pikachu_data = dFTManagerDataFiles[nFTKindPikachu];
+                ftManagerSetupFileSpecial(pikachu_data->p_file_model, pikachu_data->file_model_id);
             }
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_hi);
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_lw);

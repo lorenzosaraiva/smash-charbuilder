@@ -329,7 +329,11 @@ void itMainSetFighterRelease(GObj *item_gobj, Vec3f *vel, f32 throw_mul, u16 sta
 
     joint_id = (ip->weight == nITWeightHeavy) ? fp->attr->joint_itemheavy_id : fp->attr->joint_itemlight_id;
 
-    gmCollisionGetFighterPartsWorldPosition(fp->joints[joint_id], &pos);
+    if ((ip->kind != nITKindLinkBomb) ||
+        ((fp->status_id != nFTCommonStatusLightThrowF4) && (fp->status_id != nFTCommonStatusLightThrowAirF4)) ||
+        (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) == FALSE) ||
+        (ftMainCharBuilderGetSpecialSpawn(fighter_gobj, &pos) == FALSE))
+        gmCollisionGetFighterPartsWorldPosition(fp->joints[joint_id], &pos);
 
     DObjGetStruct(item_gobj)->translate.vec.f.x = pos.x;
     DObjGetStruct(item_gobj)->translate.vec.f.y = pos.y;

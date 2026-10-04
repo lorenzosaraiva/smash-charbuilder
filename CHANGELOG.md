@@ -1,5 +1,29 @@
 # Changes
 
+## 0.1.11 - 2026-10-04: Remaining special mechanics
+
+- Add source paths/events/sockets for bombs, eggs, Thunder, Fire Fox, Quick
+  Attack, Reflector, PSI Magnet, Sing, Falcon Dive, Final Cutter and Stone on
+  all original bodies. Keep native item/weapon/capture mechanics and body hurtboxes.
+- Expand to 99 donor clocks and 96 collision/travel/socket phases, including
+  Link's common bomb toss: frame-8 release, source hand socket and donor throw values.
+- Keep native charge/zip/travel/hold/release timers independently of pose loops;
+  merge parallel gameplay streams and stop at pauses. Preserve source hit fields,
+  radii, changing sizes, active windows and recovery physics.
+- Isolate held egg and Thunder ownership/destruction state from common status
+  unions; guard cleanup across damage, capture, Training reset and respawn.
+  Preload Pikachu Model for Thunder trails and all selected donor attributes.
+- Reflector and PSI Magnet use source field geometry and native ownership/healing
+  rules. Sing keeps its sleep collision. Falcon Dive keeps donor catch anchors
+  and safe source throw descriptors. Final Cutter keeps its landing beam and
+  movement multiplier without shrinking the foreign body. Stone keeps native
+  38% US armor, 18-tick minimum and 160-tick timeout and is now selectable.
+- Move stage selection into the Expansion Pak arena to accommodate the larger
+  gameplay overlay. Add production callback, source geometry, linked-ROM and
+  live CPU regression coverage; see the remaining-special-mechanics guide.
+- Borrowed special poses/effects and rendered contact/stage acceptance remain
+  pending. Decomp only; Remix is unchanged.
+
 ## 0.1.10 - 2026-10-04: Spin Attack, Screw Attack and Rest gameplay
 
 - Complete donor collision paths, hit fields and gameplay clocks for Link Spin

@@ -24,6 +24,7 @@ hit groups and active/clear times retain their original packed values.
 | Mario/Luigi Down B | Distinct donor event streams, 87-frame ground / 83-frame air phases, donor aerial gravity and native tap-to-rise behavior. |
 | Falcon Down B | Ground, ground-to-air, landing, aerial and wall-bound phases; source root movement, angles, collisions and native contact/transition callbacks. |
 | Ness Up B | Nine phases, source hold-phase projectile socket, native steering/expiry/self-contact logic and the 28-tick launch action. |
+| Remaining specials | Bombs, eggs, Thunder, Fire Fox, Quick Attack, Reflector, PSI Magnet, Sing, Falcon Dive, Final Cutter, Stone and Yoshi Bomb. See [mechanics, controls and checks](remaining-special-mechanics.md). |
 
 Tap B again during DK's grounded slap cycle to queue another complete cycle.
 Tornado's rise-expenditure flag is stored separately on foreign bodies and resets
@@ -51,7 +52,7 @@ and recovery events. Source launch collisions clear at frame 19.
 ## Checks and remaining work
 
 `testSpecialTiming.py` compiles production clocks/accessors against real 32-bit
-fighter layouts. It checks all 96 phase clocks and all 30 collision/travel/
+fighter layouts. It checks all 99 phase clocks and all 96 collision/travel/
 spawn definitions on twelve bodies, four slots and both facings, including state
 isolation and reset guards. The animation oracle compares every new path, active
 mask, movement delta and socket with original C playback/collision matrices.
@@ -64,6 +65,12 @@ Version 0.1.10 expands the registry to 30 phases with Link Spin Attack, Samus
 Screw Attack and Rest. Rest shares one motion between ground and air. Their
 complete gameplay coverage and remaining acceptance checks are described in
 [direct-specials.md](direct-specials.md).
+
+Version 0.1.11 expands the registry to 96 phases and 99 source clocks, including
+Link's common held-bomb toss. Native action timers remain separate from looping
+poses: Thunder's foreign loop/hit clocks last 61/31 frames and PSI Magnet's hit
+clock lasts 16 frames. Parallel source scripts are merged; native pauses stop
+execution. See [remaining mechanics](remaining-special-mechanics.md).
 
 Optional Linux emulator tests (see [setup](neutral-specials.md)):
 
@@ -87,6 +94,7 @@ a player steering the entire loop back into the fighter.
 
 Rendered contact/reflection, interruptions, visual acceptance, natural-loop
 self-launch controls and broader stage/velocity comparisons remain pending.
-Other Up/Down B collision paths, sockets, movement and effects are still
-experimental. Full animation retargeting follows collision/timing fidelity.
+Up/Down B gameplay coverage is implemented, with special effects/poses and
+stage/contact acceptance still experimental. Full animation retargeting follows
+collision/timing fidelity.
 Remix does not include this batch.

@@ -59,7 +59,7 @@ void ftCaptainSpecialHiProcInterrupt(GObj *fighter_gobj)
 void ftCaptainSpecialHiProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     fp->physics.vel_air.x = fp->status_vars.captain.specialhi.vel.x;
     fp->physics.vel_air.y = fp->status_vars.captain.specialhi.vel.y;

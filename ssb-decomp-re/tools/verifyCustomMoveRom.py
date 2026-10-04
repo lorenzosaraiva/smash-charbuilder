@@ -57,7 +57,7 @@ assert struct.pack('>'+str(len(special_words))+'I',*special_words) in rom,'Missi
 dk_path=b''.join(struct.pack('>12fI',*(v for point in centers for v in point),mask)
                  for mask,centers in donkey_frames())
 assert dk_path in rom,'Missing source DK hand-slap collision path'
-print('PASS: 96 source Up/Down B phase durations/loops and DK hit windows/geometry are linked in the ROM.')
+print(f'PASS: {len(special_catalog())} source Up/Down B phase durations/loops and DK hit windows/geometry are linked in the ROM.')
 for name,expected in metadata.items():
     address,length,index = symbols[name]
     start = sections[index][4]+address-sections[index][3]
@@ -73,6 +73,18 @@ for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMain
              'ftMainUpdateComboStats','ftMainProcUpdateInterrupt',
              'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
              'ftMainCharBuilderGetSpecialTravel','ftMainCharBuilderGetSpecialSpawn',
+             'ftMainCharBuilderGetSpecialWeapon','ftMainCharBuilderGetPikachuThunderDestroy',
+             'ftMainCharBuilderGetSpecialSphere','ftMainCharBuilderAdjustSpecialCollision',
+             'ftFoxSpecialAirHiSetStatusFromGround','ftFoxSpecialAirHiProcPhysics',
+             'ftPikachuSpecialAirHiSetStatus','ftPikachuSpecialHiCheckGotoSubZip',
+             'ftPikachuSpecialLwMakeThunder','ftPikachuSpecialLwCheckCollideThunder','ftPikachuSpecialLwProcDamage',
+             'wpPikachuThunderHeadMakeWeapon','wpPikachuThunderHeadSetDestroy',
+             'ftYoshiSpecialHiUpdateEggVars','ftYoshiSpecialHiGetEggPosition','ftYoshiSpecialHiProcDamage',
+             'ftFoxSpecialLwStartInitStatusVars','ftNessSpecialLwInitVars','ftPurinSpecialHiProcUpdate',
+             'ftCaptainSpecialHiProcCatch','ftCommonCaptureCaptainUpdatePositions','ftCaptainSpecialHiThrowSetStatus',
+             'ftKirbySpecialLwCheckRelease','ftKirbySpecialLwSetDamageResist','ftKirbySpecialHiLandingProcUpdate',
+             'gmCollisionCheckWeaponAttackSpecialCollide','gmCollisionCheckItemAttackSpecialCollide',
+             'mnMapsStartScene',
              'ftMainCharBuilderSetSpecialTravelAngle',
              'ftMainCharBuilderGetSpecialTravelAngle','ftMainCharBuilderGetSuperJumpAttributes',
              'ftMarioSpecialHiProcInterrupt','ftMarioSpecialHiProcPhysics','ftMarioSpecialHiProcMap',
@@ -258,7 +270,9 @@ def verify_special_paths():
     for name,(address,length,index) in symbols.items():
         if name.startswith('sFTCharBuilderSpecialPath') and name!='sFTCharBuilderSpecialPaths':
             data=words(name);payloads[address]=data
-            assert struct.pack('>'+str(len(data))+'I',*data) in rom,name
+            pointer_script=name.endswith('Script') and bool(path_catalog()[int(name[len('sFTCharBuilderSpecialPath'):-len('Script')])]['throws'])
+            if not pointer_script:
+                assert struct.pack('>'+str(len(data))+'I',*data) in rom,name
     count=len(path_catalog())
     records=words('sFTCharBuilderSpecialPaths');assert len(records)==count*13
     for i,c in enumerate(path_catalog()):
@@ -273,6 +287,11 @@ def verify_special_paths():
                 data=(ops['nFTMotionEventMakeAttackColl']<<26|aid<<23|gid<<20|dmg<<5|reb<<4|element,
                       (size&65535)<<16|(x&65535),(y&65535)<<16|(z&65535),
                       (angle&1023)<<22|kbs<<12|kbw<<2|ga,(sd&255)<<24|fl<<21|fk<<17|kbb<<7)
+            elif op in ('ftMotionCommandSetAttackCollSize','ftMotionCommandSetAttackCollDamage','ftMotionCommandSetAttackCollSoundLevel'):
+                shift,bits={'ftMotionCommandSetAttackCollSize':(7,16),'ftMotionCommandSetAttackCollDamage':(15,8),'ftMotionCommandSetAttackCollSoundLevel':(20,3)}[op]
+                data=(ops['nFTMotionEvent'+op[len('ftMotionCommand'):]]<<26|a[0]<<23|(a[1]&((1<<bits)-1))<<shift,)
+            elif op=='ftMotionCommandSetAttackCollOffset':
+                data=(ops['nFTMotionEventSetAttackCollOffset']<<26|a[0]<<23|(a[1]&65535)<<7,(a[2]&65535)<<16|(a[3]&65535))
             else:
                 data=(ops['nFTMotionEvent'+op[len('ftMotionCommand'):]]<<26|(a[0] if a else 0),)
             expected.append((wall,data))
@@ -284,6 +303,11 @@ def verify_special_paths():
             elif opcode==ops['nFTMotionEventMakeAttackColl']:
                 assert not word&(127<<13),'Foreign skeleton in special script'
                 actual.append((frame,(word,*data[cursor:cursor+4])));cursor+=4
+            elif opcode==ops['nFTMotionEventSetThrow']:
+                assert data[cursor] in payloads,'Missing Falcon Dive throw data'
+                cursor+=1
+            elif opcode==ops['nFTMotionEventSetAttackCollOffset']:
+                actual.append((frame,(word,data[cursor])));cursor+=1
             else:actual.append((frame,(word,)))
         assert actual==expected,('Special collision/flag source fields and event timing',c['phase'])
     def matches(table):
@@ -295,7 +319,23 @@ def verify_special_paths():
                 pointer=expected[f]
                 if not pointer:
                     if actual[f]:return False
-                elif loaded_words(actual[f],len(payloads[pointer]))!=payloads[pointer]:return False
+                else:
+                    native=loaded_words(actual[f],len(payloads[pointer]));host_data=payloads[pointer]
+                    if native is None:return False
+                    if f==2:
+                        cursor=0
+                        while cursor<len(host_data):
+                            opcode=host_data[cursor]>>26
+                            if native[cursor]!=host_data[cursor]:return False
+                            if opcode==ops['nFTMotionEventSetThrow']:
+                                throw=payloads[host_data[cursor+1]]
+                                if loaded_words(native[cursor+1],len(throw))!=throw:return False
+                                cursor+=2
+                            else:
+                                length=5 if opcode==ops['nFTMotionEventMakeAttackColl'] else 2 if opcode==ops['nFTMotionEventSetAttackCollOffset'] else 1
+                                if native[cursor:cursor+length]!=host_data[cursor:cursor+length]:return False
+                                cursor+=length
+                    elif native!=host_data:return False
         return True
     prefix=struct.pack('>2I',*records[:2]);found=False
     for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:

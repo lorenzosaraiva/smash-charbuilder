@@ -5,6 +5,7 @@
 #include <sc/scene.h>
 #include <sys/controller.h>
 #define FTCHARBUILDER_NEUTRAL_EXTENDED
+#define FTCHARBUILDER_SPECIAL_MECHANICS
 #include "ftcustommove.c.inc"
 #include "fttrainingcombo.c.inc"
 
@@ -110,6 +111,30 @@ static s32 sFTMainCharBuilderMotionDonors[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, 
 /* Recovery keeps donor physics until landing, without keeping a special active. */
 static struct FTCharBuilderSuperJumpRecovery { FTStruct *owner; u32 player_num; s32 donor; } sFTCharBuilderSuperJumpRecovery[4];
 
+/* Common damage/capture setters write status_vars before calling SetStatus.
+   Owned weapon pointers must therefore live outside that union. */
+static struct FTCharBuilderSpecialWeapons { FTStruct *owner; u32 player_num; GObj *weapons[2]; sb32 thunder_destroy; } sFTCharBuilderSpecialWeapons[4];
+GObj** ftMainCharBuilderGetSpecialWeapon(FTStruct *fp, s32 donor)
+{
+    s32 index = (donor == nFTKindYoshi) ? 0 : 1;
+    if (fp->player >= 4) return NULL;
+    if ((sFTCharBuilderSpecialWeapons[fp->player].owner != fp) ||
+        (sFTCharBuilderSpecialWeapons[fp->player].player_num != fp->player_num))
+    {
+        bzero(&sFTCharBuilderSpecialWeapons[fp->player], sizeof(sFTCharBuilderSpecialWeapons[fp->player]));
+        sFTCharBuilderSpecialWeapons[fp->player].owner = fp;
+        sFTCharBuilderSpecialWeapons[fp->player].player_num = fp->player_num;
+    }
+    return &sFTCharBuilderSpecialWeapons[fp->player].weapons[index];
+}
+sb32* ftMainCharBuilderGetPikachuThunderDestroy(FTStruct *fp)
+{
+    if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindNPikachu) || (fp->player >= 4))
+        return &fp->passive_vars.pikachu.is_thunder_destroy;
+    ftMainCharBuilderGetSpecialWeapon(fp, nFTKindPikachu);
+    return &sFTCharBuilderSpecialWeapons[fp->player].thunder_destroy;
+}
+
 static ftMotionCommand sFTMainCharBuilderSamusSpecialLwScript[] =
 {
     ftMotionCommandWaitAsync(10),
@@ -214,7 +239,9 @@ FTAttributes* ftMainCharBuilderGetSuperJumpAttributes(FTStruct *fp)
     {
         donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
         if (((donor == nFTKindMario) || (donor == nFTKindLuigi) ||
-             (donor == nFTKindLink) || (donor == nFTKindSamus)) &&
+             (donor == nFTKindLink) || (donor == nFTKindSamus) ||
+             (donor == nFTKindFox) || (donor == nFTKindPikachu) ||
+             (donor == nFTKindCaptain) || (donor == nFTKindNess)) &&
             (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi))
             return ftMainCharBuilderGetSpecialAttributes(fp);
         return fp->attr;
@@ -230,7 +257,11 @@ static void ftMainCharBuilderStartSuperJumpLandingClock(FTStruct *fp, f32 frame_
     if ((fp->status_id == nFTCommonStatusLandingFallSpecial) &&
         (donor != -1))
         ftCustomMoveStartClock(fp, (donor == nFTKindLink) ? &sFTCharBuilderLinkSpecialLanding :
-            (donor == nFTKindSamus) ? &sFTCharBuilderSamusSpecialLanding : &sFTCharBuilderSuperJumpLanding, frame_begin);
+            (donor == nFTKindSamus) ? &sFTCharBuilderSamusSpecialLanding :
+            (donor == nFTKindFox) ? &sFTCharBuilderFoxSpecialLanding :
+            (donor == nFTKindPikachu) ? &sFTCharBuilderPikachuSpecialLanding :
+            (donor == nFTKindCaptain) ? &sFTCharBuilderCaptainSpecialLanding :
+            (donor == nFTKindNess) ? &sFTCharBuilderNessSpecialLanding : &sFTCharBuilderSuperJumpLanding, frame_begin);
 }
 
 static const FTCharBuilderSpecialPath* ftMainCharBuilderActivePath(FTStruct *fp)
@@ -293,6 +324,41 @@ sb32 ftMainCharBuilderGetSpecialSpawn(GObj *g, Vec3f *out)
     out->y += path->spawn[frame].y;
     out->z += path->spawn[frame].z * fp->lr;
     return TRUE;
+}
+
+sb32 ftMainCharBuilderGetSpecialSphere(FTStruct *fp, Mtx44f matrix, Vec3f *size)
+{
+    const FTCharBuilderSpecialPath *path = ftMainCharBuilderActivePath(fp);
+    Vec3f center;
+    s32 i, j;
+    f32 donor_size;
+    if ((path == NULL) || (fp->special_coll == NULL) ||
+        (sFTMainCharBuilderSpecialKinds[fp->player] != nFTMainCharBuilderSpecialKindLw) ||
+        ((path->donor != nFTKindFox) && (path->donor != nFTKindNess)) ||
+        (ftMainCharBuilderGetSpecialSpawn(fp->fighter_gobj, &center) == FALSE)) return FALSE;
+    donor_size = ftMainCharBuilderGetSpecialAttributes(fp)->size;
+    *size = fp->special_coll->size;
+    size->x *= donor_size; size->y *= donor_size; size->z *= donor_size;
+    for (i = 0; i < 4; i++) for (j = 0; j < 4; j++) matrix[i][j] = (i == j) ? 1.0F : 0.0F;
+    matrix[3][0] = -center.x; matrix[3][1] = -center.y; matrix[3][2] = -center.z;
+    return TRUE;
+}
+
+void ftMainCharBuilderAdjustSpecialCollision(FTStruct *fp, Vec3f *center)
+{
+    const FTCharBuilderSpecialPath *path = ftMainCharBuilderActivePath(fp);
+    s32 frame;
+    f32 x, y, angle;
+    if ((path == NULL) || (path->donor != nFTKindFox) || (path->spawn == NULL) ||
+        ((fp->status_id != nFTFoxStatusSpecialHi) && (fp->status_id != nFTFoxStatusSpecialAirHi))) return;
+    frame = (s32)ftCustomMoveGetClock(fp)->frame;
+    if (frame < 0) frame = 0;
+    if (frame >= path->trajectory.count) frame = path->trajectory.count - 1;
+    /* Native Fire Fox pitches its base bone to the selected launch direction. */
+    x = center->z - path->spawn[frame].x; y = center->y - path->spawn[frame].y;
+    angle = fp->status_vars.fox.specialhi.angle;
+    center->z = path->spawn[frame].x + x * __cosf(angle) - y * __sinf(angle);
+    center->y = path->spawn[frame].y + x * __sinf(angle) + y * __cosf(angle);
 }
 
 static sb32 ftMainCharBuilderIsBorrowingMotion(FTStruct *fp)
@@ -380,7 +446,7 @@ static s32 ftMainCharBuilderGetSpecialMotionID(s32 donor, s32 special_kind, s32 
     case nFTKindKirby:
         if (special_kind == nFTMainCharBuilderSpecialKindLw)
         {
-            return -1;
+            return (ga == nMPKineticsGround) ? nFTKirbyMotionSpecialLwStart : nFTKirbyMotionSpecialAirLwStart;
         }
         return (ga == nMPKineticsGround) ? nFTKirbyMotionSpecialHi : nFTKirbyMotionSpecialAirHi;
 
@@ -418,10 +484,6 @@ s32 ftMainCharBuilderGetSpecialLwKind(GObj *fighter_gobj)
     SCCharBuilderSlot *slot = ftMainCharBuilderGetSlot(fp);
 
     if ((slot == NULL) || (slot->special_lw > nFTKindPlayableEnd))
-    {
-        return fp->fkind;
-    }
-    if ((slot->special_lw == nFTKindKirby) && (fp->fkind != nFTKindKirby))
     {
         return fp->fkind;
     }
@@ -514,10 +576,6 @@ static void ftMainCharBuilderSetSpecialDonorKind(GObj *fighter_gobj, s32 donor, 
 
     if ((fp->player >= GMCOMMON_PLAYERS_MAX) || (donor < nFTKindPlayableStart) ||
         (donor > nFTKindPlayableEnd) || (donor == fp->fkind))
-    {
-        return;
-    }
-    if ((special_kind == nFTMainCharBuilderSpecialKindLw) && (donor == nFTKindKirby))
     {
         return;
     }
@@ -675,7 +733,9 @@ static void ftMainCharBuilderCheckSpecialStatus(FTStruct *fp, sb32 is_special_st
         if ((is_special_status == FALSE) &&
             ((fp->status_id == nFTCommonStatusFallSpecial) || (fp->status_id == nFTCommonStatusLandingFallSpecial)) &&
             ((donor == nFTKindMario) || (donor == nFTKindLuigi) ||
-             (donor == nFTKindLink) || (donor == nFTKindSamus)) &&
+             (donor == nFTKindLink) || (donor == nFTKindSamus) ||
+             (donor == nFTKindFox) || (donor == nFTKindPikachu) ||
+             (donor == nFTKindCaptain) || (donor == nFTKindNess)) &&
             (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi))
         {
             sFTCharBuilderSuperJumpRecovery[fp->player].owner = fp;
@@ -730,7 +790,8 @@ static void ftMainCharBuilderMakeSamusBomb(GObj *fighter_gobj)
 
     pos.x = pos.z = 0.0F;
     pos.y = FTSAMUS_BOMB_OFF_Y;
-    gmCollisionGetFighterPartsWorldPosition(fp->joints[nFTPartsJointTopN], &pos);
+    pos = DObjGetStruct(fighter_gobj)->translate.vec.f;
+    pos.y += FTSAMUS_BOMB_OFF_Y * ftMainCharBuilderGetSpecialAttributes(fp)->size;
     wpSamusBombMakeWeapon(fighter_gobj, &pos);
 }
 
@@ -5162,6 +5223,16 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         (status_id != nFTLinkStatusSpecialHi) && (status_id != nFTLinkStatusSpecialHiEnd) &&
         (status_id != nFTLinkStatusSpecialAirHi))
         ftLinkSpecialHiProcDamage(fighter_gobj);
+    if ((ftMainCharBuilderActivePath(fp) != NULL) &&
+        (ftMainCharBuilderGetActiveSpecialDonor(fp) == nFTKindYoshi) &&
+        (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi) &&
+        (status_id != nFTYoshiStatusSpecialHi) && (status_id != nFTYoshiStatusSpecialAirHi))
+        ftYoshiSpecialHiProcDamage(fighter_gobj);
+    if ((ftMainCharBuilderActivePath(fp) != NULL) &&
+        (ftMainCharBuilderGetActiveSpecialDonor(fp) == nFTKindPikachu) &&
+        (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindLw) &&
+        ((status_id < nFTPikachuStatusSpecialLwStart) || (status_id > nFTPikachuStatusSpecialAirLwEnd)))
+        ftPikachuSpecialLwProcDamage(fighter_gobj);
     ftCustomMoveResetClock(fp);
     status_struct = NULL;
     opening_struct = NULL;
@@ -5357,6 +5428,11 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     {
         status_struct = dFTCommonActionStatusDescs;
         status_struct_id = status_id - nFTCommonStatusActionStart;
+        /* Link's Down B toss uses a common status, but still owns its source clock. */
+        if ((charbuilder_donor == nFTKindLink) &&
+            (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindLw) &&
+            ((status_id == nFTCommonStatusLightThrowF4) || (status_id == nFTCommonStatusLightThrowAirF4)))
+            is_charbuilder_special_status = TRUE;
     }
     else
     {
@@ -5369,7 +5445,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     {
         motion_attack_id = status_struct[status_struct_id].mflags.attack_id;
 
-        if (is_charbuilder_special_status != FALSE)
+        if ((is_charbuilder_special_status != FALSE) && (status_id >= nFTCommonStatusSpecialStart))
         {
             motion_attack_id = (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi) ?
                 nFTMotionAttackIDSpecialHi : nFTMotionAttackIDSpecialLw;

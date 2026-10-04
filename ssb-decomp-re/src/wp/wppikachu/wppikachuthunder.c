@@ -73,7 +73,7 @@ void wpPikachuThunderHeadSetDestroy(GObj *weapon_gobj, sb32 is_destroy)
 
         if (fp->player_num == wp->player_num) // Check number of player that spawned Thunder
         {
-            fp->passive_vars.pikachu.is_thunder_destroy |= is_destroy;
+            (*ftMainCharBuilderGetPikachuThunderDestroy(fp)) |= is_destroy;
         }
     }
 }

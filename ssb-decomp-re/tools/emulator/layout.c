@@ -21,6 +21,14 @@ const u32 sSceneSmokeFighterLayout[] = {
 };
 
 #include <wp/weapon.h>
+#include <it/item.h>
+const u32 sSceneSmokeMechanicLayout[] = {
+    __builtin_offsetof(GObj, link_next), __builtin_offsetof(WPStruct, owner_gobj),
+    __builtin_offsetof(FTStruct, item_gobj), __builtin_offsetof(ITStruct, kind),
+    __builtin_offsetof(ITStruct, owner_gobj), nITKindLinkBomb,
+    __builtin_offsetof(FTStruct, status_vars.fox.specialhi.angle),
+    __builtin_offsetof(FTStruct, percent_damage), __builtin_offsetof(FTStruct, ga), nMPKineticsAir
+};
 const u32 sSceneSmokeAnimationLayout[] = {
     __builtin_offsetof(DObj, rotate.vec.f), __builtin_offsetof(DObj, scale.vec.f)
 };

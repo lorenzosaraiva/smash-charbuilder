@@ -20,7 +20,7 @@ void ftPurinSpecialHiProcUpdate(GObj *fighter_gobj)
 
     if (fp->motion_vars.flags.flag1 == 1)
     {
-        if (efManagerPurinSingMakeEffect(fighter_gobj) != NULL)
+        if ((ftMainCharBuilderIsSpecialAdapter(fighter_gobj) == FALSE) && (efManagerPurinSingMakeEffect(fighter_gobj) != NULL))
         {
             fp->is_effect_attach = TRUE;
         }

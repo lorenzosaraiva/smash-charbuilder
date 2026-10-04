@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.10',
+        'version': '0.1.11',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -100,7 +100,7 @@ DK Up B, Mario/Luigi Tornado and Falcon Kick now keep original donor collision
 paths and numeric values. Falcon Kick uses source movement; spin/Tornado use
 donor aerial physics. Foreign Tornado rise state resets on landing/respawn.
 Ness uses its source projectile socket and native 28-tick self-launch clock.
-Other Up/Down B paths/effects and rendered acceptance remain pending.
+Special poses/effects and rendered acceptance remain pending.
 Mario/Luigi Up B now use original donor collision paths and distinct hit phases,
 source movement/steering, donor helpless physics and 25-tick landing recovery.
 Luigi retains his original 25-damage opening sweetspot and weak continuation.
@@ -110,6 +110,14 @@ paths, hit fields, timing and movement. Grounded Spin Attack keeps its native
 expanding weapon and 40-frame ending. Screw Attack keeps distinct ground/air
 multihits, intangibility and donor recovery. Rest hits once for 20 damage and
 keeps its 30-frame invulnerability and 250-frame sleep across landings/edges.
+Remaining Up/Down B mechanics now include bombs, eggs, Thunder, Fire Fox,
+Quick Attack, Reflector, PSI Magnet, Sing, Falcon Dive, Final Cutter and Stone.
+Hold B for egg charge/Reflector/PSI Magnet; change direction for Quick Attack's
+second zip; tap B after Stone's minimum hold to release. Native projectiles,
+source hit paths/timing, capture/absorb/reflect behavior and donor recovery work
+on original bodies. Link's second Down B toss keeps its frame-8 release and throw
+values. Thunder trails are preloaded; owned weapons survive status-union changes.
+Stage selection uses the Expansion Pak arena too.
 Special animations and rendered contact acceptance remain pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.

@@ -83,7 +83,7 @@ void ftCommonItemThrowProcUpdate(GObj *fighter_gobj)
         (
             dFTCommonDataItemThrowDescs[status_id - nFTCommonStatusLightThrowStart].vel_scale *
             fp->status_vars.common.itemthrow.throw_vel *
-            fp->attr->itemthrow_vel_scale
+            ftMainCharBuilderGetSpecialAttributes(fp)->itemthrow_vel_scale
         );
 
         if (fp->status_vars.common.itemthrow.throw_angle == 361)
@@ -96,7 +96,7 @@ void ftCommonItemThrowProcUpdate(GObj *fighter_gobj)
         (
             F_PCT_TO_DEC(dFTCommonDataItemThrowDescs[status_id - nFTCommonStatusLightThrowStart].damage_scale) *
             fp->status_vars.common.itemthrow.throw_damage *
-            fp->attr->itemthrow_damage_scale
+            ftMainCharBuilderGetSpecialAttributes(fp)->itemthrow_damage_scale
         );
 
         vel.x = __cosf(F_CLC_DTOR32(angle)) * vel_base * fp->lr;
@@ -121,10 +121,16 @@ void ftCommonItemThrowProcUpdate(GObj *fighter_gobj)
 void ftCommonItemThrowProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (fp->ga == nMPKineticsAir)
     {
-        ftPhysicsApplyAirVelDrift(fighter_gobj);
+        (fp->is_fastfall) ? ftPhysicsApplyFastFall(fp, attr) : ftPhysicsApplyGravityDefault(fp, attr);
+        if (ftPhysicsCheckClampAirVelXDecMax(fp, attr) == FALSE)
+        {
+            ftPhysicsClampAirVelXStickDefault(fp, attr);
+            ftPhysicsApplyAirVelXFriction(fp, attr);
+        }
     }
     else ftPhysicsApplyGroundVelFriction(fighter_gobj);
 }

@@ -17,7 +17,8 @@ void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gob
     pos->y = 0.0F;
     pos->z = 0.0F;
 
-    gmCollisionGetFighterPartsWorldPosition(this_fp->joints[29], pos);
+    if (ftMainCharBuilderGetSpecialSpawn(fighter_gobj, pos) == FALSE)
+        gmCollisionGetFighterPartsWorldPosition(this_fp->joints[29], pos);
     gmCollisionGetFighterPartsWorldPosition(capture_fp->joints[nFTPartsJointTopN], &offset);
 
     offset.x += (offset_add[capture_fp->fkind].x * this_fp->lr);

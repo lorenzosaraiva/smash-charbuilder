@@ -121,3 +121,9 @@ and weak continuation. Both use donor helpless physics and 25-tick landing recov
 Try a DK or Kirby body with **Up B: Luigi**, then compare with native Luigi in
 HITBOX view. Matching visual poses and rendered acceptance remain pending; see
 [Super Jump Punch](super-jump-punch.md).
+
+The remaining special mechanics are now available too: bombs, eggs, Thunder,
+Fire Fox, Quick Attack, Reflector, PSI Magnet, Sing, Falcon Dive, Final Cutter
+and Stone. Hold B for egg charge/Reflector/PSI Magnet; change direction for
+Quick Attack's second zip; tap B after Stone's minimum hold to release. Special
+poses remain temporary. See [controls and checks](remaining-special-mechanics.md).

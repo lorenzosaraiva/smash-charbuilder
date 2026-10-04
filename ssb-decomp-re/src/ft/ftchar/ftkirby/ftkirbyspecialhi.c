@@ -12,6 +12,11 @@ void ftKirbySpecialHiUpdateEffect(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE)
+    {
+        fp->motion_vars.flags.flag1 = fp->motion_vars.flags.flag2 = 0;
+        return;
+    }
     if (fp->motion_vars.flags.flag1 != 0)
     {
         switch (fp->motion_vars.flags.flag1)
@@ -106,7 +111,8 @@ void ftKirbySpecialHiLandingProcUpdate(GObj *fighter_gobj)
         pos.y = 0.0F;
         pos.z = 0.0F;
 
-        gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTKIRBY_FINALCUTTER_BEAM_SPAWN_JOINT), &pos);
+        if (ftMainCharBuilderGetSpecialSpawn(fighter_gobj, &pos) == FALSE)
+            gmCollisionGetFighterPartsWorldPosition(fp->joints[FTKIRBY_FINALCUTTER_BEAM_SPAWN_JOINT], &pos);
 
         if (fp->lr == +1) pos.x += FTKIRBY_FINALCUTTER_OFF_X; // Ternary doesn't match here, only if/else :(
 
@@ -121,7 +127,7 @@ void ftKirbySpecialHiLandingProcUpdate(GObj *fighter_gobj)
 void ftKirbySpecialHiProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftKirbySpecialHiUpdateEffect(fighter_gobj);
     ftPhysicsApplyAirVelTransNYZ(fighter_gobj);
@@ -137,7 +143,7 @@ void ftKirbySpecialHiProcPhysics(GObj *fighter_gobj)
 void ftKirbySpecialHiLandingProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftKirbySpecialHiUpdateEffect(fighter_gobj);
 
@@ -162,16 +168,21 @@ void ftKirbySpecialHiLandingProcPhysics(GObj *fighter_gobj)
 void ftKirbySpecialAirHiProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
-    f32 temp_scale;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftKirbySpecialHiUpdateEffect(fighter_gobj);
 
-    fp->joints[nFTPartsJointTopN]->scale.vec.f.x = fp->joints[nFTPartsJointTopN]->scale.vec.f.y = fp->joints[nFTPartsJointTopN]->scale.vec.f.z = 0.8F;
+    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) == FALSE)
+        fp->joints[nFTPartsJointTopN]->scale.vec.f.x = fp->joints[nFTPartsJointTopN]->scale.vec.f.y = fp->joints[nFTPartsJointTopN]->scale.vec.f.z = 0.8F;
 
     ftPhysicsApplyAirVelTransNYZ(fighter_gobj);
+    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE)
+    {
+        fp->physics.vel_air.y *= 0.8F;
+        fp->physics.vel_air.z *= 0.8F;
+    }
 
-    fp->joints[nFTPartsJointTopN]->scale.vec.f.x = fp->joints[nFTPartsJointTopN]->scale.vec.f.y = fp->joints[nFTPartsJointTopN]->scale.vec.f.z = 1.0F;
+    else fp->joints[nFTPartsJointTopN]->scale.vec.f.x = fp->joints[nFTPartsJointTopN]->scale.vec.f.y = fp->joints[nFTPartsJointTopN]->scale.vec.f.z = 1.0F;
 
     if (ftPhysicsCheckClampAirVelXDecMax(fp, attr) == FALSE)
     {
@@ -184,7 +195,7 @@ void ftKirbySpecialAirHiProcPhysics(GObj *fighter_gobj)
 void ftKirbySpecialAirHiFallProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftKirbySpecialHiUpdateEffect(fighter_gobj);
 

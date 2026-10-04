@@ -1,5 +1,12 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+static GObj** ftPikachuSpecialLwGetWeapon(FTStruct *fp)
+{
+    if ((fp->fkind == nFTKindPikachu) || (fp->fkind == nFTKindNPikachu))
+        return &fp->status_vars.pikachu.speciallw.thunder_gobj;
+    return ftMainCharBuilderGetSpecialWeapon(fp, nFTKindPikachu);
+}
+
 // // // // // // // // // // // //
 //                               //
 //             MACROS            //
@@ -28,7 +35,8 @@ void ftPikachuSpecialLwMakeThunder(GObj *fighter_gobj)
     pos.y = 0.0F;
     pos.z = 0.0F;
 
-    gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTPIKACHU_THUNDER_SPAWN_JOINT), &pos);
+    if (ftMainCharBuilderGetSpecialSpawn(fighter_gobj, &pos) == FALSE)
+        gmCollisionGetFighterPartsWorldPosition(fp->joints[FTPIKACHU_THUNDER_SPAWN_JOINT], &pos);
 
     pos.y = gMPCollisionGroundData->map_bound_top - FTPIKACHU_THUNDER_SPAWN_OFF_Y;
 
@@ -36,7 +44,7 @@ void ftPikachuSpecialLwMakeThunder(GObj *fighter_gobj)
     vel.z = 0.0F;
     vel.y = FTPIKACHU_THUNDER_VEL_Y;
 
-    fp->status_vars.pikachu.speciallw.thunder_gobj = wpPikachuThunderHeadMakeWeapon(fighter_gobj, &pos, &vel);
+    (*ftPikachuSpecialLwGetWeapon(fp)) = wpPikachuThunderHeadMakeWeapon(fighter_gobj, &pos, &vel);
 }
 
 // 0x80151E44
@@ -101,7 +109,8 @@ void ftPikachuSpecialLwStartInitStatusVars(GObj *fighter_gobj)
     fp->motion_vars.flags.flag1 = 0;
     fp->motion_vars.flags.flag0 = 0;
 
-    fp->passive_vars.pikachu.is_thunder_destroy = FALSE;
+    (*ftMainCharBuilderGetPikachuThunderDestroy(fp)) = FALSE;
+    (*ftPikachuSpecialLwGetWeapon(fp)) = NULL;
 }
 
 // 0x80151FBC
@@ -135,14 +144,14 @@ sb32 ftPikachuSpecialLwCheckCollideThunder(GObj *fighter_gobj)
     f32 dist_x;
     f32 dist_y;
 
-    thunder_gobj = fp->status_vars.pikachu.speciallw.thunder_gobj;
+    thunder_gobj = (*ftPikachuSpecialLwGetWeapon(fp));
 
     if (thunder_gobj == NULL)
     {
-        fp->passive_vars.pikachu.is_thunder_destroy |= TRUE;
+        (*ftMainCharBuilderGetPikachuThunderDestroy(fp)) |= TRUE;
     }
 
-    if (fp->passive_vars.pikachu.is_thunder_destroy & TRUE)
+    if ((*ftMainCharBuilderGetPikachuThunderDestroy(fp)) & TRUE)
     {
         return FALSE;
     }
@@ -167,6 +176,10 @@ sb32 ftPikachuSpecialLwCheckCollideThunder(GObj *fighter_gobj)
         if (dist_y < FTPIKACHU_THUNDER_COLLIDE_Y)
         {
             wp->weapon_vars.thunder.thunder_state = nWPPikachuThunderStatusCollide;
+            /* The native weapon consumes itself on contact. Later adapter
+               cleanup must not follow its recycled GObj/user_data pointer. */
+            if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE)
+                (*ftPikachuSpecialLwGetWeapon(fp)) = NULL;
 
             return TRUE;
         }
@@ -183,7 +196,7 @@ void ftPikachuSpecialLwLoopProcUpdate(GObj *fighter_gobj)
     {
         ftPikachuSpecialLwHitSetStatus(fighter_gobj);
     }
-    else if (fp->passive_vars.pikachu.is_thunder_destroy & TRUE)
+    else if ((*ftMainCharBuilderGetPikachuThunderDestroy(fp)) & TRUE)
     {
         ftPikachuSpecialLwEndSetStatus(fighter_gobj);
     }
@@ -202,7 +215,7 @@ void ftPikachuSpecialAirLwLoopProcUpdate(GObj *fighter_gobj)
     {
         ftPikachuSpecialAirLwHitSetStatus(fighter_gobj);
     }
-    else if (fp->passive_vars.pikachu.is_thunder_destroy & TRUE)
+    else if ((*ftMainCharBuilderGetPikachuThunderDestroy(fp)) & TRUE)
     {
         ftPikachuSpecialAirLwEndSetStatus(fighter_gobj);
     }
@@ -228,18 +241,20 @@ void ftPikachuSpecialAirLwLoopProcMap(GObj *fighter_gobj)
 void ftPikachuSpecialLwProcDamage(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    GObj *thunder_gobj = fp->status_vars.pikachu.speciallw.thunder_gobj;
+    GObj *thunder_gobj = (*ftPikachuSpecialLwGetWeapon(fp));
 
     if (thunder_gobj == NULL)
     {
-        fp->passive_vars.pikachu.is_thunder_destroy |= TRUE;
+        (*ftMainCharBuilderGetPikachuThunderDestroy(fp)) |= TRUE;
     }
-    if (!(fp->passive_vars.pikachu.is_thunder_destroy & TRUE))
+    if (!((*ftMainCharBuilderGetPikachuThunderDestroy(fp)) & TRUE))
     {
         WPStruct *wp = wpGetStruct(thunder_gobj);
 
         wp->weapon_vars.thunder.thunder_state = nWPPikachuThunderStatusDestroy;
     }
+    (*ftPikachuSpecialLwGetWeapon(fp)) = NULL;
+    (*ftMainCharBuilderGetPikachuThunderDestroy(fp)) |= TRUE;
 }
 
 // 0x8015229C
@@ -315,7 +330,7 @@ void ftPikachuSpecialAirLwHitProcUpdate(GObj *fighter_gobj)
 void ftPikachuSpecialAirLwHitProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftPhysicsApplyGravityClampTVel(fp, FTPIKACHU_THUNDER_HIT_GRAVITY, attr->tvel_base);
 

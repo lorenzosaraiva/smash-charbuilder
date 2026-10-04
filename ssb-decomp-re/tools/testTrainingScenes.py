@@ -33,7 +33,12 @@ parser.add_argument('--direct-special',type=int,choices=(3,5,10),help='Check Sam
 parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every body instead of cycling neutral choices')
 parser.add_argument('--mario-animations',action='store_true',help='Check four Mario donor catalogs using real attack inputs and RAM poses')
 parser.add_argument('--roster-animations',action='store_true',help='Check every donor/body pair, live poses, recovery and Training return')
+parser.add_argument('--mechanic',type=int,choices=(1,3,5,6,7,8,9,10,11),help='Exercise remaining special mechanics across bodies')
+parser.add_argument('--mechanic-kind',choices=('hi','lw'),default='hi')
+parser.add_argument('--thunder-contact',action='store_true',help='Place the live native Thunder head in its owner-contact box to check the hit branch')
+parser.add_argument('--falcon-contact',action='store_true',help='Place the CPU in the live Falcon Dive catch volume to check native capture/throw')
 args=parser.parse_args()
+if args.mechanic is not None:args.superjump=args.mechanic
 if args.direct_special is not None:args.superjump=args.direct_special
 common_statuses=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonStatus')
 link_statuses=enum_values((ROOT/'src/ft/ftchar/ftlink/ftlink.h').read_text().replace('nFTCommonStatusSpecialStart',str(common_statuses['nFTCommonStatusSpecialStart'])),'ftLinkStatus')
@@ -58,6 +63,8 @@ value,length,index=layout_symbols['sSceneSmokeSpinLayout'];start=sections[index]
 spin_off,wp_kind_off,wp_state_off,wp_radius_off,wp_life_off,wp_damage_off=struct.unpack_from('>6I',data,start)
 value,length,index=layout_symbols['sSceneSmokeAnimationLayout'];start=sections[index][4]+value-sections[index][3]
 rotation_off,scale_off=struct.unpack_from('>2I',data,start)
+value,length,index=layout_symbols['sSceneSmokeMechanicLayout'];start=sections[index][4]+value-sections[index][3]
+link_next_off,wp_owner_off,item_off,it_kind_off,it_owner_off,link_bomb_kind,fox_angle_off,percent_off,ga_off,air_kind=struct.unpack_from('>10I',data,start)
 ftsize,kind_off,port_off,gobj_off,status_off,motion_off,attack_off,attack_size,attack_state_off,passive_off,passive_size,generation_off,physics_off,vel_air_off,hitlag_off,gobj_frame_off=fighter_layout
 slot_size,neutral_field,players_field,player_size,pkind_field,fkind_field,man_field,cpu_field,reset_field,stage_field=layout
 for name in ('input','video'):
@@ -102,6 +109,14 @@ def w32(a,v):C.c_uint32.from_address(ram+(a&0x7fffff)).value=v
 def f32(a):return C.c_float.from_address(ram+(a&0x7fffff)).value
 def wf32(a,v):C.c_float.from_address(ram+(a&0x7fffff)).value=v
 def fighter():return u32(addr('sFTManagerStructsAllocBuf'))
+def opponent():
+    node=u32(addr('gGCCommonLinks')+3*4)
+    for _ in range(4):
+        if not 0x80000000<=node<0x80800000:break
+        fp=u32(node+user_off)
+        if 0x80400000<=fp<0x80800000 and u8(fp+port_off)!=0:return fp
+        node=u32(node+link_next_off)
+    return 0
 def head():return u32(fighter()+thunder_off)
 def weapon_velocity():
     wp=u32(head()+user_off)
@@ -117,7 +132,7 @@ def wait(predicate,label,seconds=15):
     deadline=time.monotonic()+seconds
     while not predicate():
         if time.monotonic()>deadline:raise AssertionError((label,diagnostic()))
-        time.sleep(.01)
+        time.sleep(.001 if args.mechanic is not None else .01)
 def frames(count=12):
     initial=u32(addr('dSYTaskmanUpdateCount'))
     wait(lambda:u32(addr('dSYTaskmanUpdateCount'))>=initial+count,'Game stopped updating')
@@ -128,6 +143,10 @@ def heap_ok():
     assert start==0x80400000 and end==0x80800000 and start<=ptr<=end,diagnostic()
     return end-ptr
 trace=[];travel_trace=[];superjump_trace=[];spin_trace=[];last_trace=None
+weapon_seen=set();item_seen=set();pitch_trace=[]
+thunder_contact_done=False
+falcon_contact_done=False
+falcon_flight_statuses=set()
 animation_seen=set();animation_samples=0;animation_errors=[]
 motion_ids=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
 animation_variants={motion_ids['nFTCommonMotion'+m]:i for i,m in enumerate(MOTIONS[:29])}
@@ -151,7 +170,7 @@ if args.mario_animations or args.roster_animations:
         body_variants.append(variants)
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
-    global last_trace,animation_samples
+    global last_trace,animation_samples,thunder_contact_done,falcon_contact_done
     if args.mario_animations or args.roster_animations:
         if u8(scene)!=54:return
         fp=fighter()
@@ -214,6 +233,31 @@ def frame_callback(frame):
                             f32(a+radius_off),tuple(f32(a+center_off+j) for j in (0,4,8))))
         superjump_trace.append((record,tuple(f32(root+j) for j in (0,4,8)),s32(fp+lr_off),
                                 u32(fp+hitstatus_off),u8(fp+jumps_off),u32(u32(fp+attr_off)+jumps_max_off),attacks))
+        if args.mechanic is not None:
+            pitch_trace.append(f32(fp+fox_angle_off))
+            node=u32(addr('gGCCommonLinks')+5*4)
+            for _ in range(64):
+                if not 0x80000000<=node<0x80800000:break
+                wp=u32(node+user_off)
+                if 0x80000000<=wp<0x80800000 and u32(wp+wp_owner_off)==gobj:
+                    kind=u32(wp+wp_kind_off);weapon_seen.add(kind)
+                    if args.thunder_contact and kind==11 and not thunder_contact_done:
+                        pos=u32(node+obj_off)+position_off
+                        wf32(pos,f32(root));wf32(pos+4,f32(root+4)+225);wf32(pos+8,0)
+                        thunder_contact_done=True
+                node=u32(node+link_next_off)
+            item=u32(fp+item_off)
+            if 0x80000000<=item<0x80800000:
+                ip=u32(item+user_off)
+                if 0x80000000<=ip<0x80800000 and u32(ip+it_owner_off)==gobj:item_seen.add(u32(ip+it_kind_off))
+            if args.falcon_contact and record[0] in falcon_flight_statuses and mask&1:
+                cpu=opponent();cpu_gobj=u32(cpu+gobj_off) if cpu else 0
+                if 0x80000000<=cpu_gobj<0x80800000:
+                    target=u32(cpu_gobj+obj_off)+position_off
+                    center=attacks[0][2]
+                    wf32(target,center[0]);wf32(target+4,center[1]-200);wf32(target+8,0)
+                    w32(cpu+ga_off,air_kind)
+                    falcon_contact_done=True
         if args.superjump==5:
             spin=u32(fp+spin_off) if u32(fp+kind_off)==5 else u32(addr('gFTLinkCharBuilderSpinWeapons')+8)
             if record[0] in (nFTLinkHi,nFTLinkHiEnd,nFTLinkAirHi) and 0x80400000<=spin<0x80800000:
@@ -285,6 +329,9 @@ try:
             for i in range(13):w8(slot+2+i,(body+1)%12)
         w8(slot+18,args.superjump if args.superjump is not None and args.superjump!=10 else 11 if args.specials else args.path_donor if args.path_donor in (2,11) else body)
         w8(slot+19,10 if args.superjump==10 else 2 if args.specials else args.path_donor if args.path_donor in (0,4,7) else body)
+        if args.mechanic is not None:
+            w8(slot+18,args.mechanic if args.mechanic_kind=='hi' else body)
+            w8(slot+19,args.mechanic if args.mechanic_kind=='lw' else body)
         w8(slot+neutral_field,0 if args.path_donor is not None else choice)
         pulse(0x80);wait(lambda:u32(addr('sMNOptionBuilderMode'))==2,'Build editor')
         w32(addr('sMNOptionBuilderEntry'),23);pulse(0x80)
@@ -294,14 +341,14 @@ try:
         wait(lambda:u8(scene)==18 and u32(addr('sMNPlayers1PTrainingTotalTimeTics'))>70,'Training character select')
         frames(30);minima.append(heap_ok());pulse(0x10)
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Training stage select')
-        if args.direct_special is not None:
+        if args.direct_special is not None or args.mechanic is not None:
             # Dream Land avoids Castle's bumper/other stage attacks interrupting
             # the scripted rise before source timing/recovery can be measured.
             w32(addr('sMNMapsCursorSlot'),6)
         pulse(0x80);wait(lambda:u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180,'Training match load')
         frames(30);minima.append(heap_ok())
         if args.mario_animations or args.roster_animations:
-            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(0 if args.mechanic is not None else 1))))
             animation_seen.clear();animation_errors.clear();animation_samples=0
             def act(value,ticks=3,recovery=90):
                 keys(value);frames(ticks);keys(0);frames(recovery)
@@ -326,13 +373,17 @@ try:
             assert u32(addr('gFTCustomAnimationValidationFailures'))==0
             print(f'PASS: body {body}, {animation_samples} live shared poses, donor/variants {sorted(animation_seen)}.',flush=True)
         elif args.path_donor is not None or args.superjump is not None:
-            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(0 if args.mechanic is not None else 1))))
             donor=args.superjump if args.superjump is not None else args.path_donor;name=ROSTER[donor]
             common=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonStatus')
             header=(ROOT/'src/ft/ftchar'/('ft'+name.lower())/('ft'+name.lower()+'.h')).read_text()
             statuses=enum_values(header.replace('nFTCommonStatusSpecialStart',str(common['nFTCommonStatusSpecialStart'])),'ft'+name+'Status')
-            paths={statuses[c['phase'].replace('Motion','Status')]:c for c in path_catalog() if c['donor']==donor and (args.superjump is None or ('Lw' if donor==10 else 'Hi') in c['phase'])}
-            if donor==10:paths[statuses['nFTPurinStatusSpecialAirLw']]=paths[statuses['nFTPurinStatusSpecialLw']]
+            paths={statuses[c['phase'].replace('Motion','Status')]:c for c in path_catalog() if c['donor']==donor and (args.superjump is None or (('Hi' if args.mechanic_kind=='hi' else 'Lw') if args.mechanic is not None else ('Lw' if donor==10 else 'Hi')) in c['phase'])}
+            if donor==10 and (args.mechanic is None or args.mechanic_kind=='lw'):paths[statuses['nFTPurinStatusSpecialAirLw']]=paths[statuses['nFTPurinStatusSpecialLw']]
+            if donor==10 and args.mechanic is not None and args.mechanic_kind=='hi':paths[statuses['nFTPurinStatusSpecialAirHi']]=paths[statuses['nFTPurinStatusSpecialHi']]
+            if donor==5 and args.mechanic is not None and args.mechanic_kind=='lw':
+                for c in path_catalog():
+                    if c['donor']==5 and c['phase'].startswith('nFTCommonMotionLightThrow'):paths[common[c['phase'].replace('Motion','Status')]]=c
             def check_paths():
                 seen=set();hits=0;previous_status=None;resume_frame=-1;resumed_masks=()
                 for status,motion,frame,mask in trace:
@@ -365,7 +416,85 @@ try:
                 assert trace[-1][0] not in paths,(body,'Special recovery',trace[-1])
                 return seen
             trace.clear();travel_trace.clear();last_trace=None
-            if args.superjump is not None:
+            if args.mechanic is not None:
+                def check_mechanic_fields():
+                    reference={};samples=0
+                    for status,c in paths.items():
+                        wall=0;events={};active={};ticks=[]
+                        for op,a in c['events']:
+                            if op=='ftMotionCommandWait':wall+=int(a[0],0)
+                            elif op=='ftMotionCommandWaitAsync':wall=max(wall,int(a[0],0))
+                            else:events.setdefault(wall,[]).append((op,a))
+                        for tick in range(len(c['frames'])):
+                            for op,a in events.get(tick,()):
+                                if 'MakeAttackColl' in op:active[int(a[0],0)]=[int(v,0) for v in a]
+                                elif op=='ftMotionCommandClearAttackCollAll':active.clear()
+                                elif op=='ftMotionCommandClearAttackCollID':active.pop(int(a[0],0),None)
+                                elif op=='ftMotionCommandSetAttackCollSize' and int(a[0],0) in active:active[int(a[0],0)][6]=int(a[1],0)
+                                elif op=='ftMotionCommandSetAttackCollDamage' and int(a[0],0) in active:active[int(a[0],0)][3]=int(a[1],0)
+                            ticks.append({i:tuple(a) for i,a in active.items()})
+                        reference[status]=ticks
+                    for sample,(r,root,lr,hitstatus,jumps,jumps_max,attacks) in enumerate(superjump_trace):
+                        status,_,frame,mask=r
+                        if status not in reference or not 0<=frame<len(reference[status]):continue
+                        for aid,a in reference[status][frame].items():
+                            if not mask&(1<<aid):continue
+                            fields,radius,center=attacks[aid]
+                            angle=(a[10] if a[10]<512 else a[10]-1024)&0xffffffff
+                            assert fields==(a[3],angle,a[11],a[12],a[17]),(body,'Special hit fields',r,fields,a)
+                            assert abs(radius-a[6]*.5)<.01,(body,'Special radius',r,radius,a[6]*.5)
+                            if body!=donor:
+                                x,y,z=paths[status]['frames'][frame][1][aid]
+                                if donor==1 and args.mechanic_kind=='hi' and paths[status]['phase'].endswith(('SpecialHi','SpecialAirHi')):
+                                    from math import cos,sin
+                                    pivot=paths[status]['spawn'][frame];angle=pitch_trace[sample]
+                                    dz,dy=z-pivot[0],y-pivot[1]
+                                    z=pivot[0]+dz*cos(angle)-dy*sin(angle)
+                                    y=pivot[1]+dz*sin(angle)+dy*cos(angle)
+                                expected=(root[0]+z*lr,root[1]+y,root[2]-x*lr)
+                                assert max(abs(v-w) for v,w in zip(center,expected))<.1,(body,'Special center',r,center,expected)
+                            samples+=1
+                    return samples
+                direction=80 if args.mechanic_kind=='hi' else 176
+                allowed=set(statuses[k] for k in statuses if ('SpecialHi' in k or 'SpecialAirHi' in k) if args.mechanic_kind=='hi') if args.mechanic_kind=='hi' else set(statuses[k] for k in statuses if 'SpecialLw' in k or 'SpecialAirLw' in k)
+                if donor==5 and args.mechanic_kind=='lw':allowed.update((common['nFTCommonStatusLightThrowF4'],common['nFTCommonStatusLightThrowAirF4']))
+                if args.falcon_contact:falcon_flight_statuses={statuses['nFTCaptainStatusSpecialHi'],statuses['nFTCaptainStatusSpecialAirHi']}
+                for air in (False,True):
+                    pulse(0x10);w32(addr('sSC1PTrainingModeMenu'),4);pulse(0x80);frames(50)
+                    if air:keys(0x0800);frames(3);keys(0);frames(9)
+                    trace.clear();travel_trace.clear();superjump_trace.clear();pitch_trace.clear();weapon_seen.clear();item_seen.clear();last_trace=None
+                    thunder_contact_done=False
+                    falcon_contact_done=False
+                    keys(0x40 | (direction<<24));frames(3)
+                    # Keep the original hold controls for egg force, Reflector, Magnet and Stone.
+                    keys(0x40);frames(35);keys(0)
+                    if donor==5 and args.mechanic_kind=='lw':
+                        frames(18)
+                        assert u32(fighter()+item_off),(body,'Link bomb not held for second Down B')
+                        keys(0x40 | (176<<24));frames(3);keys(0);frames(100)
+                        assert any(r[0] in (common['nFTCommonStatusLightThrowF4'],common['nFTCommonStatusLightThrowAirF4']) for r in trace),(body,'Link Down B common toss dispatch')
+                    else:frames(240)
+                    seen=[r for r in trace if r[0] in allowed]
+                    assert seen,(body,name,args.mechanic_kind,'Special never entered',trace)
+                    assert u32(fighter()+status_off) not in allowed,(body,name,'Special did not recover',trace[-15:])
+                    assert u32(fighter()+hitstatus_off)==1,(body,name,'Invulnerability remained after recovery')
+                    assert u32(addr('gFTCustomMoveValidationFailures'))==0
+                    samples=check_mechanic_fields()
+                    expected_weapon={(3,'lw'):3,(6,'hi'):5,(9,'lw'):11,(8,'hi'):4}.get((donor,args.mechanic_kind))
+                    if expected_weapon is not None:assert expected_weapon in weapon_seen,(body,name,'Native projectile missing',weapon_seen,trace)
+                    if donor==5 and args.mechanic_kind=='lw':assert link_bomb_kind in item_seen,(body,'Held Link bomb missing',item_seen)
+                    if args.thunder_contact:
+                        assert thunder_contact_done and samples>0,(body,'Controlled Thunder owner contact missing',samples,trace)
+                    if args.falcon_contact:
+                        assert falcon_contact_done and any(r[0]==statuses['nFTCaptainStatusSpecialHiCatch'] for r in trace),(body,'Falcon Dive capture missing',falcon_contact_done,sorted({r[0] for r in trace}))
+                        assert any(r[0]==statuses['nFTCaptainStatusSpecialHiThrow'] for r in trace),(body,'Falcon Dive release missing',sorted({r[0] for r in trace}))
+                        assert u32(opponent()+percent_off)>=20,(body,'Falcon Dive throw damage missing',u32(opponent()+percent_off))
+                    print('PASS:',name,args.mechanic_kind,'on body',body,'air' if air else 'ground','native state phases',sorted({r[0] for r in seen}),'source hit samples',samples,flush=True)
+                # Interrupt while an egg/Thunder/Stone/movement action is active.
+                keys(0x40 | (direction<<24));frames(8);keys(0)
+                pulse(0x10);w32(addr('sSC1PTrainingModeMenu'),4);pulse(0x80);frames(50)
+                assert u32(fighter()+status_off) not in allowed and u32(fighter()+hitstatus_off)==1,(body,'Reset cleanup',diagnostic())
+            elif args.superjump is not None:
                 def check_superjump():
                     seen=check_paths();samples=0;damage_seen=set();landing=[];center_error=0
                     active_data={};hitstatus_data={};source_damage=set()
@@ -550,6 +679,9 @@ try:
             if args.roster_animations:
                 for attack in range(13):w8(slot+2+attack,(1,2,4,7)[player])
             w8(slot+18,args.superjump if args.direct_special in (3,5) else (0,4,0,4)[player] if args.superjump is not None and args.superjump!=10 else body);w8(slot+19,10 if args.superjump==10 else body);w8(slot+neutral_field,(9,10,11,6)[player])
+            if args.mechanic is not None:
+                w8(slot+18,args.mechanic if args.mechanic_kind=='hi' else body)
+                w8(slot+19,args.mechanic if args.mechanic_kind=='lw' else body)
             record=transfer+players_field+player*player_size
             w8(record+pkind_field,0 if player==0 else 1);w8(record+fkind_field,body)
         w8(transfer+man_field,1);w8(transfer+cpu_field,3);w8(transfer+reset_field,0);w8(transfer+stage_field,1)
@@ -558,7 +690,7 @@ try:
         frames(30);heap_ok();pulse(0x10)
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'VS stage select')
         pulse(0x80);wait(lambda:u8(scene)==22 and u32(addr('dSYTaskmanUpdateCount'))>240,'Four-slot VS battle')
-        frames(180);heap_ok();pulse(0x40 | ((176 if args.superjump==10 else 80)<<24) if args.superjump is not None else 0x40);frames(300 if args.superjump==10 else 160)
+        frames(180);heap_ok();pulse(0x40 | ((80 if args.mechanic_kind=='hi' else 176)<<24) if args.mechanic is not None else 0x40 | ((176 if args.superjump==10 else 80)<<24) if args.superjump is not None else 0x40);frames(300 if args.superjump==10 else 160)
         print('PASS: four assigned builds, human/three CPUs: Play VS -> CSS -> stage -> battle/B, upper-bank heap in bounds.',flush=True)
 finally:
     keys(0);core.CoreDoCommand(6,0,None);thread.join(timeout=3)

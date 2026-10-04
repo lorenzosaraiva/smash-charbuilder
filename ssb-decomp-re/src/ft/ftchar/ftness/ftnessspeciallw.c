@@ -83,7 +83,7 @@ void ftNessSpecialLwProcPhysics(GObj *fighter_gobj)
 void ftNessSpecialAirLwProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (fp->status_vars.ness.speciallw.gravity_delay != 0)
     {
@@ -231,7 +231,7 @@ void ftNessSpecialLwInitVars(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if (!(fp->is_effect_attach))
+    if (!(fp->is_effect_attach) && (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) == FALSE))
     {
         if (efManagerNessPsychicMagnetMakeEffect(fighter_gobj) != NULL)
         {

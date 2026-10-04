@@ -1155,6 +1155,8 @@ sb32 gmCollisionCheckWeaponInFighterRange(WPAttackColl *attack_coll, s32 attack_
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
 
+    if ((fp->is_reflect || fp->is_absorb) && ftMainCharBuilderIsSpecialAdapter(fighter_gobj)) return TRUE;
+
     if (attack_coll->attack_state == nGMAttackStateTransfer)
     {
         return gmCollisionCheckAttackInFighterRange(&attack_coll->attack_pos[attack_id].pos_curr, &DObjGetStruct(fighter_gobj)->translate.vec.f, &attr->hit_detect_range, attack_coll->size);
@@ -1175,6 +1177,8 @@ sb32 gmCollisionCheckItemInFighterRange(ITAttackColl *attack_coll, s32 attack_id
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
+
+    if ((fp->is_reflect || fp->is_absorb) && ftMainCharBuilderIsSpecialAdapter(fighter_gobj)) return TRUE;
 
     if (attack_coll->attack_state == nGMAttackStateTransfer)
     {
@@ -1559,8 +1563,17 @@ sb32 gmCollisionCheckWeaponAttackShieldCollide(WPAttackColl *attack_coll, s32 at
 // 0x800EFFCC
 sb32 gmCollisionCheckWeaponAttackSpecialCollide(WPAttackColl *attack_coll, s32 attack_id, FTStruct *fp, FTSpecialColl *special_coll)
 {
-    DObj *dobj = fp->joints[special_coll->joint_id];
-    FTParts *parts = ftGetParts(dobj);
+    Mtx44f donor_matrix;
+    Vec3f donor_size, zero = { 0.0F, 0.0F, 0.0F }, scale = { 1.0F, 1.0F, 1.0F };
+    DObj *dobj;
+    FTParts *parts;
+    if (ftMainCharBuilderGetSpecialSphere(fp, donor_matrix, &donor_size) != FALSE)
+        return gmCollisionTestSphere(&attack_coll->attack_pos[attack_id].pos_curr,
+            &attack_coll->attack_pos[attack_id].pos_prev, attack_coll->size,
+            attack_coll->attack_state, donor_matrix, &zero, &donor_size, &scale, 2, NULL, NULL);
+
+    dobj = fp->joints[special_coll->joint_id];
+    parts = ftGetParts(dobj);
 
     func_ovl2_800EDE00(dobj);
     func_ovl2_800EDE5C(dobj);
@@ -1784,8 +1797,17 @@ sb32 gmCollisionCheckItemAttackShieldCollide(ITAttackColl *attack_coll, s32 atta
 // 0x800F0518
 sb32 gmCollisionCheckItemAttackSpecialCollide(ITAttackColl *attack_coll, s32 attack_id, FTStruct *fp, FTSpecialColl *special_coll)
 {
-    DObj *dobj = fp->joints[special_coll->joint_id];
-    FTParts *parts = ftGetParts(dobj);
+    Mtx44f donor_matrix;
+    Vec3f donor_size, zero = { 0.0F, 0.0F, 0.0F }, scale = { 1.0F, 1.0F, 1.0F };
+    DObj *dobj;
+    FTParts *parts;
+    if (ftMainCharBuilderGetSpecialSphere(fp, donor_matrix, &donor_size) != FALSE)
+        return gmCollisionTestSphere(&attack_coll->attack_pos[attack_id].pos_curr,
+            &attack_coll->attack_pos[attack_id].pos_prev, attack_coll->size,
+            attack_coll->attack_state, donor_matrix, &zero, &donor_size, &scale, 2, NULL, NULL);
+
+    dobj = fp->joints[special_coll->joint_id];
+    parts = ftGetParts(dobj);
 
     func_ovl2_800EDE00(dobj);
     func_ovl2_800EDE5C(dobj);

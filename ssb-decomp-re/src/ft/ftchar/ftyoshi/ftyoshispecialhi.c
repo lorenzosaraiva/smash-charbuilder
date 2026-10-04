@@ -1,6 +1,13 @@
 #include <ft/fighter.h>
 #include <wp/weapon.h>
 
+static GObj** ftYoshiSpecialHiGetWeapon(FTStruct *fp)
+{
+    if ((fp->fkind == nFTKindYoshi) || (fp->fkind == nFTKindNYoshi))
+        return &fp->status_vars.yoshi.specialhi.egg_gobj;
+    return ftMainCharBuilderGetSpecialWeapon(fp, nFTKindYoshi);
+}
+
 // // // // // // // // // // // //
 //                               //
 //           FUNCTIONS           //
@@ -12,9 +19,10 @@ void ftYoshiSpecialHiProcDamage(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if (fp->status_vars.yoshi.specialhi.egg_gobj != NULL)
+    if ((*ftYoshiSpecialHiGetWeapon(fp)) != NULL)
     {
-        wpMainDestroyWeapon(fp->status_vars.yoshi.specialhi.egg_gobj);
+        wpMainDestroyWeapon((*ftYoshiSpecialHiGetWeapon(fp)));
+        (*ftYoshiSpecialHiGetWeapon(fp)) = NULL;
     }
 }
 
@@ -25,7 +33,8 @@ void ftYoshiSpecialHiGetEggPosition(FTStruct *fp, Vec3f *pos)
     pos->y = 0.0F;
     pos->z = 0.0F;
 
-    gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTYOSHI_EGGTHROW_JOINT), pos);
+    if (ftMainCharBuilderGetSpecialSpawn(fp->fighter_gobj, pos) == FALSE)
+        gmCollisionGetFighterPartsWorldPosition(fp->joints[FTYOSHI_EGGTHROW_JOINT], pos);
 }
 
 // 0x8015E9E0
@@ -34,14 +43,14 @@ void ftYoshiSpecialHiUpdateEggVectors(FTStruct *fp)
     DObj *joint;
     Vec3f pos;
 
-    if (fp->status_vars.yoshi.specialhi.egg_gobj != NULL)
+    if ((*ftYoshiSpecialHiGetWeapon(fp)) != NULL)
     {
         ftYoshiSpecialHiGetEggPosition(fp, &pos);
         joint = ftMainCharBuilderGetSpecialJoint(fp, FTYOSHI_EGGTHROW_JOINT);
 
-        DObjGetStruct(fp->status_vars.yoshi.specialhi.egg_gobj)->translate.vec.f = pos;
+        DObjGetStruct((*ftYoshiSpecialHiGetWeapon(fp)))->translate.vec.f = pos;
 
-        DObjGetStruct(fp->status_vars.yoshi.specialhi.egg_gobj)->scale.vec.f = joint->scale.vec.f;
+        DObjGetStruct((*ftYoshiSpecialHiGetWeapon(fp)))->scale.vec.f = joint->scale.vec.f;
     }
 }
 
@@ -56,17 +65,17 @@ void ftYoshiSpecialHiUpdateEggVars(GObj *fighter_gobj)
     {
         fp->motion_vars.flags.flag2 = 0;
 
-        if (fp->status_vars.yoshi.specialhi.egg_gobj != NULL)
+        if ((*ftYoshiSpecialHiGetWeapon(fp)) != NULL)
         {
-            wp = wpGetStruct(fp->status_vars.yoshi.specialhi.egg_gobj);
+            wp = wpGetStruct((*ftYoshiSpecialHiGetWeapon(fp)));
 
             wp->weapon_vars.egg_throw.is_throw = TRUE;
             wp->weapon_vars.egg_throw.throw_force = fp->status_vars.yoshi.specialhi.throw_force;
             wp->weapon_vars.egg_throw.stick_range = fp->input.pl.stick_range.x;
 
-            mpCommonRunWeaponCollisionDefault(fp->status_vars.yoshi.specialhi.egg_gobj, fp->coll_data.p_translate, &fp->coll_data);
+            mpCommonRunWeaponCollisionDefault((*ftYoshiSpecialHiGetWeapon(fp)), fp->coll_data.p_translate, &fp->coll_data);
 
-            fp->status_vars.yoshi.specialhi.egg_gobj = NULL;
+            (*ftYoshiSpecialHiGetWeapon(fp)) = NULL;
         }
         fp->motion_vars.flags.flag1 = 1;
     }
@@ -76,7 +85,7 @@ void ftYoshiSpecialHiUpdateEggVars(GObj *fighter_gobj)
 
         ftYoshiSpecialHiGetEggPosition(fp, &pos);
 
-        fp->status_vars.yoshi.specialhi.egg_gobj = wpYoshiEggThrowMakeWeapon(fighter_gobj, &pos);
+        (*ftYoshiSpecialHiGetWeapon(fp)) = wpYoshiEggThrowMakeWeapon(fighter_gobj, &pos);
     }
 }
 
@@ -171,7 +180,7 @@ void ftYoshiSpecialHiInitStatusVars(GObj *fighter_gobj)
     fp->proc_damage = ftYoshiSpecialHiProcDamage;
     fp->motion_vars.flags.flag2 = 0;
     fp->motion_vars.flags.flag1 = 0;
-    fp->status_vars.yoshi.specialhi.egg_gobj = NULL;
+    (*ftYoshiSpecialHiGetWeapon(fp)) = NULL;
     fp->status_vars.yoshi.specialhi.throw_force = 0;
 }
 

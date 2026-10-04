@@ -43,7 +43,7 @@ void ftPikachuSpecialAirHiStartProcUpdate(GObj *fighter_gobj)
 void ftPikachuSpecialAirHiStartProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     ftPhysicsApplyGravityClampTVel(fp, 0.8F, attr->tvel_base);
 
@@ -470,19 +470,19 @@ void ftPikachuSpecialAirHiEndProcPhysics(GObj *fighter_gobj)
     {
         FTAttributes *attr;
 
-        ftPhysicsApplyGravityDefault(fp, fp->attr);
+        ftPhysicsApplyGravityDefault(fp, ftMainCharBuilderGetSpecialAttributes(fp));
 
-        attr = fp->attr;
+        attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
         ftPhysicsClampAirVelXStickRange(fp, FTPHYSICS_AIRDRIFT_CLAMP_RANGE_MIN, attr->air_accel * FTPIKACHU_QUICKATTACK_AIR_ACCEL_MUL, attr->air_speed_max_x * FTPIKACHU_QUICKATTACK_AIR_SPEED_MUL);
        
-        ftPhysicsApplyAirVelXFriction(fp, fp->attr);
+        ftPhysicsApplyAirVelXFriction(fp, ftMainCharBuilderGetSpecialAttributes(fp));
     }
     else
     {
         fp->physics.vel_air.y -= (fp->physics.vel_air.y / FTPIKACHU_QUICKATTACK_VEL_Y_DIV);
 
-        ftPhysicsApplyAirVelXFriction(fp, fp->attr);
+        ftPhysicsApplyAirVelXFriction(fp, ftMainCharBuilderGetSpecialAttributes(fp));
     }
 }
 

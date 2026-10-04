@@ -22,7 +22,7 @@ void ftFoxSpecialAirHiStartProcUpdate(GObj *fighter_gobj)
 void ftFoxSpecialAirHiStartProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (fp->status_vars.fox.specialhi.gravity_delay != 0)
     {
@@ -276,12 +276,12 @@ void ftFoxSpecialAirHiProcMap(GObj *fighter_gobj)
 void ftFoxSpecialAirHiSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     mpCommonSetFighterAir(fp);
     ftMainSetStatus(fighter_gobj, nFTFoxStatusSpecialAirHi, fighter_gobj->anim_frame, 1.0F, FTSTATUS_PRESERVE_COLANIM);
 
-    fp->jumps_used = attr->jumps_max;
+    fp->jumps_used = fp->attr->jumps_max;
 }
 
 // 0x8015C4C8
@@ -333,7 +333,7 @@ setair:
 void ftFoxSpecialAirHiSetStatusFromGround(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (ABS(fp->input.pl.stick_range.x) + ABS(fp->input.pl.stick_range.y) >= FTFOX_FIREFOX_ANGLE_STICK_THRESHOLD)
     {
@@ -353,7 +353,7 @@ void ftFoxSpecialAirHiSetStatusFromGround(GObj *fighter_gobj)
 
     ftFoxSpecialHiUpdateModelPitch(fighter_gobj);
 
-    fp->jumps_used = attr->jumps_max;
+    fp->jumps_used = fp->attr->jumps_max;
 }
 
 // 0x8015C750
@@ -427,7 +427,7 @@ void ftFoxSpecialAirHiBoundProcUpdate(GObj* fighter_gobj)
 void ftFoxSpecialAirHiBoundProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (fp->ga == nMPKineticsAir)
     {

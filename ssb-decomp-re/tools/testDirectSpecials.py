@@ -35,7 +35,7 @@ actual_physics=''.join(function(physics,n) for n in (
     'ftPhysicsGetAirVelTransN','ftPhysicsApplyAirVelTransNYZ','ftPhysicsApplyAirVelFriction'))
 flags=[];indices={}
 for case in path_catalog():
-    if case['donor'] not in (3,5,10):continue
+    if not ((case['donor'] in (3,5) and 'Hi' in case['phase']) or (case['donor']==10 and 'Lw' in case['phase'])):continue
     wall=0;events={};flag1=0;row=[];air=case['air']
     for op,args in case['events']:
         if op=='ftMotionCommandWait':wall+=int(args[0],0)
@@ -55,7 +55,7 @@ link=(ROOT/'src/ft/ftchar/ftlink/ftlinkspecialhi.c').read_text()
 samus=(ROOT/'src/ft/ftchar/ftsamus/ftsamusspecialhi.c').read_text()
 rest=(ROOT/'src/ft/ftchar/ftpurin/ftpurinspeciallw.c').read_text()
 wp=(ROOT/'src/wp/wplink/wplinkspinattack.c').read_text()
-cleanup=main[main.index('    /* Reset, damage'):main.index('    ftCustomMoveResetClock(fp);',main.index('    /* Reset, damage'))].replace('fighter_gobj','g').replace('(status_id','(status')
+cleanup=main[main.index('    /* Reset, damage'):main.index('    if ((ftMainCharBuilderActivePath(fp) != NULL)',main.index('    /* Reset, damage'))].replace('fighter_gobj','g').replace('(status_id','(status')
 source=r'''
 #include <ft/fighter.h>
 #include <wp/weapon.h>

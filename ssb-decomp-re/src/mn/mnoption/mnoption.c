@@ -1107,10 +1107,6 @@ void mnOptionBuilderRandomize(void)
     seed = (seed * 1103515245) + 12345;
     slot->special_lw = (seed >> 16) % (nFTKindPlayableEnd + 1);
 
-    if (slot->special_lw == nFTKindKirby)
-    {
-        slot->special_lw = nFTKindSamus;
-    }
 }
 
 void mnOptionBuilderChangeValue(s32 add)
@@ -1154,7 +1150,7 @@ void mnOptionBuilderChangeValue(s32 add)
         }
         else *value = (*value == nFTKindMario) ? nFTKindPlayableEnd : *value - 1;
     }
-    while ((sMNOptionBuilderEntry == 21) && (*value == nFTKindKirby));
+    while (FALSE);
 }
 
 void mnOptionBuilderUseBodyForAll(void)

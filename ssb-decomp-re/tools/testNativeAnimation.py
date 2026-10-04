@@ -88,8 +88,13 @@ def main():
         output.append('static const OracleEvent '+event_symbol+'[] = {')
         probe = ('{3,0,3,12,{0,0,0},0},' if fighter=='Ness' and case['spawn'] else
                  '{3,0,3,16,{180,0,0},0},' if fighter=='Samus' and case['spawn'] else
-                 '{3,0,3,31,{0,0,0},0},' if fighter=='Yoshi' else
+                 '{3,0,3,31,{0,0,0},0},' if fighter=='Yoshi' and (case['spawn'] or case['anchors']) else
                  '{3,0,3,0,{0,0,0},0},' if fighter=='Link' and case['spawn'] else '')
+        if case.get('socket'):
+            joint,offset=case['socket']
+            probe='{3,0,3,'+str(joint)+',{'+','.join(map(str,offset))+'},0},'
+        if max(mask for mask,_ in case['frames'])&8:probe=''
+        case['oracle_probe']=bool(probe)
         if probe:output.append(probe)
         for op,a in case['events']:
             kind=value=aid=joint=scaled=0;offset=(0,0,0)
@@ -181,7 +186,7 @@ def main():
             centers=struct.unpack_from('<12f',raw,cursor);cursor+=48
             mask=struct.unpack_from('<I',raw,cursor)[0];cursor+=4
             expected_mask,expected_centers=case['frames'][frame]
-            has_probe=bool(case['spawn'] or case['anchors'])
+            has_probe=case.get('oracle_probe',False)
             assert mask&(7 if has_probe else 15)==expected_mask,(case['fighter'],case['phase'],frame,mask,expected_mask)
             for aid in range(3 if has_probe else 4):
                 if not expected_mask&(1<<aid):continue
@@ -200,7 +205,7 @@ def main():
                 assert max(abs(a-b) for a,b in zip(movement,case['travel'][frame]))<0.003,(case['fighter'],'root movement',frame)
             previous_trans=trans
             probe=case['spawn'] or case['anchors']
-            if probe:
+            if probe and has_probe:
                 native=(centers[11],centers[10],-centers[9])
                 assert mask&8 and max(abs(a-b) for a,b in zip(native,probe[frame]))<0.003,(case['fighter'],case['phase'],'socket',frame,native,probe[frame])
     print(f'PASS: 30 neutral phases, DK Hand Slap and {len(path_catalog())} Up/Down B phases, {action_centers} active centers, grounded root movement, charge/boomerang sockets and Yoshi capture anchors match original playback/matrices; max center error {action_error:.7f}.')

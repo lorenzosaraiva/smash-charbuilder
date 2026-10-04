@@ -17,6 +17,7 @@ void ftKirbySpecialLwUpdateColAnim(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE) return;
     if (fp->damage_resist < FTKIRBY_STONE_HEALTH_MID) // Apply color overlay based on remaining Stone HP
     {
         if (fp->damage_resist < FTKIRBY_STONE_HEALTH_LOW)
@@ -51,7 +52,8 @@ void ftKirbySpecialLwSetDamageResist(GObj *fighter_gobj)
     fp->status_vars.kirby.speciallw.duration = FTKIRBY_STONE_DURATION_MAX;
     fp->status_vars.kirby.speciallw.colanim_id = nGMColAnimFighterKirbySpeciaLwHigh;
 
-    ftParamCheckSetFighterColAnimID(fighter_gobj, nGMColAnimFighterKirbySpeciaLwHigh, 0);
+    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) == FALSE)
+        ftParamCheckSetFighterColAnimID(fighter_gobj, nGMColAnimFighterKirbySpeciaLwHigh, 0);
 }
 
 // 0x80161468
@@ -190,7 +192,7 @@ void ftKirbySpecialAirLwFallProcUpdate(GObj *fighter_gobj)
 void ftKirbySpecialLwHoldProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
     f32 temp_slide_angle;
     f32 ground_vel_x;
     f32 slide_angle;
