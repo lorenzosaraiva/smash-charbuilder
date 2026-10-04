@@ -8,6 +8,11 @@
 #include <gr/grdef.h>
 #include <gm/gmdef.h>
 
+extern FTAttributes* ftMainCharBuilderGetSpecialAttributes(FTStruct *fp);
+extern sb32* ftMainCharBuilderGetTornadoExpend(FTStruct *fp);
+extern void ftMainCharBuilderSetSpecialTravelAngle(FTStruct *fp, f32 angle);
+extern sb32 ftMainCharBuilderGetSpecialTravel(FTStruct *fp, Vec3f *out, sb32 ground);
+extern sb32 ftMainCharBuilderGetSpecialSpawn(GObj *g, Vec3f *out);
 extern FTNessPassiveVars* ftMainCharBuilderGetNessPassive(FTStruct *fp);
 extern void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms, u32 ev_kind);
 extern void ftMainUpdateMotionEventsAll(GObj* fighter_gobj);

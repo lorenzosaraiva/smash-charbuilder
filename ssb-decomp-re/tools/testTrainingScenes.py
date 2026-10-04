@@ -11,6 +11,8 @@ from pathlib import Path
 from elfData import read_elf
 from auditNormalMoves import enum_values
 from hostFighterHeaders import prepare
+from generateSpecialTiming import path_catalog
+from auditNormalMoves import ROSTER
 
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
@@ -22,6 +24,7 @@ parser.add_argument('--four-mb',action='store_true')
 parser.add_argument('--cases',type=int,default=12)
 parser.add_argument('--first-choice',type=int,default=0)
 parser.add_argument('--specials',action='store_true',help='Exercise borrowed DK Down B and Ness Up B instead of neutral actions')
+parser.add_argument('--path-donor',type=int,choices=(0,2,4,7,11),help='Exercise donor special paths, movement, or Ness steering/self-contact')
 parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every body instead of cycling neutral choices')
 args=parser.parse_args()
 if not 0<=args.first_choice<12 or not 1<=args.cases<=12-args.first_choice:
@@ -36,6 +39,8 @@ value,length,index=layout_symbols['sSceneSmokeLayout'];start=sections[index][4]+
 layout=struct.unpack_from('>'+str(length//4)+'I',data,start)
 value,length,index=layout_symbols['sSceneSmokeFighterLayout'];start=sections[index][4]+value-sections[index][3]
 fighter_layout=struct.unpack_from('>'+str(length//4)+'I',data,start)
+value,length,index=layout_symbols['sSceneSmokeSpecialLayout'];start=sections[index][4]+value-sections[index][3]
+joints_off,lr_off,thunder_off,delay_off,obj_off,user_off,position_off,weapon_vel_off,battle_status_off=struct.unpack_from('>9I',data,start)
 ftsize,kind_off,port_off,gobj_off,status_off,motion_off,attack_off,attack_size,attack_state_off,passive_off,passive_size,generation_off,physics_off,vel_air_off,hitlag_off,gobj_frame_off=fighter_layout
 slot_size,neutral_field,players_field,player_size,pkind_field,fkind_field,man_field,cpu_field,reset_field,stage_field=layout
 for name in ('input','video'):
@@ -74,6 +79,13 @@ def u8(a):return C.c_uint8.from_address(ram+((a&0x7fffff)^3)).value
 def u32(a):return C.c_uint32.from_address(ram+(a&0x7fffff)).value
 def w8(a,v):C.c_uint8.from_address(ram+((a&0x7fffff)^3)).value=v
 def w32(a,v):C.c_uint32.from_address(ram+(a&0x7fffff)).value=v
+def f32(a):return C.c_float.from_address(ram+(a&0x7fffff)).value
+def wf32(a,v):C.c_float.from_address(ram+(a&0x7fffff)).value=v
+def fighter():return u32(addr('sFTManagerStructsAllocBuf'))
+def head():return u32(fighter()+thunder_off)
+def weapon_velocity():
+    wp=u32(head()+user_off)
+    return tuple(f32(wp+weapon_vel_off+j) for j in (0,4))
 def diagnostic():
     fault=u32(addr('__osFaultedThread'))
     context=[hex(u32(fault+j)) for j in (0x118,0x11c,0x120,0x124,0x128)] if fault else []
@@ -93,11 +105,11 @@ def heap_ok():
     start,end,ptr=(u32(heap+j) for j in (4,8,12))
     assert start==0x80400000 and end==0x80800000 and start<=ptr<=end,diagnostic()
     return end-ptr
-trace=[];last_trace=None
+trace=[];travel_trace=[];last_trace=None
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
     global last_trace
-    if not args.specials or u8(scene)!=54:return
+    if (not args.specials and args.path_donor is None) or u8(scene)!=54:return
     fp=u32(addr('sFTManagerStructsAllocBuf'))
     if not 0x80400000<=fp<0x80800000:return
     if u8(fp+port_off)!=0:return
@@ -106,6 +118,8 @@ def frame_callback(frame):
     source_frame=C.c_float.from_address(ram+((gobj+gobj_frame_off)&0x7fffff)).value
     mask=sum(1<<i for i in range(4) if u32(fp+attack_off+i*attack_size+attack_state_off))
     record=(u32(fp+status_off),u32(fp+motion_off),int(source_frame),mask)
+    if args.path_donor is not None:
+        travel_trace.append((record,tuple(f32(fp+physics_off+vel_air_off+j) for j in (0,4))))
     if record!=last_trace:trace.append(record);last_trace=record
 check(core.CoreDoCommand(15,0,C.cast(frame_callback,C.c_void_p)))
 thread=threading.Thread(target=lambda:check(core.CoreDoCommand(5,0,None)),daemon=True)
@@ -113,7 +127,7 @@ thread.start()
 try:
     wait(lambda:u32(0x80000318)==(0x400000 if args.four_mb else 0x800000),'Boot memory size')
     time.sleep(2)
-    check(core.CoreDoCommand(17,5,C.byref(C.c_int(0)))) # Run these timing tests at normal speed; other smoke tests run uncapped.
+    check(core.CoreDoCommand(17,5,C.byref(C.c_int(0)))) # Run menus uncapped; limit speed during frame-by-frame gameplay checks.
     # Skip the intro only. From Options onward, use the actual button handlers.
     w8(scene+1,u8(scene));w8(scene,57);w32(addr('sSYTaskmanStatus'),1)
     wait(lambda:u8(scene)==57 and u32(addr('sMNOptionTotalTimeTics'))>30,'Options load')
@@ -121,14 +135,16 @@ try:
     wait(lambda:u32(addr('sMNOptionBuilderMode'))==1,'Lab hub')
     minima=[]
     for case in range(args.first_choice,args.first_choice+args.cases):
-        choice=11 if args.egg_lay else case
+        choice=0 if args.path_donor is not None else 11 if args.egg_lay else case
         if u32(addr('sMNOptionBuilderMode'))==2:pulse(0x40)
         preset=case%4;body=(case+2)%12
         w32(addr('sMNOptionBuilderSlot'),preset)
         slot=addr('gSCManagerCharBuilderSlots')+preset*slot_size
         w8(slot,1);w8(slot+1,body)
         for i in range(16):w8(slot+2+i,body)
-        w8(slot+18,11 if args.specials else body);w8(slot+19,2 if args.specials else body);w8(slot+neutral_field,choice)
+        w8(slot+18,11 if args.specials else args.path_donor if args.path_donor in (2,11) else body)
+        w8(slot+19,2 if args.specials else args.path_donor if args.path_donor in (0,4,7) else body)
+        w8(slot+neutral_field,0 if args.path_donor is not None else choice)
         pulse(0x80);wait(lambda:u32(addr('sMNOptionBuilderMode'))==2,'Build editor')
         w32(addr('sMNOptionBuilderEntry'),23);pulse(0x80)
         if args.four_mb:
@@ -139,7 +155,81 @@ try:
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Training stage select')
         pulse(0x80);wait(lambda:u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180,'Training match load')
         frames(30);minima.append(heap_ok())
-        if args.specials:
+        if args.path_donor is not None:
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            donor=args.path_donor;name=ROSTER[donor]
+            common=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonStatus')
+            header=(ROOT/'src/ft/ftchar'/('ft'+name.lower())/('ft'+name.lower()+'.h')).read_text()
+            statuses=enum_values(header.replace('nFTCommonStatusSpecialStart',str(common['nFTCommonStatusSpecialStart'])),'ft'+name+'Status')
+            paths={statuses[c['phase'].replace('Motion','Status')]:c for c in path_catalog() if c['donor']==donor}
+            def check_paths():
+                seen=set();hits=0;previous_status=None;resume_frame=-1;resumed_masks=()
+                for status,motion,frame,mask in trace:
+                    if status not in paths:continue
+                    c=paths[status];seen.add(status)
+                    if status!=previous_status:
+                        resume_frame=frame if frame>1 else -1;wall=0;events={};resumed_masks=[]
+                        for op,a in c['events']:
+                            if op=='ftMotionCommandWait':wall+=int(a[0],0)
+                            elif op=='ftMotionCommandWaitAsync':wall=max(wall,int(a[0],0))
+                            elif 'AttackColl' in op and wall>resume_frame:events.setdefault(wall,[]).append((op,a))
+                        active=0
+                        for tick in range(len(c['frames'])):
+                            for op,a in events.get(tick,()):
+                                if 'MakeAttackColl' in op:active|=1<<int(a[0],0)
+                                elif op=='ftMotionCommandClearAttackCollAll':active=0
+                                elif op=='ftMotionCommandClearAttackCollID':active&=~(1<<int(a[0],0))
+                            resumed_masks.append(active)
+                        previous_status=status
+                    if body==donor and name=='Ness' and c['phase'].endswith('HiJibaku'):
+                        hits+=bool(mask);continue # Native nine-frame pose clock; action timer is separate.
+                    if 0<=frame<len(c['frames']):
+                        expected=c['frames'][frame][0]
+                        # Native ground/air switching clears attacks and fast-forwards
+                        # earlier creations. Each attack ID resumes when created again.
+                        if donor in (0,4) and resume_frame>=0:expected=resumed_masks[frame]
+                        assert mask==expected,(body,c['phase'],frame,'mask',mask,expected,trace)
+                        hits+=bool(mask)
+                assert seen and hits,(body,'No donor hitbox phase',seen,trace)
+                assert trace[-1][0] not in paths,(body,'Special recovery',trace[-1])
+                return seen
+            trace.clear();travel_trace.clear();last_trace=None
+            if donor==11:
+                keys(0x40 | (80<<24));frames(3);keys(0)
+                wait(lambda:u32(fighter()+status_off) in (statuses['nFTNessStatusSpecialHiHold'],statuses['nFTNessStatusSpecialAirHiHold']),'PK Thunder hold')
+                keys(80<<16);frames(8);right=weapon_velocity()
+                keys(176<<16);frames(8);left=weapon_velocity();keys(0)
+                assert max(abs(a-b) for a,b in zip(right,left))>1,(body,'PK Thunder steering',right,left)
+                wait(lambda:u32(fighter()+delay_off)==0,'PK Thunder self-contact delay')
+                check(core.CoreDoCommand(7,0,None));time.sleep(.03)
+                fp=fighter();gobj=u32(fp+gobj_off);top=u32(gobj+obj_off);thunder=head()
+                assert thunder,(body,'Missing controlled PK Thunder head')
+                pos=u32(thunder+obj_off)+position_off;root=top+position_off
+                wf32(pos,f32(root)-100*f32(fp+lr_off));wf32(pos+4,f32(root+4)+50);wf32(pos+8,0)
+                check(core.CoreDoCommand(8,0,None));frames(240)
+                seen=check_paths()
+                assert statuses['nFTNessStatusSpecialAirHiJibaku'] in seen or statuses['nFTNessStatusSpecialHiJibaku'] in seen,(body,'PK Thunder launch',seen,trace)
+                print('PASS: Ness Up B on body',body,'steers, controlled self-contact launches and recovers with source collision timing.',flush=True)
+            else:
+                direction=80 if donor==2 else 176
+                keys(0x40 | (direction<<24));frames(3);keys(0);frames(210)
+                seen=check_paths()
+                if donor==7:assert max(abs(v[0]) for r,v in travel_trace if r[0] in paths)>50,(body,'Falcon Kick travel')
+                print('PASS:',name,'special on body',body,'ground start, source hit masks and recovery.',flush=True)
+                trace.clear();travel_trace.clear();last_trace=None
+                keys(0x0800);frames(3);keys(0);frames(8)
+                keys(0x40 | (direction<<24));frames(3);keys(0)
+                if donor in (0,4):
+                    frames(12);before=f32(fighter()+physics_off+vel_air_off+4)
+                    keys(0x40);frames(3);keys(0)
+                    after=f32(fighter()+physics_off+vel_air_off+4)
+                    assert after>before+5,(body,'Tornado B-tap rise',before,after)
+                frames(240)
+                seen=check_paths()
+                assert any('SpecialAir' in paths[status]['phase'] for status in seen),(body,'Aerial special phase',seen,trace)
+                print('PASS:',name,'special on body',body,'aerial start, source hit masks and recovery.',flush=True)
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(0))))
+        elif args.specials:
             check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
             trace.clear();last_trace=None
             pulse(0x40 | (176<<24));frames(200) # B + down, analog -80.
@@ -162,14 +252,27 @@ try:
             assert not 228<=trace[-1][0]<=236,(body,'Ness recovery',trace[-1])
             print('PASS: Ness Up B on body',body,'start -> hold/projectile expiry -> end/recovery, no freeze.',flush=True)
         else:pulse(0x40);frames(200) # Actual B input and recovery/charging.
-        pulse(0x20);frames(30) # Store a charge where supported.
-        pulse(0x40);frames(120)
-        check(core.CoreDoCommand(17,5,C.byref(C.c_int(0))))
-        pulse(0x10);frames(12) # Pause, then native Exit button handler.
+        if args.path_donor is None:
+            pulse(0x20);frames(30) # Store a charge where supported.
+            pulse(0x40);frames(120)
+        if args.path_donor is not None:
+            paused=enum_values((ROOT/'src/sc/scdef.h').read_text(),'SCBattleGameStatus')['nSCBattleGameStatusPause']
+            # Native Training ignores Start during KO/respawn. Wait for a legal
+            # pause instead of firing Exit at an unopened menu.
+            for attempt in range(4):
+                keys(0x10);frames(3);keys(0);frames(12)
+                if u8(u32(addr('gSCManagerBattleState'))+battle_status_off)==paused:break
+                frames(120)
+            assert u8(u32(addr('gSCManagerBattleState'))+battle_status_off)==paused,('Training pause',diagnostic())
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(0))))
+        else:
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(0))))
+            pulse(0x10);frames(12) # Pause, then native Exit button handler.
         w32(addr('sSC1PTrainingModeMenu'),5);pulse(0x80)
         wait(lambda:u8(scene)==57 and u32(addr('sMNOptionBuilderMode'))==2,'Return to editor')
         assert u32(addr('sMNOptionBuilderSlot'))==preset and u32(addr('sMNOptionBuilderEntry'))==23
-        print(f'PASS: body {body}, neutral {choice}, preset {preset}: Test -> CSS -> stage -> Training -> B/store/B -> same editor.',flush=True)
+        action_label='donor special' if args.path_donor is not None else 'B/store/B'
+        print(f'PASS: body {body}, neutral {choice}, preset {preset}: Test -> CSS -> stage -> Training -> {action_label} -> same editor.',flush=True)
     if not args.four_mb:
         print('PASS: Training heap headroom at least',min(minima),'bytes.',flush=True)
         pulse(0x40);wait(lambda:u32(addr('sMNOptionBuilderMode'))==1,'Lab hub for VS')

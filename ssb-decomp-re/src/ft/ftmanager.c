@@ -448,13 +448,14 @@ static sb32 ftManagerIsCharBuilderSlotActive(s32 slot_id)
 static sb32 ftManagerCharBuilderSpecialHiNeedsMain(s32 fkind)
 {
     return (fkind == nFTKindLink) || (fkind == nFTKindYoshi) ||
-           (fkind == nFTKindKirby) || (fkind == nFTKindNess);
+           (fkind == nFTKindKirby) || (fkind == nFTKindNess) || (fkind == nFTKindDonkey);
 }
 
 static sb32 ftManagerCharBuilderSpecialLwNeedsMain(s32 fkind)
 {
-    return (fkind == nFTKindSamus) || (fkind == nFTKindLink) ||
-           (fkind == nFTKindYoshi) || (fkind == nFTKindPikachu);
+    return (fkind == nFTKindMario) || (fkind == nFTKindLuigi) ||
+           (fkind == nFTKindSamus) || (fkind == nFTKindLink) ||
+           (fkind == nFTKindYoshi) || (fkind == nFTKindPikachu) || (fkind == nFTKindCaptain);
 }
 
 // 0x800D782C
@@ -839,6 +840,7 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
     ftParamSetHitStatusPartAll(fighter_gobj, nGMHitStatusNormal);
     ftParamResetFighterColAnim(fighter_gobj);
     ftMainCharBuilderResetNeutral(fp);
+    *ftMainCharBuilderGetTornadoExpend(fp) = FALSE;
 }
 
 // 0x800D7F3C

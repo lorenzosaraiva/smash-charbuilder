@@ -216,7 +216,7 @@ void ftCaptainSpecialLwAirSetStatus(GObj *fighter_gobj)
     ftMainSetStatus(fighter_gobj, nFTCaptainStatusSpecialLwAir, 0.0F, 1.0F, FTSTATUS_PRESERVE_EFFECT);
 
     fp->joints[nFTPartsJointTopN]->rotate.vec.f.z = rot_z;
-    fp->joints[nFTPartsJointTransN]->rotate.vec.f.z = fp->joints[nFTPartsJointTopN]->rotate.vec.f.z;
+    ftMainCharBuilderSetSpecialTravelAngle(fp, fp->joints[nFTPartsJointTopN]->rotate.vec.f.z);
 
     fp->proc_lagstart = ftParamProcPauseEffect;
     fp->proc_lagend = ftParamProcResumeEffect;

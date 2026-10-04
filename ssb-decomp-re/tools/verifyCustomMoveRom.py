@@ -11,7 +11,7 @@ from customMoveTiming import animation_duration
 from generateCustomCollisions import catalog, stored_frames
 from generateNeutralProjectiles import catalog as projectile_catalog, render as render_projectiles
 from generateNeutralActions import catalog as action_catalog, render as render_actions
-from generateSpecialTiming import catalog as special_catalog, render as render_specials, donkey_frames
+from generateSpecialTiming import catalog as special_catalog, render as render_specials, donkey_frames, path_catalog
 from auditNormalMoves import enum_values
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,6 +69,11 @@ programs = [struct.unpack_from('>8I',elf,phoff+i*size) for i in range(count)]
 for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMainProcPhysicsMap','ftMainHasCustomAttackTimeline',
              'ftMainUpdateComboStats','ftMainProcUpdateInterrupt',
              'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
+             'ftMainCharBuilderGetSpecialTravel','ftMainCharBuilderGetSpecialSpawn',
+             'ftMainCharBuilderSetSpecialTravelAngle',
+             'ftMainCharBuilderGetSpecialAttributes','ftMainCharBuilderGetTornadoExpend',
+             'ftPhysicsGetAirVelTransN','ftPhysicsApplyGroundVelTransN',
+             'ftNessSpecialHiCheckCollidePKThunder','ftNessSpecialAirHiJibakuProcUpdate',
              'ftManagerSetupFilesPlayablesAll','wpMarioFireballMakeWeapon',
              'wpPikachuThunderJoltAirMakeWeapon','wpPikachuThunderJoltGroundMakeWeapon',
              'wpNessPKFireMakeWeapon','itNessPKFireMakeItem',
@@ -223,6 +228,67 @@ for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
     if found:break
 assert found,'Neutral action pointers/collision paths/sockets missing from ROM'
 print('PASS: all 30 neutral phases and linked script, timing, collision, travel, projectile and capture pointers match host-tested data.')
+# Verify the compiled special scripts against original packed source fields and
+# follow every actual ROM pointer, including collision, travel and spawn arrays.
+def verify_special_paths():
+    host,sections,symbols=read_elf(ROOT/'build/testSpecialTiming','<')
+    def words(name):
+        address,length,index=symbols[name]
+        start=sections[index][4]+address-sections[index][3]
+        return struct.unpack_from('<'+str(length//4)+'I',host,start)
+    payloads={}
+    for name,(address,length,index) in symbols.items():
+        if name.startswith('sFTCharBuilderSpecialPath') and name!='sFTCharBuilderSpecialPaths':
+            data=words(name);payloads[address]=data
+            assert struct.pack('>'+str(len(data))+'I',*data) in rom,name
+    records=words('sFTCharBuilderSpecialPaths');assert len(records)==20*13
+    for i,c in enumerate(path_catalog()):
+        expected=[];wall=0
+        for op,args in c['events']:
+            if op=='ftMotionCommandWait':wall+=int(args[0],0);continue
+            if op=='ftMotionCommandWaitAsync':wall=max(wall,int(args[0],0));continue
+            if 'AttackColl' not in op and not op.startswith('ftMotionCommandSetFlag') and op not in ('ftMotionCommandSetHitStatusAll','ftMotionCommandSetSlopeContour'):continue
+            a=[int(v,0) for v in args]
+            if op=='ftMotionCommandMakeAttackColl':
+                aid,gid,jid,dmg,reb,element,size,x,y,z,angle,kbs,kbw,ga,sd,fl,fk,kbb=a
+                data=(ops['nFTMotionEventMakeAttackColl']<<26|aid<<23|gid<<20|dmg<<5|reb<<4|element,
+                      (size&65535)<<16|(x&65535),(y&65535)<<16|(z&65535),
+                      (angle&1023)<<22|kbs<<12|kbw<<2|ga,(sd&255)<<24|fl<<21|fk<<17|kbb<<7)
+            else:
+                data=(ops['nFTMotionEvent'+op[len('ftMotionCommand'):]]<<26|(a[0] if a else 0),)
+            expected.append((wall,data))
+        data=words('sFTCharBuilderSpecialPath'+str(i)+'Script');actual=[];cursor=frame=0
+        while cursor<len(data):
+            word=data[cursor];opcode=word>>26;cursor+=1
+            if opcode==ops['nFTMotionEventAsyncWait']:frame=word&0x3ffffff
+            elif opcode==ops['nFTMotionEventEnd']:break
+            elif opcode==ops['nFTMotionEventMakeAttackColl']:
+                assert not word&(127<<13),'Foreign skeleton in special script'
+                actual.append((frame,(word,*data[cursor:cursor+4])));cursor+=4
+            else:actual.append((frame,(word,)))
+        assert actual==expected,('Special collision/flag source fields and event timing',c['phase'])
+    def matches(table):
+        if table is None:return False
+        for i in range(20):
+            expected=records[i*13:i*13+13];actual=table[i*13:i*13+13]
+            if any(actual[f]!=expected[f] for f in (0,1,3,4,5,7,8,9,10)):return False
+            for f in (2,6,11,12):
+                pointer=expected[f]
+                if not pointer:
+                    if actual[f]:return False
+                elif loaded_words(actual[f],len(payloads[pointer]))!=payloads[pointer]:return False
+        return True
+    prefix=struct.pack('>2I',*records[:2]);found=False
+    for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
+        if typ!=1:continue
+        pos=rom.find(prefix,paddr,paddr+filesz)
+        while pos!=-1:
+            if matches(loaded_words(vaddr+pos-paddr,20*13)):found=True;break
+            pos=rom.find(prefix,pos+1,paddr+filesz)
+        if found:break
+    assert found,'Special path registry/pointers missing from ROM'
+    print('PASS: 20 source special scripts, damage/radii/knockback/flags/timing and linked collision/travel/spawn paths match checked data.')
+verify_special_paths()
 assert 'ftMainCharBuilderIsSpecialN' not in symbols  # Removed blanket laser interception.
 for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     name = 'sFTCustomAnimation'+donor

@@ -19,3 +19,13 @@ const u32 sSceneSmokeFighterLayout[] = {
     __builtin_offsetof(FTStruct, player_num), __builtin_offsetof(FTStruct, physics),
     __builtin_offsetof(struct FTPhysics, vel_air), __builtin_offsetof(FTStruct, hitlag_tics), __builtin_offsetof(GObj, anim_frame)
 };
+
+#include <wp/weapon.h>
+const u32 sSceneSmokeSpecialLayout[] = {
+    __builtin_offsetof(FTStruct, joints), __builtin_offsetof(FTStruct, lr),
+    __builtin_offsetof(FTStruct, status_vars.ness.specialhi.pkthunder_gobj),
+    __builtin_offsetof(FTStruct, status_vars.ness.specialhi.pkjibaku_delay),
+    __builtin_offsetof(GObj, obj), __builtin_offsetof(GObj, user_data),
+    __builtin_offsetof(DObj, translate.vec.f),
+    __builtin_offsetof(WPStruct, physics.vel_air), __builtin_offsetof(SCBattleState, game_status)
+};

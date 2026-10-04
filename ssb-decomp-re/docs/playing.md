@@ -106,4 +106,7 @@ angled poses stay native. Visual acceptance is still pending.
 Borrowed Up/Down B currently use idle/falling poses while their donor phase clocks
 control duration and events. DK Down B keeps both original slap windows; tap B
 again during a cycle to queue another cycle. Ness Up B now loads its wave/trail
-assets on other bodies. See [timing and remaining limits](special-timing.md).
+assets on other bodies. DK Up B, Mario/Luigi Tornado and Falcon Kick now keep donor
+hitbox paths and numeric values independent of those poses. Falcon Kick uses its
+original movement, and Ness uses its original projectile socket/self-launch
+clock. Tap B during Tornado to rise. See [coverage and limits](special-timing.md).

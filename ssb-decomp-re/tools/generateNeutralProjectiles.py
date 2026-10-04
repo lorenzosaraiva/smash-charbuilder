@@ -17,6 +17,26 @@ def commands(name):
     scripts = source_scripts()
     names = tuple(scripts)
     result = []
+    # Some native descriptor offsets point into the following adjacent array.
+    # Resolve byte offsets against packed event lengths, including fallthrough.
+    offset=re.fullmatch(r'(\w+)\s*\+\s*(0x[\da-fA-F]+|\d+)',name)
+    if offset:
+        name,skip=offset[1],int(offset[2],0)//4
+        assert int(offset[2],0)%4==0
+        while skip:
+            total=sum(5 if 'MakeAttackColl' in op else
+                      4 if op in ('ftMotionCommandEffect','ftMotionCommandEffectItemHold','ftMotionCommandSetDamageCollPartID') else
+                      2 if op in ('ftMotionCommandGoto','ftMotionCommandSubroutine','ftMotionCommandSetParallelScript','ftMotionCommandSetAttackCollOffset','ftMotionCommandSetThrow') else 1
+                      for op,_ in calls(scripts[name]))
+            if skip<total:
+                result.extend(expand(name+' + '+str(skip*4),scripts));break
+            skip-=total
+            name=names[names.index(name)+1]
+        else:
+            result.extend(expand(name,scripts))
+        if any(op in ('ftMotionCommandEnd','ftMotionCommandReturn','ftMotionCommandGoto') for op,_ in calls(scripts[name])):
+            return result
+        name=names[names.index(name)+1]
     while True:
         result.extend(expand(name, scripts))
         # Mario/Luigi's grounded prefix falls directly into the next array.

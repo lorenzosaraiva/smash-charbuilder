@@ -24,6 +24,16 @@ typedef enum FTMainCharBuilderSpecialKind
 
 } FTMainCharBuilderSpecialKind;
 
+typedef struct FTCharBuilderSpecialTravel { Vec3f delta; f32 angle; } FTCharBuilderSpecialTravel;
+typedef struct FTCharBuilderSpecialPath
+{
+    s32 donor, motion;
+    FTCustomMoveDefinition move;
+    FTCustomCollisionTrajectory trajectory;
+    const FTCharBuilderSpecialTravel *travel;
+    const Vec3f *spawn;
+} FTCharBuilderSpecialPath;
+
 typedef struct FTCharBuilderSpecialTiming
 {
     s32 donor, motion;
@@ -35,9 +45,20 @@ static const FTCustomCollisionTrajectory sFTCharBuilderDonkeyLwTrajectory =
     sFTCharBuilderDonkeyLwFrames, 0, ARRAY_COUNT(sFTCharBuilderDonkeyLwFrames), 0, 34
 };
 
+static const FTCharBuilderSpecialPath* ftMainCharBuilderSpecialPath(s32 donor, s32 motion)
+{
+    s32 i;
+    for (i = 0; i < ARRAY_COUNT(sFTCharBuilderSpecialPaths); i++)
+        if ((sFTCharBuilderSpecialPaths[i].donor == donor) && (sFTCharBuilderSpecialPaths[i].motion == motion))
+            return &sFTCharBuilderSpecialPaths[i];
+    return NULL;
+}
+
 static const FTCustomMoveDefinition* ftMainCharBuilderSpecialTiming(s32 donor, s32 motion)
 {
     s32 i;
+    const FTCharBuilderSpecialPath *path = ftMainCharBuilderSpecialPath(donor, motion);
+    if (path != NULL) return &path->move;
     for (i = 0; i < ARRAY_COUNT(sFTCharBuilderSpecialTimings); i++)
         if ((sFTCharBuilderSpecialTimings[i].donor == donor) && (sFTCharBuilderSpecialTimings[i].motion == motion))
             return &sFTCharBuilderSpecialTimings[i].move;
@@ -62,10 +83,28 @@ FTNessPassiveVars* ftMainCharBuilderGetNessPassive(FTStruct *fp)
     return &fp->passive_vars.ness;
 }
 
+static struct FTCharBuilderTornadoState { FTStruct *owner; u32 player_num; sb32 expend; } sFTCharBuilderTornadoStates[4];
+sb32* ftMainCharBuilderGetTornadoExpend(FTStruct *fp)
+{
+    static sb32 unused;
+    if (fp->player >= 4) return &unused;
+    if ((fp->fkind == nFTKindMario) || (fp->fkind == nFTKindLuigi) ||
+        (fp->fkind == nFTKindMMario) || (fp->fkind == nFTKindNMario) || (fp->fkind == nFTKindNLuigi))
+        return &fp->passive_vars.mario.is_expend_tornado;
+    if ((sFTCharBuilderTornadoStates[fp->player].owner != fp) || (sFTCharBuilderTornadoStates[fp->player].player_num != fp->player_num))
+    {
+        sFTCharBuilderTornadoStates[fp->player].owner = fp;
+        sFTCharBuilderTornadoStates[fp->player].player_num = fp->player_num;
+        sFTCharBuilderTornadoStates[fp->player].expend = FALSE;
+    }
+    return &sFTCharBuilderTornadoStates[fp->player].expend;
+}
+
 static s32 sFTMainCharBuilderSpecialDonors[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
 static u8 sFTMainCharBuilderSpecialKinds[GMCOMMON_PLAYERS_MAX];
 static sb32 sFTMainCharBuilderSamusBombMade[GMCOMMON_PLAYERS_MAX];
 static sb32 sFTMainCharBuilderDonkeyLwSawGround[GMCOMMON_PLAYERS_MAX];
+static f32 sFTMainCharBuilderSpecialTravelAngles[GMCOMMON_PLAYERS_MAX];
 static s32 sFTMainCharBuilderSpecialMotionIDs[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
 static s32 sFTMainCharBuilderMotionDonors[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
 
@@ -143,6 +182,69 @@ static void ftMainCharBuilderClearSpecialDonor(FTStruct *fp)
     sFTMainCharBuilderSamusBombMade[fp->player] = FALSE;
     sFTMainCharBuilderDonkeyLwSawGround[fp->player] = FALSE;
     sFTMainCharBuilderSpecialMotionIDs[fp->player] = -1;
+    sFTMainCharBuilderSpecialTravelAngles[fp->player] = 0.0F;
+}
+
+FTAttributes* ftMainCharBuilderGetSpecialAttributes(FTStruct *fp)
+{
+    s32 donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
+    FTData *data;
+    if (donor < 0) return fp->attr;
+    data = dFTManagerDataFiles[donor];
+    if ((data == NULL) || (data->p_file_main == NULL) || (*data->p_file_main == NULL)) return fp->attr;
+    return lbRelocGetFileData(FTAttributes*, *data->p_file_main, data->o_attributes);
+}
+
+static const FTCharBuilderSpecialPath* ftMainCharBuilderActivePath(FTStruct *fp)
+{
+    FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
+    const FTCharBuilderSpecialPath *path;
+    if ((clock == NULL) || (fp->player >= 4)) return NULL;
+    path = ftMainCharBuilderSpecialPath(ftMainCharBuilderGetActiveSpecialDonor(fp), sFTMainCharBuilderSpecialMotionIDs[fp->player]);
+    return ((path != NULL) && (clock->move == &path->move)) ? path : NULL;
+}
+
+sb32 ftMainCharBuilderGetSpecialTravel(FTStruct *fp, Vec3f *out, sb32 ground)
+{
+    const FTCharBuilderSpecialPath *path = ftMainCharBuilderActivePath(fp);
+    s32 frame;
+    f32 angle, x, y;
+    if ((path == NULL) || (path->travel == NULL)) return FALSE;
+    frame = (s32)ftCustomMoveGetClock(fp)->frame;
+    if (frame < 0) frame = 0;
+    if (frame >= path->trajectory.count) frame = path->trajectory.count - 1;
+    *out = path->travel[frame].delta;
+    if (ground) return TRUE;
+    x = out->x * fp->lr; y = out->y;
+    angle = path->travel[frame].angle;
+    if (path->motion == nFTCaptainMotionSpecialLwAir) angle += sFTMainCharBuilderSpecialTravelAngles[fp->player];
+    out->x = x * __cosf(angle) - y * __sinf(angle);
+    out->y = x * __sinf(angle) + y * __cosf(angle);
+    out->z *= fp->lr;
+    return TRUE;
+}
+
+void ftMainCharBuilderSetSpecialTravelAngle(FTStruct *fp, f32 angle)
+{
+    if (ftMainCharBuilderGetActiveSpecialDonor(fp) != -1)
+        sFTMainCharBuilderSpecialTravelAngles[fp->player] = angle;
+    else fp->joints[nFTPartsJointTransN]->rotate.vec.f.z = angle;
+}
+
+sb32 ftMainCharBuilderGetSpecialSpawn(GObj *g, Vec3f *out)
+{
+    FTStruct *fp = ftGetStruct(g);
+    const FTCharBuilderSpecialPath *path = ftMainCharBuilderActivePath(fp);
+    s32 frame;
+    if ((path == NULL) || (path->spawn == NULL)) return FALSE;
+    frame = (s32)ftCustomMoveGetClock(fp)->frame;
+    if (frame < 0) frame = 0;
+    if (frame >= path->trajectory.count) frame = path->trajectory.count - 1;
+    *out = DObjGetStruct(g)->translate.vec.f;
+    out->x += path->spawn[frame].x * fp->lr;
+    out->y += path->spawn[frame].y;
+    out->z += path->spawn[frame].z * fp->lr;
+    return TRUE;
 }
 
 static sb32 ftMainCharBuilderIsBorrowingMotion(FTStruct *fp)
@@ -485,6 +587,11 @@ static void* ftMainCharBuilderGetMotionScript(FTStruct *fp, s32 motion_id)
     if (donor != -1)
     {
         motion_id = sFTMainCharBuilderSpecialMotionIDs[fp->player];
+        if (ftMainCharBuilderSpecialPath(donor, motion_id) != NULL)
+        {
+            sFTMainCharBuilderMotionDonors[fp->player] = donor;
+            return (void*)ftMainCharBuilderSpecialPath(donor, motion_id)->move.events;
+        }
 
         if ((sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindLw) &&
             (donor == nFTKindSamus))
@@ -5444,6 +5551,8 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
                 fp->motion_scripts[i][2] = fp->motion_scripts[i][0];
                 fp->motion_scripts[i][0].p_script = NULL;
             }
+            if ((ftMainCharBuilderSpecialPath(charbuilder_donor, charbuilder_motion_id) != NULL) && (ftCustomMoveGetClock(fp) != NULL))
+                ftCustomMoveGetClock(fp)->trajectory = &ftMainCharBuilderSpecialPath(charbuilder_donor, charbuilder_motion_id)->trajectory;
             if ((charbuilder_donor == nFTKindDonkey) && (charbuilder_motion_id == nFTDonkeyMotionSpecialLwLoop) &&
                 (ftCustomMoveGetClock(fp) != NULL)) ftCustomMoveGetClock(fp)->trajectory = &sFTCharBuilderDonkeyLwTrajectory;
         }

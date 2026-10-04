@@ -8,7 +8,7 @@ from customMoveCatalog import resolved_moves,source_scripts,MOTIONS
 from generateCustomMoves import expand
 from generateNeutralProjectiles import catalog as projectile_catalog
 from generateNeutralActions import catalog as action_catalog
-from generateSpecialTiming import donkey_case
+from generateSpecialTiming import donkey_case, path_catalog
 
 
 def function(text,name):
@@ -80,13 +80,14 @@ def main():
         scaling='sOracle'+fighter+'Scale' if scales and not case['flags']&4 else 'NULL'
         projectile_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{case["flags"]}U,{scaling},{case["firing"]+1},{events},{source_size(fighter)}F);')
     action_calls=[]
-    for i,case in enumerate(action_catalog()+(donkey_case(),)):
+    for i,case in enumerate(action_catalog()+(donkey_case(),)+path_catalog()):
         fighter=case['fighter'];path,_=animation(case['animation'])
         if path not in seen_files:
             output.append('#include "../src/relocData/'+path.name+'"');seen_files.add(path)
         event_symbol='sOracleNeutralAction'+str(i)
         output.append('static const OracleEvent '+event_symbol+'[] = {')
-        probe = ('{3,0,3,16,{180,0,0},0},' if fighter=='Samus' else
+        probe = ('{3,0,3,12,{0,0,0},0},' if fighter=='Ness' and case['spawn'] else
+                 '{3,0,3,16,{180,0,0},0},' if fighter=='Samus' else
                  '{3,0,3,31,{0,0,0},0},' if fighter=='Yoshi' else
                  '{3,0,3,0,{0,0,0},0},' if fighter=='Link' else '')
         if probe:output.append(probe)
@@ -161,27 +162,34 @@ def main():
                 projectile_error=max(projectile_error,error)
                 assert error<0.003,(case['fighter'],case['air'],native,case['offset'],error)
     action_error=0;action_centers=0
-    for case in action_catalog()+(donkey_case(),):
+    for case in action_catalog()+(donkey_case(),)+path_catalog():
         previous_trans=(0,0,0)
         poses=sample(case['fighter'],case['animation'],case['duration']+1,case['flags'])
         for frame,pose in enumerate(poses):
-            trans=(0,0,0)
+            trans=(0,0,0);rotation=0
             for joint in sorted(pose):
                 native=struct.unpack_from('<9f',raw,cursor);cursor+=36
                 expected=pose[joint][:3]+pose[joint][4:]
                 assert max(abs(a-b) for a,b in zip(native,expected))<0.003,(case['fighter'],case['phase'],joint,frame)
-                if joint==1: trans=native[3:6]
+                if joint==1: trans=native[3:6];rotation=native[2]
             centers=struct.unpack_from('<12f',raw,cursor);cursor+=48
             mask=struct.unpack_from('<I',raw,cursor)[0];cursor+=4
             expected_mask,expected_centers=case['frames'][frame]
-            hand_slap=case['phase']=='HandSlap'
-            assert mask&(15 if hand_slap else 7)==expected_mask,(case['fighter'],case['phase'],frame,mask,expected_mask)
-            for aid in range(4 if hand_slap else 3):
+            has_probe=bool(case['spawn'] or case['anchors'])
+            assert mask&(7 if has_probe else 15)==expected_mask,(case['fighter'],case['phase'],frame,mask,expected_mask)
+            for aid in range(3 if has_probe else 4):
                 if not expected_mask&(1<<aid):continue
                 error=max(abs(a-b) for a,b in zip(centers[aid*3:aid*3+3],expected_centers[aid]))
                 action_error=max(action_error,error);action_centers+=1
                 assert error<0.003,(case['fighter'],case['phase'],frame,aid,error)
-            if case['fighter'] in ('Captain','Purin') and not case['air']:
+            if case['phase'].startswith('nFT') and case['travel']:
+                delta=(0,0,0) if frame==0 else ((trans[2]-previous_trans[2])*source_size(case['fighter']),
+                        (trans[1]-previous_trans[1])*source_size(case['fighter']),
+                        -(trans[0]-previous_trans[0])*source_size(case['fighter']))
+                expected_delta,expected_angle=case['travel'][frame]
+                assert max(abs(a-b) for a,b in zip(delta,expected_delta))<0.003,(case['phase'],'travel',frame)
+                assert abs(rotation-expected_angle)<0.003,(case['phase'],'travel rotation',frame)
+            elif case['fighter'] in ('Captain','Purin') and not case['air']:
                 movement=(0,0,0) if frame==0 else ((trans[2]-previous_trans[2])*source_size(case['fighter']),0,(trans[0]-previous_trans[0])*source_size(case['fighter']))
                 assert max(abs(a-b) for a,b in zip(movement,case['travel'][frame]))<0.003,(case['fighter'],'root movement',frame)
             previous_trans=trans
@@ -189,7 +197,7 @@ def main():
             if probe:
                 native=(centers[11],centers[10],-centers[9])
                 assert mask&8 and max(abs(a-b) for a,b in zip(native,probe[frame]))<0.003,(case['fighter'],case['phase'],'socket',frame,native,probe[frame])
-    print(f'PASS: all 30 remaining neutral phases and DK Hand Slap, {action_centers} active centers, grounded root movement, charge/boomerang sockets and Yoshi capture anchors match original playback/matrices; max center error {action_error:.7f}.')
+    print(f'PASS: 30 neutral phases, DK Hand Slap and 20 Up/Down B phases, {action_centers} active centers, grounded root movement, charge/boomerang sockets and Yoshi capture anchors match original playback/matrices; max center error {action_error:.7f}.')
     assert cursor==len(raw),(cursor,len(raw))
     print(f'PASS: all eight projectile-neutral spawn poses match original animation/collision matrices; max error {projectile_error:.7f}.')
     print(f'PASS: {len(cases)} donor timelines, {comparisons} scalar samples match original ftAnimParseDObjFigatree and playback; max error {maximum:.7f}.')

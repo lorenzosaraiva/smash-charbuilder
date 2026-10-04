@@ -169,6 +169,16 @@ void ftPhysicsApplyGroundVelTransN(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
+    Vec3f donor_travel;
+    if (ftMainCharBuilderGetSpecialTravel(fp, &donor_travel, TRUE) != FALSE)
+    {
+        fp->physics.vel_ground.x = donor_travel.x;
+        fp->physics.vel_ground.z = donor_travel.z * fp->lr;
+        if ((fp->lr * DObjGetStruct(fighter_gobj)->rotate.vec.f.y) < 0.0F)
+        { fp->physics.vel_ground.x = -fp->physics.vel_ground.x; fp->physics.vel_ground.z = -fp->physics.vel_ground.z; }
+        ftPhysicsSetGroundVelTransferAir(fighter_gobj);
+        return;
+    }
     fp->physics.vel_ground.x = ((fp->joints[nFTPartsJointTransN]->translate.vec.f.z - fp->anim_vel.z) * DObjGetStruct(fighter_gobj)->scale.vec.f.z);
     fp->physics.vel_ground.z = ((fp->joints[nFTPartsJointTransN]->translate.vec.f.x - fp->anim_vel.x) * -fp->lr * DObjGetStruct(fighter_gobj)->scale.vec.f.x);
 
@@ -380,6 +390,10 @@ void ftPhysicsApplyAirVelFriction(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
+    Vec3f donor_travel;
+
+    if (ftMainCharBuilderGetSpecialTravel(fp, &donor_travel, FALSE) != FALSE)
+        attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     (fp->is_fastfall) ? ftPhysicsApplyFastFall(fp, attr) : ftPhysicsApplyGravityDefault(fp, attr);
 
@@ -394,10 +408,20 @@ void ftPhysicsGetAirVelTransN(FTStruct *fp, f32 *z, f32 *y, f32 *x) // Ness / Yo
 {
     DObj *topn_joint = fp->joints[nFTPartsJointTopN];
     DObj *transn_joint = fp->joints[nFTPartsJointTransN];
-    f32 anim_vel_z = (transn_joint->translate.vec.f.z - fp->anim_vel.z) * fp->lr * topn_joint->scale.vec.f.z;
-    f32 anim_vel_y = (transn_joint->translate.vec.f.y - fp->anim_vel.y) * topn_joint->scale.vec.f.y;
-    f32 cos = cosf(transn_joint->rotate.vec.f.z);
-    f32 sin = __sinf(transn_joint->rotate.vec.f.z);
+    f32 anim_vel_z, anim_vel_y, cos, sin;
+    Vec3f donor_travel;
+
+    if (ftMainCharBuilderGetSpecialTravel(fp, &donor_travel, FALSE) != FALSE)
+    {
+        if (z != NULL) *z = donor_travel.x;
+        if (y != NULL) *y = donor_travel.y;
+        if (x != NULL) *x = donor_travel.z;
+        return;
+    }
+    anim_vel_z = (transn_joint->translate.vec.f.z - fp->anim_vel.z) * fp->lr * topn_joint->scale.vec.f.z;
+    anim_vel_y = (transn_joint->translate.vec.f.y - fp->anim_vel.y) * topn_joint->scale.vec.f.y;
+    cos = cosf(transn_joint->rotate.vec.f.z);
+    sin = __sinf(transn_joint->rotate.vec.f.z);
 
     if (z != NULL)
     {

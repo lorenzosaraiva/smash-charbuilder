@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.4 (experimental)** | **Last updated: 2026-10-03**
+**Project version: 0.1.5 (experimental)** | **Last updated: 2026-10-03**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -59,9 +59,12 @@ still use body poses; the new choices are decomp only. See the
 [neutral controls and limits](ssb-decomp-re/docs/neutral-specials.md).
 
 Borrowed **Up B/Down B** use donor phase clocks with temporary idle/falling poses.
-DK Down B's slap windows/repeats follow DK's timing, and the Ness Up B asset-loading
-freeze on foreign bodies is fixed. These specials still need broader collision and
-movement work; see the [special timing notes](ssb-decomp-re/docs/special-timing.md).
+DK Down B, DK Up B, Mario/Luigi Tornado and Falcon Kick now have source collision
+paths and numeric attack values independent of the body pose. Falcon Kick uses
+source movement; spin/Tornado physics use donor values. Ness Up B uses its donor
+spawn socket and 28-tick self-launch timeline, with independent weapon state.
+Other specials and visible animations need more work; see the
+[special timing notes](ssb-decomp-re/docs/special-timing.md).
 
 Training and VS now allocate their heaps in the Expansion Pak bank, fixing the
 character-selection allocation overflow behind the Test in Training freeze.

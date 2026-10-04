@@ -881,6 +881,7 @@ void mpCommonSetFighterWaitOrFall(GObj *fighter_gobj)
 // 0x800DEE98
 void mpCommonSetFighterGround(FTStruct *fp)
 {
+    *ftMainCharBuilderGetTornadoExpend(fp) = FALSE;
     fp->physics.vel_ground.x = fp->physics.vel_air.x * fp->lr;
 
     fp->ga = nMPKineticsGround;

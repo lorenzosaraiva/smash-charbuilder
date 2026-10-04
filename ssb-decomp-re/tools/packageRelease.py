@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.4',
+        'version': '0.1.5',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -93,7 +93,11 @@ Borrowed Up/Down B use source phase clocks with temporary idle/falling poses.
 DK Down B keeps its original startup/slap/recovery and repeated hit windows;
 tap B during a cycle to queue another. Ness Up B now loads its wave/trail models
 on foreign bodies and keeps separate trail state, fixing the freeze.
-Other Up/Down B paths, movement, sockets and rendered acceptance remain pending.
+DK Up B, Mario/Luigi Tornado and Falcon Kick now keep original donor collision
+paths and numeric values. Falcon Kick uses source movement; spin/Tornado use
+donor aerial physics. Foreign Tornado rise state resets on landing/respawn.
+Ness uses its source projectile socket and native 28-tick self-launch clock.
+Other Up/Down B paths/effects and rendered acceptance remain pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 Three Mario animation pilots are implemented; full animation coverage is pending.

@@ -8,8 +8,8 @@ use the selected body's animations with the donor's attack values and timing.
 Full donor animations on other bodies are the dream; three Mario moves have an
 initial animation pilot so far.
 
-**[How to play](docs/playing.md)** · **[Done / not done](docs/status.md)** ·
-**[Build it yourself](docs/building.md)** · **[What's changed](CHANGELOG.md)**
+**[How to play](docs/playing.md)** | **[Done / not done](docs/status.md)** |
+**[Build it yourself](docs/building.md)** | **[What's changed](CHANGELOG.md)**
 
 ## Download
 
@@ -46,6 +46,7 @@ Creator builds currently last for the running ROM session.
 - Four builds, assigned independently to human or CPU slots.
 - Training hitbox view, quick return to the editor, unlockable fighters and Item Switch.
 - Neutral B: **Body Move** and every non-copy original neutral donor, including charging, returning boomerangs and Egg Lay. See [controls and limits](docs/neutral-specials.md); Up B/Down B remain experimental.
+- Up/Down B: donor timing, DK slaps/spin, Mario/Luigi Tornado and Falcon Kick collision paths/movement, and Ness projectile socket/self-launch timing. See [coverage and limits](docs/special-timing.md).
 - **8 MB RDRAM / Expansion Pak required**: Training/VS selection and match resources use the upper memory bank.
 - Three Mario animation pilots: Falcon down air, Fox straight forward tilt,
   DK straight forward smash.

@@ -45,7 +45,8 @@ void ftNessSpecialHiMakePKThunder(GObj *fighter_gobj)
     pos.y = 0.0F;
     pos.z = 0.0F;
 
-    gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTNESS_PKTHUNDER_SPAWN_JOINT), &pos);
+    if (ftMainCharBuilderGetSpecialSpawn(fighter_gobj, &pos) == FALSE)
+        gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTNESS_PKTHUNDER_SPAWN_JOINT), &pos);
 
     pos.z = 0.0F;
 
@@ -133,7 +134,7 @@ void ftNessSpecialHiProcPhysics(GObj *fighter_gobj)
 void ftNessSpecialAirHiProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (fp->status_vars.ness.specialhi.pkthunder_gravity_delay != 0)
     {

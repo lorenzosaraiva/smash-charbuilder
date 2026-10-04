@@ -88,6 +88,12 @@ distinction, independent player counters and vanilla resets outside Training.
 - [x] Donor phase durations/loop boundaries and independent event clocks; safe idle/falling poses.
 - [x] DK Down B startup/slap/recovery, four source hitboxes and queued repeat cycles.
 - [x] Ness Up B weapon/wave/trail preloads and independent foreign-body passive state.
-- [x] Host/native/linked-ROM checks and all-body ROM CPU regressions for these two donors.
+- [x] Host/native/linked-ROM checks and all-body ROM CPU regressions for DK slaps and Ness expiry.
+- [x] DK Up B and Mario/Luigi Tornado: source collision positions/fields and donor aerial physics.
+- [x] Falcon Kick: source collision paths and movement for all five phases.
+- [x] Foreign Tornado state isolated from body passives; landing/respawn reset.
+- [x] Ness source projectile socket and 28-tick self-launch gameplay clock.
+- [x] Original C playback/matrix comparisons and packed-field/linked-pointer checks for all 20 new phases.
+- [x] ROM CPU regressions across all twelve bodies: grounded/aerial spin, Tornado B-tap rise, Kick travel, Ness steering/controlled self-contact/recovery, editor returns and four-slot VS.
 - [ ] Complete donor paths/sockets, movement and effects for every Up/Down B.
 - [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.
