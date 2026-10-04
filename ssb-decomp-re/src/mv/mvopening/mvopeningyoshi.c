@@ -6,6 +6,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <sys/taskman.h>
 
 extern u32 sySchedulerGetTicCount();
 
@@ -584,5 +585,6 @@ void mvOpeningYoshiStartScene(void)
 	syVideoInit(&dMVOpeningYoshiVideoSetup);
 
 	dMVOpeningYoshiTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl41_BSS_END);
+	syTaskmanUseExpansionArena(&dMVOpeningYoshiTaskmanSetup.scene_setup);
 	syTaskmanStartTask(&dMVOpeningYoshiTaskmanSetup);
 }

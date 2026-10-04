@@ -40,6 +40,10 @@ def main():
         digest, name = row.split('  ')
         assert name in FILES and hashlib.sha256((DIST/name).read_bytes()).hexdigest() == digest
     assert hashlib.sha256((DIST/FILES[0]).read_bytes()).hexdigest() == info['rom_sha256']
+    desktop_rom = Path.home()/'Desktop'/'Smash 64'/'roms'/'smash-character-lab-full-roster.z64'
+    if desktop_rom.is_file():
+        assert desktop_rom.read_bytes() == (DIST/FILES[0]).read_bytes(), 'Copy the checked ROM to Desktop before publishing.'
+        print('Verified Desktop ROM matches the release binary.', flush=True)
     with zipfile.ZipFile(DIST/FILES[1]) as archive:
         assert archive.testzip() is None
         assert json.loads(archive.read('build-info.json')) == info

@@ -6,6 +6,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <sys/taskman.h>
 
 extern u32 sySchedulerGetTicCount();
 
@@ -596,5 +597,6 @@ void mvOpeningKirbyStartScene(void)
 	syVideoInit(&dMVOpeningKirbyVideoSetup);
 
 	dMVOpeningKirbyTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl43_BSS_END);
+	syTaskmanUseExpansionArena(&dMVOpeningKirbyTaskmanSetup.scene_setup);
 	syTaskmanStartTask(&dMVOpeningKirbyTaskmanSetup);
 }

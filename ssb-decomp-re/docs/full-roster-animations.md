@@ -1,6 +1,6 @@
 # Normal animations on all twelve bodies
 
-Version 0.1.7, updated 2026-10-04. This expansion is decomp only; the separate
+Introduced in version 0.1.7; current version 0.1.8, updated 2026-10-04. This expansion is decomp only; the separate
 Remix preview retains its previous animation coverage.
 
 All twelve original donors now supply normal attack poses to all twelve bodies.
@@ -56,7 +56,7 @@ The shared catalog uses 266,244 scalar keys and 1,022,744 data bytes before
 linker alignment, replacing the earlier Mario-only packed tables. Source FK,
 bind-normalized orientation deltas and body FK use bounded stack arrays; no
 new animation heap or persistent per-player pose buffer is allocated.
-The linked ROM is 18,219,824 bytes, 458,256 bytes larger than 0.1.6.
+The 0.1.7 linked ROM was 18,219,824 bytes, 458,256 bytes larger than 0.1.6.
 The common overlay ends at 0x80290100; Options BSS ends at 0x802efe40.
 Common BSS decreases by 16 bytes; Training/VS retain their upper-bank heap.
 TopN position/facing/scale and detached TransN physics are preserved. Cosmetic
@@ -102,3 +102,8 @@ human/CPU builds in VS. Minimum measured Training heap headroom was 1,971,044
 bytes. The mode samples normal families per body and at least one normal per
 foreign pairing; exhaustive clip/frame coverage comes from the host oracle.
 The 4 MB launch guard also passed: Test in Training stays in the editor.
+
+Version 0.1.8 moves all nineteen opening movie heaps to Expansion Pak memory
+to fix a cold-boot allocation overflow before the first intro frame. The
+[boot and download notes](startup-and-downloads.md) cover the regression and
+byte-identical release copies.

@@ -5,6 +5,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <sys/taskman.h>
 
 extern void syTaskmanSetLoadScene();
 extern u32 sySchedulerGetTicCount();
@@ -388,5 +389,6 @@ void mvOpeningYosterStartScene(void)
     syVideoInit(&dMVOpeningYosterVideoSetup);
 
     dMVOpeningYosterTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl45_BSS_END);
+	syTaskmanUseExpansionArena(&dMVOpeningYosterTaskmanSetup.scene_setup);
     syTaskmanStartTask(&dMVOpeningYosterTaskmanSetup);
 }

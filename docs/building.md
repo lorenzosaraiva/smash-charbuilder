@@ -9,7 +9,10 @@ git submodule update --init --recursive
 ## Character Lab
 
 The finished decomp ROM requires **8 MB RDRAM / Expansion Pak** enabled in the
-emulator. Training/VS selection and matches use the upper bank for their heap.
+emulator. Opening movies, Training/VS selection and matches use the upper bank
+for their heap. The optional [uninterrupted startup check](../ssb-decomp-re/docs/startup-and-downloads.md)
+also tests an identical downloaded ROM through the full intro and title into
+the main menu.
 
 Use x86-64 Ubuntu 22.04, or Windows with WSL/Ubuntu. Put the original US ROM at
 `ssb-decomp-re/baserom.us.z64`; its SHA-1 must be

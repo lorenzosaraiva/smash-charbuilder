@@ -9,7 +9,7 @@ https://mupen64plus.org/wiki/index.php/Mupen64Plus_v2.0_Core_Front-End
 import argparse, ctypes as C, threading, time, subprocess, struct
 from pathlib import Path
 from elfData import read_elf
-from auditNormalMoves import enum_values
+from auditNormalMoves import enum_values,us_text
 from hostFighterHeaders import prepare
 from generateSpecialTiming import path_catalog
 from auditNormalMoves import ROSTER,SLOTS
@@ -21,6 +21,8 @@ parser.add_argument('--core',default='/usr/lib/x86_64-linux-gnu/libmupen64plus.s
 parser.add_argument('--rsp',default='/usr/lib/x86_64-linux-gnu/mupen64plus/mupen64plus-rsp-hle.so')
 parser.add_argument('--headers',default='/usr/include/mupen64plus')
 parser.add_argument('--data',default='/usr/share/mupen64plus')
+parser.add_argument('--rom',type=Path,help='Check an identical copy of the current build, including a downloaded ROM')
+parser.add_argument('--boot',action='store_true',help='Check uninterrupted cold boot, the full intro, title and actual Start input')
 parser.add_argument('--four-mb',action='store_true')
 parser.add_argument('--cases',type=int,default=12)
 parser.add_argument('--first-choice',type=int,default=0)
@@ -67,7 +69,9 @@ check(core.CoreStartup(0x20001,str(build/('config-4mb' if args.four_mb else 'con
 section=C.c_void_p();check(core.ConfigOpenSection(b'Core',C.byref(section)))
 for name,typ,value in ((b'R4300Emulator',1,2),(b'DisableExtraMem',3,int(args.four_mb)),(b'OnScreenDisplay',3,0)):
     check(core.ConfigSetParameter(section,name,typ,C.byref(C.c_int(value))))
-rom=C.create_string_buffer((ROOT/'build/smashbrothers.us.z64').read_bytes())
+rom_bytes=(args.rom or ROOT/'build/smashbrothers.us.z64').read_bytes()
+if args.rom:assert rom_bytes==(ROOT/'build/smashbrothers.us.z64').read_bytes(),'ROM copy differs from current ELF/build'
+rom=C.create_string_buffer(rom_bytes)
 check(core.CoreDoCommand(1,len(rom)-1,rom))
 plugins=[]
 for typ,path in ((2,build/'video.so'),(3,None),(4,build/'input.so'),(1,Path(args.rsp))):
@@ -194,6 +198,42 @@ thread=threading.Thread(target=lambda:check(core.CoreDoCommand(5,0,None)),daemon
 thread.start()
 try:
     wait(lambda:u32(0x80000318)==(0x400000 if args.four_mb else 0x800000),'Boot memory size')
+    if args.boot:
+        scene_text=(ROOT/'src/sc/scdef.h').read_text().split('typedef enum SCKind',1)[1].split('}',1)[0]
+        scenes=enum_values(us_text('typedef enum SCKind'+scene_text+'}'),'SCKind')
+        title=scenes['nSCKindTitle'];mode=scenes['nSCKindModeSelect']
+        opening=set(range(scenes['nSCKindOpeningRoom'],scenes['nSCKindOpeningNewcomers']+1))
+        seen=set();last=None;min_headroom=0x400000;changed=time.monotonic()
+        deadline=time.monotonic()+110
+        # Never patch scene memory or skip the intro in this regression.
+        while time.monotonic()<deadline:
+            current=u8(scene);fault=u32(addr('__osFaultedThread'))
+            assert not fault,('Cold boot CPU fault',diagnostic())
+            if current!=last:changed=time.monotonic()
+            if current in opening:
+                seen.add(current)
+                start,end,ptr=(u32(heap+j) for j in (4,8,12))
+                if start==0x80400000 and end==0x80800000:
+                    assert start<=ptr<=end,('Opening heap',diagnostic())
+                    min_headroom=min(min_headroom,end-ptr)
+                else:
+                    # scene_curr changes before overlay loading/heap setup.
+                    assert time.monotonic()-changed<.5,('Opening arena initialization',diagnostic())
+            if current!=last:
+                print('BOOT: scene',current,diagnostic(),flush=True);last=current
+            if current==title and seen==opening and u32(addr('dSYTaskmanUpdateCount'))>15:break
+            time.sleep(.01)
+        else:raise AssertionError(('Full intro/title progress',sorted(seen),diagnostic()))
+        assert seen==opening,('Missing opening scenes',opening-seen)
+        # The first title presentation rejects Start until its logo animation
+        # marks is_title_anim_viewed. Respect that native input gate.
+        wait(lambda:u32(addr('sMNTitleAllowProceedWait'))>0 and
+                    u32(addr('sMNTitleTransitionTotalTimeTics'))>=u32(addr('sMNTitleAllowProceedWait')),
+             'Title logo input gate',seconds=10)
+        frames(3);pulse(0x10)
+        wait(lambda:u8(scene)==mode and u32(addr('dSYTaskmanUpdateCount'))>20,'Cold boot title Start -> main menu')
+        print('PASS: cold boot, all 19 opening scenes, title and Start -> main menu; opening heap headroom at least',min_headroom,'bytes.',flush=True)
+        raise SystemExit(0)
     time.sleep(2)
     check(core.CoreDoCommand(17,5,C.byref(C.c_int(0)))) # Run menus uncapped; limit speed during frame-by-frame gameplay checks.
     # Skip the intro only. From Options onward, use the actual button handlers.

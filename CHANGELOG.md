@@ -1,5 +1,20 @@
 # Changes
 
+## 0.1.8 - 2026-10-04: black-screen startup fix
+
+- Fix the opening room exhausting its lower-bank heap before the first frame
+  after the normal animation expansion. All nineteen opening scenes now use
+  the same separate Expansion Pak arena as Training/VS.
+- Add an uninterrupted cold-boot regression through the full intro, title and
+  actual Start input into the main menu, with heap bounds and progress checks.
+  It passes all nineteen scenes with at least 2,309,952 bytes of heap headroom.
+- Recheck Mario's eleven foreign normal donors (1,288 live poses), Training
+  return and four assigned builds in VS with three CPUs.
+- Verify every linked opening scene calls the Expansion Pak helper. Keep the
+  SDK/controller layout and normal animation/gameplay tables unchanged.
+- Public ROM assets and the Desktop ROM come from the same checked binary;
+  downloaded copies can be tested with the new smoke-test `--rom` option.
+
 ## 0.1.7 - 2026-10-04: normal animations for everyone
 
 - Decomp: all twelve donor normal catalogs now animate all twelve bodies, including

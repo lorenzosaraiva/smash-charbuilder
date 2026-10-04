@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.7',
+        'version': '0.1.8',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -89,7 +89,8 @@ animations, charge-orb visuals and donor effects/voices remain pending.
 Giant Punch/Charge Shot charge on ground: B/A releases, Z or a ground roll stores.
 A fully stored charge fires on the next B; airborne Charge Shot fires immediately.
 Boomerang returns/catches natively; Egg Lay captures into the native egg state.
-Training/VS now use the extra memory bank, fixing preview heap allocation freezes.
+Training/VS and all opening movie scenes now use the extra memory bank.
+This fixes the preview allocation freeze and the black-screen cold-boot intro overflow.
 These new choices are decomp only; rendered projectile acceptance is pending.
 Borrowed Up/Down B use source phase clocks with temporary idle/falling poses.
 DK Down B keeps its original startup/slap/recovery and repeated hit windows;

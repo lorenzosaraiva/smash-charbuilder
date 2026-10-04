@@ -43,6 +43,8 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [ ] Borrowed neutral animations, charge orb, donor effects/voices and victim rotation. Kirby copy remains outside this milestone.
 - [ ] Port the ten new neutral adapters to Remix.
 - [x] Fix Training/VS heap overflow using separate Expansion Pak memory (8 MB required).
+- [x] Fix cold-boot opening-room overflow; all nineteen intro scenes use Expansion Pak memory.
+- [x] Uninterrupted CPU boot through all nineteen intro scenes, title and Start into the main menu (null rendering).
 - [x] Emulator CPU regression: twelve body/neutral choices, four preset returns, four-slot VS and the 4 MB launch guard (null rendering).
 
 ## Character Lab on Remix

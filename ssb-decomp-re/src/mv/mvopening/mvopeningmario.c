@@ -6,6 +6,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <sys/taskman.h>
 
 extern u32 sySchedulerGetTicCount();
 
@@ -594,5 +595,6 @@ void mvOpeningMarioStartScene(void)
 	syVideoInit(&dMVOpeningMarioVideoSetup);
 
 	dMVOpeningMarioTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl36_BSS_END);
+	syTaskmanUseExpansionArena(&dMVOpeningMarioTaskmanSetup.scene_setup);
 	syTaskmanStartTask(&dMVOpeningMarioTaskmanSetup);
 }

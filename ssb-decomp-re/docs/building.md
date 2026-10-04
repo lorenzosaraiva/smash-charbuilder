@@ -4,8 +4,10 @@ You need x86-64 Ubuntu 22.04, or Windows with WSL/Ubuntu, and the original US Sm
 ROM. Native Windows and macOS are not supported by the complete current toolchain.
 You do not need to build the project just to play a downloaded release.
 
-Enable **8 MB RDRAM / Expansion Pak** when playing the ROM. Full-roster Training
-and VS selection/match resources use the separate upper memory bank.
+Enable **8 MB RDRAM / Expansion Pak** when playing the ROM. Opening movies,
+full-roster Training and VS selection/match resources use the separate upper
+memory bank. See the [startup checks](startup-and-downloads.md) for the optional
+full-intro regression and verification of a downloaded ROM.
 
 ## First build
 

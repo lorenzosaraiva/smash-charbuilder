@@ -6,6 +6,7 @@
 #include <sys/video.h>
 #include <sys/rdp.h>
 #include <reloc_data.h>
+#include <sys/taskman.h>
 
 extern u32 sySchedulerGetTicCount();
 
@@ -580,5 +581,6 @@ void mvOpeningPikachuStartScene(void)
 	syVideoInit(&dMVOpeningPikachuVideoSetup);
 
 	dMVOpeningPikachuTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl42_BSS_END);
+	syTaskmanUseExpansionArena(&dMVOpeningPikachuTaskmanSetup.scene_setup);
 	syTaskmanStartTask(&dMVOpeningPikachuTaskmanSetup);
 }

@@ -66,6 +66,9 @@ for name,expected in metadata.items():
 phoff = struct.unpack_from('>I',elf,28)[0]
 size,count = struct.unpack_from('>HH',elf,42)
 programs = [struct.unpack_from('>8I',elf,phoff+i*size) for i in range(count)]
+opening_names=tuple('mvOpening'+name+'StartScene' for name in
+                    ('Room','Portraits','Mario','Donkey','Samus','Fox','Link','Yoshi','Pikachu','Kirby',
+                     'Run','Yoster','Cliff','Standoff','Yamabuki','Clash','Sector','Jungle','Newcomers'))
 for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMainProcPhysicsMap','ftMainHasCustomAttackTimeline',
              'ftMainUpdateComboStats','ftMainProcUpdateInterrupt',
              'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
@@ -92,7 +95,7 @@ for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMain
              'mnPlayers1PTrainingInitVars','gSCManagerCharBuilderTrainingSlot',
              'mnOptionBuilderTestInTraining','mnOptionInitVars','mnOptionFuncStart',
              'ftCommonAttackAirLwProcHit','ftCommonAttackAirLwProcUpdate',
-             'sc1PTrainingModeUpdateViewOption','mnOptionBuilderAssignPlayer','mnOptionBuilderRun',*metadata):
+             'sc1PTrainingModeUpdateViewOption','mnOptionBuilderAssignPlayer','mnOptionBuilderRun',*opening_names,*metadata):
     value,length,index = symbols[name]
     assert length>0,name
     for typ,fileoffset,vaddr,paddr,filesz,memsz,flags,align in programs:
@@ -104,6 +107,12 @@ for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMain
 assert 'gSCManagerCharBuilderPlayerSlots' in symbols
 assert 'gFTCustomMoveValidationFailures' in symbols
 assert 'gFTCustomAnimationValidationFailures' in symbols
+expansion_call=struct.pack('>I',0x0C000000|((symbols['syTaskmanUseExpansionArena'][0]>>2)&0x03FFFFFF))
+for name in opening_names:
+    address,length,index=symbols[name]
+    start=sections[index][4]+address-sections[index][3]
+    assert expansion_call in elf[start:start+length],name+' missing Expansion Pak heap call'
+print('PASS: all 19 intro scenes use the linked Expansion Pak heap helper.')
 animation_bytes = 0
 host,host_sections,host_symbols = read_elf(ROOT/'build/testCustomMove','<')
 laser_addresses = []

@@ -6,6 +6,7 @@
 #include <sys/rdp.h>
 #include <lb/library.h>
 #include <reloc_data.h>
+#include <sys/taskman.h>
 
 extern void syTaskmanSetLoadScene();
 extern u32 sySchedulerGetTicCount();
@@ -485,5 +486,6 @@ void mvOpeningClashStartScene(void)
     syVideoInit(&dMVOpeningClashVideoSetup);
 
     dMVOpeningClashTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl49_BSS_END);
+	syTaskmanUseExpansionArena(&dMVOpeningClashTaskmanSetup.scene_setup);
     syTaskmanStartTask(&dMVOpeningClashTaskmanSetup);
 }

@@ -19,6 +19,8 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Training combo count/damage survive capture, cargo carry and throw windup.
 - [x] Return from a lab training test to the same build's editor.
 - [x] Training/VS selection and match heaps use separate Expansion Pak memory (8 MB required).
+- [x] Fix cold-boot opening-room overflow; all nineteen intro scenes use Expansion Pak memory.
+- [x] Uninterrupted CPU boot through all nineteen intro scenes, title and Start into the main menu (null rendering).
 - [x] Emulator CPU regression: twelve body/neutral choices, four preset returns, four-slot VS and the 4 MB launch guard (null rendering).
 - [x] The four unlockable characters and Item Switch enabled.
 - [x] Creator UI built with the game's existing font, colors and menu elements.

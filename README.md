@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.7 (experimental)** | **Last updated: 2026-10-04**
+**Project version: 0.1.8 (experimental)** | **Last updated: 2026-10-04**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -68,6 +68,9 @@ Other specials and visible animations need more work; see the
 
 Training and VS now allocate their heaps in the Expansion Pak bank, fixing the
 character-selection allocation overflow behind the Test in Training freeze.
+Version 0.1.8 also moves all opening movie heaps into that bank to fix a
+black-screen intro overflow. Public downloads and the local ROM use the same
+checked binary; see the [startup checks](ssb-decomp-re/docs/startup-and-downloads.md).
 
 Every normal donor attack now uses its original hitbox path, size, active timing,
 damage and knockback on the other bodies, including angled variants and landing

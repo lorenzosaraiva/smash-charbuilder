@@ -6,8 +6,12 @@ Download the latest play package, unzip it, and open `character-lab.z64` in an N
 emulator. RMG-K has been used for local playtesting. Other emulator and real-hardware
 compatibility still need reports. If you already had an older ROM open, reopen it
 to load the new build. Set **8 MB RDRAM / Expansion Pak** in emulator settings.
-Training and VS use that extra bank for preview and match resources; the editor
+Opening movies, Training and VS use that extra bank for their resources; the editor
 shows a memory requirement and blocks Test/Play VS on a 4 MB configuration.
+
+Version 0.1.8 fixes an intro heap overflow that could stop boot on a black screen.
+Download the new version and reopen the ROM to load the fix. See the
+[startup and download checks](startup-and-downloads.md) for verification details.
 
 The ZIP's `build-info.json` identifies the source commit. Include that commit when
 reporting a bug; two downloads named `character-lab.z64` can be different builds.
