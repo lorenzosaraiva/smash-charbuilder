@@ -1,5 +1,10 @@
 # Mario donor animation pilot
 
+Historical report for the original three moves. Version 0.1.6 expands Mario to
+Fox/DK/Luigi/Falcon normals, angled variants and aerial landings; see
+[current coverage and verification](mario-animations.md). The pilot tables remain
+unchanged. Memory/coverage figures below describe the original milestone.
+
 Implemented on 2026-10-01, following the gameplay checkpoint `c4cf93a87` and the approved [retargeting plan](animation-retargeting-plan.md). This is the first three-move milestone; rendered emulator acceptance is still pending.
 
 ## Trying it

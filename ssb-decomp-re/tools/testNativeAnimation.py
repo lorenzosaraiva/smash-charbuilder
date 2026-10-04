@@ -114,17 +114,21 @@ def main():
     subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protector','-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-O1','-Iinclude','-Isrc','-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US','tools/testNativeAnimation.c','-o','build/testNativeAnimation'],cwd=ROOT,check=True)
     raw=subprocess.check_output([str(ROOT/'build/testNativeAnimation')],cwd=ROOT)
     (ROOT/'build/native-animation-poses.bin').write_bytes(raw)
-    cursor=0;comparisons=0;maximum=0;geometry_error=0;centers_checked=0;native_geometry={}
+    cursor=0;comparisons=0;maximum=0;geometry_error=0;centers_checked=0;native_geometry={};native_poses={}
     for case_id,case in enumerate(cases):
         fighter,motion,name=(case[k] for k in ('fighter','motion','name'))
         frames=len(case_frames(case_id));poses=sample(fighter,name,frames,case['flags']);native_geometry[case_id]=[]
+        observed=[]
         for frame,(mask,centers) in enumerate(case_frames(case_id)):
+            native_pose={}
             for joint in sorted(poses[frame]):
                 native=struct.unpack_from('<9f',raw,cursor);cursor+=36
+                native_pose[joint]=(*native[:3],0,*native[3:])
                 pose=poses[frame][joint];converted=pose[:3]+pose[4:]
                 for channel,(a,b) in enumerate(zip(native,converted)):
                     error=abs(a-b);maximum=max(maximum,error);comparisons+=1
                     assert error<0.003,(name,joint,frame,channel,a,b,error)
+            observed.append(native_pose)
             native_centers=[]
             for aid,center in enumerate(centers):
                 native=struct.unpack_from('<3f',raw,cursor);cursor+=12;native_centers.append(native)
@@ -135,6 +139,8 @@ def main():
             native_mask=struct.unpack_from('<I',raw,cursor)[0];cursor+=4
             assert native_mask==mask,(fighter,motion,frame,'native motion-event active mask',native_mask,mask)
             native_geometry[case_id].append(native_centers)
+        key=(fighter,name,case['flags'])
+        if len(observed)>len(native_poses.get(key,())):native_poses[key]=observed
     placement_error=0;placements=0
     for case_id,case in enumerate(cases):
         _,frames=stored_frames(case_id)
@@ -205,5 +211,7 @@ def main():
     print(f'PASS: {placements} world positions at all twelve body sizes/both facings; max error {placement_error:.7f}.')
     from verifyCustomCollisionData import verify_compiled_collisions
     verify_compiled_collisions(native_geometry)
+    from verifyMarioAnimationData import verify_mario_poses
+    verify_mario_poses(native_poses)
 
 if __name__=='__main__':main()

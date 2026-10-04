@@ -1,5 +1,20 @@
 # Character Lab changes
 
+## 0.1.6 - 2026-10-03: more Mario donor animations
+
+- Mario now performs Fox, DK, Luigi and Falcon normal attacks, including angled
+  variants, aerial landing poses and supported Falcon/Luigi third jabs.
+- 94 shared compact clips cover 115 new variants alongside the three unchanged
+  pilots. Hitboxes, damage, knockback, timing and landing windows retain their
+  independent source catalog.
+- Handle source hidden/reserved rotation channels, neutralize body cosmetic
+  channels and preserve native TopN/facing/detached TransN physics.
+- Check actual compiled poses against original C playback/world orientations;
+  test all new runtime frames/ownership/guards and linked ROM bytes/pointers.
+- ROM CPU checks pass for four Mario donor presets, 2,082 live compact poses,
+  editor returns and four differently assigned Mario builds in VS.
+- Updated docs and play package; rendered mesh/contact acceptance remains pending.
+
 ## 0.1.5 - 2026-10-03: donor special paths and movement
 
 - Decomp: add generated safe event scripts and donor collision paths for 20 phases covering DK Up B, Mario/Luigi Down B, all Falcon Kick phases and Ness Up B. Original damage, radii, knockback, flags and collision timing follow the source independently of visible body poses.

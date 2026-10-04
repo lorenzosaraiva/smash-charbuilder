@@ -80,7 +80,8 @@ someone else's desktop by this portable build command.
 ## What the command checks
 
 The build runs the actual custom-move host tests and verifies linked code, donor
-tables, animation-pilot bytes and N64 checksum in the ROM before packaging it.
+tables, Mario pilot/compact-pose bytes and registry pointers, and N64 checksum
+in the ROM before packaging it.
 These automated checks do not replace in-emulator playtesting.
 
 The Makefile may print `smashbrothers.us.z64: FAILURE` after compilation. That is

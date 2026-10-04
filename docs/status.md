@@ -18,7 +18,11 @@ Checkboxes mean implemented, not tested in every matchup.
 
 Character Lab's [detailed feature checklist](../ssb-decomp-re/docs/status.md)
 covers normal attacks, grabs/throws, human/CPU assignments, Training HITBOX view,
-grab-preserving combo counters, the animation pilots and remaining work.
+grab-preserving combo counters, expanded Mario animations and remaining work.
+
+- [x] Decomp Mario normal animations for Fox/DK/Luigi/Falcon, angled variants and aerial landings.
+- [x] Shared compact pose tables with native-source and linked-ROM checks.
+- [ ] Remaining Mario donor rigs, other bodies and rendered animation acceptance.
 
 The [Remix guide](../remix/character_creator_guide.md) and
 [port checklist](../remix/docs/character-lab-status.md) cover the separate preview.

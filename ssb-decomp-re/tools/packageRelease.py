@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.5',
+        'version': '0.1.6',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -100,7 +100,8 @@ Ness uses its source projectile socket and native 28-tick self-launch clock.
 Other Up/Down B paths/effects and rendered acceptance remain pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
-Three Mario animation pilots are implemented; full animation coverage is pending.
+Mario now performs Fox, DK, Luigi and Falcon normal attacks, including angled
+variants and aerial landing poses. Other donor/body animations remain pending.
 Original donor collision paths now cover every normal attack on every foreign
 body, including angled variants, weapon/tail paths, multihits, landing collisions
 and body-supported jab phases. Size, timing, damage and knockback follow the donor.

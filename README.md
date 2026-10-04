@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.5 (experimental)** | **Last updated: 2026-10-03**
+**Project version: 0.1.6 (experimental)** | **Last updated: 2026-10-03**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -71,8 +71,9 @@ character-selection allocation overflow behind the Test in Training freeze.
 
 Every normal donor attack now uses its original hitbox path, size, active timing,
 damage and knockback on the other bodies, including angled variants and landing
-hitboxes. Most visible animations still belong to the body; the three Mario
-animation pilots remain available. See the
+hitboxes. **Mario now performs Fox, DK, Luigi and Falcon normal attacks**, including
+angled variants and aerial landings. Other bodies/donors still use body poses.
+See the [Mario animation guide](ssb-decomp-re/docs/mario-animations.md), the
 [collision guide](ssb-decomp-re/docs/collision-trajectories.md) and
 [checklist](ssb-decomp-re/docs/status.md). Broader in-game acceptance is pending.
 

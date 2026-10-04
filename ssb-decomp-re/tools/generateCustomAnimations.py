@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile the Mario animation pilot. No donor pointers or allocations at runtime."""
+"""Compile Mario donor poses; shared, bounded tables and no runtime allocations."""
 import json
 from customAnimation import *
 from customMoveTiming import animation_duration
@@ -13,10 +13,17 @@ def bind_pose(bones):
 def rig_map(fighter):
     return {j:j+(1 if fighter in ('Captain','Donkey') and j>=18 else 0) for j in TARGET_JOINTS}
 
-def retarget(fighter,pose):
-    source,target=model(fighter),model('Mario')
+@lru_cache(None)
+def retarget_basis(fighter,flags):
+    source,_=rig(fighter,flags)
+    if flags==0:source=model(fighter) # Preserve the original pilot's bind bases.
+    target=model('Mario')
     assert all(b.scale==(1,1,1) for b in (*source.values(),*target.values())), 'non-unit bind basis unsupported'
     source_bind=world(source,bind_pose(source));target_bind=world(target,bind_pose(target))
+    return source,target,source_bind,target_bind
+
+def retarget(fighter,pose,flags=0):
+    source,target,source_bind,target_bind=retarget_basis(fighter,flags)
     # Donor squash/stretch contributes to its collision FK, but body bone
     # lengths remain fixed. Extract orientation from a unit-scale pose.
     orientations={j:(*v[:7],1,1,1) for j,v in pose.items()}
@@ -28,7 +35,8 @@ def retarget(fighter,pose):
         translation=target[j].translate
         if j==4:
             ratio=target[4].translate[1]/source[4].translate[1]
-            translation=add(translation,tuple((a-b)*ratio for a,b in zip(pose[s][4:7],source[s].translate)))
+            delta=tuple(a-b for a,b in zip(animated[s][1],source_bind[s][1])) if flags else tuple(a-b for a,b in zip(pose[s][4:7],source[s].translate))
+            translation=add(translation,tuple(v*ratio for v in delta))
         assert all(abs(v-1)<0.0001 for v in target[j].scale),('target bind scale',j)
         result[j]=(*angles,0,*translation,*target[j].scale)
         recovered=mul(parents[target[j].parent],rotation(angles))
@@ -79,6 +87,58 @@ def number(value):
 
 def vec(values):return '{ '+', '.join(number(v) for v in values)+' }'
 
+ANIMATION_DONORS = ('Fox','Donkey','Luigi','Captain')
+
+@lru_cache(None)
+def pose_catalog():
+    from customMoveCatalog import ROSTER,resolved_moves,extra_ids
+    cases=[];rows=[];seen={}
+    pilots={(f,i) for f,_,_,i in PILOTS}
+    for fighter in ROSTER:
+        row=[]
+        for index,(motion,desc,duration) in enumerate(resolved_moves(fighter)):
+            supported=(fighter in ANIMATION_DONORS and
+                       (index<29 or (index==29 and extra_ids(fighter)[0]>=0)))
+            if not supported or (fighter,index) in pilots:
+                row.append(None);continue
+            key=(fighter,desc[0],desc[2],duration)
+            if key not in seen:
+                seen[key]=len(cases)
+                cases.append(dict(fighter=fighter,motion=motion,name=desc[0][3:-6],
+                                  flags=flag_word(desc[2]),frames=duration+1,
+                                  symbol='sFTCustomAnimationPacked'+fighter+motion))
+            row.append(seen[key])
+        rows.append(tuple(row))
+    return tuple(cases),tuple(rows)
+
+def packed_pose(pose):
+    rotations=tuple(round(v*4096) for j in TARGET_JOINTS for v in pose[j][:3])
+    root=tuple(round(v*16) for v in pose[4][4:7])
+    assert all(-32768<=v<=32767 for v in rotations+root), 'packed pose overflow'
+    return rotations+root
+
+def generate_packed():
+    from customMoveCatalog import ROSTER
+    cases,rows=pose_catalog()
+    out=['/* Shared Mario poses. Rotations /4096 radians; root translation /16. */']
+    out.append('const Vec3f sFTCustomAnimationMarioBind[24] = { '+', '.join(vec(model('Mario')[j].translate) for j in TARGET_JOINTS)+' };')
+    for case in cases:
+        out.append('const FTCustomAnimationPackedFrame '+case['symbol']+'[] = {')
+        for source in sample(case['fighter'],case['name'],case['frames'],case['flags']):
+            values=packed_pose(retarget(case['fighter'],source,case['flags']))
+            rotations=', '.join('{ '+', '.join(map(str,values[j*3:j*3+3]))+' }' for j in range(24))
+            out.append('    { { '+rotations+' }, { '+', '.join(map(str,values[72:]))+' } },')
+        out.append('};')
+    out.append('const FTCustomAnimationPackedClip sFTCustomAnimationPackedClips[12][33] = {')
+    for fighter,row in zip(ROSTER,rows):
+        out.append('    { /* '+fighter+' */')
+        out.extend('        { '+('NULL, 0' if i is None else cases[i]['symbol']+', '+str(cases[i]['frames']))+' },' for i in row)
+        out.append('    },')
+    out.append('};')
+    (ROOT/'src/ft/ftcustomanimationpacked.generated.inc').write_text('\n'.join(out)+'\n',encoding='utf-8')
+    (ROOT/'build/animation-expanded-manifest.json').write_text(json.dumps(dict(cases=cases,rows=rows),indent=2)+'\n',encoding='utf-8')
+    print('Generated',len(cases),'shared Mario clips;',sum(c['frames']*150 for c in cases),'packed bytes;',sum(i is not None for row in rows for i in row),'new donor/variant entries.')
+
 def main():
     out=['/* Generated by tools/generateCustomAnimations.py; bounded three-move pilot. */']
     report=[]
@@ -103,5 +163,6 @@ def main():
     (ROOT/'src/ft/ftcustomanimations.generated.inc').write_text('\n'.join(out)+'\n')
     (ROOT/'build/animation-pilot-manifest.json').write_text(json.dumps(report,indent=2)+'\n')
     print('Generated three Mario pilots:',sum(r['bytes'] for r in report),'bytes;',sum(r['frames'] for r in report),'frames; 24 mapped joints per frame.')
+    generate_packed()
 
 if __name__=='__main__':main()

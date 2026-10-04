@@ -1,5 +1,19 @@
 # Changes
 
+## 0.1.6 - 2026-10-03: more Mario donor animations
+
+- Decomp Mario now performs Fox, DK, Luigi and Falcon normal attacks, including
+  angled variants, aerial landing poses and supported Falcon/Luigi third jabs.
+- Share 94 compact clips across 115 new move variants; retain the three existing
+  pilots. Donor collision values/timing remain independent of the visible pose.
+- Fold reserved donor rotations into the mapped rig and clear body cosmetic
+  channels to prevent double rotation; preserve TopN/facing/TransN physics.
+- Add native-source world-orientation checks, complete compact runtime lifecycle
+  checks and linked-ROM clip/registry verification. Rendered acceptance remains pending.
+- ROM CPU checks pass for four Mario donor presets, 2,082 live compact poses,
+  editor returns and four differently assigned Mario builds in VS.
+- Update guides/checklists and rebuild the decomp ROM. Remix unchanged.
+
 ## 0.1.5 - 2026-10-03: donor special paths and movement
 
 - Decomp: add generated safe event scripts and donor collision paths for 20 phases covering DK Up B, Mario/Luigi Down B, all Falcon Kick phases and Ness Up B. Original damage, radii, knockback, flags and collision timing follow the source independently of visible body poses.

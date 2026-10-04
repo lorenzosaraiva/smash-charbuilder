@@ -81,7 +81,7 @@ same body, or share a build.
 
 Normal attacks now follow their donor collision paths on every body, including
 angled variants, weapon/tail attacks, multihits and landing hitboxes. The body
-keeps its visible pose outside the three Mario animation pilots.
+keeps its visible pose outside the [four donor normal catalogs on Mario](mario-animations.md).
 
 For an easy comparison, choose **DK Body -> Up Tilt: Kirby**, then
 **Test in Training -> View: HITBOX**. The two hitboxes follow Kirby's original
@@ -99,9 +99,9 @@ restarts. Most attack animations still come from the body. Throws copy donor
 damage/knockback but retain body choreography; DK skips cargo when another fighter's
 forward throw is selected. The [checklist](status.md) explains the remaining gaps.
 
-For the animation pilot, choose a Mario body with Falcon Down Air, Fox Forward
-Tilt or DK Forward Smash. The tilt/smash pilots cover the straight variants only;
-angled poses stay native. Visual acceptance is still pending.
+For donor animations, choose a Mario body and Fox, DK, Luigi or Falcon for any
+normal attack row. Angled attacks and aerial landing poses are included. Try
+Falcon Up Air, Fox Up Smash or DK Down Smash. Visual acceptance is still pending.
 
 Borrowed Up/Down B currently use idle/falling poses while their donor phase clocks
 control duration and events. DK Down B keeps both original slap windows; tap B

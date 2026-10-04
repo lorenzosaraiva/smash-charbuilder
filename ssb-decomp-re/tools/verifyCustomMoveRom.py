@@ -303,6 +303,33 @@ for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):
     assert pattern in rom,name+' missing from ROM'
     animation_bytes += length
 print('PASS: all three linked Mario animation pilots match host-tested poses and donor hitbox trajectories ('+str(animation_bytes)+' bytes).')
+from generateCustomAnimations import pose_catalog
+pose_cases,pose_rows=pose_catalog()
+packed_bytes=0
+for case in pose_cases:
+    name=case['symbol']
+    address,length,index=host_symbols[name]
+    assert length==case['frames']*150
+    start=host_sections[index][4]+address-host_sections[index][3]
+    values=struct.unpack_from('<'+str(length//2)+'h',host,start)
+    pattern=struct.pack('>'+str(length//2)+'h',*values)
+    address,linked_length,index=symbols[name]
+    start=sections[index][4]+address-sections[index][3]
+    assert linked_length==length and elf[start:start+length]==pattern and pattern in rom,name
+    packed_bytes+=length
+registry=loaded_words(symbols['sFTCustomAnimationPackedClips'][0],12*33*2)
+for donor,row in enumerate(pose_rows):
+    for variant,case_id in enumerate(row):
+        expected=(0,0) if case_id is None else (symbols[pose_cases[case_id]['symbol']][0],pose_cases[case_id]['frames'])
+        index=(donor*33+variant)*2
+        assert tuple(registry[index:index+2])==expected,('Mario pose registry',donor,variant)
+print(f'PASS: {len(pose_cases)} shared packed Mario clips and all 396 guarded registry pointers/counts match checked data ({packed_bytes} pose bytes).')
+address,length,index=host_symbols['sFTCustomAnimationMarioBind']
+start=host_sections[index][4]+address-host_sections[index][3]
+pattern=struct.pack('>72I',*struct.unpack_from('<72I',host,start))
+address,linked_length,index=symbols['sFTCustomAnimationMarioBind']
+start=sections[index][4]+address-sections[index][3]
+assert length==linked_length==288 and elf[start:start+length]==pattern and pattern in rom,'Mario bind translations'
 collision_bytes=0
 cases,rows=catalog()
 for case_id,case in enumerate(cases):

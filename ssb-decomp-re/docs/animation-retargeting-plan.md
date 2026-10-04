@@ -1,12 +1,17 @@
 # Next step: donor animations on custom bodies
 
-Status: the three-move Mario pilot is implemented. Native playback, geometry, host lifecycle and linked-ROM checks pass. Rendered emulator acceptance remains pending; expansion in section 5 is gated on that check. See [the pilot report](animation-retargeting-pilot.md).
+Status: Mario now has Fox/DK/Luigi/Falcon normal attack poses, angled variants and
+aerial landings through shared compact clips. Native-source geometry/orientation,
+runtime lifecycle and linked-ROM checks pass. Rendered acceptance remains pending.
+The user requested this bounded Mario expansion while visual review continues.
+See [current coverage](mario-animations.md) and the [historical pilot](animation-retargeting-pilot.md).
 Gameplay checkpoint: `c4cf93a87` (donor collision parameters, normal/grab timing and landing windows), following `290cffca3` (grab/throw donors) and `06f98fe70` (normal roster, player assignments, training HITBOX and unlocks).
 
-Current priority is the separate [collision trajectory milestone](collision-trajectories.md)
-before expanding visible animation coverage. All normal donor paths now work
-on every foreign body, including angled variants and body-supported jab phases. The Mario pose pilot and its
-pending rendered acceptance remain unchanged. The current checklist order is
+The [collision trajectory milestone](collision-trajectories.md) now has complete
+normal coverage and automated checks. Continue visible animation coverage and
+rendered comparison. All normal donor paths now work
+on every foreign body, including angled variants and body-supported jab phases.
+Mario animation coverage has expanded; its rendered acceptance remains pending. The current checklist order is
 collisions/timing, animations, neutral specials excluding Kirby copy, then tethers
 and paired capture/throw mechanics.
 

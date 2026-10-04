@@ -25,13 +25,19 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Local build command with ROM and play package under `dist/`.
 - [x] GitHub build/release workflow prepared; needs the one-time setup in [releases.md](releases.md).
 
-## Animation pilot
+## Mario animations
 
 - [x] Mario body + Captain Falcon down-air poses and donor hitbox trajectory.
 - [x] Mario body + Fox straight forward-tilt poses and donor hitbox trajectory.
 - [x] Mario body + DK straight forward-smash poses and donor hitbox trajectory.
 - [ ] Rendered emulator acceptance of all three pilot combinations.
-- [ ] Angled tilt/smash animation variants.
+- [x] Fox/DK/Luigi/Falcon normal attack families and angled tilt/smash variants on Mario.
+- [x] Aerial landing poses and body-supported Falcon/Luigi third jabs on Mario.
+- [x] Shared compact clips, native-source orientation checks and guarded per-player playback.
+- [x] ROM CPU pose checks for all four Mario donors, editor returns and four-Mario VS loading (null rendering).
+- [ ] Remaining donor rigs on Mario; rendered acceptance of the expanded catalog.
+
+See the [expanded Mario animation guide](mario-animations.md).
 
 ## Still to do
 
@@ -72,7 +78,7 @@ paths across bodies, independently of those visible poses. See the
 the donor does not yet reproduce its full choreography. Tether-grab animation/reach
 and fighter-specific effects, movement or capture behavior are not universally copied.
 
-The three animation pilots have automated numeric checks. The rest of the roster,
+Mario's four donor normal catalogs have automated numeric checks. The rest of the roster,
 special adapters and transitions need more gameplay reports. You may run into bugs.
 
 For a useful report, include the build/commit, emulator, body, donor, attack and steps
