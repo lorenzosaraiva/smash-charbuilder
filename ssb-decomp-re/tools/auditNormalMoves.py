@@ -47,7 +47,7 @@ def us_text(text):
 
 
 def arrays(text, typ):
-    return dict(re.findall(typ + r'\s+(\w+)\[.*?\]\s*=\s*\{(.*?)\n\};', text, re.S))
+    return dict(re.findall(typ + r'\s+(\w+)\[[^\]]*\]\s*=\s*\{(.*?)\n\};', text, re.S))
 
 
 def calls(body):

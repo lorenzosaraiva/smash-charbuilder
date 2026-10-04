@@ -21,6 +21,13 @@ def superjump_landing_duration():
     assert durations[0]==durations[1]
     return durations[0]
 
+def direct_landing_duration(fighter):
+    prefix={'Link':'FTLINK_SPINATTACK','Samus':'FTSAMUS_SCREWATTACK'}[fighter]
+    header=ROOT/'src/ft/ftchar'/('ft'+fighter.lower())/('ft'+fighter.lower()+'.h')
+    rate=float(re.search(r'#define '+prefix+r'_LANDING_LAG\s+([\d.]+)F',header.read_text())[1])
+    common=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
+    return ceil(animation_duration(motion_descriptors(fighter)[1][common['nFTCommonMotionLandingFallSpecial']][0])/rate)
+
 @lru_cache(None)
 def catalog():
     common=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
@@ -78,14 +85,15 @@ def path_catalog():
     result=[]
     for donor,motion,duration,cycle,key in catalog():
         selected=((donor==2 and ('SpecialHi' in key or 'SpecialAirHi' in key)) or
-                  (donor in (0,4) and ('SpecialHi' in key or 'SpecialAirHi' in key)) or
+                  (donor in (0,3,4,5) and ('SpecialHi' in key or 'SpecialAirHi' in key)) or
+                  (donor==10 and 'SpecialLw' in key) or
                   (donor in (0,4,7) and ('SpecialLw' in key or 'SpecialAirLw' in key)) or
                   (donor==11 and ('SpecialHi' in key or 'SpecialAirHi' in key)))
         if not selected:continue
         fighter=ROSTER[donor];desc=motion_descriptors(fighter)[1][motion];flags=flag_word(desc[2])
         name=desc[0][3:-6];poses=sample(fighter,name,duration+1,flags)
         bones,_=rig(fighter,flags);size=source_size(fighter)
-        source=commands(desc[1]);timeline={};script=[];wall=0
+        source=commands(desc[1]) if desc[1]!='0x80000000' else ();timeline={};script=[];wall=0
         for op,args in source:
             if op=='ftMotionCommandWait':wall+=int(args[0],0)
             elif op=='ftMotionCommandWaitAsync':wall=max(wall,int(args[0],0))
@@ -116,7 +124,7 @@ def path_catalog():
         assert not frames[-1][0],(key,'active collision at action end')
         result.append(dict(donor=donor,motion=motion,fighter=fighter,phase=key,duration=duration,
                            flags=flags,animation=name,events=source,script=tuple(script),frames=tuple(frames),
-                           cycle=cycle,travel=tuple(travel) if donor==7 or (donor in (0,4) and 'Hi' in key) else (),spawn=tuple(spawn),anchors=(),air=int('SpecialAir' in key)))
+                           cycle=cycle,travel=tuple(travel) if donor==7 or (donor in (0,3,4) and 'Hi' in key) else (),spawn=tuple(spawn),anchors=(),air=int('SpecialAir' in key)))
     return tuple(result)
 
 def render():
@@ -145,8 +153,10 @@ def render():
         out+=['    { '+str(c['donor'])+', '+str(c['motion'])+', { '+p+'Script, ARRAY_COUNT('+p+'Script), '+str(c['duration'])+', '+('4' if c['cycle'] else '0')+' }, { '+p+'Frames, 0, '+str(c['duration']+1)+', 0, 0 }, '+(p+'Travel' if c['travel'] else 'NULL')+', '+(p+'Spawn' if c['spawn'] else 'NULL')+' },']
     out+=['};']
     out+=['static const FTCustomMoveDefinition sFTCharBuilderSuperJumpLanding = { NULL, 0, '+str(superjump_landing_duration())+', 0 };']
+    for fighter in ('Link','Samus'):
+        out+=['static const FTCustomMoveDefinition sFTCharBuilder'+fighter+'SpecialLanding = { NULL, 0, '+str(direct_landing_duration(fighter))+', 0 };']
     return '\n'.join(out)+'\n'
 
 if __name__=='__main__':
-    (ROOT/'src/ft/ftspecialtiming.generated.inc').write_text(render(),encoding='utf-8')
+    (ROOT/'src/ft/ftspecialtiming.generated.inc').write_text(render(),encoding='utf-8',newline='\n')
     print('Generated',len(catalog()),'donor phase durations,',len(path_catalog()),'collision/travel/socket phases and DK slap windows.')

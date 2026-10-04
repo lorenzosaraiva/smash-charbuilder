@@ -41,6 +41,7 @@ build/testCustomMove
 python3 tools/testNeutralLifecycle.py
 python3 tools/testSpecialTiming.py
 python3 tools/testSuperJump.py
+python3 tools/testDirectSpecials.py
 python3 tools/testNativeAnimation.py
 python3 tools/verifyCustomMoveRom.py
 python3 tools/packageRelease.py

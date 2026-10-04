@@ -158,8 +158,10 @@ void ftPhysicsApplyGroundVelTransferAir(GObj *fighter_gobj)
 void ftPhysicsApplyGroundVelFriction(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
+    if (fp->status_id == nFTCommonStatusLandingFallSpecial)
+        attr = ftMainCharBuilderGetSuperJumpAttributes(fp);
     ftPhysicsSetGroundVelFriction(fp, dMPCollisionMaterialFrictions[fp->coll_data.floor_flags & MAP_VERTEX_MAT_MASK] * attr->traction);
     ftPhysicsSetGroundVelTransferAir(fighter_gobj);
 }
@@ -277,7 +279,7 @@ void ftPhysicsClampAirVelX(FTStruct *fp, f32 clamp)
 // 0x800D8EB8
 void ftPhysicsClampAirVelXMax(FTStruct *fp)
 {
-    ftPhysicsClampAirVelX(fp, fp->attr->air_speed_max_x);
+    ftPhysicsClampAirVelX(fp, ftMainCharBuilderGetSpecialAttributes(fp)->air_speed_max_x);
 }
 
 // 0x800D8EDC
@@ -389,11 +391,7 @@ void ftPhysicsApplyAirVelDriftFastFall(GObj *fighter_gobj)
 void ftPhysicsApplyAirVelFriction(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
-    Vec3f donor_travel;
-
-    if (ftMainCharBuilderGetSpecialTravel(fp, &donor_travel, FALSE) != FALSE)
-        attr = ftMainCharBuilderGetSpecialAttributes(fp);
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     (fp->is_fastfall) ? ftPhysicsApplyFastFall(fp, attr) : ftPhysicsApplyGravityDefault(fp, attr);
 

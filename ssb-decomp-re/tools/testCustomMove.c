@@ -34,7 +34,7 @@ typedef struct FTTestAttributes
 struct FTStruct
 {
     s32 fkind, pkind, hold_stick_x;
-    u32 player;
+    u32 player, player_num;
     s32 status_id, motion_id;
     s32 motion_attack_id;
     FTThrowHitDesc *throw_desc;
@@ -244,6 +244,9 @@ static s32 testCustomMove(void)
     CHECK(ftCustomMoveGetClock(&other) == NULL);
     ftCustomMoveResetClock(&other); /* A preview sharing the player ID. */
     CHECK(ftCustomMoveGetClock(&fp) != NULL);
+    fp.player_num++;
+    CHECK(ftCustomMoveGetClock(&fp) == NULL);
+    fp.player_num--;
     CHECK(ftCustomMoveEventFrame(&fp,&fp.motion_scripts[0][2],0.0F) == 0.0F);
     /* No advance during hitlag; a shorter body pose cannot finish the move. */
     CHECK(ftCustomMoveAdvanceClock(&fp,-1.0F) == 1.0F);

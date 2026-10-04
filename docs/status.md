@@ -94,6 +94,13 @@ mechanics and in-game acceptance remain on the detailed checklist.
 
 ## Decomp Up/Down B timing fixes
 
+- [x] Link Spin Attack source paths and full ground/air gameplay, grounded attack weapon and 40-frame ending.
+- [x] Samus Screw Attack source paths, distinct ground/air physics and hit sequences, startup intangibility and recovery.
+- [x] Jigglypuff Rest one-frame hit, original damage/knockback/radius, invulnerability and uninterrupted 250-frame sleep.
+- [x] Donor friction/air limits, Link/Samus recovery attributes and source landing lengths.
+- [x] Production native-versus-borrowed callback/physics/weapon lifecycle checks across twelve bodies, four slots and both facings.
+- [x] Live ROM CPU checks for all three donors on all twelve bodies: 72 ground/air starts, reset/editor return and four-slot VS loading.
+- [ ] Rendered contact, platform/ledge and damage-interruption acceptance for Spin Attack, Screw Attack and Rest.
 - [x] Mario/Luigi Up B source collision paths, distinct hit phases, travel/steering, ground/air timing and donor helpless/landing recovery.
 - [x] Native-versus-borrowed Mario/Luigi physics and recovery checks across all bodies/slots, with interruption and respawn guards.
 - [x] Live ROM CPU checks for both Up B donors on all twelve bodies: ground/air hit fields, foreign source centers, recovery, reset/editor return and four-slot VS.
@@ -106,7 +113,7 @@ mechanics and in-game acceptance remain on the detailed checklist.
 - [x] Falcon Kick: source collision paths and movement for all five phases.
 - [x] Foreign Tornado state isolated from body passives; landing/respawn reset.
 - [x] Ness source projectile socket and 28-tick self-launch gameplay clock.
-- [x] Original C playback/matrix comparisons and packed-field/linked-pointer checks for all 24 collision/travel/socket phases.
+- [x] Original C playback/matrix comparisons and packed-field/linked-pointer checks for all 30 collision/travel/socket phases.
 - [x] ROM CPU regressions across all twelve bodies: grounded/aerial spin, Tornado B-tap rise, Kick travel, Ness steering/controlled self-contact/recovery, editor returns and four-slot VS.
 - [ ] Complete donor paths/sockets, movement and effects for every Up/Down B.
 - [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.

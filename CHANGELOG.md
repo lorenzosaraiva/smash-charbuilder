@@ -1,5 +1,30 @@
 # Changes
 
+## 0.1.10 - 2026-10-04: Spin Attack, Screw Attack and Rest gameplay
+
+- Complete donor collision paths, hit fields and gameplay clocks for Link Spin
+  Attack, Samus Screw Attack and Jigglypuff Rest on every original body.
+- Preserve Link's grounded spin weapon, expanding attack radii, native lifetime,
+  hitlag, ground/air continuation and 40-frame ending. Remove the native wrong
+  fighter/weapon pointer call and clean up owned weapons on damaging/reset exits.
+  Isolate foreign spin-weapon ownership from common landing/capture status data;
+  guard cleanup and move clocks against recycled fighter generations.
+- Preserve Samus's separate ground/air movement, multihit/finisher sequences,
+  intangible startup, platform/cliff callbacks and donor recovery physics.
+- Rest keeps its one-frame 20-damage hit, original radius/knockback, 30-frame
+  invulnerability and 250-frame sleep. Landing/edge transitions continue sleep.
+- Use donor friction, gravity and speed limits during borrowed specials;
+  recovery retains donor attributes and source landing lengths (Link 13 ticks,
+  Samus 20, Mario/Luigi 25). Body hurtboxes and jump inventory remain native.
+- Add production callback/physics/weapon lifecycle checks and original animation
+  matrix checks for all 30 special path phases. Add optional live ROM coverage
+  for these three donors, Training reset/editor return and four-slot VS.
+  All three passed on all twelve bodies: 72 ground/air starts and 36 editor returns.
+- Recheck the complete intro/title boot, Mario Up B, Ness steering/self-launch
+  and 1,288 live normal poses on Mario.
+- Special animation retargeting and rendered contact/ledge acceptance remain
+  pending. Decomp only; Remix is unchanged.
+
 ## 0.1.9 - 2026-10-04: Mario/Luigi Up B gameplay
 
 - Add source ground/air Super Jump Punch collision paths and movement on every

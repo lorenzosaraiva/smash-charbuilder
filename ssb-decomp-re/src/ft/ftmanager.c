@@ -448,7 +448,7 @@ static sb32 ftManagerIsCharBuilderSlotActive(s32 slot_id)
 static sb32 ftManagerCharBuilderSpecialHiNeedsMain(s32 fkind)
 {
     return (fkind == nFTKindMario) || (fkind == nFTKindLuigi) ||
-           (fkind == nFTKindLink) || (fkind == nFTKindYoshi) ||
+           (fkind == nFTKindLink) || (fkind == nFTKindSamus) || (fkind == nFTKindYoshi) ||
            (fkind == nFTKindKirby) || (fkind == nFTKindNess) || (fkind == nFTKindDonkey);
 }
 
@@ -456,7 +456,7 @@ static sb32 ftManagerCharBuilderSpecialLwNeedsMain(s32 fkind)
 {
     return (fkind == nFTKindMario) || (fkind == nFTKindLuigi) ||
            (fkind == nFTKindSamus) || (fkind == nFTKindLink) ||
-           (fkind == nFTKindYoshi) || (fkind == nFTKindPikachu) || (fkind == nFTKindCaptain);
+           (fkind == nFTKindYoshi) || (fkind == nFTKindPikachu) || (fkind == nFTKindCaptain) || (fkind == nFTKindPurin);
 }
 
 // 0x800D782C

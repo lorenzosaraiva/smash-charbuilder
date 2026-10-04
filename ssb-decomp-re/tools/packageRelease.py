@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.9',
+        'version': '0.1.10',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -105,6 +105,12 @@ Mario/Luigi Up B now use original donor collision paths and distinct hit phases,
 source movement/steering, donor helpless physics and 25-tick landing recovery.
 Luigi retains his original 25-damage opening sweetspot and weak continuation.
 Visible Up B poses remain temporary; rendered contact/ledge acceptance is pending.
+Link Spin Attack, Samus Screw Attack and Rest now preserve source collision
+paths, hit fields, timing and movement. Grounded Spin Attack keeps its native
+expanding weapon and 40-frame ending. Screw Attack keeps distinct ground/air
+multihits, intangibility and donor recovery. Rest hits once for 20 damage and
+keeps its 30-frame invulnerability and 250-frame sleep across landings/edges.
+Special animations and rendered contact acceptance remain pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 All twelve bodies now perform all twelve donor normal attacks, including angled

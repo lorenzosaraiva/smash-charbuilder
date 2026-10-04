@@ -11,7 +11,7 @@ from customMoveTiming import animation_duration
 from generateCustomCollisions import catalog, stored_frames
 from generateNeutralProjectiles import catalog as projectile_catalog, render as render_projectiles
 from generateNeutralActions import catalog as action_catalog, render as render_actions
-from generateSpecialTiming import catalog as special_catalog, render as render_specials, donkey_frames, path_catalog, GAMEPLAY_OPS
+from generateSpecialTiming import catalog as special_catalog, render as render_specials, donkey_frames, path_catalog, GAMEPLAY_OPS, superjump_landing_duration, direct_landing_duration
 from auditNormalMoves import enum_values
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,6 +77,12 @@ for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMain
              'ftMainCharBuilderGetSpecialTravelAngle','ftMainCharBuilderGetSuperJumpAttributes',
              'ftMarioSpecialHiProcInterrupt','ftMarioSpecialHiProcPhysics','ftMarioSpecialHiProcMap',
              'ftMarioSpecialHiProcUpdate','ftCommonFallSpecialSetStatus','ftCommonFallSpecialProcPhysics',
+             'ftLinkSpecialHiUpdateWeaponAttack','ftLinkSpecialAirHiProcPhysics','ftLinkSpecialHiProcMap','ftLinkSpecialAirHiProcMap',
+             'ftLinkSpecialHiMakeWeapon','ftLinkSpecialHiProcDamage','ftLinkSpecialHiDestroyWeapon',
+             'ftLinkSpecialHiProcEffect','ftLinkSpecialHiEndProcUpdate','ftLinkSpecialAirHiProcUpdate',
+             'wpLinkSpinAttackMakeWeapon','wpLinkSpinAttackProcUpdate','wpLinkSpinAttackProcMap',
+             'ftSamusSpecialHiProcPhysics','ftSamusSpecialAirHiProcPhysics','ftSamusSpecialHiProcMap',
+             'ftPhysicsApplyGroundVelFriction','ftPhysicsApplyAirVelFriction','ftPhysicsClampAirVelXMax',
              'ftMainCharBuilderGetSpecialAttributes','ftMainCharBuilderGetTornadoExpend',
              'ftPhysicsGetAirVelTransN','ftPhysicsApplyGroundVelTransN',
              'ftNessSpecialHiCheckCollidePKThunder','ftNessSpecialAirHiJibakuProcUpdate',
@@ -300,8 +306,9 @@ def verify_special_paths():
             pos=rom.find(prefix,pos+1,paddr+filesz)
         if found:break
     assert found,'Special path registry/pointers missing from ROM'
-    landing=struct.pack('>4I',*words('sFTCharBuilderSuperJumpLanding'))
-    assert landing in rom,'Missing donor Super Jump landing clock'
+    # IDO folds the address-selecting constants into anonymous rodata records.
+    for duration in (superjump_landing_duration(),direct_landing_duration('Link'),direct_landing_duration('Samus')):
+        assert struct.pack('>4I',0,0,duration,0) in rom,('Missing donor landing clock',duration)
     print(f'PASS: {count} source special scripts, damage/radii/knockback/flags/timing and linked collision/travel/spawn paths match checked data.')
 verify_special_paths()
 assert 'ftMainCharBuilderIsSpecialN' not in symbols  # Removed blanket laser interception.

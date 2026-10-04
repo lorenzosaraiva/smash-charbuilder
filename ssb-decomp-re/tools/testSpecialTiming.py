@@ -120,7 +120,7 @@ static int test(void) {
                 ftCustomMoveAdvanceClock(fp,0);
                 CHECK(ftMainCharBuilderActivePath(fp)==p);
                 ftPhysicsApplyAirVelFriction(&gobj);
-                CHECK(last_physics_attrs==(p->travel ? &donor_attrs[p->donor] : &body_attrs));
+                CHECK(last_physics_attrs==&donor_attrs[p->donor]);
                 CHECK(ftMainCharBuilderGetSpecialTravel(fp,&actual,TRUE)==(p->travel!=NULL));
                 if(p->travel) {
                     Vec3f d=p->travel[frame].delta;f32 a=p->travel[frame].angle;

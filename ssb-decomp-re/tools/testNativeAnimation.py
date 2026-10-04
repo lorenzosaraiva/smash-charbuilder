@@ -87,9 +87,9 @@ def main():
         event_symbol='sOracleNeutralAction'+str(i)
         output.append('static const OracleEvent '+event_symbol+'[] = {')
         probe = ('{3,0,3,12,{0,0,0},0},' if fighter=='Ness' and case['spawn'] else
-                 '{3,0,3,16,{180,0,0},0},' if fighter=='Samus' else
+                 '{3,0,3,16,{180,0,0},0},' if fighter=='Samus' and case['spawn'] else
                  '{3,0,3,31,{0,0,0},0},' if fighter=='Yoshi' else
-                 '{3,0,3,0,{0,0,0},0},' if fighter=='Link' else '')
+                 '{3,0,3,0,{0,0,0},0},' if fighter=='Link' and case['spawn'] else '')
         if probe:output.append(probe)
         for op,a in case['events']:
             kind=value=aid=joint=scaled=0;offset=(0,0,0)
@@ -195,7 +195,7 @@ def main():
                 expected_delta,expected_angle=case['travel'][frame]
                 assert max(abs(a-b) for a,b in zip(delta,expected_delta))<0.003,(case['phase'],'travel',frame)
                 assert abs(rotation-expected_angle)<0.003,(case['phase'],'travel rotation',frame)
-            elif case['fighter'] in ('Captain','Purin') and not case['air']:
+            elif not case['phase'].startswith('nFT') and case['fighter'] in ('Captain','Purin') and not case['air']:
                 movement=(0,0,0) if frame==0 else ((trans[2]-previous_trans[2])*source_size(case['fighter']),0,(trans[0]-previous_trans[0])*source_size(case['fighter']))
                 assert max(abs(a-b) for a,b in zip(movement,case['travel'][frame]))<0.003,(case['fighter'],'root movement',frame)
             previous_trans=trans

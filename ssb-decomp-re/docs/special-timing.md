@@ -51,7 +51,7 @@ and recovery events. Source launch collisions clear at frame 19.
 ## Checks and remaining work
 
 `testSpecialTiming.py` compiles production clocks/accessors against real 32-bit
-fighter layouts. It checks all 96 phase clocks and all 24 collision/travel/
+fighter layouts. It checks all 96 phase clocks and all 30 collision/travel/
 spawn definitions on twelve bodies, four slots and both facings, including state
 isolation and reset guards. The animation oracle compares every new path, active
 mask, movement delta and socket with original C playback/collision matrices.
@@ -59,6 +59,11 @@ The ROM verifier follows linked pointers and checks original packed event fields
 Version 0.1.9 expands the path registry from 20 to 24 phases with Mario/Luigi Up B.
 Its dedicated callback/physics test also compares native and borrowed movement,
 steering, recovery and interruption cleanup. Visible special poses remain temporary.
+
+Version 0.1.10 expands the registry to 30 phases with Link Spin Attack, Samus
+Screw Attack and Rest. Rest shares one motion between ground and air. Their
+complete gameplay coverage and remaining acceptance checks are described in
+[direct-specials.md](direct-specials.md).
 
 Optional Linux emulator tests (see [setup](neutral-specials.md)):
 

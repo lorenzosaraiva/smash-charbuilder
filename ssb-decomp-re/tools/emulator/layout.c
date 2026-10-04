@@ -40,3 +40,9 @@ const u32 sSceneSmokeSuperJumpLayout[] = {
     __builtin_offsetof(FTAttackColl, knockback_weight), __builtin_offsetof(FTAttackColl, knockback_base),
     __builtin_offsetof(FTAttackColl, pos_curr)
 };
+const u32 sSceneSmokeSpinLayout[] = {
+    __builtin_offsetof(FTStruct, status_vars.link.specialhi.spin_attack_gobj),
+    __builtin_offsetof(WPStruct, kind), __builtin_offsetof(WPStruct, attack_coll.attack_state),
+    __builtin_offsetof(WPStruct, attack_coll.size), __builtin_offsetof(WPStruct, lifetime),
+    __builtin_offsetof(WPStruct, attack_coll.damage)
+};

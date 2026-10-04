@@ -213,7 +213,8 @@ FTAttributes* ftMainCharBuilderGetSuperJumpAttributes(FTStruct *fp)
     if (donor == -1)
     {
         donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
-        if (((donor == nFTKindMario) || (donor == nFTKindLuigi)) &&
+        if (((donor == nFTKindMario) || (donor == nFTKindLuigi) ||
+             (donor == nFTKindLink) || (donor == nFTKindSamus)) &&
             (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi))
             return ftMainCharBuilderGetSpecialAttributes(fp);
         return fp->attr;
@@ -225,9 +226,11 @@ FTAttributes* ftMainCharBuilderGetSuperJumpAttributes(FTStruct *fp)
 
 static void ftMainCharBuilderStartSuperJumpLandingClock(FTStruct *fp, f32 frame_begin)
 {
+    s32 donor = ftMainCharBuilderGetSuperJumpRecoveryDonor(fp);
     if ((fp->status_id == nFTCommonStatusLandingFallSpecial) &&
-        (ftMainCharBuilderGetSuperJumpRecoveryDonor(fp) != -1))
-        ftCustomMoveStartClock(fp, &sFTCharBuilderSuperJumpLanding, frame_begin);
+        (donor != -1))
+        ftCustomMoveStartClock(fp, (donor == nFTKindLink) ? &sFTCharBuilderLinkSpecialLanding :
+            (donor == nFTKindSamus) ? &sFTCharBuilderSamusSpecialLanding : &sFTCharBuilderSuperJumpLanding, frame_begin);
 }
 
 static const FTCharBuilderSpecialPath* ftMainCharBuilderActivePath(FTStruct *fp)
@@ -671,7 +674,8 @@ static void ftMainCharBuilderCheckSpecialStatus(FTStruct *fp, sb32 is_special_st
     {
         if ((is_special_status == FALSE) &&
             ((fp->status_id == nFTCommonStatusFallSpecial) || (fp->status_id == nFTCommonStatusLandingFallSpecial)) &&
-            ((donor == nFTKindMario) || (donor == nFTKindLuigi)) &&
+            ((donor == nFTKindMario) || (donor == nFTKindLuigi) ||
+             (donor == nFTKindLink) || (donor == nFTKindSamus)) &&
             (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi))
         {
             sFTCharBuilderSuperJumpRecovery[fp->player].owner = fp;
@@ -5149,6 +5153,15 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     DObj *transn_child;                 // Child of TransN_Joint
     s32 i;
 
+    /* Reset, damage and capture exits must not leave Link's owned spin weapon alive. */
+    if ((ftMainCharBuilderGetActiveSpecialDonor(fp) == nFTKindLink) &&
+        (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi) &&
+        (ftMainCharBuilderActivePath(fp) != NULL) &&
+        ((fp->status_id == nFTLinkStatusSpecialHi) || (fp->status_id == nFTLinkStatusSpecialHiEnd) ||
+         (fp->status_id == nFTLinkStatusSpecialAirHi)) &&
+        (status_id != nFTLinkStatusSpecialHi) && (status_id != nFTLinkStatusSpecialHiEnd) &&
+        (status_id != nFTLinkStatusSpecialAirHi))
+        ftLinkSpecialHiProcDamage(fighter_gobj);
     ftCustomMoveResetClock(fp);
     status_struct = NULL;
     opening_struct = NULL;

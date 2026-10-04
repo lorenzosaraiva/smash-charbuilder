@@ -84,7 +84,7 @@ void ftSamusSpecialAirHiProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    ftPhysicsApplyGravityDefault(fp, fp->attr);
+    ftPhysicsApplyGravityDefault(fp, ftMainCharBuilderGetSpecialAttributes(fp));
     ftPhysicsClampAirVelXStickRange(fp, 0, FTSAMUS_SCREWATTACK_DRIFT_MUL, FTSAMUS_SCREWATTACK_DRIFT_CLAMP);
 }
 

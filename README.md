@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.9 (experimental)** | **Last updated: 2026-10-04**
+**Project version: 0.1.10 (experimental)** | **Last updated: 2026-10-04**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -12,6 +12,10 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
+
+The latest decomp update completes gameplay adapters for Link Spin Attack, Samus
+Screw Attack and Jigglypuff Rest. Special animations and rendered playtesting are
+still pending; see [coverage and checks](ssb-decomp-re/docs/direct-specials.md).
 
 **[How to play Character Lab](ssb-decomp-re/docs/playing.md)** |
 **[Done / not done](docs/status.md)** | **[Build guide](docs/building.md)** |

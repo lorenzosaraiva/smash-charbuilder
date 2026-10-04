@@ -37,6 +37,7 @@ jobs:
       - name: Check move behavior and donor data
         run: |
           mkdir -p build
+          python3 tools/prepareSharedAnimationTest.py
           gcc -m32 -nostdlib -static -fno-pie -fno-stack-protector -O1 \
             -Iinclude -Isrc -D__sgi -D_LANGUAGE_C -D_MIPS_SZLONG=32 -DREGION_US \
             tools/testCustomMove.c -o build/testCustomMove
@@ -44,6 +45,7 @@ jobs:
           python3 tools/testNeutralLifecycle.py
           python3 tools/testSpecialTiming.py
           python3 tools/testSuperJump.py
+          python3 tools/testDirectSpecials.py
           python3 - <<'PY'
           import sys
           from pathlib import Path
