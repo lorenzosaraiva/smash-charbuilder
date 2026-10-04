@@ -32,3 +32,11 @@ const u32 sSceneSmokeSpecialLayout[] = {
     __builtin_offsetof(DObj, translate.vec.f),
     __builtin_offsetof(WPStruct, physics.vel_air), __builtin_offsetof(SCBattleState, game_status)
 };
+const u32 sSceneSmokeSuperJumpLayout[] = {
+    __builtin_offsetof(FTStruct, hitstatus), __builtin_offsetof(FTStruct, jumps_used),
+    __builtin_offsetof(FTStruct, attr), __builtin_offsetof(FTAttributes, jumps_max),
+    __builtin_offsetof(FTAttackColl, damage), __builtin_offsetof(FTAttackColl, size),
+    __builtin_offsetof(FTAttackColl, angle), __builtin_offsetof(FTAttackColl, knockback_scale),
+    __builtin_offsetof(FTAttackColl, knockback_weight), __builtin_offsetof(FTAttackColl, knockback_base),
+    __builtin_offsetof(FTAttackColl, pos_curr)
+};

@@ -11,7 +11,7 @@ from customMoveTiming import animation_duration
 from generateCustomCollisions import catalog, stored_frames
 from generateNeutralProjectiles import catalog as projectile_catalog, render as render_projectiles
 from generateNeutralActions import catalog as action_catalog, render as render_actions
-from generateSpecialTiming import catalog as special_catalog, render as render_specials, donkey_frames, path_catalog
+from generateSpecialTiming import catalog as special_catalog, render as render_specials, donkey_frames, path_catalog, GAMEPLAY_OPS
 from auditNormalMoves import enum_values
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,6 +74,9 @@ for name in ('ftMainSetStatus','ftMainPlayAnim','ftMainParseMotionEvent','ftMain
              'ftMainCharBuilderTrySpecialN','ftMainCharBuilderIsImmediateDonkeyThrow',
              'ftMainCharBuilderGetSpecialTravel','ftMainCharBuilderGetSpecialSpawn',
              'ftMainCharBuilderSetSpecialTravelAngle',
+             'ftMainCharBuilderGetSpecialTravelAngle','ftMainCharBuilderGetSuperJumpAttributes',
+             'ftMarioSpecialHiProcInterrupt','ftMarioSpecialHiProcPhysics','ftMarioSpecialHiProcMap',
+             'ftMarioSpecialHiProcUpdate','ftCommonFallSpecialSetStatus','ftCommonFallSpecialProcPhysics',
              'ftMainCharBuilderGetSpecialAttributes','ftMainCharBuilderGetTornadoExpend',
              'ftPhysicsGetAirVelTransN','ftPhysicsApplyGroundVelTransN',
              'ftNessSpecialHiCheckCollidePKThunder','ftNessSpecialAirHiJibakuProcUpdate',
@@ -250,13 +253,14 @@ def verify_special_paths():
         if name.startswith('sFTCharBuilderSpecialPath') and name!='sFTCharBuilderSpecialPaths':
             data=words(name);payloads[address]=data
             assert struct.pack('>'+str(len(data))+'I',*data) in rom,name
-    records=words('sFTCharBuilderSpecialPaths');assert len(records)==20*13
+    count=len(path_catalog())
+    records=words('sFTCharBuilderSpecialPaths');assert len(records)==count*13
     for i,c in enumerate(path_catalog()):
         expected=[];wall=0
         for op,args in c['events']:
             if op=='ftMotionCommandWait':wall+=int(args[0],0);continue
             if op=='ftMotionCommandWaitAsync':wall=max(wall,int(args[0],0));continue
-            if 'AttackColl' not in op and not op.startswith('ftMotionCommandSetFlag') and op not in ('ftMotionCommandSetHitStatusAll','ftMotionCommandSetSlopeContour'):continue
+            if 'AttackColl' not in op and not op.startswith('ftMotionCommandSetFlag') and op not in GAMEPLAY_OPS:continue
             a=[int(v,0) for v in args]
             if op=='ftMotionCommandMakeAttackColl':
                 aid,gid,jid,dmg,reb,element,size,x,y,z,angle,kbs,kbw,ga,sd,fl,fk,kbb=a
@@ -278,7 +282,7 @@ def verify_special_paths():
         assert actual==expected,('Special collision/flag source fields and event timing',c['phase'])
     def matches(table):
         if table is None:return False
-        for i in range(20):
+        for i in range(count):
             expected=records[i*13:i*13+13];actual=table[i*13:i*13+13]
             if any(actual[f]!=expected[f] for f in (0,1,3,4,5,7,8,9,10)):return False
             for f in (2,6,11,12):
@@ -292,11 +296,13 @@ def verify_special_paths():
         if typ!=1:continue
         pos=rom.find(prefix,paddr,paddr+filesz)
         while pos!=-1:
-            if matches(loaded_words(vaddr+pos-paddr,20*13)):found=True;break
+            if matches(loaded_words(vaddr+pos-paddr,count*13)):found=True;break
             pos=rom.find(prefix,pos+1,paddr+filesz)
         if found:break
     assert found,'Special path registry/pointers missing from ROM'
-    print('PASS: 20 source special scripts, damage/radii/knockback/flags/timing and linked collision/travel/spawn paths match checked data.')
+    landing=struct.pack('>4I',*words('sFTCharBuilderSuperJumpLanding'))
+    assert landing in rom,'Missing donor Super Jump landing clock'
+    print(f'PASS: {count} source special scripts, damage/radii/knockback/flags/timing and linked collision/travel/spawn paths match checked data.')
 verify_special_paths()
 assert 'ftMainCharBuilderIsSpecialN' not in symbols  # Removed blanket laser interception.
 for donor,frames in (('Captain',41),('Fox',28),('Donkey',61)):

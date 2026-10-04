@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.8',
+        'version': '0.1.9',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -101,6 +101,10 @@ paths and numeric values. Falcon Kick uses source movement; spin/Tornado use
 donor aerial physics. Foreign Tornado rise state resets on landing/respawn.
 Ness uses its source projectile socket and native 28-tick self-launch clock.
 Other Up/Down B paths/effects and rendered acceptance remain pending.
+Mario/Luigi Up B now use original donor collision paths and distinct hit phases,
+source movement/steering, donor helpless physics and 25-tick landing recovery.
+Luigi retains his original 25-damage opening sweetspot and weak continuation.
+Visible Up B poses remain temporary; rendered contact/ledge acceptance is pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 All twelve bodies now perform all twelve donor normal attacks, including angled

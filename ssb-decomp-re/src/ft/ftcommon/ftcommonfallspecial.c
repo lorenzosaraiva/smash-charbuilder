@@ -16,7 +16,7 @@ void ftCommonFallSpecialProcInterrupt(GObj *fighter_gobj)
 void ftCommonFallSpecialProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSuperJumpAttributes(fp);
 
     ftPhysicsCheckSetFastFall(fp);
 
@@ -72,7 +72,7 @@ void ftCommonFallSpecialProcMap(GObj *fighter_gobj)
 void ftCommonFallSpecialSetStatus(GObj *fighter_gobj, f32 drift, sb32 unknown, sb32 is_fall_accelerate, sb32 is_goto_landing, f32 landing_lag, sb32 is_allow_interrupt)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSuperJumpAttributes(fp);
 
     ftMainSetStatus(fighter_gobj, nFTCommonStatusFallSpecial, 0.0F, 1.0F, FTSTATUS_PRESERVE_FASTFALL);
 
@@ -84,7 +84,7 @@ void ftCommonFallSpecialSetStatus(GObj *fighter_gobj, f32 drift, sb32 unknown, s
     {
         mpCommonSetFighterAir(fp);
     }
-    fp->jumps_used = attr->jumps_max;
+    fp->jumps_used = fp->attr->jumps_max;
 
     fp->status_vars.common.fallspecial.is_allow_pass = TRUE;
     fp->status_vars.common.fallspecial.is_goto_landing = is_goto_landing;

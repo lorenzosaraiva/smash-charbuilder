@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.8 (experimental)** | **Last updated: 2026-10-04**
+**Project version: 0.1.9 (experimental)** | **Last updated: 2026-10-04**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -65,6 +65,11 @@ source movement; spin/Tornado physics use donor values. Ness Up B uses its donor
 spawn socket and 28-tick self-launch timeline, with independent weapon state.
 Other specials and visible animations need more work; see the
 [special timing notes](ssb-decomp-re/docs/special-timing.md).
+
+Mario/Luigi **Up B** now use their original ground/air collision paths, distinct
+hit phases, donor movement and steering, helpless recovery physics and 25-tick
+landing recovery on other bodies. Visible special animations remain temporary.
+See the [Super Jump Punch guide](ssb-decomp-re/docs/super-jump-punch.md).
 
 Training and VS now allocate their heaps in the Expansion Pak bank, fixing the
 character-selection allocation overflow behind the Test in Training freeze.

@@ -100,6 +100,10 @@ distinction, independent player counters and vanilla resets outside Training.
 
 ## Decomp Up/Down B timing fixes
 
+- [x] Mario/Luigi Up B source collision paths, distinct hit phases, travel/steering, ground/air timing and donor helpless/landing recovery.
+- [x] Native-versus-borrowed Mario/Luigi physics and recovery checks across all bodies/slots, with interruption and respawn guards.
+- [x] Live ROM CPU checks for both Up B donors on all twelve bodies: ground/air hit fields, foreign source centers, recovery, reset/editor return and four-slot VS.
+- [ ] Rendered Mario/Luigi Up B sweetspot/multihit contact, platforms, ledges and interruptions.
 - [x] Donor phase durations/loop boundaries and independent event clocks; safe idle/falling poses.
 - [x] DK Down B startup/slap/recovery, four source hitboxes and queued repeat cycles.
 - [x] Ness Up B weapon/wave/trail preloads and independent foreign-body passive state.
@@ -108,7 +112,7 @@ distinction, independent player counters and vanilla resets outside Training.
 - [x] Falcon Kick: source collision paths and movement for all five phases.
 - [x] Foreign Tornado state isolated from body passives; landing/respawn reset.
 - [x] Ness source projectile socket and 28-tick self-launch gameplay clock.
-- [x] Original C playback/matrix comparisons and packed-field/linked-pointer checks for all 20 new phases.
+- [x] Original C playback/matrix comparisons and packed-field/linked-pointer checks for all 24 collision/travel/socket phases.
 - [x] ROM CPU regressions across all twelve bodies: grounded/aerial spin, Tornado B-tap rise, Kick travel, Ness steering/controlled self-contact/recovery, editor returns and four-slot VS.
 - [ ] Complete donor paths/sockets, movement and effects for every Up/Down B.
 - [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.

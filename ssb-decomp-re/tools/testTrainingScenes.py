@@ -28,6 +28,7 @@ parser.add_argument('--cases',type=int,default=12)
 parser.add_argument('--first-choice',type=int,default=0)
 parser.add_argument('--specials',action='store_true',help='Exercise borrowed DK Down B and Ness Up B instead of neutral actions')
 parser.add_argument('--path-donor',type=int,choices=(0,2,4,7,11),help='Exercise donor special paths, movement, or Ness steering/self-contact')
+parser.add_argument('--superjump',type=int,choices=(0,4),help='Check Mario/Luigi Up B hit fields, source paths, rise, helpless landing and interrupts')
 parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every body instead of cycling neutral choices')
 parser.add_argument('--mario-animations',action='store_true',help='Check four Mario donor catalogs using real attack inputs and RAM poses')
 parser.add_argument('--roster-animations',action='store_true',help='Check every donor/body pair, live poses, recovery and Training return')
@@ -46,6 +47,8 @@ value,length,index=layout_symbols['sSceneSmokeFighterLayout'];start=sections[ind
 fighter_layout=struct.unpack_from('>'+str(length//4)+'I',data,start)
 value,length,index=layout_symbols['sSceneSmokeSpecialLayout'];start=sections[index][4]+value-sections[index][3]
 joints_off,lr_off,thunder_off,delay_off,obj_off,user_off,position_off,weapon_vel_off,battle_status_off=struct.unpack_from('>9I',data,start)
+value,length,index=layout_symbols['sSceneSmokeSuperJumpLayout'];start=sections[index][4]+value-sections[index][3]
+hitstatus_off,jumps_off,attr_off,jumps_max_off,damage_off,radius_off,angle_off,kbs_off,kbw_off,kbb_off,center_off=struct.unpack_from('>11I',data,start)
 value,length,index=layout_symbols['sSceneSmokeAnimationLayout'];start=sections[index][4]+value-sections[index][3]
 rotation_off,scale_off=struct.unpack_from('>2I',data,start)
 ftsize,kind_off,port_off,gobj_off,status_off,motion_off,attack_off,attack_size,attack_state_off,passive_off,passive_size,generation_off,physics_off,vel_air_off,hitlag_off,gobj_frame_off=fighter_layout
@@ -86,6 +89,7 @@ scene=addr('gSCManagerSceneData');heap=addr('gSYTaskmanGeneralHeap')
 ram=core.DebugMemGetPointer(1)
 def u8(a):return C.c_uint8.from_address(ram+((a&0x7fffff)^3)).value
 def u32(a):return C.c_uint32.from_address(ram+(a&0x7fffff)).value
+def s32(a):return C.c_int32.from_address(ram+(a&0x7fffff)).value
 def w8(a,v):C.c_uint8.from_address(ram+((a&0x7fffff)^3)).value=v
 def w32(a,v):C.c_uint32.from_address(ram+(a&0x7fffff)).value=v
 def f32(a):return C.c_float.from_address(ram+(a&0x7fffff)).value
@@ -114,7 +118,7 @@ def heap_ok():
     start,end,ptr=(u32(heap+j) for j in (4,8,12))
     assert start==0x80400000 and end==0x80800000 and start<=ptr<=end,diagnostic()
     return end-ptr
-trace=[];travel_trace=[];last_trace=None
+trace=[];travel_trace=[];superjump_trace=[];last_trace=None
 animation_seen=set();animation_samples=0;animation_errors=[]
 motion_ids=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
 animation_variants={motion_ids['nFTCommonMotion'+m]:i for i,m in enumerate(MOTIONS[:29])}
@@ -181,7 +185,7 @@ def frame_callback(frame):
                 animation_errors.append((body,donor,variant,source_frame,joint,error))
         animation_seen.add((donor,variant));animation_samples+=1
         return
-    if (not args.specials and args.path_donor is None) or u8(scene)!=54:return
+    if (not args.specials and args.path_donor is None and args.superjump is None) or u8(scene)!=54:return
     fp=u32(addr('sFTManagerStructsAllocBuf'))
     if not 0x80400000<=fp<0x80800000:return
     if u8(fp+port_off)!=0:return
@@ -192,6 +196,15 @@ def frame_callback(frame):
     record=(u32(fp+status_off),u32(fp+motion_off),int(source_frame),mask)
     if args.path_donor is not None:
         travel_trace.append((record,tuple(f32(fp+physics_off+vel_air_off+j) for j in (0,4))))
+    if args.superjump is not None:
+        root=u32(gobj+obj_off)+position_off
+        attacks=[]
+        for i in range(4):
+            a=fp+attack_off+i*attack_size
+            attacks.append((tuple(u32(a+j) for j in (damage_off,angle_off,kbs_off,kbw_off,kbb_off)),
+                            f32(a+radius_off),tuple(f32(a+center_off+j) for j in (0,4,8))))
+        superjump_trace.append((record,tuple(f32(root+j) for j in (0,4,8)),s32(fp+lr_off),
+                                u32(fp+hitstatus_off),u8(fp+jumps_off),u32(u32(fp+attr_off)+jumps_max_off),attacks))
     if record!=last_trace:trace.append(record);last_trace=record
 check(core.CoreDoCommand(15,0,C.cast(frame_callback,C.c_void_p)))
 thread=threading.Thread(target=lambda:check(core.CoreDoCommand(5,0,None)),daemon=True)
@@ -243,7 +256,7 @@ try:
     wait(lambda:u32(addr('sMNOptionBuilderMode'))==1,'Lab hub')
     minima=[]
     for case in (range(4) if args.mario_animations else range(args.first_choice,args.first_choice+args.cases)):
-        choice=0 if args.path_donor is not None else 11 if args.egg_lay else case
+        choice=0 if args.path_donor is not None or args.superjump is not None else 11 if args.egg_lay else case
         if u32(addr('sMNOptionBuilderMode'))==2:pulse(0x40)
         preset=case%4;body=(case+2)%12
         if args.mario_animations:body=0
@@ -256,7 +269,7 @@ try:
             for i in range(13):w8(slot+2+i,(1,2,4,7)[case])
         if args.roster_animations:
             for i in range(13):w8(slot+2+i,(body+1)%12)
-        w8(slot+18,11 if args.specials else args.path_donor if args.path_donor in (2,11) else body)
+        w8(slot+18,args.superjump if args.superjump is not None else 11 if args.specials else args.path_donor if args.path_donor in (2,11) else body)
         w8(slot+19,2 if args.specials else args.path_donor if args.path_donor in (0,4,7) else body)
         w8(slot+neutral_field,0 if args.path_donor is not None else choice)
         pulse(0x80);wait(lambda:u32(addr('sMNOptionBuilderMode'))==2,'Build editor')
@@ -294,13 +307,13 @@ try:
             assert animation_samples>=30 and len(animation_seen)>=7,('Attack coverage',animation_samples,animation_seen)
             assert u32(addr('gFTCustomAnimationValidationFailures'))==0
             print(f'PASS: body {body}, {animation_samples} live shared poses, donor/variants {sorted(animation_seen)}.',flush=True)
-        elif args.path_donor is not None:
+        elif args.path_donor is not None or args.superjump is not None:
             check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
-            donor=args.path_donor;name=ROSTER[donor]
+            donor=args.superjump if args.superjump is not None else args.path_donor;name=ROSTER[donor]
             common=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonStatus')
             header=(ROOT/'src/ft/ftchar'/('ft'+name.lower())/('ft'+name.lower()+'.h')).read_text()
             statuses=enum_values(header.replace('nFTCommonStatusSpecialStart',str(common['nFTCommonStatusSpecialStart'])),'ft'+name+'Status')
-            paths={statuses[c['phase'].replace('Motion','Status')]:c for c in path_catalog() if c['donor']==donor}
+            paths={statuses[c['phase'].replace('Motion','Status')]:c for c in path_catalog() if c['donor']==donor and (args.superjump is None or 'Hi' in c['phase'])}
             def check_paths():
                 seen=set();hits=0;previous_status=None;resume_frame=-1;resumed_masks=()
                 for status,motion,frame,mask in trace:
@@ -333,7 +346,67 @@ try:
                 assert trace[-1][0] not in paths,(body,'Special recovery',trace[-1])
                 return seen
             trace.clear();travel_trace.clear();last_trace=None
-            if donor==11:
+            if args.superjump is not None:
+                def check_superjump():
+                    seen=check_paths();samples=0;damage_seen=set();landing=[];center_error=0
+                    active_data={}
+                    for status,c in paths.items():
+                        wall=0;events={};active={};frames_data=[]
+                        for op,a in c['events']:
+                            if op=='ftMotionCommandWait':wall+=int(a[0],0)
+                            elif op=='ftMotionCommandWaitAsync':wall=max(wall,int(a[0],0))
+                            else:events.setdefault(wall,[]).append((op,a))
+                        for tick in range(len(c['frames'])):
+                            for op,a in events.get(tick,()):
+                                if 'MakeAttackColl' in op:active[int(a[0],0)]=tuple(int(v,0) for v in a)
+                                elif op=='ftMotionCommandClearAttackCollAll':active.clear()
+                            frames_data.append(dict(active))
+                        active_data[status]=frames_data
+                    for r,root,lr,hitstatus,jumps,jumps_max,attacks in superjump_trace:
+                        status,_,frame,mask=r
+                        if status==common['nFTCommonStatusLandingFallSpecial']:landing.append(frame)
+                        if status in (common['nFTCommonStatusFallSpecial'],common['nFTCommonStatusLandingFallSpecial']):
+                            if status==common['nFTCommonStatusFallSpecial']:
+                                assert jumps==jumps_max,(body,'Helpless jump inventory',jumps,jumps_max)
+                            assert not mask and hitstatus==1,(body,'Recovery cleanup',r,hitstatus)
+                        if status not in paths or frame not in range(len(paths[status]['frames'])):continue
+                        c=paths[status]
+                        assert hitstatus==(3 if 2<=frame<(3 if donor==4 else 6) else 1),(body,'Invulnerability window',r,hitstatus)
+                        for aid,a in active_data[status][frame].items():
+                            if not mask&(1<<aid):continue
+                            fields,radius,center=attacks[aid]
+                            assert fields==(a[3],a[10],a[11],a[12],a[17]),(body,'Source hit fields',r,fields,a)
+                            assert abs(radius-a[6]*.5)<.01,(body,'Donor radius',r,radius,a[6]*.5)
+                            x,y,z=c['frames'][frame][1][aid]
+                            expected=(root[0]+z*lr,root[1]+y,root[2]-x*lr)
+                            error=max(abs(v-w) for v,w in zip(center,expected));center_error=max(center_error,error)
+                            # Native fallback uses its original binary animation/
+                            # matrix data. Enforce the compiled source-path bound
+                            # on foreign adapters; native hit fields/timing are
+                            # still checked above and source geometry has its own
+                            # original-C playback oracle in testNativeAnimation.
+                            if body!=donor:assert error<.1,(body,'Donor collision center',r,center,expected)
+                            damage_seen.add(a[3]);samples+=1
+                    assert samples>20 and ({25,1} if donor==4 else {5,1,3})<=damage_seen,(body,'Hit-phase coverage',samples,damage_seen)
+                    assert landing and min(landing)==0 and 24<=len(landing)<=26,(body,'25-tick landing',landing)
+                    if body!=donor:assert max(landing)==24,(body,'Owned landing clock',landing)
+                    print('Super Jump samples:',samples,'maximum center error:',round(center_error,6),flush=True)
+                    return seen
+                for air in (False,True):
+                    trace.clear();superjump_trace.clear();last_trace=None
+                    if air:keys(0x0800);frames(3);keys(0);frames(8)
+                    keys(0x40 | (80<<24));frames(3);keys(0);frames(180)
+                    check_superjump()
+                    coverage='native hit fields/timing' if body==donor else 'source centers/damage/radius/knockback'
+                    print('PASS:',name,'Up B on body',body,'air' if air else 'ground',coverage+', invulnerability, helpless recovery and 25-tick landing.',flush=True)
+                # Reset during an active special through the real Training handler.
+                trace.clear();superjump_trace.clear();last_trace=None
+                keys(0x40 | (80<<24));frames(10);keys(0)
+                # Request a normal Training reset through the pause menu; it must
+                # discard the running action and all donor recovery state.
+                pulse(0x10);w32(addr('sSC1PTrainingModeMenu'),4);pulse(0x80);frames(50)
+                assert u32(fighter()+status_off) not in paths and u32(fighter()+hitstatus_off)==1,(body,'Training reset cleanup',diagnostic())
+            elif donor==11:
                 keys(0x40 | (80<<24));frames(3);keys(0)
                 wait(lambda:u32(fighter()+status_off) in (statuses['nFTNessStatusSpecialHiHold'],statuses['nFTNessStatusSpecialAirHiHold']),'PK Thunder hold')
                 keys(80<<16);frames(8);right=weapon_velocity()
@@ -344,7 +417,7 @@ try:
                 fp=fighter();gobj=u32(fp+gobj_off);top=u32(gobj+obj_off);thunder=head()
                 assert thunder,(body,'Missing controlled PK Thunder head')
                 pos=u32(thunder+obj_off)+position_off;root=top+position_off
-                wf32(pos,f32(root)-100*f32(fp+lr_off));wf32(pos+4,f32(root+4)+50);wf32(pos+8,0)
+                wf32(pos,f32(root)-100*s32(fp+lr_off));wf32(pos+4,f32(root+4)+50);wf32(pos+8,0)
                 check(core.CoreDoCommand(8,0,None));frames(240)
                 seen=check_paths()
                 assert statuses['nFTNessStatusSpecialAirHiJibaku'] in seen or statuses['nFTNessStatusSpecialHiJibaku'] in seen,(body,'PK Thunder launch',seen,trace)
@@ -391,10 +464,10 @@ try:
             assert not 228<=trace[-1][0]<=236,(body,'Ness recovery',trace[-1])
             print('PASS: Ness Up B on body',body,'start -> hold/projectile expiry -> end/recovery, no freeze.',flush=True)
         else:pulse(0x40);frames(200) # Actual B input and recovery/charging.
-        if args.path_donor is None and not (args.mario_animations or args.roster_animations):
+        if args.path_donor is None and args.superjump is None and not (args.mario_animations or args.roster_animations):
             pulse(0x20);frames(30) # Store a charge where supported.
             pulse(0x40);frames(120)
-        if args.path_donor is not None or args.mario_animations or args.roster_animations:
+        if args.path_donor is not None or args.superjump is not None or args.mario_animations or args.roster_animations:
             paused=enum_values((ROOT/'src/sc/scdef.h').read_text(),'SCBattleGameStatus')['nSCBattleGameStatusPause']
             # Native Training ignores Start during KO/respawn. Wait for a legal
             # pause instead of firing Exit at an unopened menu.
@@ -410,7 +483,7 @@ try:
         w32(addr('sSC1PTrainingModeMenu'),5);pulse(0x80)
         wait(lambda:u8(scene)==57 and u32(addr('sMNOptionBuilderMode'))==2,'Return to editor')
         assert u32(addr('sMNOptionBuilderSlot'))==preset and u32(addr('sMNOptionBuilderEntry'))==23
-        action_label='normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None else 'B/store/B'
+        action_label='normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None or args.superjump is not None else 'B/store/B'
         print(f'PASS: body {body}, neutral {choice}, preset {preset}: Test -> CSS -> stage -> Training -> {action_label} -> same editor.',flush=True)
     if not args.four_mb:
         print('PASS: Training heap headroom at least',min(minima),'bytes.',flush=True)
@@ -426,7 +499,7 @@ try:
                 for attack in range(13):w8(slot+2+attack,(1,2,4,7)[player])
             if args.roster_animations:
                 for attack in range(13):w8(slot+2+attack,(1,2,4,7)[player])
-            w8(slot+18,body);w8(slot+19,body);w8(slot+neutral_field,(9,10,11,6)[player])
+            w8(slot+18,(0,4,0,4)[player] if args.superjump is not None else body);w8(slot+19,body);w8(slot+neutral_field,(9,10,11,6)[player])
             record=transfer+players_field+player*player_size
             w8(record+pkind_field,0 if player==0 else 1);w8(record+fkind_field,body)
         w8(transfer+man_field,1);w8(transfer+cpu_field,3);w8(transfer+reset_field,0);w8(transfer+stage_field,1)
@@ -435,7 +508,7 @@ try:
         frames(30);heap_ok();pulse(0x10)
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'VS stage select')
         pulse(0x80);wait(lambda:u8(scene)==22 and u32(addr('dSYTaskmanUpdateCount'))>240,'Four-slot VS battle')
-        frames(180);heap_ok();pulse(0x40);frames(160)
+        frames(180);heap_ok();pulse(0x40 | (80<<24) if args.superjump is not None else 0x40);frames(160)
         print('PASS: four assigned builds, human/three CPUs: Play VS -> CSS -> stage -> battle/B, upper-bank heap in bounds.',flush=True)
 finally:
     keys(0);core.CoreDoCommand(6,0,None);thread.join(timeout=3)

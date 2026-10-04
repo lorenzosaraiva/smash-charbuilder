@@ -114,3 +114,10 @@ assets on other bodies. DK Up B, Mario/Luigi Tornado and Falcon Kick now keep do
 hitbox paths and numeric values independent of those poses. Falcon Kick uses its
 original movement, and Ness uses its original projectile socket/self-launch
 clock. Tap B during Tornado to rise. See [coverage and limits](special-timing.md).
+
+Mario/Luigi Up B now keep source collision paths, movement and steering on other
+bodies. Mario retains his multihit/finisher; Luigi retains the strong opening hit
+and weak continuation. Both use donor helpless physics and 25-tick landing recovery.
+Try a DK or Kirby body with **Up B: Luigi**, then compare with native Luigi in
+HITBOX view. Matching visual poses and rendered acceptance remain pending; see
+[Super Jump Punch](super-jump-punch.md).

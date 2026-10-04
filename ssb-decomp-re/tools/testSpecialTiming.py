@@ -2,7 +2,7 @@
 """Compile the actual special clock/accessor with real 32-bit fighter layouts."""
 import subprocess
 from pathlib import Path
-from generateSpecialTiming import catalog, render
+from generateSpecialTiming import catalog, render, path_catalog
 from hostFighterHeaders import prepare
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,8 +10,9 @@ assert (ROOT/'src/ft/ftspecialtiming.generated.inc').read_text() == render()
 clock = (ROOT/'src/ft/ftcustommove.c.inc').read_text()
 clock = clock[clock.index('typedef struct FTCustomMoveClock'):clock.index('static s32 ftCustomJointResolve')]
 main = (ROOT/'src/ft/ftmain.c').read_text()
-timing = main[main.index('typedef struct FTCharBuilderSpecialTravel'):main.index('static s32 sFTMainCharBuilderSpecialDonors')]
+timing = main[main.index('typedef enum FTMainCharBuilderSpecialKind'):main.index('static s32 sFTMainCharBuilderSpecialDonors')]
 timing = timing.replace('"ftspecialtiming.generated.inc"', '"ft/ftspecialtiming.generated.inc"')
+recovery = next(line for line in main.splitlines() if line.startswith('static struct FTCharBuilderSuperJumpRecovery'))
 attrs = main[main.index('FTAttributes* ftMainCharBuilderGetSpecialAttributes'):main.index('static const FTCharBuilderSpecialPath* ftMainCharBuilderActivePath')]
 mp = (ROOT/'src/mp/mpcommon.c').read_text()
 ground = mp[mp.index('void mpCommonSetFighterGround('):mp.index('// 0x800DEEC8')]
@@ -29,13 +30,14 @@ typedef struct FTCustomCollisionTrajectory {
 void bzero(void *p, int n) { unsigned char *q=p; while(n--) *q++=0; }
 ''' + clock + timing + r'''
 static s32 sFTMainCharBuilderSpecialMotionIDs[4], active_donors[4];
+static u8 sFTMainCharBuilderSpecialKinds[4];
 static f32 sFTMainCharBuilderSpecialTravelAngles[4];
 FTData *dFTManagerDataFiles[32];
 static FTData donor_data[12];static FTAttributes donor_attrs[12],body_attrs;static void *donor_files[12];
 static s32 ftMainCharBuilderGetActiveSpecialDonor(FTStruct *fp) { return active_donors[fp->player]; }
 f32 __cosf(f32 a) { f32 result; __asm__("flds %1; fcos; fstps %0":"=m"(result):"m"(a));return result; }
 f32 __sinf(f32 a) { f32 result; __asm__("flds %1; fsin; fstps %0":"=m"(result):"m"(a));return result; }
-''' + attrs + helpers + ground + r'''
+''' + recovery + '\n' + attrs + helpers + ground + r'''
 f32 cosf(f32 a) { return __cosf(a); }
 ''' + air + r'''
 static FTAttributes *last_physics_attrs;
@@ -154,6 +156,10 @@ static int test(void) {
             CHECK(!ftMainCharBuilderGetSpecialSpawn(&gobj,&actual));
         }
     }
+    ftCustomMoveStartClock(&fighters[0],&sFTCharBuilderSuperJumpLanding,0);
+    CHECK(ftCustomMoveGetClock(&fighters[0])->duration==25);
+    for(frame=0;frame<25;frame++) CHECK(ftCustomMoveAdvanceClock(&fighters[0],-1)>=0);
+    CHECK(ftCustomMoveAdvanceClock(&fighters[0],-1)<0);
     replacement.player=0;replacement.fkind=nFTKindCaptain;replacement.player_num=77;
     CHECK(ftMainCharBuilderGetNessPassive(&replacement)->is_thunder_destroy==0);
     replacement.player=4;replacement.fkind=nFTKindNess;
@@ -186,4 +192,4 @@ subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protec
                 '-D_MIPS_SZLONG=32','-DREGION_US',str(build/'testSpecialTiming.c'),
                 '-o',str(build/'testSpecialTiming')],check=True)
 subprocess.run([str(build/'testSpecialTiming')],check=True)
-print(f'PASS: {len(catalog())} source special clocks, 12 bodies/four slots, loop/transition progress, 20 collision/travel/socket phases and isolated Ness/Tornado state.')
+print(f'PASS: {len(catalog())} source special clocks, 12 bodies/four slots, loop/transition progress, {len(path_catalog())} collision/travel/socket phases and isolated Ness/Tornado state.')

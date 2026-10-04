@@ -447,7 +447,8 @@ static sb32 ftManagerIsCharBuilderSlotActive(s32 slot_id)
 
 static sb32 ftManagerCharBuilderSpecialHiNeedsMain(s32 fkind)
 {
-    return (fkind == nFTKindLink) || (fkind == nFTKindYoshi) ||
+    return (fkind == nFTKindMario) || (fkind == nFTKindLuigi) ||
+           (fkind == nFTKindLink) || (fkind == nFTKindYoshi) ||
            (fkind == nFTKindKirby) || (fkind == nFTKindNess) || (fkind == nFTKindDonkey);
 }
 

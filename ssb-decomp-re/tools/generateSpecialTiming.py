@@ -8,6 +8,18 @@ from customMoveTiming import animation_duration
 from customAnimation import sample, rig, world, source_size, flag_word, transform, add
 from generateCustomAnimations import vec, number
 from generateNeutralProjectiles import commands
+from math import ceil
+
+GAMEPLAY_OPS=('ftMotionCommandSetHitStatusAll','ftMotionCommandSetSlopeContour','ftMotionCommandSetAirJumpMax')
+
+def superjump_landing_duration():
+    rate=float(re.search(r'#define FTMARIO_SUPERJUMP_LANDING_LAG\s+([\d.]+)F',
+                        (ROOT/'src/ft/ftchar/ftmario/ftmario.h').read_text())[1])
+    common=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
+    durations=[ceil(animation_duration(motion_descriptors(f)[1][common['nFTCommonMotionLandingFallSpecial']][0])/rate)
+               for f in ('Mario','Luigi')]
+    assert durations[0]==durations[1]
+    return durations[0]
 
 @lru_cache(None)
 def catalog():
@@ -66,6 +78,7 @@ def path_catalog():
     result=[]
     for donor,motion,duration,cycle,key in catalog():
         selected=((donor==2 and ('SpecialHi' in key or 'SpecialAirHi' in key)) or
+                  (donor in (0,4) and ('SpecialHi' in key or 'SpecialAirHi' in key)) or
                   (donor in (0,4,7) and ('SpecialLw' in key or 'SpecialAirLw' in key)) or
                   (donor==11 and ('SpecialHi' in key or 'SpecialAirHi' in key)))
         if not selected:continue
@@ -76,7 +89,7 @@ def path_catalog():
         for op,args in source:
             if op=='ftMotionCommandWait':wall+=int(args[0],0)
             elif op=='ftMotionCommandWaitAsync':wall=max(wall,int(args[0],0))
-            elif 'AttackColl' in op or op.startswith('ftMotionCommandSetFlag') or op in ('ftMotionCommandSetHitStatusAll','ftMotionCommandSetSlopeContour'):
+            elif 'AttackColl' in op or op.startswith('ftMotionCommandSetFlag') or op in GAMEPLAY_OPS:
                 a=[int(v,0) for v in args];timeline.setdefault(wall,[]).append((op,a))
                 a=list(a)
                 if 'MakeAttackColl' in op:a[2]=0
@@ -103,7 +116,7 @@ def path_catalog():
         assert not frames[-1][0],(key,'active collision at action end')
         result.append(dict(donor=donor,motion=motion,fighter=fighter,phase=key,duration=duration,
                            flags=flags,animation=name,events=source,script=tuple(script),frames=tuple(frames),
-                           cycle=cycle,travel=tuple(travel) if donor==7 else (),spawn=tuple(spawn),anchors=(),air=int('SpecialAir' in key)))
+                           cycle=cycle,travel=tuple(travel) if donor==7 or (donor in (0,4) and 'Hi' in key) else (),spawn=tuple(spawn),anchors=(),air=int('SpecialAir' in key)))
     return tuple(result)
 
 def render():
@@ -131,6 +144,7 @@ def render():
         p='sFTCharBuilderSpecialPath'+str(i)
         out+=['    { '+str(c['donor'])+', '+str(c['motion'])+', { '+p+'Script, ARRAY_COUNT('+p+'Script), '+str(c['duration'])+', '+('4' if c['cycle'] else '0')+' }, { '+p+'Frames, 0, '+str(c['duration']+1)+', 0, 0 }, '+(p+'Travel' if c['travel'] else 'NULL')+', '+(p+'Spawn' if c['spawn'] else 'NULL')+' },']
     out+=['};']
+    out+=['static const FTCustomMoveDefinition sFTCharBuilderSuperJumpLanding = { NULL, 0, '+str(superjump_landing_duration())+', 0 };']
     return '\n'.join(out)+'\n'
 
 if __name__=='__main__':

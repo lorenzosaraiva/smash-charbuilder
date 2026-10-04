@@ -107,6 +107,8 @@ static sb32 sFTMainCharBuilderDonkeyLwSawGround[GMCOMMON_PLAYERS_MAX];
 static f32 sFTMainCharBuilderSpecialTravelAngles[GMCOMMON_PLAYERS_MAX];
 static s32 sFTMainCharBuilderSpecialMotionIDs[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
 static s32 sFTMainCharBuilderMotionDonors[GMCOMMON_PLAYERS_MAX] = { -1, -1, -1, -1 };
+/* Recovery keeps donor physics until landing, without keeping a special active. */
+static struct FTCharBuilderSuperJumpRecovery { FTStruct *owner; u32 player_num; s32 donor; } sFTCharBuilderSuperJumpRecovery[4];
 
 static ftMotionCommand sFTMainCharBuilderSamusSpecialLwScript[] =
 {
@@ -195,6 +197,39 @@ FTAttributes* ftMainCharBuilderGetSpecialAttributes(FTStruct *fp)
     return lbRelocGetFileData(FTAttributes*, *data->p_file_main, data->o_attributes);
 }
 
+static s32 ftMainCharBuilderGetSuperJumpRecoveryDonor(FTStruct *fp)
+{
+    if ((fp->player >= 4) ||
+        ((fp->status_id != nFTCommonStatusFallSpecial) && (fp->status_id != nFTCommonStatusLandingFallSpecial)) ||
+        (sFTCharBuilderSuperJumpRecovery[fp->player].owner != fp) ||
+        (sFTCharBuilderSuperJumpRecovery[fp->player].player_num != fp->player_num)) return -1;
+    return sFTCharBuilderSuperJumpRecovery[fp->player].donor;
+}
+
+FTAttributes* ftMainCharBuilderGetSuperJumpAttributes(FTStruct *fp)
+{
+    s32 donor = ftMainCharBuilderGetSuperJumpRecoveryDonor(fp);
+    FTData *data;
+    if (donor == -1)
+    {
+        donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
+        if (((donor == nFTKindMario) || (donor == nFTKindLuigi)) &&
+            (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi))
+            return ftMainCharBuilderGetSpecialAttributes(fp);
+        return fp->attr;
+    }
+    data = dFTManagerDataFiles[donor];
+    if ((data == NULL) || (data->p_file_main == NULL) || (*data->p_file_main == NULL)) return fp->attr;
+    return lbRelocGetFileData(FTAttributes*, *data->p_file_main, data->o_attributes);
+}
+
+static void ftMainCharBuilderStartSuperJumpLandingClock(FTStruct *fp, f32 frame_begin)
+{
+    if ((fp->status_id == nFTCommonStatusLandingFallSpecial) &&
+        (ftMainCharBuilderGetSuperJumpRecoveryDonor(fp) != -1))
+        ftCustomMoveStartClock(fp, &sFTCharBuilderSuperJumpLanding, frame_begin);
+}
+
 static const FTCharBuilderSpecialPath* ftMainCharBuilderActivePath(FTStruct *fp)
 {
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
@@ -217,7 +252,10 @@ sb32 ftMainCharBuilderGetSpecialTravel(FTStruct *fp, Vec3f *out, sb32 ground)
     if (ground) return TRUE;
     x = out->x * fp->lr; y = out->y;
     angle = path->travel[frame].angle;
-    if (path->motion == nFTCaptainMotionSpecialLwAir) angle += sFTMainCharBuilderSpecialTravelAngles[fp->player];
+    if (((path->donor == nFTKindCaptain) && (path->motion == nFTCaptainMotionSpecialLwAir)) ||
+        (((path->donor == nFTKindMario) || (path->donor == nFTKindLuigi)) &&
+         ((path->motion == nFTMarioMotionSpecialHi) || (path->motion == nFTMarioMotionSpecialAirHi))))
+        angle += sFTMainCharBuilderSpecialTravelAngles[fp->player];
     out->x = x * __cosf(angle) - y * __sinf(angle);
     out->y = x * __sinf(angle) + y * __cosf(angle);
     out->z *= fp->lr;
@@ -229,6 +267,13 @@ void ftMainCharBuilderSetSpecialTravelAngle(FTStruct *fp, f32 angle)
     if (ftMainCharBuilderGetActiveSpecialDonor(fp) != -1)
         sFTMainCharBuilderSpecialTravelAngles[fp->player] = angle;
     else fp->joints[nFTPartsJointTransN]->rotate.vec.f.z = angle;
+}
+
+f32 ftMainCharBuilderGetSpecialTravelAngle(FTStruct *fp)
+{
+    if (ftMainCharBuilderGetActiveSpecialDonor(fp) != -1)
+        return sFTMainCharBuilderSpecialTravelAngles[fp->player];
+    return fp->joints[nFTPartsJointTransN]->rotate.vec.f.z;
 }
 
 sb32 ftMainCharBuilderGetSpecialSpawn(GObj *g, Vec3f *out)
@@ -621,6 +666,21 @@ static void ftMainCharBuilderCheckSpecialStatus(FTStruct *fp, sb32 is_special_st
 {
     s32 donor = ftMainCharBuilderGetActiveSpecialDonor(fp);
     s32 special_kind;
+
+    if (fp->player < 4)
+    {
+        if ((is_special_status == FALSE) &&
+            ((fp->status_id == nFTCommonStatusFallSpecial) || (fp->status_id == nFTCommonStatusLandingFallSpecial)) &&
+            ((donor == nFTKindMario) || (donor == nFTKindLuigi)) &&
+            (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindHi))
+        {
+            sFTCharBuilderSuperJumpRecovery[fp->player].owner = fp;
+            sFTCharBuilderSuperJumpRecovery[fp->player].player_num = fp->player_num;
+            sFTCharBuilderSuperJumpRecovery[fp->player].donor = donor;
+        }
+        else if ((is_special_status != FALSE) || (ftMainCharBuilderGetSuperJumpRecoveryDonor(fp) == -1))
+            sFTCharBuilderSuperJumpRecovery[fp->player].owner = NULL;
+    }
 
     if (donor == -1)
     {
@@ -5556,6 +5616,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             if ((charbuilder_donor == nFTKindDonkey) && (charbuilder_motion_id == nFTDonkeyMotionSpecialLwLoop) &&
                 (ftCustomMoveGetClock(fp) != NULL)) ftCustomMoveGetClock(fp)->trajectory = &sFTCharBuilderDonkeyLwTrajectory;
         }
+        else ftMainCharBuilderStartSuperJumpLandingClock(fp, frame_begin);
         if (frame_begin != 0.0F)
         {
             ftMainPlayAnimEventsForward(fighter_gobj);

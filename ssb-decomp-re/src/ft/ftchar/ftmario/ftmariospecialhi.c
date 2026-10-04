@@ -38,11 +38,11 @@ void ftMarioSpecialHiProcInterrupt(GObj *fighter_gobj)
 
             stick_rot = ABSF(rot_z);
 
-            joint_rot = ABSF(fp->joints[nFTPartsJointTransN]->rotate.vec.f.z);
+            joint_rot = ABSF(ftMainCharBuilderGetSpecialTravelAngle(fp));
 
             if (joint_rot < stick_rot)
             {
-                fp->joints[nFTPartsJointTransN]->rotate.vec.f.z = rot_z;
+                ftMainCharBuilderSetSpecialTravelAngle(fp, rot_z);
             }
         }
     }
@@ -66,7 +66,7 @@ void ftMarioSpecialHiProcInterrupt(GObj *fighter_gobj)
 void ftMarioSpecialHiProcPhysics(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderGetSpecialAttributes(fp);
 
     if (fp->status_vars.mario.specialhi.is_air_bool == FALSE)
     {

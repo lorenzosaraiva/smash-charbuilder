@@ -9,6 +9,8 @@
 #include <gm/gmdef.h>
 
 extern FTAttributes* ftMainCharBuilderGetSpecialAttributes(FTStruct *fp);
+extern FTAttributes* ftMainCharBuilderGetSuperJumpAttributes(FTStruct *fp);
+extern f32 ftMainCharBuilderGetSpecialTravelAngle(FTStruct *fp);
 extern sb32* ftMainCharBuilderGetTornadoExpend(FTStruct *fp);
 extern void ftMainCharBuilderSetSpecialTravelAngle(FTStruct *fp, f32 angle);
 extern sb32 ftMainCharBuilderGetSpecialTravel(FTStruct *fp, Vec3f *out, sb32 ground);

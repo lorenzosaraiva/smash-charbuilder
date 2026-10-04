@@ -1,5 +1,23 @@
 # Changes
 
+## 0.1.9 - 2026-10-04: Mario/Luigi Up B gameplay
+
+- Add source ground/air Super Jump Punch collision paths and movement on every
+  original body. Preserve Mario's opening/multihit/finisher and Luigi's distinct
+  25-damage sweetspot, weak continuation, angles and knockback.
+- Keep native steering, facing, ground-to-air timing, aerial startup damping,
+  opening invulnerability, helpless physics and 25-tick landing recovery.
+- Avoid foreign TransN joints; preload donor attributes and isolate steering and
+  recovery ownership. Exhaust the body's jump inventory during helpless fall.
+- Add native-versus-borrowed callback/physics checks for twelve bodies, four slots,
+  both facings and ground/air starts, with interruption and respawn cleanup.
+- Add optional live ROM checks for source collision centers/fields, recovery and
+  Training reset. Special animation retargeting and rendered acceptance remain pending.
+- Live CPU checks passed both donors on all twelve bodies: 48 ground/air starts,
+  24 Training resets/editor returns and four assigned VS builds.
+- Recheck the full intro/title/menu boot and Ness steering/self-launch on DK.
+- Decomp only; Remix retains its previous special coverage.
+
 ## 0.1.8 - 2026-10-04: black-screen startup fix
 
 - Fix the opening room exhausting its lower-bank heap before the first frame

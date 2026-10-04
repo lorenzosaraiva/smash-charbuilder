@@ -18,6 +18,7 @@ hit groups and active/clear times retain their original packed values.
 
 | Donor move | Coverage |
 | --- | --- |
+| Mario/Luigi Up B | Four source 40-frame ground/air paths; distinct hit fields, source movement/steering and takeoff events, donor helpless physics and 25-tick landing recovery. See [Super Jump Punch](super-jump-punch.md). |
 | DK Down B | 3-frame startup, 34-frame repeating slap cycle, 5-frame recovery; four source hitboxes on frames 16-17 and 26-27. |
 | DK Up B | Both 100-frame spin phases, source collision positions/flags, donor gravity/terminal speed and native drift/recovery callbacks. |
 | Mario/Luigi Down B | Distinct donor event streams, 87-frame ground / 83-frame air phases, donor aerial gravity and native tap-to-rise behavior. |
@@ -50,11 +51,14 @@ and recovery events. Source launch collisions clear at frame 19.
 ## Checks and remaining work
 
 `testSpecialTiming.py` compiles production clocks/accessors against real 32-bit
-fighter layouts. It checks all 96 phase clocks and all 20 new collision/travel/
+fighter layouts. It checks all 96 phase clocks and all 24 collision/travel/
 spawn definitions on twelve bodies, four slots and both facings, including state
 isolation and reset guards. The animation oracle compares every new path, active
 mask, movement delta and socket with original C playback/collision matrices.
 The ROM verifier follows linked pointers and checks original packed event fields.
+Version 0.1.9 expands the path registry from 20 to 24 phases with Mario/Luigi Up B.
+Its dedicated callback/physics test also compares native and borrowed movement,
+steering, recovery and interruption cleanup. Visible special poses remain temporary.
 
 Optional Linux emulator tests (see [setup](neutral-specials.md)):
 
