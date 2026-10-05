@@ -1,5 +1,14 @@
 # Character Lab changes
 
+## 0.1.15 - 2026-10-05: Customizable taunts
+
+- Add an independent TAUNT donor to each build, plus body reset and randomization.
+- Share all twelve donor taunt poses, original durations and grab/guard cancel windows across all twelve bodies.
+- Preserve Luigi's original 1-damage foot hitbox/path and frames 47-49 active window.
+- Retain safe donor audio/rumble/common effects; keep body hurtboxes native.
+- Add production selection/cancel, original-C collision, ROM-input and linked-data checks.
+- Foreign body scaling, facial/mesh variants and rendered visual acceptance remain pending.
+
 ## 0.1.14 - 2026-10-05: Tether grabs and paired throws
 
 - Add 61 donor grab/pull/throw/carry phases and 288 native victim status pairs.

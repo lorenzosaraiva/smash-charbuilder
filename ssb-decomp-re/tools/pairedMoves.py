@@ -6,13 +6,13 @@ from auditNormalMoves import enum_values, arrays, us_text
 from customMoveTiming import animation_duration
 from customAnimation import sample, rig, world, flag_word, source_size, transform, add, animation
 from generateSpecialTiming import special_commands
-from specialAnimationCatalog import visual_script
+from specialAnimationCatalog import visual_script, SAFE_EFFECTS
 
 @lru_cache(None)
 def catalog():
     common_motion=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
     common_status=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonStatus')
-    result=[]
+    result=[];taunts=[]
     for donor,fighter in enumerate(ROSTER):
         _,descs=motion_descriptors(fighter)
         phases=[(p,common_status['nFTCommonStatus'+p],common_motion['nFTCommonMotion'+p]) for p in ('Catch','CatchPull','ThrowF','ThrowB')]
@@ -23,6 +23,7 @@ def catalog():
             extra=('ThrowFWait','ThrowFWalkSlow','ThrowFWalkMiddle','ThrowFWalkFast','ThrowFTurn','ThrowFKneeBend','ThrowFFall','ThrowFLanding','ThrowFDamage','ThrowFF','ThrowAirFF') if fighter=='Donkey' else ('ThrowF','ThrowFFall','ThrowFLanding')
             if fighter=='Kirby': phases=[v for v in phases if v[0]!='ThrowF']
             phases.extend((p,statuses['nFT'+fighter+'Status'+p],motions['nFT'+fighter+'Motion'+p]) for p in extra)
+        phases.append(('Appeal',common_status['nFTCommonStatusAppeal'],common_motion['nFTCommonMotionAppeal']))
         for phase,status,motion in phases:
             desc=descs[motion]
             duration=animation_duration(desc[0]);flags=flag_word(desc[2]);name=desc[0][3:-6]
@@ -37,16 +38,28 @@ def catalog():
                     script.extend(('ftMotionCommandWaitAsync('+str(tick)+')',op+'('+','.join(map(str,nums))+')'))
             script.append('ftMotionCommandEnd()')
             frames=duration+1
-            result.append(dict(fighter=fighter,donor=donor,phase=phase,status=status,motion=motion,desc=desc,name=name,flags=flags,duration=duration,
+            target=taunts if phase=='Appeal' else result
+            visual=visual_script(events)
+            if phase=='Appeal':
+                # Voice and rumble events have no foreign model/texture pointers.
+                # Keep commands ordered; each visual stream starts at tick zero.
+                voice=[];tick=0
+                for op,args in events:
+                    if op=='ftMotionCommandWaitAsync':tick=int(args[0],0)
+                    elif op in ('ftMotionPlayVoice','ftMotionCommandMakeRumble','ftMotionPlayFGM') or op=='ftMotionCommandEffect' and args[1].removeprefix('nEFKind') in SAFE_EFFECTS:
+                        voice.extend(('ftMotionCommandWaitAsync('+str(tick)+')',op+'('+','.join(args)+')'))
+                visual=tuple(voice)+('ftMotionCommandEnd()',)
+            target.append(dict(fighter=fighter,donor=donor,phase=phase,status=status,motion=motion,desc=desc,name=name,flags=flags,duration=duration,
                 frames=frames,loop_start=0,loop_period=duration if loop else 0,
-                events=events,timeline=timeline,script=tuple(script),visual=visual_script(events)))
-    return tuple(result)
+                events=events,timeline=timeline,script=tuple(script),visual=visual))
+    return tuple(result+taunts)
 
 @lru_cache(None)
 def phase_data(index):
     c=catalog()[index];f=c['fighter'];bones,_=rig(f,c['flags']);size=source_size(f)
     text=next((ROOT/'src/relocData').glob('*_'+f+'Main.c')).read_text()
     anchor=int(re.search(r'(\d+),\s*/\* joint_itemheavy_id',text)[1])
+    if c['phase']=='Appeal':anchor=4  # Taunts have no captured victim/socket.
     poses=sample(f,c['name'],c['frames'],c['flags']);collisions=[];anchors=[];travel=[];active={}
     for frame,pose in enumerate(poses):
         for op,a in c['timeline'].get(frame,()):
@@ -89,6 +102,7 @@ def props(index):
     from customAnimation import euler
     import math
     c=catalog()[index];fighter=c['fighter']
+    if c['phase']=='Appeal':return ()
     joints=(16,17,18) if fighter=='Link' else tuple(range(17,23)) if fighter=='Samus' else (9,) if fighter=='Yoshi' else ()
     if not joints:return ()
     bones,_=rig(fighter,c['flags']);poses=sample(fighter,c['name'],c['frames'],c['flags']);size=source_size(fighter)

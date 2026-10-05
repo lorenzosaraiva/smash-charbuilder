@@ -52,7 +52,8 @@ the actual C retargeter and linked-ROM verification. The production fixture chec
 all twelve attacker/victim bodies, four slots, release/facing/cargo behavior, stale
 ownership, loop/chunk boundaries and captured transforms at both facings.
 Original native capture matrices/root paths cover all 61 phases; the shared catalog
-now contains 488 normal/special/grab/throw clips across all twelve bodies.
+contains 488 normal/special/grab/throw clips from this milestone. Version 0.1.15
+adds 13 taunt chunks (501 clips total); see [taunts](custom-taunts.md).
 
 Optional Linux/Mupen64Plus CPU checks:
 

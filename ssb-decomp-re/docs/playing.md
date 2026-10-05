@@ -23,15 +23,19 @@ Use **up/down** to move through the rows and **left/right** to change a value.
 The body is the fighter whose model you play. Attack rows choose the donor whose
 attack values and timing you want to use.
 
-**Use Body For All** restores that body's moves. **Randomize Attacks** makes a
+**Use Body For All** restores that body's moves. **Randomize Moves** makes a
 mix. **B** returns to the lab's main screen.
+
+**TAUNT**, below **DOWN B**, selects any original fighter's taunt. Press **L**
+in Training or VS: donor poses, duration and cancel windows follow the selection.
+Luigi's taunt keeps its original 1-damage hitbox. See [taunts](custom-taunts.md).
 
 Neutral B cycles through **Body Move**, **Fox Laser**, **Mario Fireball**,
 **Luigi Fireball**, **Thunder Jolt**, **PK Fire**, **Falcon Punch**, **Pound**,
 **Giant Punch**, **Charge Shot**, **Boomerang** and **Egg Lay**. Donor choices work
 on any original body; selecting its own donor keeps the native move. Borrowed
 shots use original spawn positions, firing/recovery timing and native weapon
-behavior, while visible poses remain the body's. Landing or leaving an edge
+behavior, with donor poses retargeted to the body. Landing or leaving an edge
 continues the action without a second shot.
 
 | Projectile | Ground/air firing frame | Ground/air recovery duration |
@@ -46,7 +50,7 @@ capture/egg handoff now have dedicated adapters. See [neutral controls](neutral-
 for charge controls and visual limits. Kirby's copy system is excluded. Rendered
 contact/reflection/absorption acceptance remains pending; report body/donor, ground
 or air, and emulator when something breaks. Up B and Down B use donor phase clocks
-with temporary idle/falling poses; broader fidelity remains experimental.
+with shared donor phase poses; broader fidelity remains experimental.
 
 ## Training
 

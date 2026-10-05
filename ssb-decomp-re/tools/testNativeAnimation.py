@@ -127,7 +127,7 @@ def main():
         frames=max(c.get('start_frame',0)+c['frames'],3*c['loop_period']+1)
         special_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{c["flags"]}U,{scaling},{frames},sOracleSpecialPoseEvents,{source_size(fighter)}F);')
     from pairedMoves import catalog as paired_catalog,phase_data
-    pair_calls=[]
+    pair_calls=[];taunt_calls=[]
     for i,c in enumerate(paired_catalog()):
         fighter=c['fighter'];path,_=animation(c['name'])
         if path not in seen_files:
@@ -137,12 +137,21 @@ def main():
         scaling='sOracle'+fighter+'Scale' if scales and not c['flags']&4 else 'NULL'
         text=next((ROOT/'src/relocData').glob('*_'+fighter+'Main.c')).read_text()
         joint=int(re.search(r'(\d+),\s*/\* joint_itemheavy_id',text)[1])
+        if c['phase']=='Appeal':joint=4
         symbol='sOraclePair'+str(i)
         output.append('static const OracleEvent '+symbol+'[] = { '+','.join('{3,0,'+str(k)+','+str(joint)+',{'+','.join(map(str,offset))+'},0}' for k,offset in enumerate(((1,0,0),(0,1,0),(0,0,1),(0,0,0))))+',{0,0,0,0,{0,0,0},0} };')
         pair_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{c["flags"]}U,{scaling},{c["frames"]},{symbol},{source_size(fighter)}F);')
+        if fighter=='Luigi' and c['phase']=='Appeal':
+            output.append('static const OracleEvent sOracleTauntHits[] = {')
+            for op,a in c['events']:
+                if op=='ftMotionCommandWaitAsync':output.append('{2,'+a[0]+',0,0,{0,0,0},0},')
+                elif 'MakeAttackColl' in op:output.append('{3,0,'+a[0]+','+a[2]+',{'+','.join(a[7:10])+'},'+str(int('Scaled' in op))+'},')
+                elif op=='ftMotionCommandClearAttackCollAll':output.append('{4,0,0,0,{0,0,0},0},')
+            output.append('{0,0,0,0,{0,0,0},0} };')
+            taunt_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{c["flags"]}U,{scaling},{c["frames"]},sOracleTauntHits,{source_size(fighter)}F);')
     output.append('static const f32 sOracleBodySizes[] = { '+', '.join(str(source_size(f))+'F' for f in ROSTER)+' };')
     (ROOT/'build/nativeAnimationOracle.inc').write_text('\n'.join(output)+'\n',encoding='utf-8')
-    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls+action_calls+special_calls+pair_calls)+'\n',encoding='utf-8')
+    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls+action_calls+special_calls+pair_calls+taunt_calls)+'\n',encoding='utf-8')
     subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protector','-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-O1','-Iinclude','-Isrc','-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US','tools/testNativeAnimation.c','-o','build/testNativeAnimation'],cwd=ROOT,check=True)
     raw=subprocess.check_output([str(ROOT/'build/testNativeAnimation')],cwd=ROOT)
     (ROOT/'build/native-animation-poses.bin').write_bytes(raw)
@@ -270,6 +279,16 @@ def main():
             assert max(abs(a-b) for a,b in zip(delta,travel[frame]))<0.003,(c['phase'],frame,'paired root travel')
             previous=trans
     print(f'PASS: {len(paired_catalog())} paired native capture matrices and root paths, {pair_samples} basis samples; max error {pair_error:.7f}.')
+    index=next(i for i,c in enumerate(paired_catalog()) if c['fighter']=='Luigi' and c['phase']=='Appeal')
+    c=paired_catalog()[index];poses=sample(c['fighter'],c['name'],c['frames'],c['flags']);hits=phase_data(index)[0]
+    for frame,pose in enumerate(poses):
+        cursor+=len(pose)*36
+        centers=struct.unpack_from('<12f',raw,cursor);cursor+=48
+        mask=struct.unpack_from('<I',raw,cursor)[0];cursor+=4
+        expected_mask,expected=hits[frame];assert mask==expected_mask,('Luigi taunt native mask',frame,mask,expected_mask)
+        for aid in range(4):
+            if mask&(1<<aid):assert max(abs(a-b) for a,b in zip(centers[aid*3:aid*3+3],expected[aid]))<.003,('Luigi taunt native center',frame)
+    print('PASS: Luigi taunt original-C collision path and frames 47-49 active window.')
     assert cursor==len(raw),(cursor,len(raw))
     print(f'PASS: all eight projectile-neutral spawn poses match original animation/collision matrices; max error {projectile_error:.7f}.')
     print(f'PASS: {len(cases)} donor timelines, {comparisons} scalar samples match original ftAnimParseDObjFigatree and playback; max error {maximum:.7f}.')

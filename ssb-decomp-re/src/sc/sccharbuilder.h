@@ -52,6 +52,7 @@ typedef struct SCCharBuilderSlot
     u8 special_hi;
     u8 special_lw;
     u8 special_n;
+    u8 taunt;
 
 } SCCharBuilderSlot;
 

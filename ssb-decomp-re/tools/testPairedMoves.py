@@ -35,6 +35,11 @@ FTData *dFTManagerDataFiles[32];
 static FTAttributes attributes[12];static FTData files[12];static void *main_files[12];
 static FTStruct a,v;static GObj ag,vg;static DObj ar,vr,child;
 static int release_count,released_lr,released_script,returned,queued_start,queued_end;
+static int catch_calls,guard_calls,catch_result;
+sb32 ftCommonCatchCheckInterruptCommon(GObj *g) { catch_calls++;return catch_result; }
+sb32 ftCommonGuardOnCheckInterruptCommon(GObj *g) { guard_calls++;return TRUE; }
+void ftKirbySpecialNLoseCopy(GObj *g) {}
+#include "ft/ftcommon/ftcommonappeal.c"
 void ftMainPlayAnimEventsAll(GObj *g) { g->anim_frame=ftCustomMoveAdvanceClock(ftGetStruct(g),g->anim_frame); }
 void ftMainSetStatus(GObj *g,s32 status,f32 begin,f32 speed,u32 flags) {
  FTStruct *fp=ftGetStruct(g);const FTCustomPairPhase *phase=ftMainCharBuilderPairTransition(fp,status);
@@ -103,6 +108,25 @@ static int run(void) {
   else if(donor!=8 || kind!=1)CHECK(release_count==1 && a.catch_gobj==NULL && v.capture_gobj==NULL && returned==1 && released_script==(kind==2));
   ftMainCharBuilderResetPairedMoves();CHECK(ftCustomPairState(&a)==NULL);
  }
+ for(body=0;body<12;body++)for(player=0;player<4;player++)for(donor=0;donor<12;donor++) {
+  ftMainCharBuilderResetPairedMoves();bzero(&a,sizeof(a));
+  a.fkind=body;a.pkind=nFTPlayerKindMan;a.player=player;a.player_num=100;a.fighter_gobj=&ag;a.attr=&attributes[body];
+  a.passive_vars.kirby.copy_id=nFTKindKirby;
+  gSCManagerCharBuilderSlots[player].is_enabled=TRUE;gSCManagerCharBuilderSlots[player].body=body;
+  gSCManagerCharBuilderSlots[player].taunt=donor;
+  a.motion_vars.flags.flag1=1;ftCommonAppealSetStatus(&ag);
+  CHECK(a.status_id==nFTCommonStatusAppeal && a.motion_vars.flags.flag1==0);
+  CHECK((ftCustomPairState(&a)!=NULL)==(body!=donor));
+  if(body!=donor) {
+   phase=ftCustomPairState(&a)->phase;clock=ftCustomMoveGetClock(&a);
+   CHECK(phase->donor==donor && phase->status==nFTCommonStatusAppeal && clock->frame==0);
+   CHECK(clock->move->duration==phase->move.duration && a.attr==&attributes[body]);
+  }
+  catch_calls=guard_calls=catch_result=0;ftCommonAppealProcInterrupt(&ag);CHECK(catch_calls==0 && guard_calls==0);
+  a.motion_vars.flags.flag1=1;ftCommonAppealProcInterrupt(&ag);CHECK(catch_calls==1 && guard_calls==1);
+  catch_result=TRUE;ftCommonAppealProcInterrupt(&ag);CHECK(catch_calls==2 && guard_calls==1);
+  ftMainSetStatus(&ag,nFTCommonStatusWait,0,1,0);CHECK(ftCustomPairState(&a)==NULL && ftCustomMoveGetClock(&a)==NULL);
+ }
  for(body=0;body<12;body++)for(i=0;i<ARRAY_COUNT(sFTCustomPairPhases);i++) {
   const FTCustomAnimationClip *clip;
   phase=&sFTCustomPairPhases[i];a.fkind=gSCManagerCharBuilderSlots[0].body=body;a.player=0;a.player_num=100;a.pkind=nFTPlayerKindMan;
@@ -146,5 +170,5 @@ void _start(void) { int result=run();__asm__ volatile("int $0x80"::"a"(1),"b"(re
     (ROOT/'build/testPairedMoves.c').write_text(source,encoding='utf-8',newline='\n')
     subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protector','-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-O1','-I'+str(headers),'-Iinclude','-Isrc','-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US','build/testPairedMoves.c','-o','build/testPairedMoves'],cwd=ROOT,check=True)
     subprocess.run([str(ROOT/'build/testPairedMoves')],cwd=ROOT,check=True)
-    print('PASS:',len(catalog()),'paired phases, twelve attacker/victim bodies/four slots, donor release/facing/cargo, capture ownership and long-clip/loop boundaries.')
+    print('PASS:',len(catalog()),'paired/taunt phases, twelve attacker/victim bodies/four slots, taunt selection/native cancel policy, donor release/facing/cargo, capture ownership and long-clip/loop boundaries.')
 if __name__=='__main__':main()

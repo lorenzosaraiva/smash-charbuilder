@@ -531,6 +531,7 @@ void ftManagerSetupFilesPlayablesAll(void)
             }
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_hi);
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_lw);
+            if (gSCManagerCharBuilderSlots[i].taunt < 12) ftManagerSetupFileMainKind(gSCManagerCharBuilderSlots[i].taunt);
             {
                 s32 attack, donor;
                 for (attack = nSCCharBuilderAttackGrab; attack <= nSCCharBuilderAttackThrowB; attack++)

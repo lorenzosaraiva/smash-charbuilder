@@ -350,6 +350,55 @@ const FTCustomAnimationClip *const sFTCustomPair60Clips[] = { &sFTCustomAnimatio
 const ftMotionCommand sFTCustomPair60Script[] = { ftMotionCommandWaitAsync(0), ftMotionCommandSetSlopeContour(3), ftMotionCommandWaitAsync(3), ftMotionCommandSetHitStatusAll(2), ftMotionCommandWaitAsync(3), ftMotionCommandMakeAttackColl(0,0,0,10,0,0,300,0,0,0,361,80,0,3,1,2,0,10), ftMotionCommandWaitAsync(27), ftMotionCommandClearAttackCollAll(), ftMotionCommandWaitAsync(27), ftMotionCommandSetFlag2(2), ftMotionCommandWaitAsync(27), ftMotionCommandSetHitStatusAll(1), ftMotionCommandEnd() };
 const ftMotionCommand sFTCustomPair60Visual[] = { ftMotionCommandWaitAsync(0), ftMotionPlayFGM(nSYAudioFGMNessPSI), ftMotionCommandWaitAsync(0), ftMotionCommandEffect(30,nEFKindSparkleWhiteScale,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(3), ftMotionCommandEffect(30,nEFKindPsionic,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(6), ftMotionCommandEffect(30,nEFKindPsionic,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(9), ftMotionCommandEffect(30,nEFKindPsionic,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(12), ftMotionCommandEffect(30,nEFKindPsionic,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(15), ftMotionCommandEffect(30,nEFKindPsionic,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(18), ftMotionCommandEffect(30,nEFKindPsionic,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(21), ftMotionCommandEffect(30,nEFKindPsionic,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(24), ftMotionCommandEffect(30,nEFKindPsionic,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(27), ftMotionPlayFGM(nSYAudioFGMLightSwingLw1), ftMotionCommandWaitAsync(27), ftMotionCommandEffect(30,nEFKindSparkleWhiteScale,0,0,0,0,0,0,0), ftMotionCommandWaitAsync(27), ftMotionCommandEffect(0,nEFKindDustDashSmall,0,0,0,-150,0,0,0), ftMotionCommandWaitAsync(27), ftMotionCommandEffect(127,nEFKindQuakeMag1,0,0,0,0,0,0,0), ftMotionCommandEnd() };
 FTThrowHitDesc sFTCustomPair60Throws[] = { { 52, 16, 45, 70, 0, 90, 0 }, { -1, 8, 361, 100, 0, 0, 0 } };
+extern const FTCustomPairAnchor sFTCustomPair61Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair61Clips[] = { &sFTCustomAnimationPaired488, &sFTCustomAnimationPaired489 };
+const ftMotionCommand sFTCustomPair61Script[] = { ftMotionCommandWaitAsync(0), ftMotionCommandSetSlopeContour(3), ftMotionCommandWaitAsync(128), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair61Visual[] = { ftMotionCommandWaitAsync(0), ftMotionCommandMakeRumble(60,7), ftMotionCommandWaitAsync(0), ftMotionPlayFGM(nSYAudioFGMMarioAppealGrow), ftMotionCommandWaitAsync(120), ftMotionCommandMakeRumble(60,7), ftMotionCommandWaitAsync(120), ftMotionPlayFGM(nSYAudioFGMMarioAppealShrink), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair62Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair62Clips[] = { &sFTCustomAnimationPaired490 };
+const ftMotionCommand sFTCustomPair62Script[] = { ftMotionCommandWaitAsync(0), ftMotionCommandSetSlopeContour(3), ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair62Visual[] = { ftMotionCommandWaitAsync(10), ftMotionCommandMakeRumble(0,6), ftMotionCommandWaitAsync(10), ftMotionPlayVoice(nSYAudioVoiceFoxSelected), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair63Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair63Clips[] = { &sFTCustomAnimationPaired491 };
+const ftMotionCommand sFTCustomPair63Script[] = { ftMotionCommandWaitAsync(0), ftMotionCommandSetSlopeContour(3), ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair63Visual[] = { ftMotionCommandWaitAsync(0), ftMotionCommandMakeRumble(0,9), ftMotionCommandWaitAsync(0), ftMotionPlayVoice(nSYAudioVoiceDonkeyAppeal), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair64Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair64Clips[] = { &sFTCustomAnimationPaired492 };
+const ftMotionCommand sFTCustomPair64Script[] = { ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair64Visual[] = { ftMotionCommandWaitAsync(24), ftMotionCommandMakeRumble(0,6), ftMotionCommandWaitAsync(24), ftMotionPlayVoice(nSYAudioVoiceSamusAppeal), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair65Anchors[];
+extern const FTCustomCollisionFrame sFTCustomPair65Collisions[];
+const FTCustomAnimationClip *const sFTCustomPair65Clips[] = { &sFTCustomAnimationPaired493 };
+const ftMotionCommand sFTCustomPair65Script[] = { ftMotionCommandWaitAsync(47), ftMotionCommandMakeAttackColl(0,0,0,1,0,0,100,0,0,0,361,100,60,3,0,0,1,0), ftMotionCommandWaitAsync(50), ftMotionCommandClearAttackCollAll(), ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair65Visual[] = { ftMotionCommandWaitAsync(0), ftMotionCommandMakeRumble(0,6), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair66Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair66Clips[] = { &sFTCustomAnimationPaired494 };
+const ftMotionCommand sFTCustomPair66Script[] = { ftMotionCommandWaitAsync(0), ftMotionCommandSetSlopeContour(3), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair66Visual[] = { ftMotionCommandWaitAsync(12), ftMotionCommandMakeRumble(0,6), ftMotionCommandWaitAsync(12), ftMotionCommandEffect(0,nEFKindDustLight,0,0,0,180,0,0,0), ftMotionCommandWaitAsync(30), ftMotionCommandEffect(11,nEFKindSparkleWhiteScale,0,0,0,180,90,90,90), ftMotionCommandWaitAsync(30), ftMotionPlayVoice(nSYAudioVoiceLinkSmash1), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair67Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair67Clips[] = { &sFTCustomAnimationPaired495 };
+const ftMotionCommand sFTCustomPair67Script[] = { ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair67Visual[] = { ftMotionCommandWaitAsync(0), ftMotionPlayVoice(nSYAudioVoiceYoshiAppeal), ftMotionCommandWaitAsync(0), ftMotionCommandMakeRumble(0,6), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair68Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair68Clips[] = { &sFTCustomAnimationPaired496 };
+const ftMotionCommand sFTCustomPair68Script[] = { ftMotionCommandWaitAsync(0), ftMotionCommandSetSlopeContour(3), ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair68Visual[] = { ftMotionCommandWaitAsync(0), ftMotionCommandMakeRumble(0,6), ftMotionCommandWaitAsync(0), ftMotionPlayVoice(nSYAudioVoiceCaptainAppeal), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair69Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair69Clips[] = { &sFTCustomAnimationPaired497 };
+const ftMotionCommand sFTCustomPair69Script[] = { ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair69Visual[] = { ftMotionCommandWaitAsync(12), ftMotionCommandMakeRumble(0,6), ftMotionCommandWaitAsync(12), ftMotionPlayVoice(nSYAudioVoiceKirbyAppeal), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair70Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair70Clips[] = { &sFTCustomAnimationPaired498 };
+const ftMotionCommand sFTCustomPair70Script[] = { ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair70Visual[] = { ftMotionCommandWaitAsync(0), ftMotionCommandMakeRumble(0,6), ftMotionCommandWaitAsync(0), ftMotionPlayVoice(nSYAudioVoicePikachuAppeal), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair71Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair71Clips[] = { &sFTCustomAnimationPaired499 };
+const ftMotionCommand sFTCustomPair71Script[] = { ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair71Visual[] = { ftMotionCommandWaitAsync(0), ftMotionPlayVoice(nSYAudioVoicePurinAppeal), ftMotionCommandWaitAsync(0), ftMotionCommandMakeRumble(0,6), ftMotionCommandEnd() };
+extern const FTCustomPairAnchor sFTCustomPair72Anchors[];
+const FTCustomAnimationClip *const sFTCustomPair72Clips[] = { &sFTCustomAnimationPaired500 };
+const ftMotionCommand sFTCustomPair72Script[] = { ftMotionCommandWaitAsync(0), ftMotionCommandSetSlopeContour(3), ftMotionCommandWaitAsync(60), ftMotionCommandSetFlag1(1), ftMotionCommandEnd() };
+const ftMotionCommand sFTCustomPair72Visual[] = { ftMotionCommandWaitAsync(0), ftMotionPlayVoice(nSYAudioVoiceNessAppeal), ftMotionCommandWaitAsync(20), ftMotionCommandMakeRumble(0,6), ftMotionCommandEnd() };
 const FTCustomPairPhase sFTCustomPairPhases[] = {
     { 0, 166, 146, { sFTCustomPair0Script, ARRAY_COUNT(sFTCustomPair0Script), 16, 0 }, { sFTCustomPair0Collisions, 0, 17, 0, 0 }, sFTCustomPair0Anchors, NULL, sFTCustomPair0Clips, 17, sFTCustomPair0Visual, sFTCustomPair0Throws, NULL, 0 },
     { 0, 167, 147, { sFTCustomPair1Script, ARRAY_COUNT(sFTCustomPair1Script), 2, 0 }, { NULL, 0, 3, 0, 0 }, sFTCustomPair1Anchors, NULL, sFTCustomPair1Clips, 3, sFTCustomPair1Visual, NULL, NULL, 0 },
@@ -412,6 +461,18 @@ const FTCustomPairPhase sFTCustomPairPhases[] = {
     { 11, 167, 147, { sFTCustomPair58Script, ARRAY_COUNT(sFTCustomPair58Script), 2, 0 }, { NULL, 0, 3, 0, 0 }, sFTCustomPair58Anchors, NULL, sFTCustomPair58Clips, 3, sFTCustomPair58Visual, NULL, NULL, 0 },
     { 11, 169, 148, { sFTCustomPair59Script, ARRAY_COUNT(sFTCustomPair59Script), 45, 0 }, { sFTCustomPair59Collisions, 0, 46, 0, 0 }, sFTCustomPair59Anchors, NULL, sFTCustomPair59Clips, 46, sFTCustomPair59Visual, sFTCustomPair59Throws, NULL, 0 },
     { 11, 170, 149, { sFTCustomPair60Script, ARRAY_COUNT(sFTCustomPair60Script), 45, 0 }, { sFTCustomPair60Collisions, 0, 46, 0, 0 }, sFTCustomPair60Anchors, NULL, sFTCustomPair60Clips, 46, sFTCustomPair60Visual, sFTCustomPair60Throws, NULL, 0 },
+    { 0, 189, 164, { sFTCustomPair61Script, ARRAY_COUNT(sFTCustomPair61Script), 180, 0 }, { NULL, 0, 181, 0, 0 }, sFTCustomPair61Anchors, NULL, sFTCustomPair61Clips, 181, sFTCustomPair61Visual, NULL, NULL, 0 },
+    { 1, 189, 164, { sFTCustomPair62Script, ARRAY_COUNT(sFTCustomPair62Script), 60, 0 }, { NULL, 0, 61, 0, 0 }, sFTCustomPair62Anchors, NULL, sFTCustomPair62Clips, 61, sFTCustomPair62Visual, NULL, NULL, 0 },
+    { 2, 189, 164, { sFTCustomPair63Script, ARRAY_COUNT(sFTCustomPair63Script), 60, 0 }, { NULL, 0, 61, 0, 0 }, sFTCustomPair63Anchors, NULL, sFTCustomPair63Clips, 61, sFTCustomPair63Visual, NULL, NULL, 0 },
+    { 3, 189, 164, { sFTCustomPair64Script, ARRAY_COUNT(sFTCustomPair64Script), 60, 0 }, { NULL, 0, 61, 0, 0 }, sFTCustomPair64Anchors, NULL, sFTCustomPair64Clips, 61, sFTCustomPair64Visual, NULL, NULL, 0 },
+    { 4, 189, 164, { sFTCustomPair65Script, ARRAY_COUNT(sFTCustomPair65Script), 80, 0 }, { sFTCustomPair65Collisions, 0, 81, 0, 0 }, sFTCustomPair65Anchors, NULL, sFTCustomPair65Clips, 81, sFTCustomPair65Visual, NULL, NULL, 0 },
+    { 5, 189, 164, { sFTCustomPair66Script, ARRAY_COUNT(sFTCustomPair66Script), 60, 0 }, { NULL, 0, 61, 0, 0 }, sFTCustomPair66Anchors, NULL, sFTCustomPair66Clips, 61, sFTCustomPair66Visual, NULL, NULL, 0 },
+    { 6, 189, 164, { sFTCustomPair67Script, ARRAY_COUNT(sFTCustomPair67Script), 80, 0 }, { NULL, 0, 81, 0, 0 }, sFTCustomPair67Anchors, NULL, sFTCustomPair67Clips, 81, sFTCustomPair67Visual, NULL, NULL, 0 },
+    { 7, 189, 164, { sFTCustomPair68Script, ARRAY_COUNT(sFTCustomPair68Script), 60, 0 }, { NULL, 0, 61, 0, 0 }, sFTCustomPair68Anchors, NULL, sFTCustomPair68Clips, 61, sFTCustomPair68Visual, NULL, NULL, 0 },
+    { 8, 189, 164, { sFTCustomPair69Script, ARRAY_COUNT(sFTCustomPair69Script), 60, 0 }, { NULL, 0, 61, 0, 0 }, sFTCustomPair69Anchors, NULL, sFTCustomPair69Clips, 61, sFTCustomPair69Visual, NULL, NULL, 0 },
+    { 9, 189, 164, { sFTCustomPair70Script, ARRAY_COUNT(sFTCustomPair70Script), 80, 0 }, { NULL, 0, 81, 0, 0 }, sFTCustomPair70Anchors, NULL, sFTCustomPair70Clips, 81, sFTCustomPair70Visual, NULL, NULL, 0 },
+    { 10, 189, 164, { sFTCustomPair71Script, ARRAY_COUNT(sFTCustomPair71Script), 90, 0 }, { NULL, 0, 91, 0, 0 }, sFTCustomPair71Anchors, NULL, sFTCustomPair71Clips, 91, sFTCustomPair71Visual, NULL, NULL, 0 },
+    { 11, 189, 164, { sFTCustomPair72Script, ARRAY_COUNT(sFTCustomPair72Script), 60, 0 }, { NULL, 0, 61, 0, 0 }, sFTCustomPair72Anchors, NULL, sFTCustomPair72Clips, 61, sFTCustomPair72Visual, NULL, NULL, 0 },
 };
 const FTThrownStatus sFTCustomPairVictimStatuses[12][12][2] = {
     { { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } }, { { -1, nFTCommonStatusThrownCommon }, { nFTCommonStatusThrownMarioBStart, nFTCommonStatusThrownMarioB } } },

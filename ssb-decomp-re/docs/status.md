@@ -5,6 +5,8 @@ they do not mean every matchup has been playtested. Please share weird cases.
 
 ## Playable now
 
+- [x] Custom taunt donors on every original body: poses, duration/cancel flags, safe effects and Luigi's original hitbox.
+- [ ] Rendered taunt acceptance, animated foreign-body scaling and facial/mesh variants.
 - [x] Four editable character builds with any of the twelve original fighter bodies.
 - [x] Thirteen normal attack families: jab, dash attack, three tilts, three smashes and five aerials.
 - [x] Donor damage, knockback, hitbox values and attack/recovery timing for normals.
@@ -170,3 +172,5 @@ See the [normal mechanics guide](normal-mechanics.md).
 - [ ] Port this paired mechanics/animation batch to Remix.
 
 See [controls and verification](paired-grabs-and-throws.md).
+
+See [custom taunts](custom-taunts.md) for controls and verification.

@@ -53,6 +53,7 @@ assert symbols['syTaskmanMalloc'][0]==0x80004980,'Main SDK/controller/ucode addr
 assert symbols['osMemSize'][0]==0x80000318,'Incorrect IPL memory-size parameter'
 for name in ('sSC1PTrainingModeStatusBuffer','sSCVSBattleStatusBuffer'):
     assert symbols[name][1] == 512*8, 'Full-roster donor asset cache: '+name
+assert symbols['gSCManagerCharBuilderSlots'][1] == 4*22, 'Taunt field missing from creator presets'
 assert (ROOT/'src/ft/ftspecialtiming.generated.inc').read_text()==render_specials()
 special_words=[v for donor,motion,duration,cycle,_ in special_catalog()
                for v in (donor,motion,0,0,duration,4 if cycle else 0)]
@@ -503,11 +504,12 @@ for name,(address,length,index) in pair_symbols.items():
             break
     else:raise AssertionError(name+' not loaded from ROM')
     pair_bytes+=length;pair_count+=1
-assert symbols['sFTCustomPairPhases'][1]==61*80
+from pairedMoves import catalog as pair_catalog
+assert symbols['sFTCustomPairPhases'][1]==len(pair_catalog())*80
 assert symbols['sFTCustomPairVictimStatuses'][1]==12*12*2*8
 for name in ('ftMainCharBuilderTryPairedThrow','ftMainCharBuilderPairCaptureTransform','ftMainCharBuilderGetCaptureKind','ftMainCharBuilderGetGrabKind'):
     assert symbols[name][1]>0,(name,'paired code missing')
-print(f'PASS: all 61 paired phases, 288 native victim status pairs, scripts/throws, capture matrices and prop data match host-tested ROM data ({pair_count} arrays, {pair_bytes} bytes).')
+print(f'PASS: all {len(pair_catalog())} paired/taunt phases, 288 native victim status pairs, scripts/throws, capture matrices and prop data match host-tested ROM data ({pair_count} arrays, {pair_bytes} bytes).')
 collision_bytes=0
 cases,rows=catalog()
 for case_id,case in enumerate(cases):

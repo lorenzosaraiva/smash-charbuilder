@@ -1,6 +1,7 @@
 /* Read actual MIPS struct offsets; keep smoke-test writes out of guessed fields. */
 #include <sc/sctypes.h>
 #include <sc/sccharbuilder.h>
+const u32 sSceneSmokeTauntLayout[] = { __builtin_offsetof(SCCharBuilderSlot, taunt) };
 const u32 sSceneSmokeLayout[] = {
     sizeof(SCCharBuilderSlot), __builtin_offsetof(SCCharBuilderSlot, special_n),
     __builtin_offsetof(SCBattleState, players), sizeof(SCPlayerData),

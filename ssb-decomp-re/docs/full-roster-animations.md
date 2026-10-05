@@ -112,5 +112,6 @@ byte-identical release copies.
 
 Version 0.1.14 also adds shared attacker grab/throw poses, donor tether paths and
 paired capture/release mechanics. See [paired grabs and throws](paired-grabs-and-throws.md).
-The current combined catalog has 488 clips; earlier normal-only memory/pose
+Version 0.1.15 adds twelve selectable donor taunts, including Luigi's hitbox.
+See [taunts](custom-taunts.md). The current combined catalog has 501 clips; earlier normal-only memory/pose
 measurements above document their original milestone.

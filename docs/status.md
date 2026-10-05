@@ -4,6 +4,8 @@ Checkboxes mean implemented, not tested in every matchup.
 
 ## Repository
 
+- [x] Custom taunt donors on every original body: poses, duration/cancel flags, safe effects and Luigi's original hitbox.
+- [ ] Rendered taunt acceptance, animated foreign-body scaling and facial/mesh variants.
 - [x] Both creator codebases in one project repository.
 - [x] Preserve both source histories and existing creator edits.
 - [x] Root play/build documentation, changelog and issue forms.
@@ -164,3 +166,5 @@ See the [normal mechanics guide](../ssb-decomp-re/docs/normal-mechanics.md).
 - [ ] Port this paired mechanics/animation batch to Remix.
 
 See [controls and verification](../ssb-decomp-re/docs/paired-grabs-and-throws.md).
+
+See [custom taunts](../ssb-decomp-re/docs/custom-taunts.md) for controls and verification.

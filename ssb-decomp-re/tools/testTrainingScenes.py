@@ -34,6 +34,7 @@ parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every 
 parser.add_argument('--mario-animations',action='store_true',help='Check four Mario donor catalogs using real attack inputs and RAM poses')
 parser.add_argument('--roster-animations',action='store_true',help='Check every donor/body pair, live poses, recovery and Training return')
 parser.add_argument('--paired-moves',action='store_true',help='Check native tether contacts and donor paired throw releases')
+parser.add_argument('--taunts',action='store_true',help='Check selectable donor taunt durations, cancel windows and Luigi hitbox/contact')
 parser.add_argument('--paired-native',action='store_true',help='Run native grab/throw controls for paired checks')
 parser.add_argument('--normal-mechanics',action='store_true',help='Check all donor jab chains, Link bounce and Ness bat windows on each body')
 parser.add_argument('--special-animations',action='store_true',help='Compare live borrowed-special poses with native-engine references')
@@ -84,6 +85,8 @@ invisible_bits=[(i,b) for i,b in enumerate(data[start:start+length]) if b]
 assert len(invisible_bits)==1;invisible_off,invisible_mask=invisible_bits[0]
 ftsize,kind_off,port_off,gobj_off,status_off,motion_off,attack_off,attack_size,attack_state_off,passive_off,passive_size,generation_off,physics_off,vel_air_off,hitlag_off,gobj_frame_off=fighter_layout
 slot_size,neutral_field,players_field,player_size,pkind_field,fkind_field,man_field,cpu_field,reset_field,stage_field=layout
+value,length,index=layout_symbols['sSceneSmokeTauntLayout'];start=sections[index][4]+value-sections[index][3]
+taunt_field=struct.unpack_from('>I',data,start)[0]
 for name in ('input','video'):
     subprocess.run(['gcc','-shared','-fPIC','-I'+args.headers,str(ROOT/'tools/emulator'/f'{name}.c'),
                     '-o',str(build/f'{name}.so')],check=True)
@@ -127,7 +130,7 @@ def w32(a,v):C.c_uint32.from_address(ram+(a&0x7fffff)).value=v
 def f32(a):return C.c_float.from_address(ram+(a&0x7fffff)).value
 def wf32(a,v):C.c_float.from_address(ram+(a&0x7fffff)).value=v
 def fighter():
-    if args.paired_moves:
+    if args.paired_moves or args.taunts:
         node=u32(addr('gGCCommonLinks')+3*4)
         for _ in range(4):
             if not 0x80000000<=node<0x80800000:break
@@ -202,10 +205,31 @@ if args.mario_animations or args.roster_animations or args.special_animations:
             if motion>=0:variants[motion]=variant
         body_variants.append(variants)
 pair_trace=[];pair_errors=[];pair_hits=[];pair_position_samples=0;pair_escape=False;pair_contact=False;pair_first_point=None;pair_direction=0;pair_cargo_frames=0
+taunt_trace=[];taunt_menu_target=None
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
     global pair_cargo_frames,pair_position_samples
     global last_trace,animation_samples,thunder_contact_done,falcon_contact_done,normal_bounced,normal_reflected
+    if taunt_menu_target is not None and u8(taunt_menu_target[0])==taunt_menu_target[1]:keys(0)
+    if args.taunts and u8(scene)==54:
+        fp=fighter()
+        if 0x80400000<=fp<0x80800000 and u32(fp+status_off)==common_statuses['nFTCommonStatusAppeal']:
+            clock=addr('sFTCustomMoveClocks');gobj=u32(fp+gobj_off);root=u32(gobj+obj_off)+position_off
+            tick=int(f32(clock+24) if u32(clock)==fp else f32(gobj+gobj_frame_off))
+            mask=sum(1<<aid for aid in range(4) if u32(fp+attack_off+aid*attack_size+attack_state_off))
+            hits=tuple((tuple(u32(fp+attack_off+aid*attack_size+j) for j in (damage_off,angle_off,kbs_off,kbw_off,kbb_off)),
+                        f32(fp+attack_off+aid*attack_size+radius_off),
+                        tuple(f32(fp+attack_off+aid*attack_size+center_off+j) for j in (0,4,8))) for aid in range(4))
+            taunt_trace.append((tick,u32(fp+flag1_off),mask,hits,tuple(f32(root+j) for j in (0,4,8)),s32(fp+lr_off)))
+            if mask:
+                cpu=opponent();target=u32(u32(cpu+gobj_off)+obj_off)+position_off
+                center=hits[0][2]
+                # Keep the CPU standing on the attacker's floor. Putting a
+                # head at this ground-level toe volume drops it under the stage.
+                placed=(center[0],f32(root+4),f32(root+8))
+                for j,v in zip((0,4,8),placed):
+                    wf32(target+j,v);wf32(cpu+coll_prev_off+j,v);wf32(cpu+physics_off+vel_air_off+j,0)
+                wf32(cpu+physics_off+vel_ground_off,0)
     if args.paired_moves and u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180:
         fp=fighter();cpu=opponent()
         if 0x80400000<=fp<0x80800000 and cpu:
@@ -213,7 +237,7 @@ def frame_callback(frame):
             frame_value=f32(clock+24) if u32(clock)==fp else f32(u32(fp+gobj_off)+gobj_frame_off)
             root=u32(u32(fp+gobj_off)+obj_off)+position_off
             if pair_contact and u32(fp+catch_off) and u32(cpu+capture_off)==u32(fp+gobj_off) and not args.paired_native:
-                phase=next((addr('sFTCustomPairPhases')+i*80 for i in range(61) if addr('sFTCustomPairPhases')+i*80+12==u32(clock+8)),0)
+                phase=next((addr('sFTCustomPairPhases')+i*80 for i in range(symbols['sFTCustomPairPhases'][1]//80) if addr('sFTCustomPairPhases')+i*80+12==u32(clock+8)),0)
                 if u32(clock)==fp and u32(clock+12)==status and phase:
                     anchors=u32(phase+48);count=u32(phase+60);tick=max(0,int(frame_value))
                     period=u32(phase+44);begin=u32(phase+40)
@@ -499,19 +523,35 @@ try:
             w8(slot+18,args.mechanic if args.mechanic_kind=='hi' else body)
             w8(slot+19,args.mechanic if args.mechanic_kind=='lw' else body)
         w8(slot+neutral_field,0 if args.path_donor is not None else choice)
+        w8(slot+taunt_field,case if args.taunts else body)
         pulse(0x80);wait(lambda:u32(addr('sMNOptionBuilderMode'))==2,'Build editor')
-        w32(addr('sMNOptionBuilderEntry'),23);pulse(0x80)
+        if args.taunts:
+            check(core.CoreDoCommand(17,4,C.byref(C.c_int(200))))
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            w32(addr('sMNOptionBuilderEntry'),22);taunt_menu_target=(slot+taunt_field,(case+1)%12);keys(0x01)
+            wait(lambda:u8(slot+taunt_field)==(case+1)%12,'Taunt editor right');keys(0);taunt_menu_target=None;frames(15)
+            assert u8(slot+taunt_field)==(case+1)%12,('Taunt editor right/wrap',case,u8(slot+taunt_field))
+            taunt_menu_target=(slot+taunt_field,case);keys(0x02)
+            wait(lambda:u8(slot+taunt_field)==case,'Taunt editor left');keys(0);taunt_menu_target=None;frames(15)
+            assert u8(slot+taunt_field)==case,('Taunt editor left/wrap',case,u8(slot+taunt_field))
+            saved=[u8(slot+i) for i in range(slot_size)]
+            w32(addr('sMNOptionBuilderEntry'),2);pulse(0x80);assert u8(slot+taunt_field)==body,'Taunt body reset'
+            w8(slot+taunt_field,255);w32(addr('sMNOptionBuilderEntry'),23);pulse(0x80)
+            assert u8(slot+taunt_field)<12,'Taunt randomization'
+            for i,value in enumerate(saved):w8(slot+i,value)
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(0))))
+        w32(addr('sMNOptionBuilderEntry'),24);pulse(0x80)
         if args.four_mb:
             frames(90);assert u8(scene)==57 and u32(addr('sMNOptionBuilderMode'))==2,diagnostic()
             print('PASS: 4 MB Test in Training stays in the editor, without a heap overflow.',flush=True);break
         wait(lambda:u8(scene)==18 and u32(addr('sMNPlayers1PTrainingTotalTimeTics'))>70,'Training character select')
         frames(30);minima.append(heap_ok());pulse(0x10)
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Training stage select')
-        if args.superjump is not None or args.direct_special is not None or args.mechanic is not None or args.normal_mechanics or args.charge_animations or args.paired_moves:
+        if args.superjump is not None or args.direct_special is not None or args.mechanic is not None or args.normal_mechanics or args.charge_animations or args.paired_moves or args.taunts:
             # Dream Land avoids Castle's bumper/other stage attacks interrupting
             # the scripted rise before source timing/recovery can be measured.
             w32(addr('sMNMapsCursorSlot'),6)
-        if args.normal_mechanics or args.paired_moves:w8(scene+training_cpu_kind_off,0)
+        if args.normal_mechanics or args.paired_moves or args.taunts:w8(scene+training_cpu_kind_off,0)
         pulse(0x80);wait(lambda:u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180,'Training match load')
         frames(30);minima.append(heap_ok())
         if args.paired_moves:
@@ -586,6 +626,59 @@ try:
                 assert u32(fp+status_off)<235 and not (u8(cpu+invisible_off)&invisible_mask),('Cargo escape cleanup',body)
                 print('PASS: cargo mash escape body',body,'native bidirectional release and status cleanup.',flush=True)
             pair_direction=0;pair_contact=False
+        elif args.taunts:
+            from pairedMoves import catalog as pair_catalog,phase_data
+            index=next(i for i,c in enumerate(pair_catalog()) if c['donor']==case and c['phase']=='Appeal')
+            taunt=pair_catalog()[index];source_hits=phase_data(index)[0]
+            cancel=next((tick for tick,commands in taunt['timeline'].items() if any(op=='ftMotionCommandSetFlag1' and a[0] for op,a in commands)),None)
+            check(core.CoreDoCommand(17,4,C.byref(C.c_int(200))))
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            frames(200) # Finish GO and native spawn protection before contact checks.
+            wait(lambda:u32(fighter()+status_off)==common_statuses['nFTCommonStatusWait'],'Taunt ready')
+            if case==4:
+                w32(opponent()+pkind_off,0);keys_port(u8(opponent()+port_off),0)
+                # Use the center of the floor so the dummy's native ledge
+                # recovery cannot jump out of the three-frame toe window.
+                point=source_hits[47][1][0];facing=s32(fighter()+lr_off)
+                for actor,x in ((fighter(),0),(opponent(),point[2]*facing)):
+                    actor_root=u32(u32(actor+gobj_off)+obj_off)+position_off
+                    for j,v in zip((0,4,8),(x,0,0)):
+                        wf32(actor_root+j,v);wf32(actor+coll_prev_off+j,v);wf32(actor+physics_off+vel_air_off+j,0)
+                    wf32(actor+physics_off+vel_ground_off,0)
+                frames(90)
+            taunt_trace.clear();pulse(0x2000)
+            wait(lambda:len(taunt_trace)>0,'L starts chosen taunt')
+            wait(lambda:u32(fighter()+status_off)==common_statuses['nFTCommonStatusWait'],'Taunt natural recovery')
+            seen={r[0]:r for r in taunt_trace};assert max(seen)>=taunt['duration']-2,('Taunt duration',body,case,max(seen),taunt['duration'])
+            active=[]
+            for tick,flag,mask,hits,root,facing in taunt_trace:
+                if tick<0 or tick>=len(source_hits):continue
+                expected_mask,centers=source_hits[tick]
+                assert mask==expected_mask,('Taunt active mask',body,case,tick,mask,expected_mask)
+                if cancel is not None:assert bool(flag)==(tick>=cancel),('Taunt cancel flag',body,case,tick,flag,cancel)
+                for aid,point in enumerate(centers):
+                    if not mask&(1<<aid):continue
+                    expected=(root[0]+point[2]*facing,root[1]+point[1],root[2]-point[0]*facing)
+                    assert max(abs(a-b) for a,b in zip(hits[aid][2],expected))<(1 if args.paired_native else .2),('Taunt hit center',body,case,tick,hits[aid][2],expected)
+                    assert hits[aid][0]==(1,361,100,60,0) and abs(hits[aid][1]-50)<.01,('Luigi taunt hit fields',hits[aid])
+                    active.append(tick)
+            if case==4:
+                assert {47,48,49}<=set(active),('Luigi taunt window',active)
+                assert u32(opponent()+percent_off)>=1,('Luigi taunt actual damage',body,'CPU kind/status/hitstatus',u32(opponent()+kind_off),u32(opponent()+status_off),u32(opponent()+hitstatus_off),'game',u8(u32(addr('gSCManagerBattleState'))+battle_status_off),'active',[(r[0],r[3][0][2]) for r in taunt_trace if r[2]])
+            else:assert not active,('Unexpected taunt hitbox',body,case)
+            assert u32(addr('gFTCustomAnimationValidationFailures'))==0,'Invalid retargeted taunt skeleton'
+            # A second real taunt rejects early guard input, then uses the
+            # original flag-controlled guard interrupt when that window opens.
+            taunt_trace.clear();pulse(0x2000);wait(lambda:u32(fighter()+status_off)==common_statuses['nFTCommonStatusAppeal'],'Second taunt')
+            keys(0x20);frames(8);keys(0);assert u32(fighter()+status_off)==common_statuses['nFTCommonStatusAppeal'],'Early taunt guard'
+            if cancel is not None and cancel<taunt['duration']:
+                wait(lambda:u32(fighter()+flag1_off)!=0,'Original donor cancel window')
+                keys(0x20);wait(lambda:u32(fighter()+status_off)!=common_statuses['nFTCommonStatusAppeal'],'Taunt guard cancel');keys(0)
+                frames(90)
+            else:wait(lambda:u32(fighter()+status_off)==common_statuses['nFTCommonStatusWait'],'Uncancelled taunt ending')
+            assert u32(addr('sFTCustomMoveClocks'))!=fighter(),'Stale taunt clock after interruption/recovery'
+            if case==4:w32(opponent()+pkind_off,1)
+            print(f'PASS: taunt body {body}, donor {case}, duration {taunt["duration"]}, cancel {cancel}, source hit windows/fields/contact and cleanup.',flush=True)
         elif args.normal_mechanics:
             # Cap input sampling so short pulses cannot disappear between
             # Python's polls on fast hosts. Speed affects wall time only.
@@ -966,7 +1059,7 @@ try:
             pulse(0x40);frames(400) # Charge fully and store automatically.
             pulse(0x40);frames(120) # Fire the stored full charge.
         else:pulse(0x40);frames(200) # Actual B input and recovery/charging.
-        if args.path_donor is None and args.superjump is None and not (args.mario_animations or args.roster_animations or args.normal_mechanics or args.charge_animations):
+        if args.path_donor is None and args.superjump is None and not (args.mario_animations or args.roster_animations or args.normal_mechanics or args.charge_animations or args.taunts):
             pulse(0x20);frames(30) # Store a charge where supported.
             pulse(0x40);frames(120)
         if args.special_animations:
@@ -977,7 +1070,7 @@ try:
                 required={'Start0','Loop0','End0'}|({'Full0'} if choice==8 else set())
                 assert required<={phase for donor,phase in animation_seen},('Charge pose transitions',body,required,animation_seen)
             if animation_seen:print(f'PASS: body {body}, {animation_samples} live special poses, phases {sorted(animation_seen)}.',flush=True)
-        if args.path_donor is not None or args.superjump is not None or args.mario_animations or args.roster_animations or args.normal_mechanics:
+        if args.path_donor is not None or args.superjump is not None or args.mario_animations or args.roster_animations or args.normal_mechanics or args.taunts:
             paused=enum_values((ROOT/'src/sc/scdef.h').read_text(),'SCBattleGameStatus')['nSCBattleGameStatusPause']
             # Native Training ignores Start during KO/respawn. Wait for a legal
             # pause instead of firing Exit at an unopened menu.
@@ -992,8 +1085,8 @@ try:
             pulse(0x10);frames(12) # Pause, then native Exit button handler.
         w32(addr('sSC1PTrainingModeMenu'),5);pulse(0x80)
         wait(lambda:u8(scene)==57 and u32(addr('sMNOptionBuilderMode'))==2,'Return to editor')
-        assert u32(addr('sMNOptionBuilderSlot'))==preset and u32(addr('sMNOptionBuilderEntry'))==23
-        action_label='normal mechanics' if args.normal_mechanics else 'normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None or args.superjump is not None else 'B/store/B'
+        assert u32(addr('sMNOptionBuilderSlot'))==preset and u32(addr('sMNOptionBuilderEntry'))==24
+        action_label='taunts' if args.taunts else 'normal mechanics' if args.normal_mechanics else 'normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None or args.superjump is not None else 'B/store/B'
         print(f'PASS: body {body}, neutral {choice}, preset {preset}: Test -> CSS -> stage -> Training -> {action_label} -> same editor.',flush=True)
     if not args.four_mb:
         print('PASS: Training heap headroom at least',min(minima),'bytes.',flush=True)
@@ -1005,6 +1098,7 @@ try:
             slot=addr('gSCManagerCharBuilderSlots')+player*slot_size
             w8(slot,1);w8(slot+1,body)
             for attack in range(16):w8(slot+2+attack,body)
+            w8(slot+taunt_field,(4,0,7,11)[player] if args.taunts else body)
             if args.mario_animations:
                 for attack in range(13):w8(slot+2+attack,(1,2,4,7)[player])
             if args.roster_animations:

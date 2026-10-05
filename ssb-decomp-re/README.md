@@ -3,7 +3,7 @@
 Pick a fighter's body, mix in moves from the other Smash 64 characters, and try
 your creation against friends or a CPU. A little experiment that got out of hand.
 
-Version **0.1.14**, updated **2026-10-05**. All twelve bodies now perform all twelve
+Version **0.1.15**, updated **2026-10-05**. All twelve bodies now perform all twelve
 donors' normal attacks through shared motion curves and body skeleton maps.
 Hitboxes and timing follow the donor independently of body proportions. This is
 still experimental; rendered contact and visual polish need more testing. Implemented specials now share donor poses, phase transitions,
@@ -28,6 +28,10 @@ now work across the roster. See [controls and verification](docs/normal-mechanic
 
 **[How to play](docs/playing.md)** | **[Done / not done](docs/status.md)** |
 **[Build it yourself](docs/building.md)** | **[What's changed](CHANGELOG.md)**
+
+Taunts are customizable too: change **TAUNT**, then press **L** in-game.
+Donor poses, duration/cancel windows and Luigi's 1-damage hitbox follow the selection.
+See [taunt controls](docs/custom-taunts.md).
 
 ## Download
 

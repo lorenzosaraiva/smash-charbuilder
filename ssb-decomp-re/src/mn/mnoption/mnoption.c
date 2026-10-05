@@ -36,7 +36,7 @@ mnCommonSetOptionChangeWaitN(sMNOptionOptionChangeWait, is_button, stick_range, 
 #define MNOPTION_BUILDER_SLOT_ROWS 9
 #define MNOPTION_BUILDER_TEXT_SCALE 2.0F
 
-#define MNOPTION_BUILDER_ENTRY_COUNT 24
+#define MNOPTION_BUILDER_ENTRY_COUNT 25
 #define MNOPTION_BUILDER_VISIBLE_COUNT 12
 
 #define MNOPTION_BUILDER_ROW_X 38
@@ -1010,7 +1010,7 @@ void mnOptionBuilderMakeEditor(GObj *gobj)
     {
         "ENABLED", "BODY", "USE BODY FOR ALL", "JAB", "DASH ATTACK", "FORWARD TILT", "UP TILT",
         "DOWN TILT", "FORWARD SMASH", "UP SMASH", "DOWN SMASH", "NEUTRAL AIR", "FORWARD AIR",
-        "BACK AIR", "UP AIR", "DOWN AIR", "GRAB", "FORWARD THROW", "BACK THROW", "NEUTRAL B", "UP B", "DOWN B", "RANDOMIZE ATTACKS", "TEST IN TRAINING"
+        "BACK AIR", "UP AIR", "DOWN AIR", "GRAB", "FORWARD THROW", "BACK THROW", "NEUTRAL B", "UP B", "DOWN B", "TAUNT", "RANDOMIZE MOVES", "TEST IN TRAINING"
     };
     SCCharBuilderSlot *slot = &gSCManagerCharBuilderSlots[sMNOptionBuilderSlot];
     u32 title_color[3] = { 0xFF, 0xD8, 0x4A };
@@ -1066,6 +1066,10 @@ void mnOptionBuilderMakeEditor(GObj *gobj)
         {
             value = mnOptionBuilderGetFighterName(slot->special_lw);
         }
+        else if (i == 22)
+        {
+            value = mnOptionBuilderGetFighterName(slot->taunt);
+        }
         if (value != NULL)
         {
             mnOptionMakeString(gobj, value, MNOPTION_BUILDER_VALUE_X, MNOPTION_BUILDER_ROW_Y + ((i - start) * MNOPTION_BUILDER_ROW_HEIGHT), normal_color, TRUE);
@@ -1106,6 +1110,8 @@ void mnOptionBuilderRandomize(void)
     slot->special_n = (seed >> 15) % nSCCharBuilderNeutralEnumCount;
     seed = (seed * 1103515245) + 12345;
     slot->special_lw = (seed >> 16) % (nFTKindPlayableEnd + 1);
+    seed = (seed * 1103515245) + 12345;
+    slot->taunt = (seed >> 16) % (nFTKindPlayableEnd + 1);
 
 }
 
@@ -1140,6 +1146,10 @@ void mnOptionBuilderChangeValue(s32 add)
     {
         value = &slot->special_lw;
     }
+    else if (sMNOptionBuilderEntry == 22)
+    {
+        value = &slot->taunt;
+    }
     else return;
 
     do
@@ -1165,6 +1175,7 @@ void mnOptionBuilderUseBodyForAll(void)
     slot->special_hi = slot->body;
     slot->special_lw = slot->body;
     slot->special_n = nSCCharBuilderNeutralBody;
+    slot->taunt = slot->body;
 }
 
 void mnOptionBuilderTestInTraining(void)
@@ -1285,11 +1296,11 @@ void mnOptionBuilderRun(void)
             mnOptionBuilderUseBodyForAll();
             break;
 
-        case 22:
+        case 23:
             mnOptionBuilderRandomize();
             break;
 
-        case 23:
+        case 24:
             mnOptionBuilderTestInTraining();
             return;
 

@@ -64,7 +64,12 @@ static const FTCustomPairPhase* ftMainCharBuilderPairTransition(FTStruct *fp, s3
     s = &sFTCustomPairStates[fp->player];
     if (slot != NULL)
     {
-        if ((status >= nFTCommonStatusCatch) && (status <= nFTCommonStatusCatchWait))
+        if (status == nFTCommonStatusAppeal)
+        {
+            donor = slot->taunt;
+            if ((donor >= 0) && (donor < 12) && (donor != fp->fkind)) phase = ftCustomPairFind(donor, status);
+        }
+        else if ((status >= nFTCommonStatusCatch) && (status <= nFTCommonStatusCatchWait))
         {
             donor = slot->attacks[nSCCharBuilderAttackGrab];
             if ((donor >= 0) && (donor < 12) && (donor != fp->fkind)) phase = ftCustomPairFind(donor, status);

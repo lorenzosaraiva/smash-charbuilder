@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.14 (experimental)** | **Last updated: 2026-10-05**
+**Project version: 0.1.15 (experimental)** | **Last updated: 2026-10-05**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -23,6 +23,10 @@ Rendered contact and visual polish remain on the checklist.
 **[How to play Character Lab](ssb-decomp-re/docs/playing.md)** |
 **[Done / not done](docs/status.md)** | **[Build guide](docs/building.md)** |
 **[Changes](CHANGELOG.md)**
+
+Taunts are now customizable too: choose **TAUNT**, then press **L** in-game.
+Donor poses, duration/cancel windows and Luigi's 1-damage hitbox follow the selection.
+See [taunt controls](ssb-decomp-re/docs/custom-taunts.md).
 
 ## Downloads
 

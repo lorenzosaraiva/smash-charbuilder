@@ -19,10 +19,10 @@ s8 gSCManagerCharBuilderPlayerSlots[4] = { -1, -1, -1, -1 };
 s8 gSCManagerCharBuilderTrainingSlot = -1;
 SCCharBuilderSlot gSCManagerCharBuilderSlots[SCCHARBUILDER_SLOTS_COUNT] =
 {
-    { TRUE, nFTKindMario, { nFTKindFox, nFTKindCaptain, nFTKindLink, nFTKindPikachu, nFTKindNess, nFTKindDonkey, nFTKindKirby, nFTKindSamus, nFTKindYoshi, nFTKindFox, nFTKindLink, nFTKindPurin, nFTKindCaptain, nFTKindMario, nFTKindMario, nFTKindMario }, nFTKindPikachu, nFTKindFox, nSCCharBuilderNeutralFoxLaser },
-    { TRUE, nFTKindFox,   { nFTKindMario, nFTKindLink, nFTKindYoshi, nFTKindCaptain, nFTKindKirby, nFTKindSamus, nFTKindDonkey, nFTKindNess, nFTKindPikachu, nFTKindMario, nFTKindPikachu, nFTKindLuigi, nFTKindLink, nFTKindFox, nFTKindFox, nFTKindFox }, nFTKindNess, nFTKindCaptain, nSCCharBuilderNeutralFoxLaser },
-    { TRUE, nFTKindLink,  { nFTKindPikachu, nFTKindFox, nFTKindMario, nFTKindNess, nFTKindDonkey, nFTKindCaptain, nFTKindSamus, nFTKindKirby, nFTKindLuigi, nFTKindYoshi, nFTKindFox, nFTKindPurin, nFTKindMario, nFTKindLink, nFTKindLink, nFTKindLink }, nFTKindFox, nFTKindYoshi, nSCCharBuilderNeutralFoxLaser },
-    { TRUE, nFTKindKirby, { nFTKindCaptain, nFTKindMario, nFTKindFox, nFTKindLink, nFTKindPurin, nFTKindNess, nFTKindPikachu, nFTKindDonkey, nFTKindSamus, nFTKindLuigi, nFTKindYoshi, nFTKindFox, nFTKindLink, nFTKindKirby, nFTKindKirby, nFTKindKirby }, nFTKindMario, nFTKindSamus, nSCCharBuilderNeutralFoxLaser }
+    { TRUE, nFTKindMario, { nFTKindFox, nFTKindCaptain, nFTKindLink, nFTKindPikachu, nFTKindNess, nFTKindDonkey, nFTKindKirby, nFTKindSamus, nFTKindYoshi, nFTKindFox, nFTKindLink, nFTKindPurin, nFTKindCaptain, nFTKindMario, nFTKindMario, nFTKindMario }, nFTKindPikachu, nFTKindFox, nSCCharBuilderNeutralFoxLaser, nFTKindMario },
+    { TRUE, nFTKindFox,   { nFTKindMario, nFTKindLink, nFTKindYoshi, nFTKindCaptain, nFTKindKirby, nFTKindSamus, nFTKindDonkey, nFTKindNess, nFTKindPikachu, nFTKindMario, nFTKindPikachu, nFTKindLuigi, nFTKindLink, nFTKindFox, nFTKindFox, nFTKindFox }, nFTKindNess, nFTKindCaptain, nSCCharBuilderNeutralFoxLaser, nFTKindFox },
+    { TRUE, nFTKindLink,  { nFTKindPikachu, nFTKindFox, nFTKindMario, nFTKindNess, nFTKindDonkey, nFTKindCaptain, nFTKindSamus, nFTKindKirby, nFTKindLuigi, nFTKindYoshi, nFTKindFox, nFTKindPurin, nFTKindMario, nFTKindLink, nFTKindLink, nFTKindLink }, nFTKindFox, nFTKindYoshi, nSCCharBuilderNeutralFoxLaser, nFTKindLink },
+    { TRUE, nFTKindKirby, { nFTKindCaptain, nFTKindMario, nFTKindFox, nFTKindLink, nFTKindPurin, nFTKindNess, nFTKindPikachu, nFTKindDonkey, nFTKindSamus, nFTKindLuigi, nFTKindYoshi, nFTKindFox, nFTKindLink, nFTKindKirby, nFTKindKirby, nFTKindKirby }, nFTKindMario, nFTKindSamus, nSCCharBuilderNeutralFoxLaser, nFTKindKirby }
 };
 
 // // // // // // // // // // // //

@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.14',
+        'version': '0.1.15',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -71,6 +71,8 @@ Normal and implemented special animations follow the selected donor on every
 body, including charge loops, phase transitions, recovery and required props.
 Donor tether paths and paired grab/throw mechanics are implemented; rendered
 contact and visual polish still need testing.
+TAUNT selects any original donor's poses, duration and cancel window. Press L;
+Luigi's taunt keeps its original 1-damage hitbox on frames 47-49. See custom-taunts.md.
 
 1. Enable 8 MB RDRAM / Expansion Pak, then open `character-lab.z64`.
 2. Go to Options -> Character Lab and select a build with A.
@@ -155,7 +157,7 @@ The package contains the ROM, guides, build information and SHA-256 checksums.
     with zipfile.ZipFile(output / 'character-lab.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
         for name in ('character-lab.z64', 'PLAY.md', 'build-info.json', 'SHA256SUMS.txt'):
             archive.write(output / name, arcname=name)
-        for name in ('CHANGELOG.md', 'docs/status.md', 'docs/paired-grabs-and-throws.md'):
+        for name in ('CHANGELOG.md', 'docs/status.md', 'docs/paired-grabs-and-throws.md', 'docs/custom-taunts.md'):
             archive.write(ROOT / name, arcname=Path(name).name)
     sums = ''.join(f'{hashlib.sha256((output / name).read_bytes()).hexdigest()}  {name}\n'
                    for name in ('character-lab.z64', 'character-lab.zip', 'build-info.json'))
