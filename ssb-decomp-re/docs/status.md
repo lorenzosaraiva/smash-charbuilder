@@ -5,6 +5,8 @@ they do not mean every matchup has been playtested. Please share weird cases.
 
 ## Playable now
 
+- [x] Default Build One uses the [Yoshi starter recipe](playing.md#default-build-one), checked in the linked ROM.
+- [ ] Rendered playtesting of the complete Yoshi starter recipe.
 - [x] Custom taunt donors on every original body: poses, duration/cancel flags, safe effects and Luigi's original hitbox.
 - [ ] Rendered taunt acceptance, animated foreign-body scaling and facial/mesh variants.
 - [x] Four editable character builds with any of the twelve original fighter bodies.

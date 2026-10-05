@@ -3,7 +3,7 @@
 Pick a fighter's body, mix in moves from the other Smash 64 characters, and try
 your creation against friends or a CPU. A little experiment that got out of hand.
 
-Version **0.1.15**, updated **2026-10-05**. All twelve bodies now perform all twelve
+Version **0.1.16**, updated **2026-10-05**. All twelve bodies now perform all twelve
 donors' normal attacks through shared motion curves and body skeleton maps.
 Hitboxes and timing follow the donor independently of body proportions. This is
 still experimental; rendered contact and visual polish need more testing. Implemented specials now share donor poses, phase transitions,

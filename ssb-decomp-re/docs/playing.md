@@ -52,6 +52,35 @@ contact/reflection/absorption acceptance remains pending; report body/donor, gro
 or air, and emulator when something breaks. Up B and Down B use donor phase clocks
 with shared donor phase poses; broader fidelity remains experimental.
 
+## Default Build One
+
+On a fresh ROM start, **Build One** uses this recipe. Changes made in the editor
+last for the running session; restarting restores these defaults.
+
+| Setting | Body / donor |
+| --- | --- |
+| BODY | Yoshi |
+| JAB | Pikachu |
+| FTILT | Fox |
+| UTILT | Kirby |
+| DTILT | Pikachu |
+| DASH ATTACK | Fox |
+| FSMASH | Kirby |
+| USMASH | Fox |
+| DSMASH | Fox |
+| NAIR | Pikachu |
+| FAIR | Kirby |
+| BAIR | Kirby |
+| UAIR | Captain Falcon |
+| DAIR | Ness |
+| NEUTRAL B | Fox Laser |
+| UP B | Pikachu |
+| DOWN B | Fox |
+| GRAB | Donkey Kong |
+| FTHROW | Captain Falcon |
+| BTHROW | Ness |
+| TAUNT | Mario |
+
 ## Training
 
 Choose **Test in Training** from the editor, then select your training opponent

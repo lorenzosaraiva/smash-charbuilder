@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.15 (experimental)** | **Last updated: 2026-10-05**
+**Project version: 0.1.16 (experimental)** | **Last updated: 2026-10-05**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -13,7 +13,7 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
 
-The latest decomp update adds donor tether reach, grab/pull timing and paired
+Character Lab includes donor tether reach, grab/pull timing and paired
 forward/back throws on every original body. DK cargo carry and Kirby's landing
 throw retain their own mechanics. Attacker poses share the animation catalog;
 victims keep their native rigs and donor-selected capture/throw states.
@@ -60,6 +60,10 @@ locally; automatic hosted Remix builds remain pending.
 In Training, press **Start -> View -> HITBOX** to see attack and hurtbox outlines.
 Grabs preserve the current combo count and damage through the hold and throw.
 Presets in this version last for the running ROM session.
+
+**Build One** now starts with a **Yoshi** body and the requested mixed moveset,
+including **Fox Laser**, **Pikachu Up B**, **Fox Down B** and **Mario Taunt**.
+See the [complete starter recipe](ssb-decomp-re/docs/playing.md#default-build-one).
 
 Character Lab's **Neutral B** row now offers **Body Move**, **Fox Laser**,
 **Mario Fireball**, **Luigi Fireball**, **Thunder Jolt**, **PK Fire**, **Falcon Punch**,

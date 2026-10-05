@@ -1,5 +1,11 @@
 # Character Lab changes
 
+## 0.1.16 - 2026-10-05: Yoshi starter build
+
+- Set default Build One to the requested Yoshi recipe, including all normal attacks, specials, grab/throws and Mario's taunt.
+- Document every donor in the play guide and include that guide in the download package.
+- Check the initialized recipe in the linked ROM alongside the existing build/host checks; rendered playtesting remains pending.
+
 ## 0.1.15 - 2026-10-05: Customizable taunts
 
 - Add an independent TAUNT donor to each build, plus body reset and randomization.

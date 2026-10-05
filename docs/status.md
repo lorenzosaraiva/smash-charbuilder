@@ -18,6 +18,9 @@ Checkboxes mean implemented, not tested in every matchup.
 
 ## Gameplay
 
+- [x] Default Build One uses the documented Yoshi starter recipe, checked in the linked ROM.
+- [ ] Rendered playtesting of the complete Yoshi starter recipe.
+
 Character Lab's [detailed feature checklist](../ssb-decomp-re/docs/status.md)
 covers normal attacks, grabs/throws, human/CPU assignments, Training HITBOX view,
 grab-preserving combo counters, full-roster normal animations and remaining work.
