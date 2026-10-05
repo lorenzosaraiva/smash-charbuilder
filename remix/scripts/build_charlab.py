@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
+VERSION = '0.1.2'
+UPDATED = '2026-10-05'
 
 
 def run(command, stage, cwd=ROOT):
@@ -51,6 +53,7 @@ def package(desktop=None):
     rom = (ROOT/'ssb64asm_extra.z64').read_bytes()
     assert receipt['rom_sha256'] == hashlib.sha256(rom).hexdigest(), 'ROM changed after verification.'
     info = {
+        'version': VERSION, 'last_updated': UPDATED,
         'commit': git('rev-parse', 'HEAD'),
         'source_dirty': bool(git('status', '--porcelain', '--untracked-files=normal')),
         'source_directory': 'remix', 'base_sha1': BASE_SHA1,
@@ -58,23 +61,36 @@ def package(desktop=None):
         'scope': 'Character Lab features for original twelve bodies/donors on Smash Remix +EXTRA',
         'in_game_acceptance': 'pending',
     }
+    scene_report=ROOT/'build/char_creator/emulator/cpu-scenes.json'
+    if scene_report.exists():
+        report=json.loads(scene_report.read_text())
+        if report.get('rom_sha256')==info['rom_sha256']:
+            info['optional_cpu_scene_checks']=report
     DIST.mkdir(exist_ok=True)
     play = (ROOT/'character_creator_guide.md').read_bytes()
-    notes = f'''# Character Lab on Remix - original-roster preview
+    notes = f'''# Character Lab on Remix {VERSION} - original-roster preview
+
+Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
 Source commit: `{info['commit']}`; uncommitted changes: {info['source_dirty']}.
 
 Original donor collision paths/timing, normal values, grab/throw choices,
 Body Move/Fox Laser, Mario animation pilots and return from Training to the
-tested editor. Borrowed Up/Down B uses body idle/falling poses, original-roster
-donor phase clocks and recovery transform guards. Use Settings -> CHARACTER LAB; keep Original 12 Only enabled.
+tested editor. Borrowed Up/Down B now connects original donor collision paths,
+phase clocks, TransN travel and donor physics attributes while showing safe
+body idle/falling poses. Fixes include retaining recipes during donor identity,
+Fox dash/Kirby forward-smash momentum and Falcon Kick source travel.
+Pikachu/Fox/Ness recovery transform guards remain active.
+Use Settings -> CHARACTER LAB; keep Original 12 Only enabled.
 Assign Custom Build in the VS/Training CSS Player Settings for human/CPU slots.
 Remix's existing HITBOX/HITBOX+ display and improved combo meter remain available.
 
 The ROM is checked with shared host tests, linked-byte/CRC verification and
 production MIPS execution tests. Rendered gameplay acceptance is still pending.
-Most poses and fighter-specific mechanics remain body-owned. Expanded-roster
-fidelity, full retargeted animations, Kirby copy and tether choreography are pending.
+Full decomp parity is pending: neutral adapters beyond Laser, special sockets/
+independent weapons/passives, directional collision transforms/recovery,
+normal jab/bounce/reflection mechanics, taunts, retargeted animations and paired
+grabs/throws. Expanded-roster fidelity and Kirby copy are outside this milestone.
 The changed SRAM layout resets older Remix settings/recipes once.
 
 SHA-256: `{info['rom_sha256']}`
@@ -84,6 +100,7 @@ SHA-256: `{info['rom_sha256']}`
         'build-info.json': (json.dumps(info, indent=2)+'\n').encode(),
         'PLAY.md': play,
         'STATUS.md': (ROOT/'docs/character-lab-status.md').read_bytes(),
+        'PORT-STATUS.md': (ROOT/'docs/decomp-port.md').read_bytes(),
         'CHANGELOG.md': (PROJECT/'CHANGELOG.md').read_bytes(),
         'release-notes.md': notes.encode(),
     }
@@ -136,6 +153,8 @@ def main():
                '-Iinclude', '-Isrc', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
                'tools/testCustomMove.c', '-o', 'build/testCustomMove']), 'Compile shared host tests', lab)
     run(linux(['build/testCustomMove']), 'Run shared host tests', lab)
+    run(linux(['python3','tools/testNormalMechanics.py']), 'Check source normal travel', lab)
+    run(linux(['python3','tools/testSpecialTiming.py']), 'Check source special paths', lab)
     run([sys.executable, 'scripts/verify_charlab_rom.py'], 'Verify ROM')
     if not args.package_only:
         receipt = {'source_sha256': source_hash(), 'rom_sha256': hashlib.sha256((ROOT/'ssb64asm_extra.z64').read_bytes()).hexdigest()}

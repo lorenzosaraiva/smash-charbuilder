@@ -1,6 +1,6 @@
 # Character Lab on Remix
 
-An original-roster preview of our current Character Lab features inside Smash
+An original-roster partial port of Character Lab features inside Smash
 Remix +EXTRA: donor hitbox paths/timing, grabs/throws, Body Move/Fox Laser, Mario
 pose pilots, human/CPU preset assignments and return from Training to the editor.
 
@@ -8,10 +8,13 @@ pose pilots, human/CPU preset assignments and return from Training to the editor
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.1 (2026-10-03):** borrowed Up/Down B uses body idle/falling poses and
-independent original-roster donor phase clocks. This removes the taunt growth
-and guards donor recovery pitching/stretching. Special retargeting and rendered
-acceptance remain on the [checklist](docs/character-lab-status.md).
+**0.1.2 (2026-10-05):** donor normal momentum and special source collision/
+travel are connected, with donor physics attributes and retained recipes during
+borrowed phases. Mario with Falcon Kick/Pikachu Up B is the first CPU regression
+target. Safe idle/fall visuals and recovery transform guards remain.
+See the [full decomp-port matrix](docs/decomp-port.md) and
+[checklist](docs/character-lab-status.md) for the still-missing mechanics,
+neutral adapters, animations, taunts and paired throws.
 
 Open **Settings -> CHARACTER LAB** and keep **Original 12 Only** enabled. The
 expanded roster stays playable, with its earlier experimental creator adapters;

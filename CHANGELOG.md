@@ -1,5 +1,16 @@
 # Changes
 
+## 0.1.19 - 2026-10-05: Remix port audit and donor movement foundation
+
+- Release Remix preview 0.1.2; keep the decomp ROM at 0.1.18.
+- Retain the actual body recipe while Remix temporarily uses special donor identity.
+- Compile all 96 shared special collision/travel phases and connect borrowed Up/Down B statuses to external source scripts and body-size-compensated root geometry.
+- Restore source TransN travel for Falcon Kick, Fox dash attack and Kirby forward smash; use donor attributes around native special physics.
+- Use source gameplay clock overrides for phases that outlive their looping poses, retain Pikachu/Fox/Ness transform guards and generation cleanup.
+- Correct the shared C importer for current animation/throw source and ELF HI16/LO16 relocation order; keep the animation pilots bounded until a streamed bank is implemented.
+- Extend source/linked-byte/MIPS checks and add an optional real-input Remix CPU regression with isolated saves and null rendering.
+- Add a feature-by-feature and special-by-special decomp-to-Remix matrix. Full neutral/normal callbacks, special ownership/sockets/recovery, shared animations, paired grabs/throws, taunts and rendered acceptance remain pending.
+
 ## 0.1.18 - 2026-10-05: Taunt growth, VS defaults and match endings
 
 - Apply Mario's original growth/shrink track to borrowed taunts, including Yoshi, and restore body scale on interruption.

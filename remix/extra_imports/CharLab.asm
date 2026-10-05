@@ -2,6 +2,52 @@
 if !{defined __CHAR_LAB__} {
 define __CHAR_LAB__()
 scope CharLab {
+    scope body_kind_: {
+        lbu t0, 0x000D(a0)
+        sltiu t1, t0, 4
+        beqz t1, _native
+        sll t0, t0, 2
+        li t1, CharCreator.body_character_data
+        addu t1, t1, t0
+        lw t1, 0x0000(t1)
+        beqz t1, _native
+        nop
+        li t1, CharCreator.body_character_id
+        addu t1, t1, t0
+        lw v0, 0x0000(t1)
+        bgez v0, _end
+        nop
+        _native:
+        lw v0, 0x0008(a0)
+        _end:
+        jr ra
+        nop
+    }
+    // Source TransN movement is independent of the safe visible body pose.
+    OS.patch_start(0x54414, 0x800D8C14)
+    j CharLabRuntime.ccGroundTravel
+    nop
+    OS.patch_end()
+    original_ground_travel_:
+    OS.copy_segment(0x54414, 8)
+    j 0x800D8C1C
+    nop
+    OS.patch_start(0x54A60, 0x800D9260)
+    j CharLabRuntime.ccAirTravel
+    nop
+    OS.patch_end()
+    original_air_travel_:
+    OS.copy_segment(0x54A60, 8)
+    j 0x800D9268
+    nop
+    OS.patch_start(0x544CC, 0x800D8CCC)
+    j CharLabRuntime.ccGroundPhysics
+    nop
+    OS.patch_end()
+    original_ground_physics_:
+    OS.copy_segment(0x544CC, 8)
+    j 0x800D8CD4
+    nop
     // Donor recovery callbacks address their own base bone (joint 4).
     // That bone is not the same part of another body. Keep the actual
     // movement/velocity callbacks, but suppress donor-only pitching/stretch.

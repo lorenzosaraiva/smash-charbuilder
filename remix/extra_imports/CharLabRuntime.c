@@ -6,12 +6,14 @@
 #include <ft/ftparam.h>
 #include <ft/ftphysics.h>
 #include <mp/mpcommon.h>
+#include <ft/fighter.h>
+extern s32 ccBodyKind(FTStruct*);
 
 SCCharBuilderSlot gSCManagerCharBuilderSlots[4];
 s8 gSCManagerCharBuilderPlayerSlots[4] = { 0, 1, 2, 3 };
 static struct { s32 scene_curr; } gSCManagerSceneData;
 static FTStruct *sFTCharBuilderNeutralStartingOwner;
-#include "../../ssb-decomp-re/src/ft/ftcustommove.c.inc"
+#include "../build/char_creator/runtime/move.c.inc"
 
 #define ABI_CHECK(field, offset) _Static_assert(__builtin_offsetof(FTStruct, field) == offset, #field " Remix ABI")
 ABI_CHECK(fkind, 0x8);
@@ -37,28 +39,34 @@ void ccSync(FTStruct *fp, s32 **entries, s32 scene)
 {
     SCCharBuilderSlot *slot;
     s32 i;
+    s32 body = ccBodyKind(fp);
     gSCManagerSceneData.scene_curr = scene;
     if (fp->player >= 4) return;
     slot = &gSCManagerCharBuilderSlots[fp->player];
     slot->is_enabled = FALSE;
-    if ((entries == NULL) || (fp->fkind < 0) || (fp->fkind >= 12) ||
-        (*entries[1] != fp->fkind) || !*entries[0]) return;
-    slot->body = fp->fkind;
-    for (i = 0; i < 13; i++) slot->attacks[i] = (u32)*entries[i + 2] < 12 ? *entries[i + 2] : fp->fkind;
-    for (i = 0; i < 3; i++) slot->attacks[13 + i] = (u32)*entries[18 + i] < 12 ? *entries[18 + i] : fp->fkind;
+    if ((entries == NULL) || (body < 0) || (body >= 12) ||
+        (*entries[1] != body) || !*entries[0]) return;
+    slot->body = body;
+    for (i = 0; i < 13; i++) slot->attacks[i] = (u32)*entries[i + 2] < 12 ? *entries[i + 2] : body;
+    for (i = 0; i < 3; i++) slot->attacks[13 + i] = (u32)*entries[18 + i] < 12 ? *entries[18 + i] : body;
     slot->special_n = *entries[15];
+    slot->special_hi = *entries[16]; slot->special_lw = *entries[17];
     slot->is_enabled = TRUE;
 }
 
 static FTMotionScript sCCMotionScripts[4];
 #include "../build/char_creator/runtime/special-timings.inc"
 extern s32 ccSpecialDonor(FTStruct*);
+typedef struct FTCharBuilderSpecialPath FTCharBuilderSpecialPath;
 typedef struct CCSpecialClock
 {
     FTStruct *owner;
     s32 status, motion, donor;
     u32 timing;
     f32 frame;
+    u32 player_num;
+    const FTCharBuilderSpecialPath *path;
+    void (*physics)(GObj*);
 } CCSpecialClock;
 static CCSpecialClock sCCSpecialClocks[4];
 
@@ -67,10 +75,11 @@ static CCSpecialClock* ccSpecialClock(FTStruct *fp)
     CCSpecialClock *clock;
     if (fp->player >= 4) return NULL;
     clock = &sCCSpecialClocks[fp->player];
-    if (clock->owner != fp || clock->status != fp->status_id ||
+    if (clock->owner != fp || clock->player_num != fp->player_num || clock->status != fp->status_id ||
         clock->motion != fp->motion_id || clock->donor != ccSpecialDonor(fp)) return NULL;
     return clock;
 }
+#include "CharLabMovement.c.inc"
 extern s32 **ccGetEntries(s32 player);
 extern void ccOriginalParse(GObj*, FTStruct*, FTMotionScript*, u32);
 extern void ccRestoreBody(FTStruct*);
@@ -122,6 +131,11 @@ void ccAdvance(GObj *gobj)
             special->frame -= duration;
         gobj->anim_frame = (!(special->timing & 0x80000000) && special->frame >= duration) ?
             -1.0F : (special->frame > 0.0F ? special->frame : 0.001F);
+        if (ftCustomMoveGetClock(fp) != NULL)
+        {
+            ftCustomMoveGetClock(fp)->frame = special->frame;
+            ftCustomMoveGetClock(fp)->native_frame = gobj->anim_frame;
+        }
         return;
     }
     gobj->anim_frame = ftCustomMoveAdvanceClock(fp, gobj->anim_frame);
@@ -132,7 +146,23 @@ void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
 {
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
     f32 frame = gobj->anim_frame;
-    if (ftCustomMoveSkipNativeCollision(fp, script, opcode)) return;
+    if (script != &sCCMotionScripts[fp->player] && ccSpecialClock(fp) != NULL && ccSpecialClock(fp)->path != NULL)
+    {
+        /* The phase is outside the normal definition table, so skip native
+         * collision commands explicitly. Numeric flags still run natively. */
+        switch(opcode)
+        {
+        case nFTMotionEventMakeAttackColl: case nFTMotionEventMakeAttackCollScaled:
+            ftMotionEventAdvance(script,FTMotionEventMakeAttack);return;
+        case nFTMotionEventSetAttackCollOffset:
+            ftMotionEventAdvance(script,FTMotionEventSetAttackOffset);return;
+        case nFTMotionEventClearAttackCollID: case nFTMotionEventClearAttackCollAll:
+        case nFTMotionEventRefreshAttackCollID: case nFTMotionEventSetAttackCollDamage:
+        case nFTMotionEventSetAttackCollSize: case nFTMotionEventSetAttackCollSoundLevel:
+            ftMotionEventAdvance(script,FTMotionEventDefault);return;
+        }
+    }
+    else if (ftCustomMoveSkipNativeCollision(fp, script, opcode)) return;
     if (clock != NULL)
         gobj->anim_frame = script == &sCCMotionScripts[fp->player] ? clock->frame : clock->native_frame;
     ccOriginalParse(gobj, fp, script, opcode);
@@ -153,13 +183,13 @@ void ccEvents(GObj *gobj)
         if (((DObj*)gobj->obj)->anim_speed <= gobj->anim_frame) return;
         script->script_wait = -gobj->anim_frame;
     }
-    else script->script_wait -= 1.0F;
+    else script->script_wait -= ccSpecialClock(fp) ? ((DObj*)gobj->obj)->anim_speed : 1.0F;
     while (script->p_script != NULL && script->script_wait <= 0.0F && limit-- > 0)
         ccParse(gobj, fp, script, *script->p_script >> 26);
     if (limit <= 0) { script->p_script = NULL; gFTCustomMoveValidationFailures++; }
 }
 
-void ccCollision(FTStruct *fp) { ftCustomCollisionApply(fp); }
+void ccCollision(FTStruct *fp) { ccSpecialCollision(fp); }
 
 static void ccSyncCurrent(FTStruct *fp)
 {
@@ -186,9 +216,20 @@ void ccPrepare(GObj *gobj, f32 frame_begin)
     clock->donor = donor;
     clock->timing = sCCSpecialTimings[donor][fp->motion_id];
     clock->frame = frame_begin - ((DObj*)gobj->obj)->anim_speed;
+    clock->player_num = fp->player_num;
+    clock->path = ccFindSpecialPath(donor, fp->motion_id);
+    clock->physics = fp->proc_physics;
+    if (clock->path != NULL)
+    {
+        FTMotionScript *script=&sCCMotionScripts[fp->player];
+        ftCustomMoveStartClock(fp,&clock->path->move,frame_begin);
+        sFTCustomMoveClocks[fp->player].frame=clock->frame;
+        script->p_script=(ftMotionCommand*)clock->path->move.events;
+        script->script_wait=1.0F-frame_begin;script->script_id=0;
+        if (clock->physics != NULL) fp->proc_physics=ccDonorPhysics;
+    }
 }
 
-#define ftGetStruct(gobj) ((FTStruct*)(gobj)->user_data.p)
 extern GObj *wpFoxBlasterMakeWeapon(GObj*, Vec3f*);
 extern alSoundEffect *func_800269C0_275C0(u16);
 static void ftMainCharBuilderClearSpecialDonor(FTStruct *fp) { ccRestoreBody(fp); }
@@ -236,4 +277,15 @@ const u32 ccSpecialLayout[] = {
     OFF(FTStruct, physics.vel_ground), OFF(FTStruct, joints),
     nFTPikachuStatusSpecialHi, nFTPikachuStatusSpecialHiEnd,
     nFTPikachuStatusSpecialAirHi, nFTPikachuStatusSpecialAirHiEnd
+};
+const u32 ccClockLayout[] = {
+    sizeof(FTCustomMoveClock), OFF(FTCustomMoveClock, move), OFF(FTCustomMoveClock, frame),
+    OFF(FTStruct, player_num), OFF(FTStruct, physics.vel_ground), OFF(FTStruct, proc_physics)
+};
+const u32 ccMovementLayout[] = {
+    sizeof(CCSpecialClock), OFF(CCSpecialClock, frame),
+    sizeof(FTCharBuilderSpecialPath), ARRAY_COUNT(sFTCharBuilderSpecialPaths),
+    OFF(FTCharBuilderSpecialPath, trajectory), OFF(FTCharBuilderSpecialPath, travel),
+    sizeof(FTCustomNormalMechanics), OFF(FTCustomNormalMechanics, count),
+    OFF(FTStruct, coll_data.floor_angle), OFF(FTAttributes, traction)
 };

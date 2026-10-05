@@ -24,6 +24,7 @@ def special_timings():
     from auditNormalMoves import ROSTER, us_text
     from customMoveCatalog import motion_descriptors
     from customMoveTiming import animation_duration
+    from generateSpecialTiming import catalog
     rows = []
     paths = {re.sub(r'^\d+_', '', p.stem): p for p in (LAB/'src/relocData').glob('*.c')}
     for fighter in ROSTER:
@@ -40,6 +41,10 @@ def special_timings():
             loop = bool(re.search(r'ftAnimLoop\(', us_text(paths[match[1]].read_text())))
             row[motion] = duration | (0x80000000 if loop else 0)
         rows.append(row)
+    # Gameplay may intentionally outlive a looping visual (PK Thunder launch,
+    # Thunder/PSI hit phases). Use the same overrides as the decomp runtime.
+    for donor,motion,duration,loop,_ in catalog():
+        rows[donor][motion] = duration | (0x80000000 if loop else 0)
     (OUT/'special-timings.inc').write_text(
         '/* Generated from original US motion/animation sources. */\n'
         'static const u32 sCCSpecialTimings[12][276] = {\n' +
@@ -66,7 +71,32 @@ def prepare_headers():
     assert neutral.count('fp->motion_scripts[i][2]') == 3
     neutral = neutral.replace('fp->motion_scripts[i][2]', 'sCCMotionScripts[fp->player]')
     (OUT / 'neutral.c.inc').write_text(neutral, encoding='utf-8')
+    # Full shared animation curves need a streamed bank on Remix: its code,
+    # menus and expanded roster already occupy most Expansion Pak RAM. Keep
+    # the three existing pilots until that bank is implemented, rather than
+    # silently embedding the decomp's entire resident animation catalog.
+    animation = (LAB/'src/ft/ftcustomanimation.c.inc').read_text(encoding='utf-8')
+    def function(name):
+        start=animation.index('static ', animation.index('static const FTCustomAnimationFrame* '+name) if name=='ftCustomAnimationGetFrame' else animation.index('static void '+name))
+        opening=animation.index('{',start);end=opening+1;depth=1
+        while depth:
+            depth += (animation[end]=='{')-(animation[end]=='}');end+=1
+        return animation[start:end]
+    apply=function('ftCustomAnimationApplyPose')
+    apply=re.sub(r'    const FTCustomAnimationClip \*clip;\n','',apply)
+    apply=apply.replace('s32 i, frame;', 's32 i;')
+    apply=re.sub(r'    if \(pilot == NULL\)\n    \{.*?\n    \}', '    if (pilot == NULL) return;',apply,flags=re.S)
+    prefix=animation[:animation.index('typedef struct FTCustomAnimationQuat')]
+    prefix=prefix.replace('#include "ftcustomanimations.generated.inc"','#include "ft/ftcustomanimations.generated.inc"')
+    (OUT/'animation.c.inc').write_text(prefix+'u32 gFTCustomAnimationValidationFailures;\n'+function('ftCustomAnimationGetFrame')+'\n'+apply+'\n',encoding='utf-8')
+    move=(LAB/'src/ft/ftcustommove.c.inc').read_text(encoding='utf-8')
+    assert move.count('(slot->body != fp->fkind)') == 1
+    move=move.replace('(slot->body != fp->fkind)','(slot->body != ccBodyKind(fp))')
+    move=move.replace('#include "ftcustomanimation.c.inc"','#include "animation.c.inc"')
+    move=re.sub(r'#include "(ft[^"/]+\.inc)"',r'#include "ft/\1"',move)
+    (OUT/'move.c.inc').write_text(move,encoding='utf-8')
     throw = (LAB / 'src/ft/ftcommon/ftcommonthrow.c').read_text(encoding='utf-8')
+    throw=re.sub(r'^    if \(ftMainCharBuilderTryPairedThrow\([^\n]+\n','',throw,flags=re.M)
     for direction in (0, 1):
         throw = throw.replace(f'this_fp->attr->thrown_status[catch_fp->fkind].ft_thrown[{direction}]',
                               f'this_fp->attr->thrown_status[ccMappedThrownKind(catch_fp->fkind, {direction})].ft_thrown[{direction}]')
@@ -98,12 +128,18 @@ def object_to_bass(path):
         'ccRestoreBody': 'CharLab.restore_body_',
         'ccMappedThrownKind': 'CharLab.mapped_thrown_kind_',
         'ccSpecialDonor': 'CharLab.special_donor_',
+        'ccBodyKind': 'CharLab.body_kind_',
+        'ccOriginalGroundTravel': 'CharLab.original_ground_travel_',
+        'ccOriginalAirTravel': 'CharLab.original_air_travel_',
+        'ccOriginalGroundPhysics': 'CharLab.original_ground_physics_',
         'wpFoxBlasterMakeWeapon': 'CharCreator.neutral_make_weapon_',
         'func_800269C0_275C0': '0x800269C0',
     }
     # Engine symbols come from the decompilation's original US function labels,
     # not addresses of the relocated Character Lab build.
     wanted = {name for name,_,_,_,index in symbols if not index and name}
+    for name,address in re.findall(r'^(\w+)\s*=\s*(0x[0-9a-fA-F]+);', (LAB/'symbols/symbols_us.txt').read_text(),re.M):
+        if name in wanted and name not in bindings:bindings[name]=address
     for path in (LAB / 'src').rglob('*.c'):
         source = path.read_text(encoding='utf-8')
         for address, name in re.findall(r'// (0x[0-9A-Fa-f]{8})[^\n]*\n(?:[\w*]+\s+)+([\w]+)\(', source):
@@ -130,6 +166,7 @@ def object_to_bass(path):
         target = s[7]
         payload = data[sections[target][4]:sections[target][4]+sections[target][5]]
         entries = [struct.unpack_from('>II', data, offset) for offset in range(s[4],s[4]+s[5],8)]
+        pending = {}
         for offset, info in entries:
             symbol, kind = info >> 8, info & 255
             word = struct.unpack_from('>I', payload, offset)[0]
@@ -140,39 +177,43 @@ def object_to_bass(path):
                 expression = f'0x{word & 0xFC000000:08X} | (({label} + {(word & 0x3FFFFFF) << 2}) >> 2 & 0x03FFFFFF)'
             elif kind in (5,6):  # paired R_MIPS_HI16 / LO16
                 if kind == 5:
-                    looffset = next(o for o,inf in entries if o > offset and inf >> 8 == symbol and inf & 255 == 6)
-                    low = struct.unpack_from('>I', payload, looffset)[0] & 65535
-                    low = low - 65536 if low & 32768 else low
-                    addend = ((word & 65535) << 16) + low
-                    expression = f'0x{word & 0xFFFF0000:08X} | (({label} + {addend} + 0x8000) >> 16 & 0xFFFF)'
+                    # ELF relocation order defines the pairs; optimized Clang
+                    # output does not necessarily sort them by code offset.
+                    pending.setdefault(symbol, []).append((offset,word))
+                    continue
                 else:
                     low = word & 65535
                     addend = low - 65536 if low & 32768 else low
+                    for highoffset, highword in pending.pop(symbol, []):
+                        combined = ((highword & 65535) << 16) + addend
+                        relocations.setdefault(target,{})[highoffset] = f'0x{highword & 0xFFFF0000:08X} | (({label} + {combined} + 0x8000) >> 16 & 0xFFFF)'
                     # The LO relocation has the full low addend; the high part
                     # is represented only on its paired HI relocation.
                     expression = f'0x{word & 0xFFFF0000:08X} | (({label} + {addend}) & 0xFFFF)'
             else:
                 raise ValueError(f'Unsupported MIPS relocation {kind}; compile without PIC/GP.')
             relocations.setdefault(target,{})[offset] = expression
+        assert not pending, 'Unpaired MIPS HI16 relocation'
     for i in sorted(allocated):
         section = sections[i]
         alignment = max(4, section[8])
         lines += [f'OS.align({alignment})', f'section_{i}:']
+        lines.append(f'constant section_{i}_origin(origin())')
         target = OUT / f'section-{i}.bin'
         if section[1] != 8:
             target.write_bytes(data[section[4]:section[4]+section[5]])
         relative = target.name  # Bass resolves inserts relative to runtime.asm.
-        cursor = 0
-        boundaries = set(labels.get(i, {})) | set(relocations.get(i, {})) | {section[5]}
+        # Insert once. Thousands of tiny inserts reopen the same binary on
+        # every assembler pass and become very slow on Windows/WSL filesystems.
+        lines.append(f'fill {section[5]}' if section[1] == 8 else f'insert "{relative}"')
+        lines.append('pushvar origin, base')
+        boundaries = set(labels.get(i, {})) | set(relocations.get(i, {}))
         for offset in sorted(boundaries):
-            if offset > cursor:
-                lines.append(f'fill {offset-cursor}' if section[1] == 8 else f'insert "{relative}", {cursor}, {offset-cursor}')
-                cursor = offset
-            assert cursor == offset, 'Symbol inside a relocation word.'
+            lines += [f'origin section_{i}_origin + {offset}', f'base section_{i} + {offset}']
             lines.extend(label + ':' for label in labels.get(i, {}).get(offset, []))
             if offset in relocations.get(i, {}):
                 lines.append(f'dw {relocations[i][offset]}')
-                cursor = offset + 4
+        lines.append('pullvar base, origin')
     lines += ['end:', '}', '']
     (OUT / 'runtime.asm').write_text('\n'.join(lines), encoding='utf-8')
     print(f'Compiled shared Character Lab runtime: {sum(sections[i][5] for i in allocated):,} bytes; {sum(len(r) for r in relocations.values())} relocations.')

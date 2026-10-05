@@ -70,7 +70,9 @@ def linked_object(rom, labels):
         assert not pending, 'Unpaired HI16 relocation'
     for i, payload in payloads.items():
         offset = labels['CharLabRuntime.section_'+str(i)] - 0x80400000 + 0x3800000
-        assert rom[offset:offset+len(payload)] == payload, 'Linked section differs: '+str(i)
+        actual=rom[offset:offset+len(payload)]
+        differences=[j for j in range(0,len(payload),4) if actual[j:j+4]!=payload[j:j+4]][:8]
+        assert actual == payload, ('Linked section differs',i,[(hex(j),actual[j:j+4].hex(),payload[j:j+4].hex()) for j in differences])
     # Compare donor event words, all trajectories and animation poses with the
     # already source-checked shared host build, excluding relocated pointers.
     host, hs, syms = read_elf(LAB / 'build/testCustomMove', '<')
@@ -96,8 +98,22 @@ def linked_object(rom, labels):
         assert obj[start:start+length] == expected, 'Shared data differs: '+name
         checked += 1
     assert checked >= 650, checked
+    geometry=0
+    for filename,prefix in (('testNormalMechanics','sFTCustomNormal'),('testSpecialTiming','sFTCharBuilderSpecial')):
+        reference,rs,reference_symbols=read_elf(LAB/'build'/filename,'<')
+        for name,(address,length,index) in reference_symbols.items():
+            if not name.startswith(prefix) or not name.endswith(('Travel','Socket','Frames','Spawn')) or name not in symbols:
+                continue
+            actual,actual_length,actual_index=symbols[name]
+            assert actual_length==length and length%4==0,name
+            start=rs[index][4]+address-rs[index][3]
+            expected=struct.pack('>'+str(length//4)+'I',*struct.unpack_from('<'+str(length//4)+'I',reference,start))
+            start=sections[actual_index][4]+actual-sections[actual_index][3]
+            assert obj[start:start+length]==expected,'Source movement/collision differs: '+name
+            geometry+=1
+    assert geometry>=150,geometry
     assert labels['custom_heap'] < 0x80780000, 'Expansion RAM heap headroom too small'
-    print(f'PASS: {count} relocations, all allocated runtime bytes and {checked} shared donor tables/poses match; expansion heap at {labels["custom_heap"]:08X}.')
+    print(f'PASS: {count} relocations, all allocated runtime bytes, {checked} shared donor tables/poses and {geometry} source special/normal geometry arrays match; expansion heap at {labels["custom_heap"]:08X}.')
 
 
 class Runtime:
@@ -110,6 +126,9 @@ class Runtime:
         # KSEG0 is translated to physical RAM by Unicorn's MIPS CPU.
         self.uc.mem_map(0, 0x800000)
         self.uc.mem_map(0x80000000, 0x800000)
+        # Native math/physics helpers use the original main-code addresses.
+        self.uc.mem_write(0x80000400, rom[0x1000:0x415C0])
+        self.uc.mem_write(0x400, rom[0x1000:0x415C0])
         self.uc.mem_write(0x80400000, rom[0x3800000:0x3800000+0x400000])
         self.uc.mem_write(0x800D6490, rom[0x51C90:0xAC540])
         # Mirror initial ROM data in the physical alias as well.
@@ -127,6 +146,7 @@ class Runtime:
                  'throw_f', 'throw_b', 'dk_throw_ff', 'shouldered', 'thrown_common', 'vs', 'training', 'air',
                  'thrown_table', 'stick', 'tap', 'b_mask')
         self.layout = dict(zip(names, struct.unpack('>34I', self.read(self.addr('ccLayout'), 136))))
+        self.clock_size,self.clock_move,self.clock_frame,self.player_num,self.ground_velocity,self.physics=struct.unpack('>6I',self.read(self.addr('ccClockLayout'),24))
         # Stale queue is match-global state; isolate raw donor values in tests.
         self.services[0x800EA54C] = lambda: self.reg(UC_MIPS_REG_A1)
         self.services[self.labels['CharLab.restore_body_']] = lambda: 0
@@ -175,6 +195,9 @@ class Runtime:
         return self.reg(UC_MIPS_REG_V0)
 
     def setup(self, body, donor, player=0):
+        self.u32(self.labels['CharCreator.body_character_data']+player*4,0)
+        self.u32(self.labels['CharCreator.body_character_id']+player*4,-1)
+        self.u32(self.labels['CharCreator.active_special_donor']+player*4,-1)
         self.write(self.FP, bytes(self.layout['size']))
         self.write(self.GOBJ, bytes(0x100))
         self.u32(self.FP+8, body)
@@ -244,13 +267,13 @@ def test_runtime(rom, labels):
                 if duration == 0:
                     assert r.u32(clocks) == 0
                     continue  # Donor has no matching extra jab phase.
-                assert r.u32(clocks) == r.FP and r.u32(clocks+4) == move, (body, donor, index, motion, hex(r.u32(clocks+4)), hex(move))
+                assert r.u32(clocks) == r.FP and r.u32(clocks+r.clock_move) == move, (body, donor, index, motion, hex(r.u32(clocks+r.clock_move)), hex(move))
                 assert r.u32(script) and word_count <= 512
                 assert r.advance() == (-1.0 if flags & 2 else struct.unpack('>f', struct.pack('>f', 0.001))[0])
-                assert r.f32(clocks+20) == 0
+                assert r.f32(clocks+r.clock_frame) == 0
                 # Test expiry without pretending that body animation duration
                 # or speed determines donor recovery.
-                r.f32(clocks+20, duration-1)
+                r.f32(clocks+r.clock_frame, duration-1)
                 assert r.advance(100) == (100 if flags & 2 else -1)
                 r.u32(r.FP+0x24, 500)
                 assert r.advance(17) == 17
@@ -331,7 +354,7 @@ def test_runtime(rom, labels):
             r.u32(r.u32(table), 1)
             r.u32(labels['CharCreator.selected_builds']+player*4, preset+1)
             r.call('ccPrepare', r.GOBJ, 0)
-            assert r.u32(clocks+player*32) == r.FP
+            assert r.u32(clocks+player*r.clock_size) == r.FP
     print('PASS: all four native body streams suppress foreign collisions; 16 player/preset assignments feed the correct independent runtime slot.')
     return r
 
@@ -488,6 +511,7 @@ def test_borrowed_specials(r):
             r.u32(r.FP+8, 9)  # Native donor identity during borrowed chain.
             r.u32(r.FP+0x9C4, donor_data)
             r.u32(r.labels['CharCreator.body_character_data']+player*4, body_data)
+            r.u32(r.labels['CharCreator.body_character_id']+player*4,body)
             r.u32(r.labels['CharCreator.active_special_donor']+player*4, 9)
             for air, action, motion in ((0, hi, 207), (1, air_hi, 209)):
                 r.u32(r.FP+0x24, action)
@@ -527,6 +551,7 @@ def test_borrowed_specials(r):
             r.u32(r.FP+0x24, 0xA)
             assert r.advance(19.0) == 19.0
             r.u32(r.labels['CharCreator.body_character_data']+player*4, 0)
+            r.u32(r.labels['CharCreator.body_character_id']+player*4,-1)
             r.u32(r.labels['CharCreator.active_special_donor']+player*4, -1)
             for name, address in (('pikachu_pitch_scale_', 0x80152AA0),
                                   ('fox_pitch_', 0x8015C054), ('ness_pitch_', 0x80154758)):
@@ -622,6 +647,119 @@ def test_borrowed_specials(r):
     print(f'PASS: borrowed special Idle/Fall records, frozen dash/46-frame end clocks and transform guards on 12 bodies x 4 ports; {phases} donor phase speed/loop/continuation checks; native second-dash event/update and endpoint position preservation. Rendering/status setup and direction predicate are stubbed.')
 
 
+def test_movement_and_special_paths(r):
+    """Execute source movement/collision hooks, including real native math.
+
+    Ground transfer and animation-independent donor callbacks are exercised;
+    this does not assert contact, projectile sockets or paired mechanics.
+    """
+    from math import sin,cos
+    size,frame_off,path_size,path_count,trajectory_off,travel_off,normal_size,count_off,floor_off,traction_off=struct.unpack('>10I',r.read(r.addr('ccMovementLayout'),40))
+    clocks=r.addr('sCCSpecialClocks');common=r.addr('sFTCustomMoveClocks')
+    paths=r.addr('sFTCharBuilderSpecialPaths');out=0x8022A000
+    callback=0x803FDF00;donor_data=0x80230000;main_pointer=0x80231000;donor_attr=0x80232100
+    physics_seen=[]
+    r.services[callback]=lambda:physics_seen.append(r.u32(r.FP+0x9C8))
+    r.services[0x800E87A0]=lambda:0  # Hit-status color rendering only.
+    def near(actual,expected,context):
+        assert all(abs(a-b)<0.004 for a,b in zip(actual,expected)),(context,actual,expected)
+    normal_checks=0
+    for body in range(12):
+        for donor,index in ((1,2),(8,14)):  # Fox dash / Kirby straight F-smash.
+            if body==donor:continue
+            r.setup(body,donor)
+            r.u32(r.FP+0x24,100+index);r.u32(r.FP+0x28,r.motion(body,index))
+            r.call('ccStart',r.FP,0)
+            record=r.addr('sFTCustomNormalMechanics')+(donor*33+index)*normal_size
+            travel,count,flags=r.u32(record),r.u32(record+count_off),r.u32(record+count_off+4)
+            assert travel and flags&0x40000000,(donor,index)
+            for facing in (-1,1):
+                r.u32(r.FP+0x44,facing);r.f32(r.JOINTS+r.layout['rotate']+4,facing*1.57)
+                r.f32(r.FP+floor_off,0);r.f32(r.FP+floor_off+4,1)
+                for frame in range(count):
+                    r.f32(common+r.clock_frame,frame)
+                    expected=struct.unpack('>3f',r.read(travel+frame*12,12))
+                    r.call('ccGroundPhysics',r.GOBJ)
+                    near((r.f32(r.FP+r.ground_velocity),r.f32(r.FP+r.ground_velocity+4)),(expected[0],expected[2]*facing),(body,donor,index,frame,facing))
+                    r.call('ccAirTravel',r.FP,out,out+4,out+8)
+                    near(struct.unpack('>3f',r.read(out,12)),(expected[0]*facing,expected[1],expected[2]*facing),('air',body,donor,index,frame))
+                    normal_checks+=1
+    placements=travel_checks=parser_frames=0
+    for index in range(path_count):
+        path=paths+index*path_size;donor,motion=struct.unpack('>2I',r.read(path,8))
+        for body in range(12):
+            if body==donor:continue
+            r.setup(body,donor);r.preset(body,donor)
+            r.u32(r.labels['CharCreator.body_character_data'],0x80220000)
+            r.u32(r.labels['CharCreator.body_character_id'],body)
+            r.u32(r.labels['CharCreator.active_special_donor'],donor)
+            r.u32(r.FP+8,donor);r.u32(r.FP+0x24,0xDC);r.u32(r.FP+0x28,motion)
+            r.u32(0x80116E10+donor*4,donor_data)
+            r.u32(donor_data+0x28,main_pointer);r.u32(main_pointer,donor_attr-0x100);r.u32(donor_data+0x60,0x100)
+            r.u32(r.FP+r.physics,callback)
+            r.call('ccPrepare',r.GOBJ,0)
+            assert r.u32(common+r.clock_move)==path+8,('slot lost during donor identity',body,donor,motion)
+            r.labels['Test.phase_physics']=r.u32(r.FP+r.physics)
+            r.call('phase_physics',r.GOBJ,namespace='Test')
+            assert physics_seen[-1]==donor_attr and r.u32(r.FP+0x9C8)==r.ATTR,('donor attributes/restoration',body,donor,motion)
+            ptr,first,count,loop,period=struct.unpack('>5I',r.read(path+trajectory_off,20))
+            travel=r.u32(path+travel_off)
+            samples=range(count) if body==(donor+1)%12 else sorted({0,count//2,count-1})
+            for frame in samples:
+                r.f32(clocks+frame_off,frame);r.f32(common+r.clock_frame,frame)
+                r.call('ccCollision',r.FP)  # Real engine fields, poisoned body transforms.
+                sample=ptr+(frame-first)*52 if first<=frame<first+count else 0
+                if sample:
+                    mask=r.u32(sample+48)
+                    if body==(donor+1)%12:
+                        r.events()
+                        actual_mask=sum(1<<hit for hit in range(4) if r.u32(r.FP+0x294+hit*0xC4))
+                        assert actual_mask==mask,('source special event window',donor,motion,frame,actual_mask,mask)
+                        parser_frames+=1
+                    for hit in range(4):
+                        base=r.FP+0x294+hit*0xC4
+                        if mask&(1<<hit):
+                            r.u32(base,1)
+                            r.u32(base+0x3C,0xFCA01234)  # Includes scaled-position flag.
+                    before=r.read(r.FP+0x294,4*0xC4)
+                    r.call('ccCollision',r.FP)
+                    for hit in range(4):
+                        base=r.FP+0x294+hit*0xC4
+                        if mask&(1<<hit):
+                            near(struct.unpack('>3f',r.read(base+0x18,12)),tuple(x/2 for x in struct.unpack('>3f',r.read(sample+hit*12,12))),('special',body,donor,motion,frame,hit))
+                            assert r.u32(base+0x14)==r.JOINTS
+                            assert r.u32(base+0x3C)==0xFC801234,('double body scaling',body,donor,motion,frame,hit)
+                            placements+=1
+                        for off,length in ((0,8),(0xC,8),(0x24,0x18),(0x40,0x84)):
+                            assert r.read(base+off,length)==before[hit*0xC4+off:hit*0xC4+off+length]
+                if travel:
+                    dx,dy,dz,angle=struct.unpack('>4f',r.read(travel+frame*16,16))
+                    for facing in (-1,1):
+                        r.u32(r.FP+0x44,facing)
+                        r.f32(r.JOINTS+0x100+r.layout['rotate']+8,0)
+                        r.call('ccAirTravel',r.FP,out,out+4,out+8)
+                        near(struct.unpack('>3f',r.read(out,12)),(dx*facing*cos(angle)-dy*sin(angle),dx*facing*sin(angle)+dy*cos(angle),dz*facing),('special air',body,donor,motion,frame))
+                        travel_checks+=1
+            # Reusing the allocation for a respawn must retire the phase.
+            r.u32(r.FP+r.player_num,r.u32(r.FP+r.player_num)+1)
+            assert r.advance(17)==17,('stale special clock',body,donor,motion)
+            before=len(physics_seen);r.call('phase_physics',r.GOBJ,namespace='Test')
+            assert len(physics_seen)==before,('stale donor callback',body,donor,motion)
+    del r.services[callback]
+    del r.services[0x800E87A0]
+    r.call('ccReset')
+    r.setup(0,1)
+    # No custom move: execute native air TransN fallback through the trampoline.
+    r.u32(r.FP+0x24,10);r.u32(r.FP+0x28,10)
+    r.f32(r.JOINTS+0x100+r.layout['translate']+8,8)
+    r.f32(r.JOINTS+0x100+r.layout['translate']+4,3)
+    r.f32(r.JOINTS+0x100+r.layout['translate'],2)
+    r.f32(r.JOINTS+0x100+r.layout['rotate']+8,0)
+    r.call('ccAirTravel',r.FP,out,out+4,out+8)
+    near(struct.unpack('>3f',r.read(out,12)),(16,6,-4),'native air passthrough')
+    print(f'PASS: {normal_checks} Fox/Kirby normal momentum samples; {path_count} special paths on eleven foreign bodies, {parser_frames} native special parser frames, {placements} collision placements/{travel_checks} air travel samples, donor attributes, generation cleanup and native air passthrough. Native math executes; contact and animation rendering remain untested.')
+
+
 def main():
     rom = (ROOT / 'ssb64asm_extra.z64').read_bytes()
     labels = {name: int(address, 16) for address, name in re.findall(r'^([0-9a-fA-F]{8}) (.+)$', (ROOT/'logfile.log').read_text(), re.M)}
@@ -644,6 +782,7 @@ def main():
     runtime = test_runtime(rom, labels)
     test_specials_and_return(runtime)
     test_borrowed_specials(runtime)
+    test_movement_and_special_paths(runtime)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')
 
 

@@ -1,9 +1,11 @@
 # Character Lab on Smash Remix
 
-Our current Character Lab features now have an original-roster Remix preview.
+Character Lab has an original-roster Remix preview, **0.1.2 (2026-10-05)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for the shared donor timing and collision system. Most visible poses still
 belong to the body; the [checklist](docs/character-lab-status.md) tracks what remains.
+This is a partial port. The [full port matrix](docs/decomp-port.md) lists which
+mechanics are implemented and which still need adapters or playtesting.
 
 ## Make a build and fight with it
 
@@ -13,7 +15,8 @@ belong to the body; the [checklist](docs/character-lab-status.md) tracks what re
 4. **USE BODY FOR ALL MOVES** gives you a native starting point.
 5. Change any jab, dash attack, tilt, smash, aerial, grab or throw donor.
 6. Neutral Special offers **Body Move** or **Fox Laser**. Up/Down Special
-   retain the earlier experimental adapters; leave them on the body initially.
+   remain experimental. Mario with Falcon Kick/Pikachu Up B is the first
+   regression target; use native body specials for unverified mechanics.
 7. Select **TEST IN TRAINING**, then select the preset's Body on the Training CSS.
 8. Exit Training, or press Back on its CSS, to reopen the same preset editor.
 
@@ -52,9 +55,9 @@ detection, staling, hit records and swept collision history.
 
 The tables use vanilla US donor values, matching Character Lab. Remix balance
 changes and enabled gameplay modifiers can affect the resulting battle. This
-ports our current donor system; fighter movement and mechanics are unfinished.
-Jab phases must exist on the body. Donor physics, some followups and landing
-behavior remain on the roadmap.
+ports donor root movement too, including Fox dash and Kirby forward smash.
+Jab phases must still exist on the body. Donor traction/air attributes,
+followups, Link bounce, Ness reflection and landing callbacks remain pending.
 
 Grab choices borrow donor hitbox events and timing. Throw choices borrow
 numeric damage/knockback while preserving body capture, victim statuses and
@@ -85,11 +88,18 @@ for recovery/events, respecting frozen dash phases and animation speed.
 Pikachu stretching and Fox/Ness recovery pitching are suppressed on borrowed
 bodies while their movement callbacks remain active.
 
+Source special collision events/paths and TransN travel are now connected.
+Collision placement compensates for body size, and native special physics uses
+donor attributes during its callback. The actual body keeps recipe ownership
+through the donor compatibility context. These foundations are shared;
+directional hitbox rotation, projectile sockets, independent passives and
+helpless/landing recovery are not yet a complete port.
+
 Expanded Remix donors retain the earlier finite taunt fallback because their
 phase clocks are not yet compiled.
 
-This is a compatibility fix, not full special retargeting. Donor special hitbox
-paths, projectile placement, model changes and capture mechanics still need
+Full special retargeting remains pending. Projectile placement, directional
+paths, model changes and capture mechanics still need
 work and per-pair playtesting. In particular, check Mario with Pikachu Up B:
 first dash, direction change for a second dash, recovery, interruption and
 landing. The body should keep its size and finish at the position it moved to. Original-roster
@@ -120,8 +130,10 @@ Report body, donor, move, emulator, enabled Remix settings and source commit.
 - `extra_imports/CharCreator.asm`: recipe lookup, resource cache and special dispatch.
 - `extra_imports/CharLab.asm`: native engine, parser, clock, collision and Training hooks.
 - `extra_imports/CharLabRuntime.c`: shared donor runtime with the native Remix ABI.
+- `extra_imports/CharLabMovement.c.inc`: donor normal/special travel, attributes and source collision placement.
 - `scripts/build_charlab_runtime.py`: freestanding MIPS compilation and ELF relocation import.
 - `scripts/verify_charlab_rom.py`: ROM/data checks and production MIPS execution tests.
+- `scripts/test_charlab_scenes.py`: optional real-input CPU fixture, isolated saves and null rendering.
 - `scripts/build_charlab.py`: asset generation, build, verification and packaging.
 - `character_appender.py`: generated source/catalog, owned overrides and menu injection.
 
