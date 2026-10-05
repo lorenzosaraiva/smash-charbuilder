@@ -3,11 +3,14 @@
 Pick a fighter's body, mix in moves from the other Smash 64 characters, and try
 your creation against friends or a CPU. A little experiment that got out of hand.
 
-Version **0.1.16**, updated **2026-10-05**. All twelve bodies now perform all twelve
+Version **0.1.17**, updated **2026-10-05**. All twelve bodies now perform all twelve
 donors' normal attacks through shared motion curves and body skeleton maps.
 Hitboxes and timing follow the donor independently of body proportions. This is
 still experimental; rendered contact and visual polish need more testing. Implemented specials now share donor poses, phase transitions,
 charge loops, recovery and native effects/props across all twelve bodies.
+
+Borrowed normal root movement now uses the native flag, restoring Fox dash attack
+and Kirby forward-smash travel across bodies. See [movement checks](docs/normal-mechanics.md).
 
 Mario/Luigi Up B now borrow source hitbox paths, movement, steering, hit phases
 and helpless/landing recovery. See [coverage and testing](docs/super-jump-punch.md).

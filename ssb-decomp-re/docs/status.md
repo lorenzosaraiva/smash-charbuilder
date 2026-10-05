@@ -5,6 +5,9 @@ they do not mean every matchup has been playtested. Please share weird cases.
 
 ## Playable now
 
+- [x] Correct donor normal root-movement flag, including Fox dash attack and Kirby forward-smash travel.
+- [x] MIPS flag-packing, original C playback and live ROM movement/recovery checks.
+- [ ] Rendered movement/contact acceptance for the corrected normals.
 - [x] Default Build One uses the [Yoshi starter recipe](playing.md#default-build-one), checked in the linked ROM.
 - [ ] Rendered playtesting of the complete Yoshi starter recipe.
 - [x] Custom taunt donors on every original body: poses, duration/cancel flags, safe effects and Luigi's original hitbox.

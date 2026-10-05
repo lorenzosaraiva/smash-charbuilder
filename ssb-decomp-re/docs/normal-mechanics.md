@@ -1,6 +1,6 @@
 # Donor normal mechanics
 
-Version 0.1.12, updated 2026-10-04. Decomp only; Remix is unchanged.
+Version 0.1.17, updated 2026-10-05. Decomp only; Remix is unchanged.
 
 Customized grabs retain native release descriptors and choreography. The VS
 regression also caught an Egg Lay interruption crash: the adapter now installs
@@ -43,6 +43,20 @@ rapid-loop boundaries, so a short body animation cannot cut off or repeat a phas
 
 ## Bounce, reflection and movement
 
+Version 0.1.17 corrects the native root-movement flag. The legacy descriptor
+macro names for TransN and XRotN are reversed; the engine reads TransN from bit
+30 (`0x40000000`). Checking bit 31 incorrectly removed Fox dash attack's travel
+and chose friction for Kirby forward smash. The regenerated normal data and
+physics selector now follow the actual native bitfield. Original descriptor
+values and the body's movement outside attacks stay intact.
+Repeated rapid-jab loops also retain the source end-to-start root velocity;
+the first frame's zero velocity is only used when the action initially starts.
+
+Fox dash attack's source root curve travels 1,050 engine units;
+Kirby forward smash's travels 819, including Kirby's original size. These curves
+apply on every borrowed body, with original timing and facing. Stage collision,
+hitlag and interruption can shorten the distance in a real match.
+
 - Link down-air performs the original contact bounce on any body: clear attacks,
   cancel fastfall, set upward velocity to 40, rewind a late hit to frame 35, and
   retain the 30-tick rehit timer with the original frame-65 cutoff. A Link body
@@ -76,6 +90,10 @@ menus can show the memory requirement; Training/VS lab launches stay blocked.
 
 ## Checks and remaining acceptance
 
+- [x] Target-compiled `FTAnimDesc` flag packing versus all 396 normal movement records.
+- [x] Root velocities compared frame by frame with original C figatree playback.
+- [x] Live ROM Fox dash attack and Kirby forward-smash velocity, world displacement,
+  both facings, donor duration and native recovery checks across all twelve bodies (null rendering).
 - [x] Production normal callback checks on all twelve donors/bodies/four slots:
   jab buffering, thresholds, loop/end clocks, Link bounce/rehit, Ness bat field,
   source travel/physics and generation guards.
@@ -97,6 +115,12 @@ to isolate recovery from accumulated movement toward stage edges. Its contact
 fixtures place the CPU in Link's live attack volume and a native CPU fireball in
 Ness's field; natural contact and rendered playtesting remain separate acceptance
 checks.
+
+`testTrainingScenes.py --normal-movement --cases 12` starts Fox dash attack and
+Kirby forward smash through actual controller inputs. Position fixtures keep
+the attacker on the flat stage and an idle opponent away; the native physics
+and recovery callbacks run normally. Rendered contact, slopes and interruptions
+remain separate acceptance checks.
 
 Specials, tether grabs and paired throw choreography are tracked in their own
 guides. The [full-roster animation guide](full-roster-animations.md) explains

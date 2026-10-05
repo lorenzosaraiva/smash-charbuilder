@@ -9,6 +9,7 @@ from generateCustomMoves import expand
 from generateNeutralProjectiles import catalog as projectile_catalog
 from generateNeutralActions import catalog as action_catalog
 from generateSpecialTiming import donkey_case, path_catalog
+from generateNormalMechanics import catalog as normal_catalog
 
 
 def function(text,name):
@@ -156,10 +157,11 @@ def main():
     raw=subprocess.check_output([str(ROOT/'build/testNativeAnimation')],cwd=ROOT)
     (ROOT/'build/native-animation-poses.bin').write_bytes(raw)
     cursor=0;comparisons=0;maximum=0;geometry_error=0;centers_checked=0;native_geometry={};native_poses={}
+    normal_data=normal_catalog();normal_travel_samples=0;normal_travel_error=0
     for case_id,case in enumerate(cases):
         fighter,motion,name=(case[k] for k in ('fighter','motion','name'))
         frames=len(case_frames(case_id));poses=sample(fighter,name,frames,case['flags']);native_geometry[case_id]=[]
-        observed=[]
+        observed=[];previous_trans=None
         for frame,(mask,centers) in enumerate(case_frames(case_id)):
             native_pose={}
             for joint in sorted(poses[frame]):
@@ -170,6 +172,16 @@ def main():
                     error=abs(a-b);maximum=max(maximum,error);comparisons+=1
                     assert error<0.003,(name,joint,frame,channel,a,b,error)
             observed.append(native_pose)
+            movement=normal_data[ROSTER.index(fighter)][case['index']]['travel']
+            if movement:
+                trans=native_pose[1][4:7]
+                delta=(0,0,0) if previous_trans is None else ((trans[2]-previous_trans[2])*source_size(fighter),
+                    (trans[1]-previous_trans[1])*source_size(fighter),-(trans[0]-previous_trans[0])*source_size(fighter))
+                movement_frame=1+(frame-1)%(len(movement)-1) if frame>=len(movement) and case['native_loop'] else frame
+                expected=movement[movement_frame]
+                error=max(abs(a-b) for a,b in zip(delta,expected));normal_travel_error=max(normal_travel_error,error);normal_travel_samples+=1
+                assert error<0.003,(fighter,motion,frame,'native normal root movement',delta,expected)
+                previous_trans=trans
             native_centers=[]
             for aid,center in enumerate(centers):
                 native=struct.unpack_from('<3f',raw,cursor);cursor+=12;native_centers.append(native)
@@ -182,6 +194,7 @@ def main():
             native_geometry[case_id].append(native_centers)
         key=(fighter,name,case['flags'])
         if len(observed)>len(native_poses.get(key,())):native_poses[key]=observed
+    print(f'PASS: {normal_travel_samples} normal root velocities match original C playback; max error {normal_travel_error:.7f}.')
     placement_error=0;placements=0
     for case_id,case in enumerate(cases):
         _,frames=stored_frames(case_id)

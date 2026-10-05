@@ -1,5 +1,13 @@
 # Character Lab changes
 
+## 0.1.17 - 2026-10-05: Normal attack momentum
+
+- Fix the donor normal TransN flag: legacy descriptor macro labels were reversed, so Fox dash attack and Kirby forward smash lost their original movement.
+- Regenerate normal travel using the native flag and keep donor size, source clocks and native traction selection.
+- Keep the sampled end-to-start velocity at repeated rapid-jab loop boundaries.
+- Check flag packing with the MIPS compiler, compare root velocities with original C animation playback, and add live ROM movement/recovery checks.
+- Rendered movement/contact acceptance remains pending; Build One retains its Yoshi recipe.
+
 ## 0.1.16 - 2026-10-05: Yoshi starter build
 
 - Set default Build One to the requested Yoshi recipe, including all normal attacks, specials, grab/throws and Mario's taunt.

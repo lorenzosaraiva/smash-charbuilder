@@ -2,7 +2,7 @@
 """Source normal root travel and Ness's native bat-reflector socket."""
 from functools import lru_cache
 from customMoveCatalog import ROSTER, resolved_moves
-from customAnimation import ROOT, sample, flag_word, source_size, rig, world, add, transform
+from customAnimation import ROOT, sample, flag_word, source_size, rig, world, add, transform, TRANSN_FLAG
 from generateCustomAnimations import vec
 
 @lru_cache(None)
@@ -12,10 +12,10 @@ def catalog():
         row=[]
         for motion,desc,duration in resolved_moves(fighter):
             flags=flag_word(desc[2]); travel=(); socket=()
-            if desc[1]!='dCustomEmpty' and ((flags & 0x80000000) or (fighter=='Ness' and motion.startswith('AttackS4'))):
+            if desc[1]!='dCustomEmpty' and ((flags & TRANSN_FLAG) or (fighter=='Ness' and motion.startswith('AttackS4'))):
                 poses=sample(fighter,desc[0][3:-6],duration+1,flags)
                 size=source_size(fighter)
-                if flags & 0x80000000:
+                if flags & TRANSN_FLAG:
                     travel=tuple(((p.get(1,(0,)*10)[6]-poses[max(i-1,0)].get(1,(0,)*10)[6])*size,
                                   (p.get(1,(0,)*10)[5]-poses[max(i-1,0)].get(1,(0,)*10)[5])*size,
                                  -(p.get(1,(0,)*10)[4]-poses[max(i-1,0)].get(1,(0,)*10)[4])*size) for i,p in enumerate(poses))

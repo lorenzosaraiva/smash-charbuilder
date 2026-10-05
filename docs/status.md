@@ -18,6 +18,10 @@ Checkboxes mean implemented, not tested in every matchup.
 
 ## Gameplay
 
+- [x] Native root-movement flag and regenerated donor normal velocities, including Fox dash attack and Kirby forward smash.
+- [x] MIPS flag-packing, original C playback and live ROM normal movement/recovery checks.
+- [ ] Rendered movement/contact acceptance for the corrected normals.
+
 - [x] Default Build One uses the documented Yoshi starter recipe, checked in the linked ROM.
 - [ ] Rendered playtesting of the complete Yoshi starter recipe.
 

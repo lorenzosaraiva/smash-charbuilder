@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.16 (experimental)** | **Last updated: 2026-10-05**
+**Project version: 0.1.17 (experimental)** | **Last updated: 2026-10-05**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -64,6 +64,10 @@ Presets in this version last for the running ROM session.
 **Build One** now starts with a **Yoshi** body and the requested mixed moveset,
 including **Fox Laser**, **Pikachu Up B**, **Fox Down B** and **Mario Taunt**.
 See the [complete starter recipe](ssb-decomp-re/docs/playing.md#default-build-one).
+
+Borrowed normal attacks now read the native root-movement flag correctly,
+restoring Fox dash attack and Kirby forward-smash travel on Yoshi and other bodies.
+See the [movement checks](ssb-decomp-re/docs/normal-mechanics.md).
 
 Character Lab's **Neutral B** row now offers **Body Move**, **Fox Laser**,
 **Mario Fireball**, **Luigi Fireball**, **Thunder Jolt**, **PK Fire**, **Falcon Punch**,

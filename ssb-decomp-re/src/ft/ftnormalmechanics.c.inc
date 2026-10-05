@@ -68,7 +68,10 @@ static sb32 ftCustomNormalGetTravel(FTStruct *fp, Vec3f *out, sb32 ground)
     if (data->travel == NULL) { out->x = out->y = out->z = 0.0F; return TRUE; }
     frame = (s32)ftCustomMoveGetClock(fp)->frame;
     if (frame < 0) frame = 0;
-    if (frame >= data->count) frame = (ftCustomMoveGetClock(fp)->flags & FTCUSTOMMOVE_FLAG_LOOP) ? frame % (data->count - 1) : data->count - 1;
+    /* Frame zero has no predecessor. Later loop starts must use the sampled
+     * end-to-start delta, not that first-frame zero velocity. */
+    if (frame >= data->count) frame = (ftCustomMoveGetClock(fp)->flags & FTCUSTOMMOVE_FLAG_LOOP) ?
+        1 + (frame - 1) % (data->count - 1) : data->count - 1;
     *out = data->travel[frame];
     if (ground == FALSE) { out->x *= fp->lr; out->z *= fp->lr; }
     return TRUE;
@@ -78,7 +81,9 @@ sb32 ftMainCharBuilderUsesNormalTransN(FTStruct *fp)
 {
     s32 index = ftCustomNormalIndex(fp);
     if (index < 0) return fp->anim_desc.flags.is_use_transn_joint;
-    return (sFTCustomNormalMechanics[index / 33][index % 33].flags & FTANIM_FLAG_TRANSN_JOINT) != 0;
+    /* FTAnimDesc.is_use_transn_joint is bit 30. The legacy *_JOINT macro
+     * labels are reversed; their descriptor values must remain unchanged. */
+    return (sFTCustomNormalMechanics[index / 33][index % 33].flags & 0x40000000) != 0;
 }
 
 sb32 ftMainCharBuilderGetNormalSphere(FTStruct *fp, Mtx44f matrix, Vec3f *size)

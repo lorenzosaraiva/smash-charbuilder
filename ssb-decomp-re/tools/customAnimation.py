@@ -9,6 +9,9 @@ from auditNormalMoves import ROOT, arrays, us_text
 TRACKS = ('ROTX','ROTY','ROTZ','TRAI','TRAX','TRAY','TRAZ','SCAX','SCAY','SCAZ')
 VALUE_SCALE = (512,512,512,16384,4,4,4,4096,4096,4096)
 RATE_SCALE = (512,512,512,16384,32,32,32,8192,8192,8192)
+# FTAnimDesc's actual TransN bit. Legacy *_JOINT macro labels in ftdef.h are
+# reversed for TransN/XRotN; retain their values so original descriptors stay intact.
+TRANSN_FLAG = 0x40000000
 PILOTS = (('Captain','AttackAirLw','FTCaptainAnimAttackAirD',23),
           ('Fox','AttackS3','FTFoxAnimFTilt',5),
           ('Donkey','AttackS4','FTDonkeyAnimFSmash',14))

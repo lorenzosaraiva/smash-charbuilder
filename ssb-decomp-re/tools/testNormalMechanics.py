@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Production normal callbacks, donor identity and clocks on actual 32-bit layouts."""
-import re, subprocess
+import re, struct, subprocess
 from pathlib import Path
 from hostFighterHeaders import prepare
 from generateNormalMechanics import render, catalog
 from customAnimation import source_size
+from elfData import read_elf
 ROOT=Path(__file__).resolve().parents[1]
 
 def function(text,name):
@@ -15,6 +16,17 @@ def function(text,name):
 def functions(file,names):
     text=(ROOT/file).read_text();return ''.join(function(text,n) for n in names.split())
 assert (ROOT/'src/ft/ftnormalmechanics.generated.inc').read_text()==render()
+# Ask the target compiler which bit the native runtime actually reads. Host
+# bitfield packing differs, so reading the union's word on x86 is not an oracle.
+headers=prepare(ROOT,ROOT/'build/normal-host-headers')
+mask_source=ROOT/'build/normal-transn-mask.c'
+mask_source.write_text('#include <ft/fighter.h>\nconst FTAnimDesc sNativeTransNMask = { .flags = { .is_use_transn_joint = TRUE } };\n')
+mask_object=ROOT/'build/normal-transn-mask.o'
+subprocess.run(['clang','--target=mips-unknown-none','-c','-EB','-mabi=32','-march=mips2','-ffreestanding',
+    '-I'+str(headers),'-I'+str(ROOT/'include'),'-I'+str(ROOT/'src'),'-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US',str(mask_source),'-o',str(mask_object)],check=True)
+data,sections,symbols=read_elf(mask_object,'>')
+value,length,index=symbols['sNativeTransNMask']
+native_transn_mask=struct.unpack_from('>I',data,sections[index][4]+value-sections[index][3])[0]
 source=r'''
 #include <ft/fighter.h>
 #include <it/item.h>
@@ -81,6 +93,7 @@ begin=smash.index('    case nFTKindPikachu:');end=smash.index('    case nFTKindN
 source+=smash[:begin]+smash[end:]
 source+=functions('src/ft/ftphysics.c','ftPhysicsSetGroundVelTransferAir ftPhysicsSetGroundVelFriction ftPhysicsApplyGroundVelFriction ftPhysicsApplyGroundVelTransN ftPhysicsApplyGroundFrictionOrTransN ftPhysicsApplyGravityClampTVel ftPhysicsApplyGravityDefault ftPhysicsApplyFastFall ftPhysicsCheckClampAirVelXDec ftPhysicsCheckClampAirVelXDecMax ftPhysicsClampAirVelXStickRange ftPhysicsClampAirVelXStickDefault ftPhysicsApplyAirVelXFriction ftPhysicsApplyAirVelDrift')
 source+='static const f32 source_sizes[12]={'+','.join(str(source_size(f))+'F' for f in ('Mario','Fox','Donkey','Samus','Luigi','Link','Yoshi','Captain','Kirby','Pikachu','Purin','Ness'))+'};\n'
+source+='static const u32 native_transn_mask='+str(native_transn_mask)+'U;\n'
 source+=r'''
 #define CHECK(x) do { if(!(x))return __LINE__; } while(0)
 #define NEAR(a,b) (ABSF((a)-(b))<0.001F)
@@ -100,6 +113,7 @@ int test(void) {
         for(i=0;i<13;i++)gSCManagerCharBuilderSlots[p].attacks[i]=d;
         CHECK(!ftCustomMoveIsNormalDefinition(&sFTCustomGrabMoves[d]));
         for(i=0;i<33;i++){
+            CHECK((sFTCustomNormalMechanics[d][i].travel!=NULL)==((sFTCustomNormalMechanics[d][i].flags&native_transn_mask)!=0));
             CHECK(ftCustomMoveIsNormalDefinition(&sFTCustomMoves[d][i]));
             u32 failures=gFTCustomMoveValidationFailures;
             CHECK(ftCustomMoveBuildScript(&fp,&sFTCustomMoves[d][i])!=NULL);
@@ -127,6 +141,13 @@ int test(void) {
                 g.anim_frame=-1;ftCommonAttack100StartProcUpdate(&g);CHECK(fp.status_id==FTCUSTOMMOVE_JAB_STATUS_START+2);
                 clock=ftCustomMoveGetClock(&fp);CHECK(clock && clock->move==&sFTCustomMoves[d][31]);
                 for(i=0;i<clock->duration*3;i++){f32 f=ftCustomMoveAdvanceClock(&fp,123);CHECK(f>=0 && f<clock->duration);}
+                if(d==7){
+                    clock->frame=0;CHECK(ftCustomNormalGetTravel(&fp,&v,TRUE));CHECK(NEAR(v.x,0));
+                    for(i=1;i<=3;i++){
+                        clock->frame=clock->duration*i;CHECK(ftCustomNormalGetTravel(&fp,&v,TRUE));
+                        CHECK(NEAR(v.x,sFTCustomNormalMechanics[d][31].travel[clock->duration].x));CHECK(ABSF(v.x)>0.1F);
+                    }
+                }
                 fp.motion_vars.flags.flag1=1;fp.status_vars.common.attack100.is_anim_end=TRUE;fp.status_vars.common.attack100.is_goto_loop=FALSE;
                 ftCommonAttack100LoopProcUpdate(&g);CHECK(fp.status_id==FTCUSTOMMOVE_JAB_STATUS_START+3);
             }
@@ -137,6 +158,7 @@ int test(void) {
         fp.status_id=nFTCommonStatusAttackDash;fp.motion_id=nFTCommonMotionAttackDash;
         ftCustomMoveStartClock(&fp,&sFTCustomMoves[d][2],0);clock=ftCustomMoveGetClock(&fp);clock->frame=10;
         CHECK(ftMainCharBuilderGetSpecialAttributes(&fp)==&attrs[d]);
+        CHECK(ftMainCharBuilderUsesNormalTransN(&fp)==((sFTCustomNormalMechanics[d][2].flags&native_transn_mask)!=0));
         CHECK(ftCustomNormalGetTravel(&fp,&v,TRUE));ftPhysicsApplyGroundVelTransN(&g);CHECK(NEAR(fp.physics.vel_ground.x,v.x));
         fp.physics.vel_ground.x=100;fp.coll_data.floor_flags=0;ftPhysicsApplyGroundVelFriction(&g);CHECK(NEAR(fp.physics.vel_ground.x,100-(d+1)));
         fp.physics.vel_air.y=100;fp.physics.vel_air.x=0;ftPhysicsApplyAirVelDrift(&g);CHECK(fp.physics.vel_air.y==100-(d+1));
@@ -149,6 +171,11 @@ int test(void) {
         /* Ness reflection uses source flag window, radius and socket. */
         fp.status_id=nFTCommonStatusAttackS4;fp.motion_id=nFTCommonMotionAttackS4;g.anim_frame=19;
         ftCustomMoveStartClock(&fp,&sFTCustomMoves[d][14],0);fp.special_coll=&bat;fp.motion_vars.flags.flag1=1;
+        CHECK(ftMainCharBuilderUsesNormalTransN(&fp)==((sFTCustomNormalMechanics[d][14].flags&native_transn_mask)!=0));
+        clock=ftCustomMoveGetClock(&fp);clock->frame=12;
+        fp.physics.vel_ground.x=100;ftPhysicsApplyGroundFrictionOrTransN(&g);
+        CHECK(ftCustomNormalGetTravel(&fp,&v,TRUE));
+        CHECK(NEAR(fp.physics.vel_ground.x,ftMainCharBuilderUsesNormalTransN(&fp)?v.x:100-(d+1)));
         ftCommonAttackS4ProcUpdate(&g);CHECK(fp.is_reflect==(d==11));
         CHECK(ftMainCharBuilderGetNormalSphere(&fp,matrix,&size)==(d==11));
         if(d==11){CHECK(NEAR(size.x,300*attrs[d].size) && NEAR(size.y,300*attrs[d].size));CHECK(NEAR(matrix[3][1],-150*attrs[d].size));}

@@ -37,6 +37,7 @@ parser.add_argument('--paired-moves',action='store_true',help='Check native teth
 parser.add_argument('--taunts',action='store_true',help='Check selectable donor taunt durations, cancel windows and Luigi hitbox/contact')
 parser.add_argument('--paired-native',action='store_true',help='Run native grab/throw controls for paired checks')
 parser.add_argument('--normal-mechanics',action='store_true',help='Check all donor jab chains, Link bounce and Ness bat windows on each body')
+parser.add_argument('--normal-movement',action='store_true',help='Check Fox dash and Kirby forward-smash root velocities, facing and recovery on each body')
 parser.add_argument('--special-animations',action='store_true',help='Compare live borrowed-special poses with native-engine references')
 parser.add_argument('--charge-animations',action='store_true',help='Check partial/full Giant Punch and Charge Shot pose transitions')
 parser.add_argument('--mechanic',type=int,choices=(1,3,5,6,7,8,9,10,11),help='Exercise remaining special mechanics across bodies')
@@ -44,6 +45,7 @@ parser.add_argument('--mechanic-kind',choices=('hi','lw'),default='hi')
 parser.add_argument('--thunder-contact',action='store_true',help='Place the live native Thunder head in its owner-contact box to check the hit branch')
 parser.add_argument('--falcon-contact',action='store_true',help='Place the CPU in the live Falcon Dive catch volume to check native capture/throw')
 args=parser.parse_args()
+if args.normal_movement:args.normal_mechanics=True
 if args.charge_animations:
     args.first_choice=8;args.cases=2;args.special_animations=True
 if args.mechanic is not None:args.superjump=args.mechanic
@@ -178,6 +180,7 @@ thunder_contact_done=False
 falcon_contact_done=False
 falcon_flight_statuses=set()
 normal_trace=[];normal_contact=False;normal_bounced=False;normal_reflect_contact=False;normal_reflected=False
+normal_movement_trace=[]
 FT_LINK_REHIT=int(re.search(r'#define FTCOMMON_ATTACKAIRLW_LINK_REHIT_TIMER\s+(\d+)',(ROOT/'src/ft/ftcommon.h').read_text())[1])
 animation_seen=set();animation_samples=0;animation_errors=[]
 motion_ids=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
@@ -330,6 +333,11 @@ def frame_callback(frame):
         mask=sum(1<<i for i in range(4) if u32(fp+attack_off+i*attack_size+attack_state_off))
         record=(status,u32(fp+motion_off),f32(gobj+gobj_frame_off),mask,u32(fp+flag1_off),f32(fp+physics_off+vel_air_off+4),u32(fp+rehit_off),u32(fp+special_coll_off),bool(u8(fp+reflect_flag_off)&reflect_flag_mask))
         normal_trace.append(record)
+        if args.normal_movement:
+            clock=addr('sFTCustomMoveClocks')+u8(fp+port_off)*44
+            source_frame=f32(clock+24) if u32(clock)==fp and u32(clock+12)==status else record[2]
+            normal_movement_trace.append((u32(addr('dSYTaskmanUpdateCount')),status,source_frame,
+                f32(fp+physics_off+vel_ground_off),f32(root),s32(fp+lr_off),s32(fp+hitlag_off)))
         if normal_contact and status==common_statuses['nFTCommonStatusAttackAirLw'] and mask and not normal_bounced:
             cpu=opponent();cg=u32(cpu+gobj_off) if cpu else 0
             if cg:
@@ -679,6 +687,62 @@ try:
             assert u32(addr('sFTCustomMoveClocks'))!=fighter(),'Stale taunt clock after interruption/recovery'
             if case==4:w32(opponent()+pkind_off,1)
             print(f'PASS: taunt body {body}, donor {case}, duration {taunt["duration"]}, cancel {cancel}, source hit windows/fields/contact and cleanup.',flush=True)
+        elif args.normal_movement:
+            from generateNormalMechanics import catalog as normal_movement_catalog
+            check(core.CoreDoCommand(17,4,C.byref(C.c_int(300))))
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            frames(200) # Finish GO before placing either live fighter.
+            fp=fighter();cpu=opponent()
+            root=u32(u32(fp+gobj_off)+obj_off)+position_off
+            cpu_root=u32(u32(cpu+gobj_off)+obj_off)+position_off
+            # A human dummy with no input stays behind the attacker; CPU ledge
+            # recovery/respawn must not introduce contact or jostle into travel.
+            w32(cpu+pkind_off,0);keys_port(u8(cpu+port_off),0)
+            origin_y=f32(root+4)
+            for donor,variant,attack,status_name in ((1,2,1,'AttackDash'),(8,14,5,'AttackS4')):
+                w8(slot+2+attack,donor)
+                movement=normal_movement_catalog()[donor][variant]
+                assert movement['travel'] and sum(v[0] for v in movement['travel'])>100
+                for facing in (1,-1):
+                    keys(0);wait(lambda:u32(fp+status_off)==common_statuses['nFTCommonStatusWait'],'Normal movement idle')
+                    for offset,value in ((0,-1800*facing),(4,origin_y),(8,0)):
+                        wf32(cpu_root+offset,value);wf32(cpu+coll_prev_off+offset,value)
+                        wf32(cpu+physics_off+vel_air_off+offset,0)
+                    wf32(cpu+physics_off+vel_ground_off,0)
+                    # Position only is a fixture; real input chooses facing and starts attacks.
+                    for offset,value in ((0,-1000*facing),(4,origin_y),(8,0)):
+                        wf32(root+offset,value);wf32(fp+coll_prev_off+offset,value)
+                        wf32(fp+physics_off+vel_air_off+offset,0)
+                    wf32(fp+physics_off+vel_ground_off,0)
+                    keys(((35*facing)&255)<<16);frames(5);keys(0);frames(15)
+                    assert s32(fp+lr_off)==facing,('Normal facing',body,donor,facing)
+                    normal_movement_trace.clear()
+                    if attack==1:
+                        keys(((80*facing)&255)<<16)
+                        wait(lambda:u32(fp+status_off)==common_statuses['nFTCommonStatusRun'],'Run before dash attack')
+                        keys((((80*facing)&255)<<16)|0x80)
+                    else:keys((((80*facing)&255)<<16)|0x80)
+                    target=common_statuses['nFTCommonStatus'+status_name]
+                    wait(lambda:any(r[1]==target for r in normal_movement_trace),'Normal attack started')
+                    keys(0)
+                    wait(lambda:u32(fp+status_off)==common_statuses['nFTCommonStatusWait'],'Normal donor recovery')
+                    rows={int(r[2]):r for r in normal_movement_trace if r[1]==target and r[6]==0}
+                    assert len(rows)>=movement['duration']-3,('Normal movement coverage',body,donor,facing,sorted(rows))
+                    distance=0
+                    for tick,r in rows.items():
+                        assert 0<=tick<len(movement['travel']),('Normal movement frame',r)
+                        expected=movement['travel'][tick][0]
+                        assert abs(r[3]-expected)<.01,('Normal donor velocity',body,donor,facing,tick,r[3],expected)
+                        distance+=r[3]
+                    assert distance>100,('Stationary borrowed attack',body,donor,facing,distance)
+                    assert max(rows)>=movement['duration']-2,('Normal recovery duration',body,donor,facing,max(rows))
+                    ordered=sorted(rows.values())
+                    for previous,current in zip(ordered,ordered[1:]):
+                        if current[0]!=previous[0]+1 or current[2]!=previous[2]+1:continue
+                        assert abs(current[4]-previous[4]-current[3]*facing)<.1,('Normal world displacement',body,donor,facing,previous,current)
+                    assert u32(addr('sFTCustomMoveClocks'))!=fp,('Stale normal movement clock',body,donor)
+                    print(f'PASS: {ROSTER[donor]} {status_name}, body {body}, facing {facing}: {len(rows)} source velocities/world displacement, donor duration and native recovery.',flush=True)
+            w32(cpu+pkind_off,1)
         elif args.normal_mechanics:
             # Cap input sampling so short pulses cannot disappear between
             # Python's polls on fast hosts. Speed affects wall time only.
@@ -1086,7 +1150,7 @@ try:
         w32(addr('sSC1PTrainingModeMenu'),5);pulse(0x80)
         wait(lambda:u8(scene)==57 and u32(addr('sMNOptionBuilderMode'))==2,'Return to editor')
         assert u32(addr('sMNOptionBuilderSlot'))==preset and u32(addr('sMNOptionBuilderEntry'))==24
-        action_label='taunts' if args.taunts else 'normal mechanics' if args.normal_mechanics else 'normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None or args.superjump is not None else 'B/store/B'
+        action_label='taunts' if args.taunts else 'normal movement' if args.normal_movement else 'normal mechanics' if args.normal_mechanics else 'normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None or args.superjump is not None else 'B/store/B'
         print(f'PASS: body {body}, neutral {choice}, preset {preset}: Test -> CSS -> stage -> Training -> {action_label} -> same editor.',flush=True)
     if not args.four_mb:
         print('PASS: Training heap headroom at least',min(minima),'bytes.',flush=True)
