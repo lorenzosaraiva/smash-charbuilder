@@ -1,5 +1,28 @@
 # Changes
 
+## 0.1.13 - 2026-10-04: Shared special animations
+
+- Reserve an Expansion Pak pose bank so the expanded catalog cannot push game
+  overlays into video buffers; add link/ROM memory boundary checks.
+
+- Extend the common retargeter to all implemented special adapters on all twelve
+  bodies: 40 neutral phases, 99 Up/Down B phases and 16 helpless/landing recovery
+  entries. The catalog contains 429 distinct normal/special clips.
+- Keep source gameplay clocks and donor collision/travel/socket paths independent
+  of pose loops, source body proportions, charge speed and directional flight.
+- Fix charge loops using a permanently positive animation countdown: donor cycle
+  boundaries now advance Giant Punch charge/store/release and Charge Shot loops.
+- Fire stored full Giant Punch after donor startup, and keep frame-zero Up B timing
+  by avoiding duplicate borrowed Mario/Luigi playback.
+- Restore safe Reflector, Sing, PSI Magnet, Final Cutter and Falcon Punch effects;
+  map visual joints by semantic role and retain standard interruption/hitlag cleanup.
+- Add standalone native blaster, extending tongue and Stone props and a held
+  Charge Shot orb. Preload required assets and keep prop scales outside body rigs.
+- Add production selector/loop/recovery tests, original-engine pose/prop comparisons,
+  live ROM pose sampling and linked visual-registry checks. Rendered acceptance,
+  full voice/color polish, tethers and paired victim choreography remain pending.
+- Build and publish the checked decomp ROM; the separate Remix ROM is unchanged.
+
 ## 0.1.12 - 2026-10-04: Donor normal mechanics
 
 - Make jab-chain availability, buffering and third/rapid phases follow the donor

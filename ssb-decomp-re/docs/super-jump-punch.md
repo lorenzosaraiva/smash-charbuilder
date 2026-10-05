@@ -1,10 +1,10 @@
 # Mario and Luigi Up B
 
-Version 0.1.9, updated 2026-10-04. This milestone is decomp only.
+Version 0.1.13, updated 2026-10-04. This milestone is decomp only.
 
 Choose any original body, set **Up B** to **Mario** or **Luigi**, then Test in
 Training. Matching body/donor combinations retain native behavior. Foreign
-bodies use a temporary idle/falling pose with independent donor gameplay.
+bodies use shared retargeted phase/recovery poses with independent donor gameplay.
 
 ## Implemented gameplay
 
@@ -31,7 +31,14 @@ donor's 25-tick recovery clock independently of the body's animation length.
 Per-player recovery ownership checks fighter identity and generation. Ordinary
 status changes, damage, scene changes and respawn cannot reuse the prior action's
 travel, steering or recovery physics. Body hurtboxes and ordinary movement remain
-native outside this move. Donor effects/voices and animation retargeting remain pending.
+native outside this move. Shared animation retargeting and safe source sound/effect
+events are implemented in 0.1.13; complete voice/color and rendered polish remain pending.
+
+Borrowed startup plays source frame zero once. The native extra startup playback
+is skipped only for an active borrowed visual, avoiding a second donor-clock
+advance. Ground/air live pose and recovery regressions passed with Mario on DK,
+Samus and Luigi, and Luigi on DK and Samus. These newer checks use Dream Land so
+the stage cannot interrupt the finisher before its source frame.
 
 ## Automated checks
 
@@ -75,4 +82,5 @@ the main menu, plus a Ness Up B steering/self-contact/recovery regression on DK.
 - [ ] Mario multihits and final hit against an opponent and shield.
 - [ ] Steering/facing changes, slopes, platforms, stage edges and cliff catch.
 - [ ] Damage interruption, hitlag, KO/respawn, Training reset and four-player use.
-- [ ] Borrowed Up B animation, coin/fire visuals and donor sound events.
+- [x] Borrowed Up B/recovery poses and safe source sound/effect events.
+- [ ] Complete coin/fire/color/voice polish and rendered acceptance.

@@ -44,6 +44,7 @@ python3 tools/testSuperJump.py
 python3 tools/testDirectSpecials.py
 python3 tools/testRemainingSpecials.py
 python3 tools/testNormalMechanics.py
+python3 tools/testSpecialAnimations.py
 python3 tools/testNativeAnimation.py
 python3 tools/verifyCustomMoveRom.py
 python3 tools/packageRelease.py

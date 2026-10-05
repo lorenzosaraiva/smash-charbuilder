@@ -2,8 +2,8 @@
 
 The decomp ROM offers Body Move plus all eleven original neutral donors other
 than Kirby's copy system. Matching donor bodies keep their native move. Foreign
-bodies use their own neutral pose with a separate donor action clock, source
-collision path/values and native weapon or capture services.
+bodies use shared retargeted donor phase poses with a separate donor action clock,
+source collision path/values and native weapon or capture services.
 
 | Choice | What follows the donor |
 | --- | --- |
@@ -40,12 +40,11 @@ character selection finished loading. Training/VS selection and matches now use
 a separate 4 MB arena in the upper bank, clear of overlays and framebuffers.
 The editor shows the requirement and blocks Test/Play VS with only 4 MB.
 
-Most visible poses still belong to the body. Samus's held charging orb and donor
-voice/effect events are not yet reproduced. Egg Lay positions the victim using
-the donor tongue socket, then hands off to the native egg state; exact victim
-rotation and matching attacker animations remain pending. Body hurtboxes remain
-native. Up B/Down B now use independent donor phase clocks; broader fidelity
-remains experimental. See [special timing notes](special-timing.md).
+Version 0.1.13 adds shared donor phase poses, charge loops and a held Samus orb,
+plus safe source effects/sounds and separate blaster/tongue props. Egg Lay keeps
+its donor capture socket and native egg state; exact paired victim rotation is
+still pending. Body hurtboxes remain native. See [special animations](special-animations.md)
+and [special timing](special-timing.md) for coverage and rendered-test limits.
 
 Host tests cover all six new foreign-body choices, ground/air and four player
 slots, stored charge, native fallbacks, boomerang identity and egg handoff.

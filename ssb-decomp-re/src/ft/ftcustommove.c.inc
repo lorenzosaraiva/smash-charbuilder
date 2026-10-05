@@ -22,7 +22,8 @@ typedef struct FTCustomMoveClock
 #endif
 } FTCustomMoveClock;
 
-static FTCustomMoveClock sFTCustomMoveClocks[GMCOMMON_PLAYERS_MAX];
+/* Named in the ROM for live pose/clock verification; mutation stays private. */
+FTCustomMoveClock sFTCustomMoveClocks[GMCOMMON_PLAYERS_MAX];
 
 static FTCustomMoveClock* ftCustomMoveGetClock(FTStruct *fp)
 {
@@ -94,11 +95,18 @@ static f32 ftCustomMoveEventFrame(FTStruct *fp, FTMotionScript *ms, f32 native_f
 {
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
     if (clock == NULL) return native_frame;
+#ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
+    if ((ms == &fp->motion_scripts[0][1]) || (ms == &fp->motion_scripts[1][1])) return clock->frame;
+#endif
     return ((ms == &fp->motion_scripts[0][2]) || (ms == &fp->motion_scripts[1][2])) ? clock->frame : clock->native_frame;
 }
 
 static f32 ftCustomMoveEventSpeed(FTStruct *fp, FTMotionScript *ms, f32 anim_speed)
 {
+#ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
+    if ((ftCustomMoveGetClock(fp) != NULL) && ((ms == &fp->motion_scripts[0][1]) || (ms == &fp->motion_scripts[1][1])))
+        return ftCustomMoveGetClock(fp)->speed;
+#endif
     if ((ftCustomMoveGetClock(fp) != NULL) &&
         ((ms == &fp->motion_scripts[0][2]) || (ms == &fp->motion_scripts[1][2])))
     {

@@ -72,5 +72,23 @@ def verify_shared_poses(native_poses):
     expected=tuple(t+d*target[0]['translate'][1] for t,d in zip(target[0]['translate'],roots[frame]))
     error=max(abs(a-b) for a,b in zip(observed,expected));root_error=max(root_error,error)
     assert error<0.055,(c['symbol'],body,frame,'root translation',error)
+ from specialAnimationAttachments import attachment,frames as prop_frames
+ prop_checks=0
+ for phase,index in special_rows():
+  spec=attachment(phase)
+  if spec is None:continue
+  joint=spec[0];bones,_=rig(phase['fighter'],phase['flags'])
+  poses=native_poses[(phase['fighter'],phase['name'],phase['flags'])]
+  for frame,(r,t,s,active) in enumerate(prop_frames(phase)):
+   pose=poses[frame]
+   unit={j:(*v[:7],1,1,1) for j,v in pose.items()}
+   native_r,_=world(bones,unit)[joint];_,native_t=world(bones,pose)[joint]
+   size=source_size(phase['fighter'])
+   assert max(abs(a-b*size) for a,b in zip(t,native_t))<0.003,(phase['phase'],'prop translation',frame)
+   assert max(abs(a-b*size) for a,b in zip(s,pose[joint][7:10]))<0.003,(phase['phase'],'prop scale',frame)
+   observed_r=rotation(r)
+   assert max(abs(observed_r[i][j]-native_r[i][j]) for i in range(3) for j in range(3))<0.0001,(phase['phase'],'prop rotation',frame)
+   prop_checks+=1
+ print(f'PASS: {prop_checks} native blaster/tongue/Stone attachment transforms, including tongue extension scales, match original C poses.')
  assert cursor==len(raw),(cursor,len(raw))
  print(f'PASS: {len(cases)} shared clips on all 12 bodies, {checks} runtime joint-world orientations, original C inverse-trig and native donor poses; max matrix error {maximum:.7f}, root error {root_error:.7f}, scalar compression error {scalar_error:.7f}.')

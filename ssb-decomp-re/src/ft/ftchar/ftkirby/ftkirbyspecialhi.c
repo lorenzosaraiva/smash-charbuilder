@@ -12,11 +12,6 @@ void ftKirbySpecialHiUpdateEffect(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
 
-    if (ftMainCharBuilderIsSpecialAdapter(fighter_gobj) != FALSE)
-    {
-        fp->motion_vars.flags.flag1 = fp->motion_vars.flags.flag2 = 0;
-        return;
-    }
     if (fp->motion_vars.flags.flag1 != 0)
     {
         switch (fp->motion_vars.flags.flag1)

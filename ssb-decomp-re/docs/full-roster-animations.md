@@ -33,14 +33,16 @@ Optional joints absent from the initialized body are skipped; missing required
 joints reject the whole pose and increment the validation counter.
 
 Unmapped ears, tails, hats and weapon/capture attachments retain native local
-bind poses and follow their posed parent. No donor mesh or weapon is attached.
+bind poses and follow their posed parent. Normal attacks do not add donor meshes or weapons.
 Donor animated squash/stretch is omitted from cosmetic retargeting; it remains
 included in independently evaluated collision geometry. This is a general
 retarget, with mesh-specific polish and rendered acceptance still pending.
 
-Special, charge, tether-grab and paired attacker/victim throw animations remain
-outside this normal-attack milestone. Those adapters retain their existing
-timing and temporary/body poses; Kirby copy remains excluded.
+Version 0.1.13 extends this catalog to special startup, charge loops, transitions,
+release and recovery. See [special animations](special-animations.md). Special
+props are separate effect objects; native body proportions and donor gameplay
+paths stay independent. Tethers, paired victim choreography and Kirby copy are
+still outside this milestone.
 
 ## Shared data and playback
 

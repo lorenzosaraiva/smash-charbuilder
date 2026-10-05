@@ -32,6 +32,10 @@ typedef struct FTCustomAnimationBone
 typedef struct FTCustomAnimationRig { const FTCustomAnimationBone *bones; s32 count; } FTCustomAnimationRig;
 #include "ftcustomanimationshared.generated.inc"
 u32 gFTCustomAnimationValidationFailures;
+#ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
+static const FTCustomAnimationClip* ftCustomAnimationGetSpecialClip(FTStruct*, s32*);
+static void ftMainCharBuilderStartSpecialVisualScript(FTStruct*, f32);
+#endif
 
 static FTCustomAnimationQuat ftCustomAnimationMultiply(FTCustomAnimationQuat a, FTCustomAnimationQuat b)
 {
@@ -106,7 +110,12 @@ static const FTCustomAnimationClip* ftCustomAnimationGetClip(FTStruct *fp, s32 *
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
     const FTCustomAnimationClip *clip;
     u32 offset, index;
-    if ((clock == NULL) || (fp->fkind < 0) || (fp->fkind >= 12) || (ftCustomMoveGetSlot(fp) == NULL)) return NULL;
+    if ((fp->fkind < 0) || (fp->fkind >= 12) || (ftCustomMoveGetSlot(fp) == NULL)) return NULL;
+#ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
+    clip = ftCustomAnimationGetSpecialClip(fp, frame);
+    if (clip != NULL) return clip;
+#endif
+    if (clock == NULL) return NULL;
     offset = (u32)clock->move - (u32)sFTCustomMoves;
     if ((offset >= sizeof(sFTCustomMoves)) || (offset % sizeof(FTCustomMoveDefinition))) return NULL;
     index = offset / sizeof(FTCustomMoveDefinition);

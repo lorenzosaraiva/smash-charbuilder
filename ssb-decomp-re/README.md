@@ -3,10 +3,12 @@
 Pick a fighter's body, mix in moves from the other Smash 64 characters, and try
 your creation against friends or a CPU. A little experiment that got out of hand.
 
-Version **0.1.12**, updated **2026-10-04**. All twelve bodies now perform all twelve
+Version **0.1.13**, updated **2026-10-04**. All twelve bodies now perform all twelve
 donors' normal attacks through shared motion curves and body skeleton maps.
 Hitboxes and timing follow the donor independently of body proportions. This is
-still experimental; special, tether and paired throw animations need more work.
+still experimental; rendered polish, tethers and paired grab/throw animations
+need more work. Implemented specials now share donor poses, phase transitions,
+charge loops, recovery and native effects/props across all twelve bodies.
 
 Mario/Luigi Up B now borrow source hitbox paths, movement, steering, hit phases
 and helpless/landing recovery. See [coverage and testing](docs/super-jump-punch.md).
@@ -58,7 +60,7 @@ Creator builds currently last for the running ROM session.
 - Four builds, assigned independently to human or CPU slots.
 - Training hitbox view, quick return to the editor, unlockable fighters and Item Switch.
 - Neutral B: **Body Move** and every non-copy original neutral donor, including charging, returning boomerangs and Egg Lay. See [controls and limits](docs/neutral-specials.md); Up B/Down B remain experimental.
-- Up/Down B: donor clocks, collision paths, projectile/capture mechanics, movement, absorption/reflection and Stone armor. Special poses and rendered acceptance remain pending. See [coverage and limits](docs/special-timing.md).
+- Up/Down B: donor clocks, collision paths, projectile/capture mechanics, movement, absorption/reflection and Stone armor. Shared special phase poses are implemented; rendered acceptance remains pending. See [coverage and limits](docs/special-timing.md).
 - **8 MB RDRAM / Expansion Pak required**: Training/VS selection and match resources use the upper memory bank.
 - All twelve donor normal animations on all twelve bodies, angled variants,
   aerial landings and donor jab phases on every body. See the
@@ -69,7 +71,8 @@ Creator builds currently last for the running ROM session.
 
 The [checkbox list](docs/status.md) covers what is implemented, what still needs
 playtesting and what is missing. In particular, throws currently copy donor
-damage/knockback with body choreography; donor special animations remain unfinished.
+damage/knockback with body choreography. Shared special poses are implemented;
+rendered animation/contact acceptance remains pending.
 
 ## Build a ROM inside this repo
 
@@ -107,5 +110,5 @@ and the Smash 64 decompilation community's work. The original
 [gameplay](docs/custom-move-roster.md) / [animation](docs/animation-retargeting-pilot.md)
 notes are kept for people who want to dig into the implementation.
 
-Borrowed Up/Down B now use donor phase clocks and temporary idle/falling poses.
-See [special timing and remaining limits](docs/special-timing.md).
+Borrowed Up/Down B now use donor phase clocks and shared retargeted phase poses.
+See [special animations](docs/special-animations.md) and [special timing](docs/special-timing.md).

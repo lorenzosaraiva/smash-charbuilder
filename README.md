@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.12 (experimental)** | **Last updated: 2026-10-04**
+**Project version: 0.1.13 (experimental)** | **Last updated: 2026-10-04**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -13,11 +13,8 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
 
-The latest decomp update adds donor jab chains on every body, Link's down-air
-bounce, Ness's bat reflection, and donor normal movement/angle/landing behavior.
-See [normal mechanics and checks](ssb-decomp-re/docs/normal-mechanics.md).
-The [remaining special mechanics](ssb-decomp-re/docs/remaining-special-mechanics.md)
-are also implemented; special poses and rendered playtesting still need work.
+The latest decomp update extends shared animations to all implemented specials: startup, charge loops, transitions, release and recovery on all twelve bodies. It also adds safe native special effects, blaster/tongue/Stone props and a held charge orb. Gameplay keeps its donor timing and collision paths.
+See [special animations and checks](ssb-decomp-re/docs/special-animations.md). Rendered playtesting and paired victim/tether animations remain on the checklist.
 
 **[How to play Character Lab](ssb-decomp-re/docs/playing.md)** |
 **[Done / not done](docs/status.md)** | **[Build guide](docs/building.md)** |
@@ -61,21 +58,21 @@ Character Lab's **Neutral B** row now offers **Body Move**, **Fox Laser**,
 **Pound**, **Giant Punch**, **Charge Shot**, **Boomerang** and **Egg Lay**.
 These donors work across all twelve bodies with source timing and collision data,
 charge storage, returning boomerangs and capture/egg handoff. Borrowed animations
-still use body poses; the new choices are decomp only. See the
+now adapt donor poses to the body; the new choices are decomp only. See the
 [neutral controls and limits](ssb-decomp-re/docs/neutral-specials.md).
 
-Borrowed **Up B/Down B** use donor phase clocks with temporary idle/falling poses.
+Borrowed **Up B/Down B** use donor phase clocks and shared donor poses.
 DK Down B, DK Up B, Mario/Luigi Tornado and Falcon Kick now have source collision
 paths and numeric attack values independent of the body pose. Falcon Kick uses
 source movement; spin/Tornado physics use donor values. Ness Up B uses its donor
 spawn socket and 28-tick self-launch timeline, with independent weapon state.
 The remaining specials now use native mechanics and source paths/sockets too;
-visible animations and rendered acceptance need more work. See the
+rendered animation/contact acceptance remains pending. See the
 [special timing notes](ssb-decomp-re/docs/special-timing.md).
 
 Mario/Luigi **Up B** now use their original ground/air collision paths, distinct
 hit phases, donor movement and steering, helpless recovery physics and 25-tick
-landing recovery on other bodies. Visible special animations remain temporary.
+landing recovery on other bodies, with shared rise/fall/landing animations.
 See the [Super Jump Punch guide](ssb-decomp-re/docs/super-jump-punch.md).
 
 Training and VS now allocate their heaps in the Expansion Pak bank, fixing the
@@ -88,8 +85,8 @@ Every normal donor attack now uses its original hitbox path, size, active timing
 damage and knockback on the other bodies, including angled variants and landing
 hitboxes. **All twelve bodies now perform all twelve donors' normal attacks**,
 including angled variants, aerial landings and body-supported jab phases. Shared
-donor curves adapt to each body's skeleton and proportions. Specials and throws
-still need their borrowed animations. See the
+donor curves adapt to each body's skeleton and proportions. Implemented specials
+share that catalog; paired grab/throw choreography remains pending. See the
 [full animation guide](ssb-decomp-re/docs/full-roster-animations.md), the
 [collision guide](ssb-decomp-re/docs/collision-trajectories.md) and
 [checklist](ssb-decomp-re/docs/status.md). Broader in-game acceptance is pending.

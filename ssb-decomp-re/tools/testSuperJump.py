@@ -79,6 +79,7 @@ void ftMainSetStatus(GObj *g,s32 status,f32 begin,f32 speed,u32 flags) {
     ftMainCharBuilderStartSuperJumpLandingClock(fp,begin);
 }
 void ftMainPlayAnimEventsAll(GObj *g) {}
+sb32 ftMainCharBuilderIsSpecialVisual(FTStruct *fp) { return ftMainCharBuilderActivePath(fp)!=NULL; }
 void mpCommonSetFighterAir(FTStruct *fp) { fp->ga=nMPKineticsAir; }
 sb32 ftParamCheckSetFighterColAnimID(GObj *g,s32 id,s32 ticks) { return FALSE; }
 void ftPublicTryPlayFallSpecialReact(GObj *g) {}

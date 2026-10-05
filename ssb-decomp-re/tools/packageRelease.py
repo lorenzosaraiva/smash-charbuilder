@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.12',
+        'version': '0.1.13',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -67,8 +67,9 @@ Version: {metadata['version']} | Built (UTC): {metadata['built_at'][:10]}
 Local uncommitted changes: {metadata['source_dirty'] if metadata['source_dirty'] is not None else 'unknown'}
 
 Mix normal attacks, grabs and throw parameters across the twelve original fighters.
-Normal animations follow the selected donor on every body. Special and paired
-throw animations still need work.
+Normal and implemented special animations follow the selected donor on every
+body, including charge loops, phase transitions, recovery and required props.
+Rendered polish and paired grab/throw choreography still need work.
 
 1. Enable 8 MB RDRAM / Expansion Pak, then open `character-lab.z64`.
 2. Go to Options -> Character Lab and select a build with A.
@@ -85,14 +86,15 @@ Thunder Jolt, PK Fire, Falcon Punch, Pound, Giant Punch, Charge Shot, Boomerang
 and Egg Lay. The projectiles keep native weapon behavior,
 donor spawn positions and firing/recovery timing on all original bodies. Landing
 and edge transitions continue the clock without a second shot. Borrowed neutral
-animations, charge-orb visuals and donor effects/voices remain pending.
+phase poses, charge loops, native props and a held charge orb are implemented;
+complete voice/color polish and rendered acceptance remain pending.
 Giant Punch/Charge Shot charge on ground: B/A releases, Z or a ground roll stores.
 A fully stored charge fires on the next B; airborne Charge Shot fires immediately.
 Boomerang returns/catches natively; Egg Lay captures into the native egg state.
 Training/VS and all opening movie scenes now use the extra memory bank.
 This fixes the preview allocation freeze and the black-screen cold-boot intro overflow.
 These new choices are decomp only; rendered projectile acceptance is pending.
-Borrowed Up/Down B use source phase clocks with temporary idle/falling poses.
+Borrowed Up/Down B use source phase clocks and shared retargeted phase poses.
 DK Down B keeps its original startup/slap/recovery and repeated hit windows;
 tap B during a cycle to queue another. Ness Up B now loads its wave/trail models
 on foreign bodies and keeps separate trail state, fixing the freeze.
@@ -100,11 +102,11 @@ DK Up B, Mario/Luigi Tornado and Falcon Kick now keep original donor collision
 paths and numeric values. Falcon Kick uses source movement; spin/Tornado use
 donor aerial physics. Foreign Tornado rise state resets on landing/respawn.
 Ness uses its source projectile socket and native 28-tick self-launch clock.
-Special poses/effects and rendered acceptance remain pending.
+Safe native special effects and shared phase poses are implemented; rendered acceptance remains pending.
 Mario/Luigi Up B now use original donor collision paths and distinct hit phases,
 source movement/steering, donor helpless physics and 25-tick landing recovery.
 Luigi retains his original 25-damage opening sweetspot and weak continuation.
-Visible Up B poses remain temporary; rendered contact/ledge acceptance is pending.
+Shared Up B and recovery poses are implemented; rendered contact/ledge acceptance is pending.
 Link Spin Attack, Samus Screw Attack and Rest now preserve source collision
 paths, hit fields, timing and movement. Grounded Spin Attack keeps its native
 expanding weapon and 40-frame ending. Screw Attack keeps distinct ground/air
@@ -125,12 +127,12 @@ mixed builds. Part-intangibility follows donor timing on native body hurtboxes.
 Grabs keep native release setup, and interrupted Egg Lay uses original escape
 descriptors. With 4 MB, startup skips the intro and lab gameplay stays blocked.
 
-Special animations and rendered contact acceptance remain pending.
+Shared special animations are implemented; rendered contact acceptance remains pending.
 Throws use donor damage and
 knockback with body animations; DK skips cargo for a non-DK forward throw.
 All twelve bodies now perform all twelve donor normal attacks, including angled
 variants, aerial landings and donor jab phases on every body. Shared curves adapt
-motion to the body skeleton. Special, tether and paired throw animations remain pending.
+motion to the body skeleton. Special phase animations also use the shared catalog. Tether and paired victim/throw animations remain pending.
 Original donor collision paths now cover every normal attack on every foreign
 body, including angled variants, weapon/tail paths, multihits, landing collisions
 and donor jab phases on every body. Size, timing, damage and knockback follow the donor.

@@ -146,6 +146,10 @@ void ftManagerAllocFighter(u32 data_flags, s32 allocs_num)
     bzero(sFTManagerStructsAllocBuf, sizeof(FTStruct) * allocs_num);
 
     ftMainCharBuilderResetNeutralAll();
+    {
+        extern void ftMainCharBuilderResetSpecialVisualsAll(void);
+        ftMainCharBuilderResetSpecialVisualsAll();
+    }
 
     for (i = 0; i < (allocs_num - 1); i++)
     {
@@ -219,10 +223,26 @@ void ftManagerAllocFighter(u32 data_flags, s32 allocs_num)
  * lower-bank overlays, subsystem and framebuffers. */
 void syTaskmanUseExpansionArena(SYTaskmanSceneSetup *scene)
 {
+#ifdef REGION_US
+    extern u8 charbuilder_animation_bank_ROM_START[], charbuilder_animation_bank_VRAM_END[];
+    extern u8 sFTCustomAnimationKeys[];
+    static sb32 pose_bank_loaded;
+#endif
     if (osMemSize >= 0x800000)
     {
+#ifdef REGION_US
+        if (!pose_bank_loaded)
+        {
+            syDmaReadRom((uintptr_t)charbuilder_animation_bank_ROM_START, sFTCustomAnimationKeys,
+                (uintptr_t)charbuilder_animation_bank_VRAM_END - (uintptr_t)sFTCustomAnimationKeys);
+            pose_bank_loaded = TRUE;
+        }
+        scene->arena_start = (void*)(((uintptr_t)charbuilder_animation_bank_VRAM_END + 63) & ~63);
+        scene->arena_size = 0x80800000 - (uintptr_t)scene->arena_start;
+#else
         scene->arena_start = (void*)0x80400000;
         scene->arena_size = 0x400000;
+#endif
     }
 }
 
@@ -445,6 +465,13 @@ static sb32 ftManagerIsCharBuilderSlotActive(s32 slot_id)
     return FALSE;
 }
 
+static void ftManagerSetupCharBuilderPropKind(s32 kind)
+{
+    FTData *data = dFTManagerDataFiles[kind];
+    ftManagerSetupFileSpecial(data->p_file_model, data->file_model_id);
+    ftManagerSetupFileMainKind(kind);
+}
+
 static sb32 ftManagerCharBuilderSpecialHiNeedsMain(s32 fkind)
 {
     return (fkind >= nFTKindPlayableStart) && (fkind <= nFTKindPlayableEnd);
@@ -500,8 +527,15 @@ void ftManagerSetupFilesPlayablesAll(void)
             }
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_hi);
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_lw);
+            if (gSCManagerCharBuilderSlots[i].special_lw == nFTKindKirby) ftManagerSetupCharBuilderPropKind(nFTKindKirby);
             switch (gSCManagerCharBuilderSlots[i].special_n)
             {
+            case nSCCharBuilderNeutralFoxLaser:
+                ftManagerSetupCharBuilderPropKind(nFTKindFox);
+                break;
+            case nSCCharBuilderNeutralFalconPunch:
+                ftManagerSetupFilesSpecialKind(nFTKindCaptain);
+                break;
             case nSCCharBuilderNeutralMarioFireball:
                 ftManagerSetupFilesSpecialKind(nFTKindMario);
                 break;
@@ -525,6 +559,7 @@ void ftManagerSetupFilesPlayablesAll(void)
             case nSCCharBuilderNeutralEggLay:
                 /* Native egg shell and breakout effects live in Special3. */
                 ftManagerSetupFilesSpecialKind(nFTKindYoshi);
+                ftManagerSetupCharBuilderPropKind(nFTKindYoshi);
                 break;
             }
         }

@@ -77,6 +77,11 @@ static void ftMainCharBuilderStartNeutral(GObj *fighter_gobj, const FTCustomMove
     sFTCharBuilderNeutralStartingOwner = NULL;
     /* SetStatus already played the first frame of the body pose. */
     ftCustomMoveStartClock(fp, move, frame_begin + 1.0F);
+#ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
+    ftMainCharBuilderStartSpecialVisualScript(fp, frame_begin);
+    ftCustomAnimationApplyPose(fp);
+    ftParamsUpdateFighterPartsTransform(fp->joints[nFTPartsJointTopN]);
+#endif
     for (i = 0; i < 2; i++)
     {
         fp->motion_scripts[i][2].p_script = (ftMotionCommand*)move->events;

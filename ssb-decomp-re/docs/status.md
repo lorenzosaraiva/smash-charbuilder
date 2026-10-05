@@ -57,14 +57,17 @@ See the [full-roster animation guide](full-roster-animations.md); the
 - [ ] Validate donor startup, active frames, recovery, landing lag and hitlag in-game.
 - [x] Full donor jab-chain availability, input buffering, rapid thresholds and repeat-hit/refresh timelines on all original bodies.
 - [x] Every donor normal attack animation on every body.
-- [ ] Every donor special and grab/throw animation on every body.
+- [x] Shared phase animations for all implemented neutral/Up B/Down B adapters on every body, including charge loops and recovery.
+- [ ] Donor grab/throw and paired victim animations on every body.
 - [ ] Paired donor throw/victim choreography, including special capture mechanics.
 - [ ] Tether grab reach, capture timing and visuals on other bodies.
 - [x] Native projectile neutral first batch on all bodies/four player slots; eight donor pose/matrix checks.
 - [ ] Rendered projectile contact, stage following, reflection/absorption and transition acceptance.
 - [x] Falcon Punch/Pound hitbox and movement adapters.
 - [x] DK/Samus charging, Link boomerang return/catch and Yoshi capture; Kirby copy excluded.
-- [ ] Donor neutral animations across bodies.
+- [x] Donor neutral startup/charge/release/recovery poses across bodies.
+- [x] Safe native Reflector/Sing/PSI Magnet/Final Cutter/Falcon effects and separate blaster/tongue/Stone props and charge orb.
+- [ ] Rendered acceptance and complete voice/color/accessory polish for specials.
 - [x] Donor normal movement/physics, angled/landing availability, Link down-air bounce and Ness bat reflection.
 - [ ] Complete, consistent special-move compatibility across all bodies.
 - [ ] Save creator presets across ROM restarts; currently they last for the running session.
@@ -111,7 +114,7 @@ distinction, independent player counters and vanilla resets outside Training.
 - [x] Native-versus-borrowed Mario/Luigi physics and recovery checks across all bodies/slots, with interruption and respawn guards.
 - [x] Live ROM CPU checks for both Up B donors on all twelve bodies: ground/air hit fields, foreign source centers, recovery, reset/editor return and four-slot VS.
 - [ ] Rendered Mario/Luigi Up B sweetspot/multihit contact, platforms, ledges and interruptions.
-- [x] Donor phase durations/loop boundaries and independent event clocks; safe idle/falling poses.
+- [x] Donor phase durations/loop boundaries and independent event clocks; shared donor poses.
 - [x] DK Down B startup/slap/recovery, four source hitboxes and queued repeat cycles.
 - [x] Ness Up B weapon/wave/trail preloads and independent foreign-body passive state.
 - [x] Host/native/linked-ROM checks and all-body ROM CPU regressions for DK slaps and Ness expiry.
@@ -130,7 +133,8 @@ distinction, independent player counters and vanilla resets outside Training.
 - [x] Production callback checks across twelve bodies/four slots for movement, zip gate, ownership, healing, capture/release, armor and bomb throw values.
 - [x] Live CPU checks for thirteen donor specials on all twelve bodies: 312 ground/air casts, native projectile creation, recovery, reset/editor return and four-slot VS; controlled Falcon Dive capture/throw and Thunder owner contact included (null rendering).
 - [ ] Rendered projectile/contact, sleep/capture, slopes/ledges, interruption and visual acceptance across bodies and stages.
-- [ ] Retarget borrowed special animations and mesh-specific effects; port this batch to Remix.
+- [x] Retarget implemented special phases, charge loops and recovery; add semantic effects and native props.
+- [ ] Port this special mechanics/animation batch to Remix.
 - [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.
 
 ## Decomp normal-specific mechanics

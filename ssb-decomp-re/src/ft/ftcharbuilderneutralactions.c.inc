@@ -85,6 +85,9 @@ static void ftMainCharBuilderStartAction(GObj *g, s32 pair, f32 frame)
     if (pair == 20) fp->is_special_interrupt = TRUE;
     if (fp->ga == nMPKineticsGround) s->recoil = 0;
     ftMainUpdateMotionEventsAll(g);
+#ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
+    ftMainCharBuilderUpdateSpecialAttachments(g);
+#endif
     ftMainCharBuilderActionAccessory(g);
 }
 
@@ -126,6 +129,9 @@ static void ftMainCharBuilderActionUpdate(GObj *g)
     f32 frame;
     if (s == NULL) return;
     pair = s->row & ~1; frame = ftCustomMoveGetClock(fp)->frame;
+#ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
+    if (pair == 0) ftCaptainSpecialNUpdateEffect(g);
+#endif
     if ((pair == 14) && (s->last_update != frame))
     {
         if (--s->charge_wait <= 0)
@@ -156,10 +162,20 @@ static void ftMainCharBuilderActionUpdate(GObj *g)
             ftParamSetCaptureImmuneMask(fp, FTCATCHKIND_MASK_NONE);
         }
     }
-    if (g->anim_frame > 0) return;
+    /* The normal-jab loop clock keeps anim_frame positive. Charge phases own
+     * their source cycle boundary and must still increment/store/release. */
+    if ((pair == 6) || (pair == 14))
+    {
+        if (frame < ftCustomMoveGetClock(fp)->duration) return;
+    }
+    else if (g->anim_frame > 0) return;
     switch (pair)
     {
-    case 4: ftMainCharBuilderStartAction(g, 6, 0); return;
+    case 4:
+        /* The native loop checks release at its initial boundary. A stored
+         * full punch still plays startup, then releases without another cycle. */
+        if (s->release) { ftMainCharBuilderReleaseCharge(g, s, TRUE); return; }
+        s->charging = TRUE; ftMainCharBuilderStartAction(g, 6, 0); return;
     case 6:
         if (s->charging && s->dk_charge < FTDONKEY_GIANTPUNCH_CHARGE_MAX) s->dk_charge++;
         if (s->cancel || s->dk_charge == FTDONKEY_GIANTPUNCH_CHARGE_MAX) break;

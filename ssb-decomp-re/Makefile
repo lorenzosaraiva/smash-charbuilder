@@ -154,7 +154,7 @@ ifeq ($(VERSION),jp)
 			   ,$(C_FILES))
 else ifeq ($(VERSION),us)
     LDFLAGS := -T .splat/us/undefined_funcs_auto.txt -T .splat/us/undefined_syms_auto.txt \
-               -T .splat/us/smashbrothers.ld -T symbols/not_found.txt -T symbols/linker_constants.txt -T symbols/reloc_data_symbols.$(VERSION).txt
+               -T $(BUILD_DIR)/smashbrothers-charbuilder.ld -T symbols/not_found.txt -T symbols/linker_constants.txt -T symbols/reloc_data_symbols.$(VERSION).txt
     C_FILES := $(shell find src -type f | grep \\.c$)
 else
     $(error Unsupported VERSION "$(VERSION)")
@@ -162,6 +162,11 @@ endif
 
 # Exclude relocData C files from normal compilation (they are compiled separately into binary blobs)
 C_FILES := $(filter-out $(wildcard src/relocData/*.c src/relocData/**/*.c),$(C_FILES))
+ifeq ($(VERSION),us)
+EXTRA_LINK_DEPS += $(BUILD_DIR)/smashbrothers-charbuilder.ld
+else
+C_FILES := $(filter-out src/ft/ftanimationbank.c,$(C_FILES))
+endif
 
 # relocData C-to-binary conversion - per-version manifest of converted files.
 # Only load the file list when RELOC_DATA=1; otherwise the extract-stamp
@@ -621,6 +626,9 @@ $(ROM): $(ELF)
 	$(V)$(PYTHON) tools/n64crc.py $@
 
 # Linking
+$(BUILD_DIR)/smashbrothers-charbuilder.ld: .splat/us/smashbrothers.ld tools/linkAnimationBank.py
+	$(V)$(PYTHON) tools/linkAnimationBank.py $< $@
+
 $(ELF): $(O_FILES) $(EXTRA_LINK_DEPS)
 	$(call print_2,Linking:,$@,$(BLUE))
 	$(V)$(LD) -Map $(LD_MAP) -o $@ $(LDFLAGS)

@@ -4,6 +4,8 @@
 #include <wp/weapon.h>
 #include <sc/scene.h>
 #include <reloc_data.h>
+extern DObj* ftMainCharBuilderGetSpecialVisualJoint(FTStruct*, s32, s32);
+extern sb32 ftMainCharBuilderIsSpecialVisual(FTStruct*);
 
 // // // // // // // // // // // //
 //                               //
@@ -4661,7 +4663,7 @@ GObj* efManagerCaptainFalconKickMakeEffect(GObj *fighter_gobj)
     fp = ftGetStruct(fighter_gobj);
     dobj = DObjGetStruct(effect_gobj);
 
-    dobj->user_data.p = ftMainCharBuilderGetSpecialJoint(fp, 23);
+    dobj->user_data.p = ftMainCharBuilderIsSpecialVisual(fp) ? ftMainCharBuilderGetSpecialVisualJoint(fp, nFTKindCaptain, 23) : ftMainCharBuilderGetSpecialJoint(fp, 23);
 
     dobj->rotate.vec.f.y = fp->lr * F_CLC_DTOR32(90.0F);
 
@@ -4695,6 +4697,7 @@ GObj* efManagerCaptainFalconPunchMakeEffect(GObj *fighter_gobj)
     dobj = DObjGetStruct(effect_gobj);
 
     joint = ((fp->fkind == nFTKindCaptain) || (fp->fkind == nFTKindNCaptain)) ? fp->joints[16] : fp->joints[30];
+    if (ftMainCharBuilderIsSpecialVisual(fp)) joint = ftMainCharBuilderGetSpecialVisualJoint(fp, nFTKindCaptain, 16);
 
     dobj->user_data.p = joint;
 
@@ -4917,7 +4920,7 @@ GObj* efManagerKirbyCutterDrawMakeEffect(GObj *fighter_gobj)
 
     dobj = DObjGetStruct(effect_gobj);
 
-    dobj->user_data.p = ftMainCharBuilderGetSpecialJoint(ftGetStruct(fighter_gobj), 17);
+    dobj->user_data.p = ftMainCharBuilderIsSpecialVisual(ftGetStruct(fighter_gobj)) ? ftMainCharBuilderGetSpecialVisualJoint(ftGetStruct(fighter_gobj), nFTKindKirby, 17) : ftMainCharBuilderGetSpecialJoint(ftGetStruct(fighter_gobj), 17);
 
     return effect_gobj;
 }
@@ -4942,7 +4945,7 @@ GObj* efManagerKirbyCutterTrailMakeEffect(GObj *fighter_gobj)
     fp = ftGetStruct(fighter_gobj);
     dobj = DObjGetStruct(effect_gobj);
 
-    dobj->user_data.p = ftMainCharBuilderGetSpecialJoint(fp, 17);
+    dobj->user_data.p = ftMainCharBuilderIsSpecialVisual(fp) ? ftMainCharBuilderGetSpecialVisualJoint(fp, nFTKindKirby, 17) : ftMainCharBuilderGetSpecialJoint(fp, 17);
     dobj->rotate.vec.f.y = fp->lr * F_CLC_DTOR32(90.0F);
 
     return effect_gobj;

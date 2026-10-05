@@ -7,9 +7,16 @@
 #define FTCHARBUILDER_NEUTRAL_EXTENDED
 #define FTCHARBUILDER_SPECIAL_MECHANICS
 #define FTCHARBUILDER_NORMAL_MECHANICS
+#define FTCHARBUILDER_SPECIAL_ANIMATIONS
+#ifdef REGION_US
+#define FTCHARBUILDER_ANIMATION_BANK
+#endif
 #include "ftcustommove.c.inc"
 #include "ftnormalmechanics.c.inc"
 #include "fttrainingcombo.c.inc"
+static s32 ftMainCharBuilderVisualMotionJoint(FTStruct*, s32);
+static void ftMainCharBuilderUpdateSpecialAttachments(GObj*);
+sb32 ftMainCharBuilderIsSpecialVisual(FTStruct*);
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 extern void func_ovl0_800C9A38();
@@ -385,6 +392,8 @@ DObj* ftMainCharBuilderGetSpecialJoint(FTStruct *fp, s32 joint_id)
 
 static s32 ftMainCharBuilderGetMotionJointID(FTStruct *fp, s32 joint_id, sb32 is_allow_none)
 {
+    if (is_allow_none && (joint_id >= 0) && ftMainCharBuilderIsSpecialVisual(fp))
+        return ftMainCharBuilderVisualMotionJoint(fp, joint_id);
     joint_id = ftParamGetJointID(fp, joint_id);
 
     if (ftMainCharBuilderIsBorrowingMotion(fp) == FALSE)
@@ -799,6 +808,8 @@ static void ftMainCharBuilderMakeSamusBomb(GObj *fighter_gobj)
 }
 
 #include "ftcharbuilderneutral.c.inc"
+#include "ftspecialanimation.c.inc"
+#include "ftspecialattachments.c.inc"
 
 // // // // // // // // // // // //
 //                               //
@@ -1756,8 +1767,11 @@ void ftMainPlayAnim(GObj *fighter_gobj)
     }
     ftParamUpdateAnimKeys(fighter_gobj);
     fighter_gobj->anim_frame = ftCustomMoveAdvanceClock(fp, fighter_gobj->anim_frame);
+    ftMainCharBuilderAdvanceRecoveryPose(fp);
     ftCustomAnimationApplyPose(fp);
+    ftMainCharBuilderApplySpecialVisuals(fighter_gobj);
     ftParamsUpdateFighterPartsTransform(fp->joints[nFTPartsJointTopN]);
+    ftMainCharBuilderUpdateSpecialAttachments(fighter_gobj);
 }
 
 // 0x800E0830 - Play fighter animation and run motion scripts normally
@@ -5238,6 +5252,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         (sFTMainCharBuilderSpecialKinds[fp->player] == nFTMainCharBuilderSpecialKindLw) &&
         ((status_id < nFTPikachuStatusSpecialLwStart) || (status_id > nFTPikachuStatusSpecialAirLwEnd)))
         ftPikachuSpecialLwProcDamage(fighter_gobj);
+    ftMainCharBuilderRestoreSpecialBody(fp);
     ftCustomMoveResetClock(fp);
     status_struct = NULL;
     opening_struct = NULL;
@@ -5729,6 +5744,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
                 (ftCustomMoveGetClock(fp) != NULL)) ftCustomMoveGetClock(fp)->trajectory = &sFTCharBuilderDonkeyLwTrajectory;
         }
         else ftMainCharBuilderStartSuperJumpLandingClock(fp, frame_begin);
+        if (is_charbuilder_special_status != FALSE) ftMainCharBuilderStartSpecialVisualScript(fp, frame_begin);
         if (frame_begin != 0.0F)
         {
             ftMainPlayAnimEventsForward(fighter_gobj);

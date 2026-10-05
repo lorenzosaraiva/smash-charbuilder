@@ -113,9 +113,22 @@ def main():
         setup,hidden,scales=attributes(fighter)
         scaling='sOracle'+fighter+'Scale' if scales and not case['flags']&4 else 'NULL'
         action_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{case["flags"]}U,{scaling},{case["duration"]+1},{event_symbol},{source_size(fighter)}F);')
+    from sharedAnimation import catalog as shared_catalog
+    special_cases=[c for c in shared_catalog()[0] if c['symbol'].startswith('sFTCustomAnimationSpecial')]
+    special_calls=[]
+    output.append('static const OracleEvent sOracleSpecialPoseEvents[] = { {0,0,0,0,{0,0,0},0} };')
+    for c in special_cases:
+        fighter=c['fighter'];path,_=animation(c['name'])
+        if path not in seen_files:
+            output.append('#include "../src/relocData/'+path.name+'"');seen_files.add(path)
+        table=next(iter(arrays(us_text(path.read_text()),r'AObjEvent32\s*\*')))
+        setup,hidden,scales=attributes(fighter)
+        scaling='sOracle'+fighter+'Scale' if scales and not c['flags']&4 else 'NULL'
+        frames=max(c['frames'],3*c['loop_period']+1)
+        special_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{c["flags"]}U,{scaling},{frames},sOracleSpecialPoseEvents,{source_size(fighter)}F);')
     output.append('static const f32 sOracleBodySizes[] = { '+', '.join(str(source_size(f))+'F' for f in ROSTER)+' };')
     (ROOT/'build/nativeAnimationOracle.inc').write_text('\n'.join(output)+'\n',encoding='utf-8')
-    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls+action_calls)+'\n',encoding='utf-8')
+    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls+action_calls+special_calls)+'\n',encoding='utf-8')
     subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protector','-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-O1','-Iinclude','-Isrc','-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US','tools/testNativeAnimation.c','-o','build/testNativeAnimation'],cwd=ROOT,check=True)
     raw=subprocess.check_output([str(ROOT/'build/testNativeAnimation')],cwd=ROOT)
     (ROOT/'build/native-animation-poses.bin').write_bytes(raw)
@@ -209,6 +222,18 @@ def main():
                 native=(centers[11],centers[10],-centers[9])
                 assert mask&8 and max(abs(a-b) for a,b in zip(native,probe[frame]))<0.003,(case['fighter'],case['phase'],'socket',frame,native,probe[frame])
     print(f'PASS: 30 neutral phases, DK Hand Slap and {len(path_catalog())} Up/Down B phases, {action_centers} active centers, grounded root movement, charge/boomerang sockets and Yoshi capture anchors match original playback/matrices; max center error {action_error:.7f}.')
+    for c in special_cases:
+        poses=sample(c['fighter'],c['name'],max(c['frames'],3*c['loop_period']+1),c['flags']);observed=[]
+        for frame,pose in enumerate(poses):
+            native_pose={}
+            for joint in sorted(pose):
+                native=struct.unpack_from('<9f',raw,cursor);cursor+=36
+                assert max(abs(a-b) for a,b in zip(native,pose[joint][:3]+pose[joint][4:]))<0.003,(c['symbol'],frame,joint)
+                native_pose[joint]=native[:3]+(0,)+native[3:]
+            observed.append(native_pose);cursor+=52
+        key=(c['fighter'],c['name'],c['flags'])
+        if len(observed)>len(native_poses.get(key,())):native_poses[key]=observed
+    print(f'PASS: {len(special_cases)} special pose timelines, including three cycles of every loop, match original C playback.')
     assert cursor==len(raw),(cursor,len(raw))
     print(f'PASS: all eight projectile-neutral spawn poses match original animation/collision matrices; max error {projectile_error:.7f}.')
     print(f'PASS: {len(cases)} donor timelines, {comparisons} scalar samples match original ftAnimParseDObjFigatree and playback; max error {maximum:.7f}.')

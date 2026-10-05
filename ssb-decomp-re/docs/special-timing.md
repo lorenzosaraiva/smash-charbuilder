@@ -1,7 +1,7 @@
 # Up/Down B timing and collision paths
 
 Borrowed specials use donor status callbacks, an independent donor clock and a
-safe event stream. The body supplies a temporary idle/falling pose. Matching
+safe event stream. Shared donor curves supply body-adapted phase poses. Matching
 body/donor combinations still run native specials. Hitlag and pause stop the
 clock; native ground/air transitions preserve the requested source progress.
 Their native fast-forward rules also apply: landing clears attacks and skips
@@ -36,7 +36,7 @@ Falcon Kick's translation comes from sampled donor TransN displacement and
 rotation, with facing/slope conversion. Slope-transfer angles have separate
 storage; movement never reads a missing body TransN joint. Native contact slowdown
 and wall/landing transitions still apply; airborne recovery friction/gravity use
-Falcon values. The body's placeholder animation cannot add travel.
+Falcon values. The body-adapted visual pose cannot add physical travel.
 
 ## Ness Up B
 
@@ -59,7 +59,7 @@ mask, movement delta and socket with original C playback/collision matrices.
 The ROM verifier follows linked pointers and checks original packed event fields.
 Version 0.1.9 expands the path registry from 20 to 24 phases with Mario/Luigi Up B.
 Its dedicated callback/physics test also compares native and borrowed movement,
-steering, recovery and interruption cleanup. Visible special poses remain temporary.
+steering, recovery and interruption cleanup. Shared special phase poses are implemented in version 0.1.13.
 
 Version 0.1.10 expands the registry to 30 phases with Link Spin Attack, Samus
 Screw Attack and Rest. Rest shares one motion between ground and air. Their
@@ -94,7 +94,7 @@ a player steering the entire loop back into the fighter.
 
 Rendered contact/reflection, interruptions, visual acceptance, natural-loop
 self-launch controls and broader stage/velocity comparisons remain pending.
-Up/Down B gameplay coverage is implemented, with special effects/poses and
-stage/contact acceptance still experimental. Full animation retargeting follows
-collision/timing fidelity.
+Up/Down B gameplay and shared phase-pose coverage are implemented. Safe native
+effects/props are enabled; rendered stage/contact/visual acceptance remains
+experimental. See [special animations](special-animations.md).
 Remix does not include this batch.

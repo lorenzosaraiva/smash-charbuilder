@@ -1,7 +1,10 @@
 # Animation work: current milestone and next steps
 
-Version 0.1.12 includes normal donor poses and gameplay mechanics on all twelve
-bodies and donors. See [normal mechanics](normal-mechanics.md) for jab chains,
+Version 0.1.13 extends the shared catalog to special startup, charge loops,
+transitions, release and recovery. See [special animations](special-animations.md)
+for phase coverage, safe effects and native props.
+Normal donor poses and gameplay mechanics cover all twelve bodies and donors.
+See [normal mechanics](normal-mechanics.md) for jab chains,
 bounce, reflection and source attack movement.
 The shared curve format, skeleton maps, preserved body proportions and native
 verification are documented in [full-roster animations](full-roster-animations.md).
@@ -19,6 +22,8 @@ record earlier milestones.
 - Body meshes, bone lengths, bind scales and TopN/facing remain native. Attack
   root travel uses the donor; collision reach stays independent of retargeted
   limb positions.
+- Shared special phase poses, safe source effects/sounds, native field/Cutter/Falcon
+  effects, separate blaster/tongue/Stone props and a collision-free held charge orb.
 
 ## Next work
 
@@ -28,16 +33,12 @@ record earlier milestones.
    Kirby/Jigglypuff/Pikachu skeletons, shoulders, feet and accessories. Record
    body/donor/move combinations; adjust rig maps only when the geometry supports
    it. Gameplay timing and hitbox reach take priority over visual convenience.
-2. **Neutral animations, excluding Kirby copy.** Reuse shared curves and body
-   maps for ground/air startup, charging/holding, release and recovery. Keep the
-   existing projectile/socket/capture/charge adapters and their phase clocks.
-   Begin with simple Punch/Pound/projectile poses; handle charge loops and paired
-   Egg Lay captures separately. Validate native playback before enabling clips.
-3. **Remaining Up/Down B and special motion.** Add phase poses to the existing
-   safe adapters without importing foreign fighter callbacks or passive unions.
-   Preserve donor travel/timing and keep root displacement from being applied
-   both cosmetically and physically. Add missing gameplay paths/effects separately.
-4. **Tethers and paired throws.** Model reach, capture/release timing and both
+2. **Rendered special acceptance and polish.** Check native props/materials,
+   charge/store/release, ground/air continuation, directional recovery and cleanup
+   after damage/KO. Compare the donor alongside the custom body. Resolve compact
+   skeleton issues, then add remaining voice/color/mesh polish without changing
+   collision paths or phase clocks. Kirby copy remains outside this milestone.
+3. **Tethers and paired throws.** Model reach, capture/release timing and both
    attacker/victim positions before adding animation choreography. Keep native
    identity and valid joint references; never attach raw foreign figatrees.
 

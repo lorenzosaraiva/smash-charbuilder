@@ -1,6 +1,6 @@
 # Startup and download checks
 
-Version 0.1.12, updated 2026-10-04. Enable **8 MB RDRAM / Expansion Pak**.
+Version 0.1.13, updated 2026-10-04. Enable **8 MB RDRAM / Expansion Pak**.
 
 The public `character-lab.z64`, root `dist/character-lab.z64` and Desktop
 `smash-character-lab-full-roster.z64` are copies of one checked build. The release
@@ -23,11 +23,36 @@ startup to Options, so they missed this allocation path. Reaching the menus
 through a skipped intro did not establish successful uninterrupted boot.
 
 All nineteen opening scenes now move their allocation arena into
-`0x80400000..0x80800000` when Expansion Pak memory is present, using the existing
+Expansion Pak memory when it is present, using the existing
 Training/VS heap helper. The original framebuffers, lower-bank overlays, SDK
 addresses and normal animation/collision tables are preserved.
 
+## The 0.1.13 pose bank
+
+The special animation expansion exposed another memory boundary: keeping the
+larger compressed pose pool inside the fighter overlay moved dependent game
+code past the fixed `0x80392a00` framebuffer start. The uninterrupted boot check
+caught this before publication. Pose keys now occupy a separate ROM section
+loaded into the Expansion Pak; scene heaps start after that reserved bank.
+Original lower-bank overlays and video buffer addresses remain separate.
+The linker and ROM verifier reject overlaps, and the cold-boot test checks the
+new heap boundary through every intro scene. The existing 4 MB launch guard
+still applies; gameplay requires 8 MB.
+
 ## Regression checks
+
+The 0.1.13 build passed uninterrupted boot through all nineteen opening scenes,
+title and Start into the main menu, with at least 1,090,624 bytes of opening heap
+headroom. Its 4 MB Training launch guard passed. Live charge/store/full-release
+and Luigi Up B checks passed on the final build, including same-editor returns
+and four assigned builds in VS. The mixed twelve-normal-donor preload regression
+retained at least 429,876 bytes of Training heap headroom. Special pose/phase,
+Mario Up B, normal-animation and remaining-special regressions also passed on
+the new memory layout. These are CPU execution checks with null rendering;
+rendered acceptance remains pending.
+
+The 0.1.13 ROM is 19,077,584 bytes, with SHA-256
+`62c6277c1d5e844093fff60976e8957ac521906358deb35c355d5383cdbffb36`.
 
 The 0.1.12 normal-mechanics build passed uninterrupted boot through all nineteen
 opening scenes, title and Start into the main menu. Opening heap headroom

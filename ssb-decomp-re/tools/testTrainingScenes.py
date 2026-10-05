@@ -34,11 +34,15 @@ parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every 
 parser.add_argument('--mario-animations',action='store_true',help='Check four Mario donor catalogs using real attack inputs and RAM poses')
 parser.add_argument('--roster-animations',action='store_true',help='Check every donor/body pair, live poses, recovery and Training return')
 parser.add_argument('--normal-mechanics',action='store_true',help='Check all donor jab chains, Link bounce and Ness bat windows on each body')
+parser.add_argument('--special-animations',action='store_true',help='Compare live borrowed-special poses with native-engine references')
+parser.add_argument('--charge-animations',action='store_true',help='Check partial/full Giant Punch and Charge Shot pose transitions')
 parser.add_argument('--mechanic',type=int,choices=(1,3,5,6,7,8,9,10,11),help='Exercise remaining special mechanics across bodies')
 parser.add_argument('--mechanic-kind',choices=('hi','lw'),default='hi')
 parser.add_argument('--thunder-contact',action='store_true',help='Place the live native Thunder head in its owner-contact box to check the hit branch')
 parser.add_argument('--falcon-contact',action='store_true',help='Place the CPU in the live Falcon Dive catch volume to check native capture/throw')
 args=parser.parse_args()
+if args.charge_animations:
+    args.first_choice=8;args.cases=2;args.special_animations=True
 if args.mechanic is not None:args.superjump=args.mechanic
 if args.direct_special is not None:args.superjump=args.direct_special
 common_statuses=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonStatus')
@@ -132,6 +136,7 @@ def diagnostic():
     fault=u32(addr('__osFaultedThread'))
     context=[hex(u32(fault+j)) for j in (0x118,0x11c,0x120,0x124,0x128)] if fault else []
     return dict(scene=u8(scene),pc=hex(C.c_uint32.from_address(core.DebugGetCPUDataPtr(1)).value),fault=context,
+                fault_thread=hex(fault), fault_gprs=[hex(u32(fault+j)) for j in range(0x24,0x118,8)] if fault else [],
                 fault_registers=[hex(u32(fault+j)) for j in range(0xe0,0x118,4)] if fault else [],
                 fighter=[hex(u32(fighter()+j)) for j in (status_off,motion_off,spin_off,generation_off)] if fault else [],
                 heap=[hex(u32(heap+j)) for j in (4,8,12)],updates=u32(addr('dSYTaskmanUpdateCount')))
@@ -139,7 +144,7 @@ def wait(predicate,label,seconds=15):
     deadline=time.monotonic()+seconds
     while not predicate():
         if time.monotonic()>deadline:raise AssertionError((label,diagnostic()))
-        time.sleep(.001 if args.mechanic is not None or args.normal_mechanics else .01)
+        time.sleep(.001 if args.mechanic is not None or args.superjump is not None or args.normal_mechanics or args.charge_animations else .01)
 def frames(count=12):
     initial=u32(addr('dSYTaskmanUpdateCount'))
     wait(lambda:u32(addr('dSYTaskmanUpdateCount'))>=initial+count,'Game stopped updating')
@@ -147,7 +152,7 @@ def pulse(value):
     keys(value);time.sleep(.07);keys(0);time.sleep(.07)
 def heap_ok():
     start,end,ptr=(u32(heap+j) for j in (4,8,12))
-    assert start==0x80400000 and end==0x80800000 and start<=ptr<=end,diagnostic()
+    assert start==((addr('charbuilder_animation_bank_VRAM_END')+63)&~63) and end==0x80800000 and start<=ptr<=end,diagnostic()
     return end-ptr
 trace=[];travel_trace=[];superjump_trace=[];spin_trace=[];last_trace=None
 weapon_seen=set();item_seen=set();pitch_trace=[]
@@ -161,7 +166,7 @@ motion_ids=enum_values((ROOT/'src/ft/ftdef.h').read_text(),'FTCommonMotion')
 animation_variants={motion_ids['nFTCommonMotion'+m]:i for i,m in enumerate(MOTIONS[:29])}
 animation_variants[extra_ids('Mario')[0]]=29
 animation_rows=[next(i for i,family in enumerate(SLOTS.values()) if m in family) for m in MOTIONS[:24]]+list(range(8,13))+[0]
-if args.mario_animations or args.roster_animations:
+if args.mario_animations or args.roster_animations or args.special_animations:
     from sharedAnimation import catalog as pose_catalog,body_rig,qmul,quaternion,rotation,qmatrix
     pose_cases,pose_rows=pose_catalog()
     pose_data=(ROOT/'build/shared-animation-poses.bin').read_bytes()
@@ -171,6 +176,10 @@ if args.mario_animations or args.roster_animations:
             pose_offsets[case_id,body_id]=cursor
             cursor+=case['frames']*(len(body_rig(body_name))*16+12)
     assert cursor==len(pose_data),'Run tools/testNativeAnimation.py for current runtime pose references.'
+    if args.special_animations:
+        from sharedAnimation import special_rows
+        special_pose_rows=[(phase,index) for phase,index in special_rows() if phase['binding'] is not None]
+        special_clock=addr('sFTCustomMoveClocks')
     body_variants=[]
     for name in ROSTER:
         variants=dict(animation_variants)
@@ -180,6 +189,37 @@ if args.mario_animations or args.roster_animations:
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
     global last_trace,animation_samples,thunder_contact_done,falcon_contact_done,normal_bounced,normal_reflected
+    if args.special_animations and u8(scene)==54:
+        fp=fighter()
+        if 0x80400000<=fp<0x80800000:
+            body=u32(fp+kind_off);clock=special_clock
+            if body<12 and u32(clock)==fp and u32(clock+4)==u32(fp+generation_off) and u32(clock+12)==u32(fp+status_off):
+                move=u32(clock+8)
+                for row,(phase,case_id) in enumerate(special_pose_rows):
+                    if u32(addr('sFTCustomSpecialAnimations')+row*20)!=move:continue
+                    c=pose_cases[case_id];source_frame=max(0,int(f32(clock+24)))
+                    if c['loop_period'] and source_frame>=c['loop_start']:source_frame=c['loop_start']+(source_frame-c['loop_start'])%c['loop_period']
+                    source_frame=min(source_frame,c['frames']-1)
+                    rig=body_rig(ROSTER[body]);sample=pose_offsets[case_id,body]+source_frame*(len(rig)*16+12)
+                    worlds={0:(0,0,0,1)};correction=(0,0,0,1)
+                    from sharedAnimation import qnormal
+                    for i,bone in enumerate(rig):
+                        obj=u32(fp+joints_off+bone['joint']*4)
+                        if not obj or bone['parent'] not in worlds:continue
+                        local=quaternion(rotation(tuple(f32(obj+rotation_off+axis*4) for axis in range(3))))
+                        worlds[bone['joint']]=qmul(worlds[bone['parent']],local)
+                        expected=struct.unpack_from('<4f',pose_data,sample+i*16)
+                        if bone['joint']==4:
+                            q=qnormal(expected);correction=qmul(worlds[4],(-q[0],-q[1],-q[2],q[3]))
+                        # Directional flight pitches the root; native ground slope
+                        # processing can adjust legs after the shared pose.
+                        expected=qmul(correction,expected)
+                        if not bone['required'] or bone['role']<0 or (u32(fp+ga_off)!=air_kind and bone['role']>=14):continue
+                        a,b=qmatrix(worlds[bone['joint']]),qmatrix(expected)
+                        error=max(abs(a[x][y]-b[x][y]) for x in range(3) for y in range(3))
+                        if error>0.008 and len(animation_errors)<10:animation_errors.append((body,phase['phase'],source_frame,bone['joint'],error))
+                    animation_seen.add((phase['donor'],phase['phase']));animation_samples+=1
+                    break
     if args.normal_mechanics:
         if u8(scene)!=54:return
         fp=fighter()
@@ -324,7 +364,7 @@ try:
             if current in opening:
                 seen.add(current)
                 start,end,ptr=(u32(heap+j) for j in (4,8,12))
-                if start==0x80400000 and end==0x80800000:
+                if start==((addr('charbuilder_animation_bank_VRAM_END')+63)&~63) and end==0x80800000:
                     assert start<=ptr<=end,('Opening heap',diagnostic())
                     min_headroom=min(min_headroom,end-ptr)
                 else:
@@ -354,6 +394,7 @@ try:
     wait(lambda:u32(addr('sMNOptionBuilderMode'))==1,'Lab hub')
     minima=[]
     for case in (range(4) if args.mario_animations else range(args.first_choice,args.first_choice+args.cases)):
+        if args.special_animations:animation_seen.clear();animation_errors.clear();animation_samples=0
         choice=0 if args.path_donor is not None or args.superjump is not None else 11 if args.egg_lay else case
         if u32(addr('sMNOptionBuilderMode'))==2:pulse(0x40)
         preset=case%4;body=(case+2)%12
@@ -384,7 +425,7 @@ try:
         wait(lambda:u8(scene)==18 and u32(addr('sMNPlayers1PTrainingTotalTimeTics'))>70,'Training character select')
         frames(30);minima.append(heap_ok());pulse(0x10)
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Training stage select')
-        if args.direct_special is not None or args.mechanic is not None or args.normal_mechanics:
+        if args.superjump is not None or args.direct_special is not None or args.mechanic is not None or args.normal_mechanics or args.charge_animations:
             # Dream Land avoids Castle's bumper/other stage attacks interrupting
             # the scripted rise before source timing/recovery can be measured.
             w32(addr('sMNMapsCursorSlot'),6)
@@ -659,7 +700,8 @@ try:
                             # original-C playback oracle in testNativeAnimation.
                             if body!=donor:assert error<.1,(body,'Donor collision center',r,center,expected)
                             damage_seen.add(a[3]);samples+=1
-                    assert samples>=(1 if donor==10 else 20) and source_damage<=damage_seen,(body,'Hit-phase coverage',samples,damage_seen,source_damage)
+                    assert samples>=(1 if donor==10 else 20) and source_damage<=damage_seen,(body,'Hit-phase coverage',samples,damage_seen,source_damage,
+                        [(r,[a[0][0] for a in attacks]) for r,_,_,_,_,_,attacks in superjump_trace if r[0] in paths][:12])
                     if donor==5:
                         ending=[r[2] for r in trace if r[0]==nFTLinkHiEnd]
                         if ending:
@@ -761,10 +803,26 @@ try:
             assert {228,229,230}<=phases,(body,'Ness start/hold/end',phases)
             assert not 228<=trace[-1][0]<=236,(body,'Ness recovery',trace[-1])
             print('PASS: Ness Up B on body',body,'start -> hold/projectile expiry -> end/recovery, no freeze.',flush=True)
+        elif args.charge_animations:
+            check(core.CoreDoCommand(17,4,C.byref(C.c_int(300))))
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            pulse(0x40);frames(80) # Startup and a partial charge.
+            pulse(0x40);frames(100) # Release while charging.
+            pulse(0x10);w32(addr('sSC1PTrainingModeMenu'),4);pulse(0x80);frames(50)
+            pulse(0x40);frames(400) # Charge fully and store automatically.
+            pulse(0x40);frames(120) # Fire the stored full charge.
         else:pulse(0x40);frames(200) # Actual B input and recovery/charging.
-        if args.path_donor is None and args.superjump is None and not (args.mario_animations or args.roster_animations or args.normal_mechanics):
+        if args.path_donor is None and args.superjump is None and not (args.mario_animations or args.roster_animations or args.normal_mechanics or args.charge_animations):
             pulse(0x20);frames(30) # Store a charge where supported.
             pulse(0x40);frames(120)
+        if args.special_animations:
+            assert not animation_errors,('Special pose mismatch',animation_errors)
+            expected_donor=args.path_donor if args.path_donor is not None else args.superjump if args.superjump is not None else 11 if args.specials else (-1,1,0,4,9,11,7,10,2,3,5,6)[choice]
+            if expected_donor>=0 and body!=expected_donor:assert animation_samples>4,('Missing borrowed special poses',body,expected_donor)
+            if args.charge_animations:
+                required={'Start0','Loop0','End0'}|({'Full0'} if choice==8 else set())
+                assert required<={phase for donor,phase in animation_seen},('Charge pose transitions',body,required,animation_seen)
+            if animation_seen:print(f'PASS: body {body}, {animation_samples} live special poses, phases {sorted(animation_seen)}.',flush=True)
         if args.path_donor is not None or args.superjump is not None or args.mario_animations or args.roster_animations or args.normal_mechanics:
             paused=enum_values((ROOT/'src/sc/scdef.h').read_text(),'SCBattleGameStatus')['nSCBattleGameStatusPause']
             # Native Training ignores Start during KO/respawn. Wait for a legal

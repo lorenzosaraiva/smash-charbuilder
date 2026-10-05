@@ -5,7 +5,8 @@ Version 0.1.10, updated 2026-10-04. This milestone is decomp only.
 The earlier adapters could enter each donor's native states and reproduce numeric
 hitbox values. They did not preserve complete donor collision geometry or all
 movement/recovery attributes on foreign bodies. This update completes those
-three gameplay adapters; their foreign-body special animations remain temporary.
+three gameplay adapters. Version 0.1.13 adds shared phase animations on foreign
+bodies; rendered acceptance remains pending.
 
 | Move | Gameplay coverage |
 | --- | --- |
@@ -74,10 +75,11 @@ on DK, and 1,288 live normal poses on Mario plus four-slot VS regressions.
 
 ## Remaining acceptance
 
-- [ ] Retarget the visible special animations onto each body.
+- [x] Retarget visible special phases onto each body through the shared catalog.
 - [ ] Rendered hit/contact, multihit connection, DI, wall/ceiling/platform/ledge
       interactions, damage/capture interruptions and every matchup.
-- [ ] Matching special effects/voices and foreign sword/costume/accessory visuals.
+- [x] Safe native Spin Attack/Cutter and common source effect/sound events.
+- [ ] Complete voice/color/sword/costume polish and rendered accessory acceptance.
 - [ ] Port this special fidelity to the separate Remix build.
 
 The gameplay adapters are implemented and automatically checked. Full visual and

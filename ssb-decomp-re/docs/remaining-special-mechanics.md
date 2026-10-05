@@ -6,7 +6,8 @@ The gameplay adapters cover the twelve original bodies. They use native US
 status, weapon, item and capture code together with generated donor event clocks,
 collision paths and sockets. Body proportions do not change donor attack reach.
 The chosen body keeps its hurtboxes, jump inventory and movement outside specials.
-Borrowed special animations still use temporary body idle/falling poses.
+Version 0.1.13 adds shared retargeted phase poses and safe effects/props. See
+[special animations](special-animations.md); rendered acceptance is pending.
 
 ## Controls and behavior
 
@@ -23,10 +24,10 @@ Select a donor in the editor's **Up B** or **Down B** row, then choose
 | Pikachu Up B | Native 20-tick startup, 5-tick zip, directional movement, second-zip gate, speed reduction, wall/platform/ledge callbacks and donor recovery. Change direction during the zip window for a second zip; the native minimum direction change is 42 degrees. No third zip. |
 | Fox Down B | Native startup hit, held reflection, ownership handoff, turning, release and 18-tick minimum hold. The field follows the donor socket and radius rather than the body joint. Hold B to keep it active. |
 | Ness Down B | Native absorbability rules, held field, hit/recovery state and healing: twice absorbed projectile damage, clamped at zero percent. The donor field bypasses body hurtbox broad-phase culling, then uses the original special collision test. Hold B to keep it active. |
-| Jigglypuff Up B | Original 180-frame Sing action, sleep collision element, changing radii and native ground/air victim rules. Mesh-specific singing effects are deferred on foreign bodies. |
+| Jigglypuff Up B | Original 180-frame Sing action, sleep collision element, changing radii and native ground/air victim rules. Native singing effects are enabled on foreign bodies. |
 | Falcon Up B | Native flight, catch/release callbacks, captured-victim state and donor catch socket; source throw descriptors preserve capture/release damage and knockback. Successful release restores the native reusable recovery behavior. Victims retain native body capture poses. |
-| Kirby Up B | Source ascent/descent hit paths, native movement and stage transitions, landing beam and recovery. Its native 0.8 aerial travel multiplier is applied without resizing the foreign body's root. Sword/accessory effects are deferred. |
-| Kirby Down B | Stone is selectable on all bodies. Native fall/landing/slide/release, 38% US armor with spill damage, 18-tick minimum hold and 160-tick timeout. Tap B after the minimum to release early. Foreign Stone mesh/color changes are deferred. |
+| Kirby Up B | Source ascent/descent hit paths, native movement and stage transitions, landing beam and recovery. Its native 0.8 aerial travel multiplier is applied without resizing the foreign body's root. Native Cutter draw/up/down/trail effects use safe visual attachments. |
+| Kirby Down B | Stone is selectable on all bodies. Native fall/landing/slide/release, 38% US armor with spill damage, 18-tick minimum hold and 160-tick timeout. Tap B after the minimum to release early. The native Stone mesh is drawn separately on foreign bodies; armor-color polish is pending. |
 | Yoshi Down B | Source startup/landing paths and travel, native falling state and landing-star weapon behavior. Included in this batch's regression coverage. |
 
 ## Timing and lifecycle
@@ -84,7 +85,8 @@ shared gameplay overlay from overrunning its previous stage-menu heap.
 - [ ] Rendered contact/shield comparisons, reflected/absorbed projectile scenarios,
   Sing victim transitions, Falcon Dive contacts, bomb jumps, slopes, platforms,
   ledges and damage interruptions across bodies/stages.
-- [ ] Borrowed special animations, sword/Stone meshes, charge/field effects and voices.
+- [x] Shared special phase poses, native Stone prop and safe charge/field/Cutter effects.
+- [ ] Complete voice/color and rendered accessory polish.
 - [ ] Port this mechanics batch to Remix.
 
 Kirby's Neutral B copy system and tether-grab/ordinary paired-throw choreography

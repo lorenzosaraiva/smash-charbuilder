@@ -69,7 +69,26 @@ def catalog():
                       loop_period=duration if loop else 0,symbol='sFTCustomAnimationShared'+fighter+motion))
    row.append(seen[key])
   rows.append(tuple(row))
+ from specialAnimationCatalog import catalog as special_catalog
+ for phase in special_catalog():
+  key=(phase['fighter'],phase['name'],phase['flags'],phase['frames'],phase['loop_start'],phase['loop_period'])
+  if key not in seen:
+   seen[key]=len(cases)
+   cases.append(dict(fighter=phase['fighter'],motion=phase['phase'],name=phase['name'],flags=phase['flags'],
+                     frames=phase['frames'],loop_start=phase['loop_start'],loop_period=phase['loop_period'],
+                     symbol='sFTCustomAnimationSpecial'+str(len(cases))))
  return tuple(cases),tuple(rows)
+
+@lru_cache(None)
+def special_rows():
+ from specialAnimationCatalog import catalog as special_catalog
+ cases,_=catalog()
+ result=[]
+ for phase in special_catalog():
+  index=next(i for i,c in enumerate(cases) if (c['fighter'],c['name'],c['flags'],c['frames'],c['loop_start'],c['loop_period'])==
+             (phase['fighter'],phase['name'],phase['flags'],phase['frames'],phase['loop_start'],phase['loop_period']))
+  result.append((phase,index))
+ return tuple(result)
 
 @lru_cache(None)
 def clip_data(index):

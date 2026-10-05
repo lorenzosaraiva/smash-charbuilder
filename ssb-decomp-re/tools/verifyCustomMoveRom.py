@@ -69,6 +69,14 @@ for name,expected in metadata.items():
 phoff = struct.unpack_from('>I',elf,28)[0]
 size,count = struct.unpack_from('>HH',elf,42)
 programs = [struct.unpack_from('>8I',elf,phoff+i*size) for i in range(count)]
+bank_start = symbols['sFTCustomAnimationKeys'][0]
+bank_end = symbols['charbuilder_animation_bank_VRAM_END'][0]
+assert bank_start == 0x80400000 and bank_start < bank_end < 0x80600000, 'Reserved pose bank layout'
+framebuffers = symbols['gSYFramebufferSets'][0]
+for name,(address,_,_) in symbols.items():
+    if name.startswith('ovl') and name.endswith('_VRAM_END'):
+        assert address <= framebuffers, ('Overlay overlaps framebuffers',name,hex(address))
+print('PASS: pose keys occupy a reserved Expansion Pak bank; all lower-bank overlays stop before framebuffers.')
 opening_names=tuple('mvOpening'+name+'StartScene' for name in
                     ('Room','Portraits','Mario','Donkey','Samus','Fox','Link','Yoshi','Pikachu','Kirby',
                      'Run','Yoster','Cliff','Standoff','Yamabuki','Clash','Sector','Jungle','Newcomers'))
@@ -397,7 +405,7 @@ for name in sorted(animation_names-{'sFTCustomAnimationCaptain','sFTCustomAnimat
     address,length,index=host_symbols[name]
     start=host_sections[index][4]+address-host_sections[index][3]
     raw=host[start:start+length]
-    if name=='sFTCustomAnimationKeys':pattern=raw
+    if name in ('sFTCustomAnimationKeys','sFTCustomAnimationSemanticJoints'):pattern=raw
     elif name=='sFTCustomAnimationCurves':
         pattern=b''.join(struct.pack('>IHH',*v) for v in struct.iter_unpack('<IHH',raw))
     elif name.endswith(('Curves','Root')):
@@ -427,12 +435,48 @@ for name in sorted(animation_names-{'sFTCustomAnimationCaptain','sFTCustomAnimat
     start=sections[index][4]+linked_address-sections[index][3]
     assert linked_length==length and elf[start:start+length]==pattern,name+' linked data'
     for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
-        if typ==1 and vaddr<=linked_address and linked_address+length<=vaddr+filesz:
+        if typ==1 and vaddr<=linked_address and linked_address+length<=vaddr+filesz and offset<=start and start+length<=offset+filesz:
             assert rom[paddr+linked_address-vaddr:paddr+linked_address-vaddr+length]==pattern,name+' ROM data'
             break
     else:raise AssertionError(name+' not loaded from ROM')
     shared_bytes+=length
-print(f'PASS: {len(pose_cases)} shared normal clips, all 12 body rigs and 396 registry pointers match host-tested data ({shared_bytes} bytes).')
+print(f'PASS: {len(pose_cases)} shared normal/special clips, all 12 body rigs and 396 normal registry pointers match host-tested data ({shared_bytes} bytes).')
+from sharedAnimation import special_rows
+special_host,special_sections,special_symbols=read_elf(ROOT/'build/testSpecialAnimations','<')
+def special_host_words(address,count):
+    for sec in special_sections:
+        if sec[1]!=8 and sec[3]<=address and address+count*4<=sec[3]+sec[5]:
+            return struct.unpack_from('<'+str(count)+'I',special_host,sec[4]+address-sec[3])
+    raise AssertionError(('Special host pointer',address,count))
+name='sFTCustomSpecialAnimations';entries=sum(p['binding'] is not None for p,i in special_rows())
+assert symbols[name][1]==entries*20
+linked=loaded_words(symbols[name][0],entries*5)
+reference=special_host_words(special_symbols[name][0],entries*5)
+special_phases=[(p,i) for p,i in special_rows() if p['binding'] is not None]
+for row,(phase,index) in enumerate(special_phases):
+    move,clip,script,donor,prop=linked[row*5:row*5+5]
+    expected=reference[row*5:row*5+5]
+    assert clip==symbols[pose_cases[index]['symbol']][0] and donor==phase['donor'],('Special visual phase',row)
+    assert loaded_words(move,4)[1:]==special_host_words(expected[0],4)[1:],('Special visual gameplay clock',row)
+    symbol='sFTCustomSpecialVisual'+str(row)
+    assert script==symbols[symbol][0]
+    count=special_symbols[symbol][1]//4
+    assert loaded_words(script,count)==special_host_words(expected[2],count),('Special visual script',row)
+    if expected[4]:
+        prop_symbol='sFTCustomSpecialProp'+str(row)
+        assert prop==symbols[prop_symbol][0]
+        hfields=special_host_words(expected[4],4);fields=loaded_words(prop,4)
+        assert fields[1:]==hfields[1:]
+        frame_symbol='sFTCustomSpecialAttachment'+str(row)
+        count=special_symbols[frame_symbol][1]//4
+        assert fields[0]==symbols[frame_symbol][0] and loaded_words(fields[0],count)==special_host_words(hfields[0],count),('Special prop data',row)
+    else:assert prop==0
+recovery=loaded_words(symbols['sFTCustomSpecialRecoveryClips'][0],24)
+for phase,index in special_rows():
+    if phase['binding'] is None:
+        at=phase['donor']*2+int(phase['phase']=='LandingFallSpecial')
+        assert recovery[at]==symbols[pose_cases[index]['symbol']][0],('Special recovery pose',phase['fighter'],phase['phase'])
+print(f'PASS: all {entries} special visual bindings/scripts, native prop transforms and 16 helpless/landing recovery pointers are in the checked ROM.')
 collision_bytes=0
 cases,rows=catalog()
 for case_id,case in enumerate(cases):

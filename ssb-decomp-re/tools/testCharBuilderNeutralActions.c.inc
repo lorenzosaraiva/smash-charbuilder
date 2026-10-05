@@ -1,7 +1,9 @@
 static void testActionTick(GObj *g)
 {
     s32 i;
-    g->anim_frame = ftCustomMoveAdvanceClock(g->fp, -1);
+    /* A looping pose remains positive in the production jab/special clock.
+     * Charge callbacks must use their own donor cycle boundary. */
+    g->anim_frame = ftCustomMoveAdvanceClock(g->fp, 1);
     ftMainUpdateMotionEventsAll(g);
     g->fp->proc_accessory(g);
     g->fp->proc_update(g);
@@ -57,7 +59,16 @@ static s32 testCharBuilderNeutralActions(void)
             }
         }
         CHECK(ftCustomMoveGetClock(&fp) == NULL);
-        if (index == 2) CHECK(s->dk_charge == FTDONKEY_GIANTPUNCH_CHARGE_MAX);
+        if (index == 2)
+        {
+            CHECK(s->dk_charge == FTDONKEY_GIANTPUNCH_CHARGE_MAX);
+            CHECK(ftMainCharBuilderTrySpecialN(&g));
+            CHECK(s->row == 4 + air);
+            for (tick = 0; tick < sFTCharBuilderActions[4 + air].move.duration; tick++) testActionTick(&g);
+            CHECK(s->row == 10 + air && s->release_charge == FTDONKEY_GIANTPUNCH_CHARGE_MAX && s->dk_charge == 0);
+            for (tick = 0; tick < 81 && ftCustomMoveGetClock(&fp); tick++) testActionTick(&g);
+            CHECK(ftCustomMoveGetClock(&fp) == NULL);
+        }
         if (index == 3 && !air) CHECK(s->samus_charge == FTSAMUS_CHARGE_MAX);
         if (index == 4)
         {
