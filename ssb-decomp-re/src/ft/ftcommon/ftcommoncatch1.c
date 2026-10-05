@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+extern s32 ftMainCharBuilderGetGrabKind(FTStruct*);
 
 // // // // // // // // // // // //
 //                               //
@@ -95,7 +96,7 @@ void ftCommonCatchSetStatus(GObj *fighter_gobj)
 
     fp->is_shield_catch = FALSE;
 
-    if (((fp->fkind == nFTKindSamus) || (fp->fkind == nFTKindNSamus)) && (efManagerSamusGrappleBeamGlowMakeEffect(fighter_gobj) != NULL))
+    if (((fp->fkind == nFTKindSamus) || (fp->fkind == nFTKindNSamus)) && ftMainCharBuilderGetGrabKind(fp) == fp->fkind && (efManagerSamusGrappleBeamGlowMakeEffect(fighter_gobj) != NULL))
     {
         fp->is_effect_attach = TRUE;
     }

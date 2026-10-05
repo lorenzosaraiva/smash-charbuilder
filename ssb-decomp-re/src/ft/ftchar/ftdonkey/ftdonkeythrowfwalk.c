@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+extern FTAttributes* ftMainCharBuilderPairAttributes(FTStruct*);
 // // // // // // // // // // // //
 //                               //
 //             MACROS            //
@@ -28,15 +29,15 @@ f32 ftDonkeyThrowFWalkGetWalkAnimLength(FTStruct *fp, s32 status_id)
     switch (status_id)
     {
     case nFTDonkeyStatusThrowFWalkSlow:
-        walk_anim_length = fp->attr->throw_walkslow_anim_length;
+        walk_anim_length = ftMainCharBuilderPairAttributes(fp)->throw_walkslow_anim_length;
         break;
 
     case nFTDonkeyStatusThrowFWalkMiddle:
-        walk_anim_length = fp->attr->throw_walkmiddle_anim_length;
+        walk_anim_length = ftMainCharBuilderPairAttributes(fp)->throw_walkmiddle_anim_length;
         break;
 
     case nFTDonkeyStatusThrowFWalkFast:
-        walk_anim_length = fp->attr->throw_walkfast_anim_length;
+        walk_anim_length = ftMainCharBuilderPairAttributes(fp)->throw_walkfast_anim_length;
         break;
     }
     return walk_anim_length;

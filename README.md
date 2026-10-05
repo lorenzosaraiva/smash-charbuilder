@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.13 (experimental)** | **Last updated: 2026-10-04**
+**Project version: 0.1.14 (experimental)** | **Last updated: 2026-10-05**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -13,8 +13,12 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
 
-The latest decomp update extends shared animations to all implemented specials: startup, charge loops, transitions, release and recovery on all twelve bodies. It also adds safe native special effects, blaster/tongue/Stone props and a held charge orb. Gameplay keeps its donor timing and collision paths.
-See [special animations and checks](ssb-decomp-re/docs/special-animations.md). Rendered playtesting and paired victim/tether animations remain on the checklist.
+The latest decomp update adds donor tether reach, grab/pull timing and paired
+forward/back throws on every original body. DK cargo carry and Kirby's landing
+throw retain their own mechanics. Attacker poses share the animation catalog;
+victims keep their native rigs and donor-selected capture/throw states.
+See [tether grabs and paired throws](ssb-decomp-re/docs/paired-grabs-and-throws.md).
+Rendered contact and visual polish remain on the checklist.
 
 **[How to play Character Lab](ssb-decomp-re/docs/playing.md)** |
 **[Done / not done](docs/status.md)** | **[Build guide](docs/building.md)** |
@@ -24,7 +28,7 @@ See [special animations and checks](ssb-decomp-re/docs/special-animations.md). R
 
 | Build | ROM last updated | ROM download | Play package | Source build |
 | --- | --- | --- | --- | --- |
-| **Character Lab** | 2026-10-04 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
+| **Character Lab** | 2026-10-05 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
 | **Character Lab on Remix (preview)** | 2026-10-03 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
 
 Dates use Sao Paulo time and refer to the published ROMs. The project version
@@ -86,7 +90,8 @@ damage and knockback on the other bodies, including angled variants and landing
 hitboxes. **All twelve bodies now perform all twelve donors' normal attacks**,
 including angled variants, aerial landings and body-supported jab phases. Shared
 donor curves adapt to each body's skeleton and proportions. Implemented specials
-share that catalog; paired grab/throw choreography remains pending. See the
+share that catalog. Grabs/throws retain donor paths, paired positioning and
+release mechanics, with shared attacker poses and native victim rigs. See the
 [full animation guide](ssb-decomp-re/docs/full-roster-animations.md), the
 [collision guide](ssb-decomp-re/docs/collision-trajectories.md) and
 [checklist](ssb-decomp-re/docs/status.md). Broader in-game acceptance is pending.

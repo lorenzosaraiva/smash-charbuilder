@@ -149,6 +149,10 @@ void ftManagerAllocFighter(u32 data_flags, s32 allocs_num)
     {
         extern void ftMainCharBuilderResetSpecialVisualsAll(void);
         ftMainCharBuilderResetSpecialVisualsAll();
+        {
+            extern void ftMainCharBuilderResetPairedMoves(void);
+            ftMainCharBuilderResetPairedMoves();
+        }
     }
 
     for (i = 0; i < (allocs_num - 1); i++)
@@ -527,6 +531,15 @@ void ftManagerSetupFilesPlayablesAll(void)
             }
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_hi);
             ftManagerSetupFilesSpecialKind(gSCManagerCharBuilderSlots[i].special_lw);
+            {
+                s32 attack, donor;
+                for (attack = nSCCharBuilderAttackGrab; attack <= nSCCharBuilderAttackThrowB; attack++)
+                {
+                    donor = gSCManagerCharBuilderSlots[i].attacks[attack];
+                    if (donor == nFTKindLink || donor == nFTKindSamus || donor == nFTKindYoshi) ftManagerSetupCharBuilderPropKind(donor);
+                    else if ((donor >= 0) && (donor < 12)) ftManagerSetupFileMainKind(donor);
+                }
+            }
             if (gSCManagerCharBuilderSlots[i].special_lw == nFTKindKirby) ftManagerSetupCharBuilderPropKind(nFTKindKirby);
             switch (gSCManagerCharBuilderSlots[i].special_n)
             {

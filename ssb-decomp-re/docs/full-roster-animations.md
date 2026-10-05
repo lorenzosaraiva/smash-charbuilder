@@ -109,3 +109,8 @@ Version 0.1.8 moves all nineteen opening movie heaps to Expansion Pak memory
 to fix a cold-boot allocation overflow before the first intro frame. The
 [boot and download notes](startup-and-downloads.md) cover the regression and
 byte-identical release copies.
+
+Version 0.1.14 also adds shared attacker grab/throw poses, donor tether paths and
+paired capture/release mechanics. See [paired grabs and throws](paired-grabs-and-throws.md).
+The current combined catalog has 488 clips; earlier normal-only memory/pose
+measurements above document their original milestone.

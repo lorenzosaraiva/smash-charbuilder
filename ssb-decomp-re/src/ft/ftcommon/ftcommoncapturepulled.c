@@ -1,5 +1,6 @@
 #include <ft/fighter.h>
 #include <it/item.h>
+extern sb32 ftMainCharBuilderPairCaptureTransform(GObj*, Vec3f*, Vec3f*);
 
 // // // // // // // // // // // //
 //                               //
@@ -16,6 +17,8 @@ void ftCommonCapturePulledRotateScale(GObj *fighter_gobj, Vec3f *this_pos, Vec3f
     DObj *joint = DObjGetStruct(fighter_gobj)->child;
     Mtx44f mtx;
 
+    if (ftMainCharBuilderPairCaptureTransform(fighter_gobj, this_pos, rotate)) return;
+
     func_ovl0_800C9A38(mtx, capture_fp->joints[capture_fp->attr->joint_itemheavy_id]);
     func_ovl2_800EDA0C(mtx, rotate);
 
@@ -27,6 +30,8 @@ void ftCommonCapturePulledRotateScale(GObj *fighter_gobj, Vec3f *this_pos, Vec3f
 #else
     FTParts *ftparts;
     DObj *joint = DObjGetStruct(fighter_gobj)->child;
+
+    if (ftMainCharBuilderPairCaptureTransform(fighter_gobj, this_pos, rotate)) return;
 
     func_ovl2_800EDBA4(capture_fp->joints[capture_fp->attr->joint_itemheavy_id]);
     ftparts = capture_fp->joints[capture_fp->attr->joint_itemheavy_id]->user_data.p;

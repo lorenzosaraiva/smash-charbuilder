@@ -23,8 +23,9 @@ choices keep native behavior.
 All original donor normal poses are retargeted to all twelve bodies. The body
 keeps its hurtbox geometry and movement outside attacks. Donor jab chains,
 Link's bounce, Ness's bat field and normal travel/physics are now implemented;
-see [normal mechanics](normal-mechanics.md). Special effects and tether/paired
-grab choreography remain separate work.
+see [normal mechanics](normal-mechanics.md). Special effects are covered in
+[special animations](special-animations.md), and tether/paired grab mechanics in
+[paired grabs and throws](paired-grabs-and-throws.md).
 
 ## Try it
 
@@ -110,9 +111,10 @@ preset/scene guards stop interrupted or unrelated moves from using old data.
 - ROM checks verify linked trajectory bytes, registry pointers/metadata, donor
   scripts/timing, integrated processing and N64 CRC. CI checks regeneration.
 
-The complete catalog adds **145,328 bytes** to the ROM/resident overlay relative
+At the 0.1.6 collision milestone, the complete catalog added **145,328 bytes** to the ROM/resident overlay relative
 to the five-move release, with **no BSS growth**. The Training arena retains about
-**1.74 MiB** before the framebuffer region. The checked ROM size and checksum are
+**1.74 MiB** before the framebuffer region. Current builds use the reserved Expansion Pak pose bank and scene heaps; these
+earlier memory figures are historical. The checked ROM size and checksum are
 recorded in the download's build metadata.
 
 These are numeric/code checks, not rendered collision-detection acceptance.
@@ -122,11 +124,12 @@ These are numeric/code checks, not rendered collision-detection acceptance.
 - [ ] In-game donor comparisons across small/large bodies, variants and both facings.
 - [ ] Miss, hit, shield, hitlag, repeat hits, damage interruption and four-player/CPU matches.
 - [ ] Aerial landing/cancellation and actual jab-chain transitions.
-- [ ] Visible donor animation retargeting across the roster.
-- [ ] Donor-specific movement, callbacks/effects and hurtbox behavior.
+- [x] Visible donor animation retargeting across the roster; rendered acceptance pending.
+- [x] Donor normal movement/callbacks and part-intangibility timing; native body hurtboxes retained.
 - [x] Projectile neutral first batch: Mario/Luigi Fireball, Thunder Jolt, PK Fire with donor timing and spawn geometry.
-- [ ] Remaining neutral charge/melee/movement/return/capture adapters, excluding Kirby copy.
-- [ ] Tether/paired grab and throw mechanics and choreography.
+- [x] Remaining neutral charge/melee/movement/return/capture adapters, excluding Kirby copy.
+- [x] Donor tether paths/timing, paired positioning/release and native victim queues.
+- [ ] Rendered tether/paired contacts, body alignment, stages and interruptions.
 
 See [building](../../docs/building.md) for ROM/release commands and the
 [checklist](status.md) for the remaining roadmap.

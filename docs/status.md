@@ -26,7 +26,9 @@ grab-preserving combo counters, full-roster normal animations and remaining work
 - [ ] Rendered animation/contact acceptance across the full roster.
 - [x] Shared borrowed-special startup/charge/transition/release/recovery poses on all twelve bodies.
 - [x] Safe native effects, blaster/tongue/Stone props and a held Samus charge orb.
-- [ ] Tether and paired victim/throw animations.
+- [x] Donor tether paths/props, grab/pull timing, paired release/positioning and native victim queues.
+- [x] Shared grab/throw attacker poses, DK cargo carry and Kirby landing throws.
+- [ ] Rendered tether/victim alignment, contact, stage edges and interruptions.
 
 The [Remix guide](../remix/character_creator_guide.md) and
 [port checklist](../remix/docs/character-lab-status.md) cover the separate preview.
@@ -148,3 +150,17 @@ remain on the detailed checklist.
 - [ ] Normal mesh/effect/audio polish and port this mechanics batch to Remix.
 
 See the [normal mechanics guide](../ssb-decomp-re/docs/normal-mechanics.md).
+
+## Decomp tether grabs and paired throws
+
+- [x] All twelve donor grab and forward/back throw choices retain independent source clocks.
+- [x] Link hook/rope, Samus beam and Yoshi tongue use source reach, windows and native props.
+- [x] Full donor capture matrices include animated scale and preserve each victim's own rig.
+- [x] Donor release flags, throw descriptors, facing changes and native victim status pairs.
+- [x] DK carry/walk/turn/jump/fall/landing/damage/toss and Kirby lift/fall/landing callbacks.
+- [x] Per-player ownership/generation guards, original-C geometry and linked-ROM checks.
+- [x] Paired ROM CPU checks: 24 foreign and 24 native forward/back releases, donor reach/ticks/damage, live victim positions and DK mash escape (null rendering).
+- [ ] Rendered contact, materials, compact-body intersections, slopes/edges and damage/escape acceptance.
+- [ ] Port this paired mechanics/animation batch to Remix.
+
+See [controls and verification](../ssb-decomp-re/docs/paired-grabs-and-throws.md).

@@ -9,7 +9,7 @@ they do not mean every matchup has been playtested. Please share weird cases.
 - [x] Thirteen normal attack families: jab, dash attack, three tilts, three smashes and five aerials.
 - [x] Donor damage, knockback, hitbox values and attack/recovery timing for normals.
 - [x] Independent grab, forward-throw and back-throw selections.
-- [x] Throw damage and knockback from the donor, with body capture/release animations.
+- [x] Donor grab/throw timing, paths, numeric values, capture anchors and native victim queues.
 - [x] Non-DK forward throws on DK release directly instead of entering cargo carry.
 - [x] All eleven non-copy neutral donors plus Body Move, on every original body.
 - [x] Four native projectile adapters with donor timing/spawn geometry and ground/air continuation.
@@ -58,9 +58,10 @@ See the [full-roster animation guide](full-roster-animations.md); the
 - [x] Full donor jab-chain availability, input buffering, rapid thresholds and repeat-hit/refresh timelines on all original bodies.
 - [x] Every donor normal attack animation on every body.
 - [x] Shared phase animations for all implemented neutral/Up B/Down B adapters on every body, including charge loops and recovery.
-- [ ] Donor grab/throw and paired victim animations on every body.
-- [ ] Paired donor throw/victim choreography, including special capture mechanics.
-- [ ] Tether grab reach, capture timing and visuals on other bodies.
+- [x] Shared donor grab/throw attacker poses on every body; donor-selected native victim phases.
+- [x] Paired positioning/release, DK cargo carry and Kirby lift/fall/landing throw mechanics.
+- [x] Link/Samus/Yoshi donor tether reach/timing and native hook/beam/tongue props.
+- [ ] Rendered tether/paired contact, victim alignment, slopes/edges and interruption acceptance.
 - [x] Native projectile neutral first batch on all bodies/four player slots; eight donor pose/matrix checks.
 - [ ] Rendered projectile contact, stage following, reflection/absorption and transition acceptance.
 - [x] Falcon Punch/Pound hitbox and movement adapters.
@@ -85,9 +86,11 @@ Normal attacks now show body-adapted donor poses. Compact bodies merge some
 semantic joints; accessories keep native bind poses and no foreign weapon mesh
 is added. Donor reach remains independent of limb length, so hitboxes may extend
 beyond a small body's limbs. See the
-[collision coverage and test guide](collision-trajectories.md). Throws keep body poses and release timing; changing
-the donor does not yet reproduce its full choreography. Tether-grab animation/reach
-and fighter-specific effects, movement or capture behavior are not universally copied.
+[collision coverage and test guide](collision-trajectories.md). Grabs and throws use donor paths, clocks and capture anchors, with shared
+attacker poses and native victim rigs. Bodies of different sizes can still intersect
+visually while retaining original donor reach. Rendered tether materials, victim
+alignment and stage/contact/interruption acceptance remain pending. See
+[paired grabs and throws](paired-grabs-and-throws.md).
 
 All twelve normal catalogs and bodies have automated numeric checks. Rendered
 appearance, special adapters and transitions need more gameplay reports. You may
@@ -153,3 +156,17 @@ distinction, independent player counters and vanilla resets outside Training.
 - [ ] Normal mesh/effect/audio polish and port this mechanics batch to Remix.
 
 See the [normal mechanics guide](normal-mechanics.md).
+
+## Decomp tether grabs and paired throws
+
+- [x] All twelve donor grab and forward/back throw choices retain independent source clocks.
+- [x] Link hook/rope, Samus beam and Yoshi tongue use source reach, windows and native props.
+- [x] Full donor capture matrices include animated scale and preserve each victim's own rig.
+- [x] Donor release flags, throw descriptors, facing changes and native victim status pairs.
+- [x] DK carry/walk/turn/jump/fall/landing/damage/toss and Kirby lift/fall/landing callbacks.
+- [x] Per-player ownership/generation guards, original-C geometry and linked-ROM checks.
+- [x] Paired ROM CPU checks: 24 foreign and 24 native forward/back releases, donor reach/ticks/damage, live victim positions and DK mash escape (null rendering).
+- [ ] Rendered contact, materials, compact-body intersections, slopes/edges and damage/escape acceptance.
+- [ ] Port this paired mechanics/animation batch to Remix.
+
+See [controls and verification](paired-grabs-and-throws.md).

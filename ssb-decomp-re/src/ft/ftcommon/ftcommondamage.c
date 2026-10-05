@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+extern s32 ftMainCharBuilderGetGrabKind(FTStruct*);
 #include <it/item.h>
 
 extern alSoundEffect* func_800269C0_275C0(u16);
@@ -433,7 +434,7 @@ sb32 ftCommonDamageCheckCatchResist(FTStruct *fp)
     {
         return TRUE;
     }
-    if ((fp->fkind == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey))
+    if ((ftMainCharBuilderGetGrabKind(fp) == nFTKindDonkey) || (fp->fkind == nFTKindNDonkey) || (fp->fkind == nFTKindGDonkey))
     {
         if ((fp->status_id >= nFTDonkeyStatusThrowFStart) && (fp->status_id <= nFTDonkeyStatusThrowFEnd) && (ftCommonDamageGetDamageLevel(ftParamGetHitStun(fp->damage_knockback)) < 3))
         {

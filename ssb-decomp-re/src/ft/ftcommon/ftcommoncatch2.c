@@ -1,4 +1,6 @@
 #include <ft/fighter.h>
+extern s32 ftMainCharBuilderGetGrabKind(FTStruct*);
+extern sb32 ftMainCharBuilderPairSocket(FTStruct*, Vec3f*);
 
 // // // // // // // // // // // //
 //                               //
@@ -48,7 +50,8 @@ void ftCommonCatchPullProcCatch(GObj *fighter_gobj)
     }
     pos = dFTCommonCatchPullEffectOffset;
 
-    gmCollisionGetFighterPartsWorldPosition(fp->joints[fp->attr->joint_itemheavy_id], &pos);
+    if (!ftMainCharBuilderPairSocket(fp, &pos))
+        gmCollisionGetFighterPartsWorldPosition(fp->joints[fp->attr->joint_itemheavy_id], &pos);
     efManagerCatchSwirlMakeEffect(&pos);
     ftParamMakeRumble(fp, 9, 0);
 }
@@ -76,12 +79,12 @@ void ftCommonCatchWaitSetStatus(GObj *fighter_gobj)
 
     ftParamSetCaptureImmuneMask(fp, FTCATCHKIND_MASK_ALL);
 
-    if ((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink))
+    if (((fp->fkind == nFTKindLink) || (fp->fkind == nFTKindNLink)) && ftMainCharBuilderGetGrabKind(fp) == fp->fkind)
     {
         ftParamSetModelPartID(fighter_gobj, 21, 0);
         ftParamSetModelPartID(fighter_gobj, 19, -1);
     }
-    else if ((fp->fkind == nFTKindYoshi) || (fp->fkind == nFTKindNYoshi))
+    else if (((fp->fkind == nFTKindYoshi) || (fp->fkind == nFTKindNYoshi)) && ftMainCharBuilderGetGrabKind(fp) == fp->fkind)
     {
         ftParamSetModelPartID(fighter_gobj, 7, 1);
     }

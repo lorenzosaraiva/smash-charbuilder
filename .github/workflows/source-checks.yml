@@ -36,7 +36,7 @@ jobs:
             src/ft/ftcustomcollisionregistry.generated.inc src/ft/ftneutralprojectiles.generated.inc \
             src/ft/ftneutralactions.generated.inc src/ft/ftspecialtiming.generated.inc \
             src/ft/ftnormalmechanics.generated.inc
-          git diff --exit-code -- src/ft/ftspecialanimations.generated.inc src/ft/ftcustomanimationkeys.generated.inc
+          git diff --exit-code -- src/ft/ftspecialanimations.generated.inc src/ft/ftcustomanimationkeys.generated.inc src/ft/ftpairedmoves.generated.inc src/ft/ftpairedgeometry.generated.inc
       - name: Check move behavior and donor data
         run: |
           mkdir -p build
@@ -52,6 +52,7 @@ jobs:
           python3 tools/testRemainingSpecials.py
           python3 tools/testNormalMechanics.py
           python3 tools/testSpecialAnimations.py
+          python3 tools/testPairedMoves.py
           python3 - <<'PY'
           import sys
           from pathlib import Path

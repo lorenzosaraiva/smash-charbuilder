@@ -185,6 +185,8 @@ def host_words(name):
     return struct.unpack_from('<'+str(length//4)+'I',host,start)
 def loaded_words(address, count):
     for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
+        # Relocation-asset virtual ranges can overlap the reserved pose bank.
+        if address>=0x80400000 and vaddr!=symbols["sFTCustomAnimationKeys"][0]:continue
         if typ == 1 and vaddr <= address and address+count*4 <= vaddr+filesz:
             return struct.unpack_from('>'+str(count)+'I',rom,paddr+address-vaddr)
     return None
@@ -477,6 +479,35 @@ for phase,index in special_rows():
         at=phase['donor']*2+int(phase['phase']=='LandingFallSpecial')
         assert recovery[at]==symbols[pose_cases[index]['symbol']][0],('Special recovery pose',phase['fighter'],phase['phase'])
 print(f'PASS: all {entries} special visual bindings/scripts, native prop transforms and 16 helpless/landing recovery pointers are in the checked ROM.')
+from generatePairedMoves import render as render_pairs
+pair_source,pair_geometry=render_pairs()
+assert (ROOT/'src/ft/ftpairedmoves.generated.inc').read_text()==pair_source
+assert (ROOT/'src/ft/ftpairedgeometry.generated.inc').read_text()==pair_geometry
+pair_host,pair_sections,pair_symbols=read_elf(ROOT/'build/testPairedMoves','<')
+pair_targets={a:n for n,(a,l,i) in pair_symbols.items() if n.startswith('sFTCustom') and l and pair_sections[i][1]!=8}
+pair_bytes=pair_count=0
+for name,(address,length,index) in pair_symbols.items():
+    if not name.startswith('sFTCustomPair') or pair_sections[index][1]==8 or not length:continue
+    start=pair_sections[index][4]+address-pair_sections[index][3]
+    words=list(struct.unpack_from('<'+str(length//4)+'I',pair_host,start))
+    if name.endswith(('Clips','Props')) or name=='sFTCustomPairPhases':
+        words=[symbols[pair_targets[w]][0] if w in pair_targets else w for w in words]
+    linked_address,linked_length,index=symbols[name]
+    assert linked_length==length,(name,'paired length')
+    start=sections[index][4]+linked_address-sections[index][3]
+    pattern=struct.pack('>'+str(len(words))+'I',*words)
+    assert elf[start:start+length]==pattern,(name,'paired ELF words')
+    for typ,offset,vaddr,paddr,filesz,memsz,flags,align in programs:
+        if typ==1 and vaddr<=linked_address and linked_address+length<=vaddr+filesz and offset<=start and start+length<=offset+filesz:
+            assert rom[paddr+linked_address-vaddr:paddr+linked_address-vaddr+length]==pattern,(name,'paired ROM words')
+            break
+    else:raise AssertionError(name+' not loaded from ROM')
+    pair_bytes+=length;pair_count+=1
+assert symbols['sFTCustomPairPhases'][1]==61*80
+assert symbols['sFTCustomPairVictimStatuses'][1]==12*12*2*8
+for name in ('ftMainCharBuilderTryPairedThrow','ftMainCharBuilderPairCaptureTransform','ftMainCharBuilderGetCaptureKind','ftMainCharBuilderGetGrabKind'):
+    assert symbols[name][1]>0,(name,'paired code missing')
+print(f'PASS: all 61 paired phases, 288 native victim status pairs, scripts/throws, capture matrices and prop data match host-tested ROM data ({pair_count} arrays, {pair_bytes} bytes).')
 collision_bytes=0
 cases,rows=catalog()
 for case_id,case in enumerate(cases):

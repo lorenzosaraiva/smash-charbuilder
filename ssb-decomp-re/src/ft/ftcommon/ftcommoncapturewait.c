@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+extern s32 ftMainCharBuilderGetCaptureKind(FTStruct*);
 
 // // // // // // // // // // // //
 //                               //
@@ -50,7 +51,7 @@ void ftCommonCaptureWaitSetStatus(GObj *fighter_gobj)
 
     ftMainSetStatus(fighter_gobj, nFTCommonStatusCaptureWait, 0.0F, 1.0F, (FTSTATUS_PRESERVE_TEXTUREPART | FTSTATUS_PRESERVE_MODELPART));
 
-    if ((capture_fp->fkind == nFTKindYoshi) || (capture_fp->fkind == nFTKindNYoshi))
+    if ((ftMainCharBuilderGetCaptureKind(this_fp) == nFTKindYoshi) || (capture_fp->fkind == nFTKindNYoshi))
     {
         this_fp->is_invisible = TRUE;
 

@@ -77,6 +77,16 @@ def catalog():
    cases.append(dict(fighter=phase['fighter'],motion=phase['phase'],name=phase['name'],flags=phase['flags'],
                      frames=phase['frames'],loop_start=phase['loop_start'],loop_period=phase['loop_period'],
                      symbol='sFTCustomAnimationSpecial'+str(len(cases))))
+ from pairedMoves import catalog as paired_catalog
+ for phase in paired_catalog():
+  for start in range(0,phase['frames'],128):
+   frames=min(128,phase['frames']-start)
+   key=('pair',phase['fighter'],phase['name'],phase['flags'],start,frames)
+   if key not in seen:
+    seen[key]=len(cases)
+    cases.append(dict(fighter=phase['fighter'],motion=phase['phase'],name=phase['name'],flags=phase['flags'],
+                      frames=frames,start_frame=start,loop_start=0,loop_period=0,
+                      symbol='sFTCustomAnimationPaired'+str(len(cases))))
  return tuple(cases),tuple(rows)
 
 @lru_cache(None)
@@ -91,10 +101,24 @@ def special_rows():
  return tuple(result)
 
 @lru_cache(None)
+def paired_rows():
+ from pairedMoves import catalog as paired_catalog
+ cases,_=catalog();result=[]
+ for phase in paired_catalog():
+  indices=[]
+  for start in range(0,phase['frames'],128):
+   frames=min(128,phase['frames']-start)
+   indices.append(next(i for i,c in enumerate(cases) if c.get('start_frame')==start and
+       (c['fighter'],c['name'],c['flags'],c['frames'])==(phase['fighter'],phase['name'],phase['flags'],frames)))
+  result.append((phase,tuple(indices)))
+ return tuple(result)
+
+@lru_cache(None)
 def clip_data(index):
  c=catalog()[0][index]
  bones,_=rig(c['fighter'],c['flags'])
- poses=sample(c['fighter'],c['name'],c['frames'],c['flags'])
+ start=c.get('start_frame',0)
+ poses=sample(c['fighter'],c['name'],start+c['frames'],c['flags'])[start:]
  bind=world(bones,{j:(*b.rotate,0,*b.translate,1,1,1) for j,b in bones.items()})
  keys=[];roots=[]
  for joint in bones:

@@ -1,5 +1,20 @@
 # Character Lab changes
 
+## 0.1.14 - 2026-10-05: Tether grabs and paired throws
+
+- Add 61 donor grab/pull/throw/carry phases and 288 native victim status pairs.
+- Retain donor grab hitbox paths/windows, pull offsets, release flags, facing,
+  throw descriptors and capture matrices, including animated scale.
+- Extend shared attacker poses to grabs/throws; victims retain their own rigs and
+  donor-selected native capture/thrown animations. Add native hook/rope/beam/tongue props.
+- Run DK cargo movement/jump/fall/damage/toss and Kirby lift/fall/landing mechanics
+  on foreign bodies, with donor movement attributes and source timing.
+- Keep state isolated by player and fighter generation; use donor sockets for
+  catch effects instead of requiring hidden body joints.
+- Add original-C matrix/pose, production phase/ownership and linked-ROM checks.
+  Rendered contact, body intersections, materials and stage/interrupt acceptance remain pending.
+- Build the checked decomp ROM/package; Remix remains unchanged.
+
 ## 0.1.13 - 2026-10-04: Shared special animations
 
 - Reserve an Expansion Pak pose bank so the expanded catalog cannot push game

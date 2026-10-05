@@ -2,6 +2,9 @@
 #include <ft/ftcustommove.h>
 #include "ftcustommoves.generated.inc"
 #include "ftcustomgrabs.generated.inc"
+#ifdef FTCHARBUILDER_PAIRED_MOVES
+static const FTCustomMoveDefinition* ftMainCharBuilderGetPairMove(FTStruct*);
+#endif
 
 static ftMotionCommand sFTCustomMoveScripts[GMCOMMON_PLAYERS_MAX][FTCUSTOMMOVE_SCRIPT_WORDS];
 u32 gFTCustomMoveValidationFailures;
@@ -159,6 +162,9 @@ static const FTCustomMoveDefinition* ftCustomMoveGetDefinition(FTStruct *fp)
     SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
     s32 attack, i, donor;
     if (slot == NULL) return NULL;
+#ifdef FTCHARBUILDER_PAIRED_MOVES
+    if (ftMainCharBuilderGetPairMove(fp) != NULL) return ftMainCharBuilderGetPairMove(fp);
+#endif
     if ((fp->status_id >= FTCUSTOMMOVE_JAB_STATUS_START) && (fp->status_id <= FTCUSTOMMOVE_JAB_STATUS_END))
     {
         donor = slot->attacks[nSCCharBuilderAttackJab];

@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+extern s32 ftMainCharBuilderGetCaptureKind(FTStruct*);
 
 // // // // // // // // // // // //
 //                               //
@@ -14,10 +15,11 @@ void ftCommonThrownProcUpdate(GObj *fighter_gobj)
     if (fighter_gobj->anim_frame <= 0.0F)
     {
         FTStruct *capture_fp = ftGetStruct(this_fp->capture_gobj);
+        s32 capture_kind = ftMainCharBuilderGetCaptureKind(this_fp);
 
         if 
         (
-            (capture_fp->fkind != nFTKindDonkey)                      &&
+            (capture_kind != nFTKindDonkey)                          &&
             (capture_fp->fkind != nFTKindNDonkey)                     &&
             (capture_fp->fkind != nFTKindGDonkey)                     ||
             (capture_fp->status_id != nFTCommonStatusThrowF)
@@ -69,7 +71,7 @@ void ftCommonThrownSetStatusQueue(GObj *fighter_gobj, s32 status_id_new, s32 sta
     ftMainSetStatus(fighter_gobj, status_id_new, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 
-    if ((capture_fp->fkind == nFTKindYoshi) || (capture_fp->fkind == nFTKindNYoshi))
+    if ((ftMainCharBuilderGetCaptureKind(this_fp) == nFTKindYoshi) || (capture_fp->fkind == nFTKindNYoshi))
     {
         this_fp->is_invisible = TRUE;
 
@@ -92,7 +94,7 @@ void ftCommonThrownSetStatusImmediate(GObj *fighter_gobj, s32 status_id)
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 
-    if ((capture_fp->fkind == nFTKindYoshi) || (capture_fp->fkind == nFTKindNYoshi))
+    if ((ftMainCharBuilderGetCaptureKind(this_fp) == nFTKindYoshi) || (capture_fp->fkind == nFTKindNYoshi))
     {
         this_fp->is_invisible = TRUE;
 
@@ -102,9 +104,9 @@ void ftCommonThrownSetStatusImmediate(GObj *fighter_gobj, s32 status_id)
 
     if 
     (
-        (capture_fp->fkind == nFTKindMario)   ||
+        (ftMainCharBuilderGetCaptureKind(this_fp) == nFTKindMario) ||
         (capture_fp->fkind == nFTKindMMario)  ||
-        (capture_fp->fkind == nFTKindLuigi)   ||
+        (ftMainCharBuilderGetCaptureKind(this_fp) == nFTKindLuigi) ||
         (capture_fp->fkind == nFTKindNMario)  ||
         (capture_fp->fkind == nFTKindNLuigi)
     )

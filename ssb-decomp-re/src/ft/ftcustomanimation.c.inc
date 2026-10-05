@@ -32,6 +32,9 @@ typedef struct FTCustomAnimationBone
 typedef struct FTCustomAnimationRig { const FTCustomAnimationBone *bones; s32 count; } FTCustomAnimationRig;
 #include "ftcustomanimationshared.generated.inc"
 u32 gFTCustomAnimationValidationFailures;
+#ifdef FTCHARBUILDER_PAIRED_MOVES
+static const FTCustomAnimationClip* ftCustomAnimationGetPairClip(FTStruct*, s32*);
+#endif
 #ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
 static const FTCustomAnimationClip* ftCustomAnimationGetSpecialClip(FTStruct*, s32*);
 static void ftMainCharBuilderStartSpecialVisualScript(FTStruct*, f32);
@@ -111,6 +114,10 @@ static const FTCustomAnimationClip* ftCustomAnimationGetClip(FTStruct *fp, s32 *
     const FTCustomAnimationClip *clip;
     u32 offset, index;
     if ((fp->fkind < 0) || (fp->fkind >= 12) || (ftCustomMoveGetSlot(fp) == NULL)) return NULL;
+#ifdef FTCHARBUILDER_PAIRED_MOVES
+    clip = ftCustomAnimationGetPairClip(fp, frame);
+    if (clip != NULL) return clip;
+#endif
 #ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS
     clip = ftCustomAnimationGetSpecialClip(fp, frame);
     if (clip != NULL) return clip;

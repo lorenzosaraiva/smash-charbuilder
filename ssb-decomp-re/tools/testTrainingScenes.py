@@ -33,6 +33,8 @@ parser.add_argument('--direct-special',type=int,choices=(3,5,10),help='Check Sam
 parser.add_argument('--egg-lay',action='store_true',help='Test Egg Lay on every body instead of cycling neutral choices')
 parser.add_argument('--mario-animations',action='store_true',help='Check four Mario donor catalogs using real attack inputs and RAM poses')
 parser.add_argument('--roster-animations',action='store_true',help='Check every donor/body pair, live poses, recovery and Training return')
+parser.add_argument('--paired-moves',action='store_true',help='Check native tether contacts and donor paired throw releases')
+parser.add_argument('--paired-native',action='store_true',help='Run native grab/throw controls for paired checks')
 parser.add_argument('--normal-mechanics',action='store_true',help='Check all donor jab chains, Link bounce and Ness bat windows on each body')
 parser.add_argument('--special-animations',action='store_true',help='Compare live borrowed-special poses with native-engine references')
 parser.add_argument('--charge-animations',action='store_true',help='Check partial/full Giant Punch and Charge Shot pose transitions')
@@ -75,6 +77,11 @@ proc_hit_off,flag1_off,rehit_off,pkind_off,special_coll_off,wp_reflect_off,vel_g
 value,length,index=layout_symbols['sSceneSmokeReflectFlags'];start=sections[index][4]+value-sections[index][3]
 reflect_bits=[(i,b) for i,b in enumerate(data[start:start+length]) if b]
 assert len(reflect_bits)==1;reflect_flag_off,reflect_flag_mask=reflect_bits[0]
+value,length,index=layout_symbols['sSceneSmokePairLayout'];start=sections[index][4]+value-sections[index][3]
+catch_off,capture_off,throw_desc_off,flag2_off,child_off=struct.unpack_from('>5I',data,start)
+value,length,index=layout_symbols['sSceneSmokeInvisibleFlags'];start=sections[index][4]+value-sections[index][3]
+invisible_bits=[(i,b) for i,b in enumerate(data[start:start+length]) if b]
+assert len(invisible_bits)==1;invisible_off,invisible_mask=invisible_bits[0]
 ftsize,kind_off,port_off,gobj_off,status_off,motion_off,attack_off,attack_size,attack_state_off,passive_off,passive_size,generation_off,physics_off,vel_air_off,hitlag_off,gobj_frame_off=fighter_layout
 slot_size,neutral_field,players_field,player_size,pkind_field,fkind_field,man_field,cpu_field,reset_field,stage_field=layout
 for name in ('input','video'):
@@ -119,7 +126,15 @@ def w8(a,v):C.c_uint8.from_address(ram+((a&0x7fffff)^3)).value=v
 def w32(a,v):C.c_uint32.from_address(ram+(a&0x7fffff)).value=v
 def f32(a):return C.c_float.from_address(ram+(a&0x7fffff)).value
 def wf32(a,v):C.c_float.from_address(ram+(a&0x7fffff)).value=v
-def fighter():return u32(addr('sFTManagerStructsAllocBuf'))
+def fighter():
+    if args.paired_moves:
+        node=u32(addr('gGCCommonLinks')+3*4)
+        for _ in range(4):
+            if not 0x80000000<=node<0x80800000:break
+            fp=u32(node+user_off)
+            if 0x80400000<=fp<0x80800000 and u8(fp+port_off)==0:return fp
+            node=u32(node+link_next_off)
+    return u32(addr('sFTManagerStructsAllocBuf'))
 def opponent():
     node=u32(addr('gGCCommonLinks')+3*4)
     for _ in range(4):
@@ -186,9 +201,71 @@ if args.mario_animations or args.roster_animations or args.special_animations:
         for variant,motion in enumerate(extra_ids(name),29):
             if motion>=0:variants[motion]=variant
         body_variants.append(variants)
+pair_trace=[];pair_errors=[];pair_hits=[];pair_position_samples=0;pair_escape=False;pair_contact=False;pair_first_point=None;pair_direction=0;pair_cargo_frames=0
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
+    global pair_cargo_frames,pair_position_samples
     global last_trace,animation_samples,thunder_contact_done,falcon_contact_done,normal_bounced,normal_reflected
+    if args.paired_moves and u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180:
+        fp=fighter();cpu=opponent()
+        if 0x80400000<=fp<0x80800000 and cpu:
+            status=u32(fp+status_off);clock=addr('sFTCustomMoveClocks')
+            frame_value=f32(clock+24) if u32(clock)==fp else f32(u32(fp+gobj_off)+gobj_frame_off)
+            root=u32(u32(fp+gobj_off)+obj_off)+position_off
+            if pair_contact and u32(fp+catch_off) and u32(cpu+capture_off)==u32(fp+gobj_off) and not args.paired_native:
+                phase=next((addr('sFTCustomPairPhases')+i*80 for i in range(61) if addr('sFTCustomPairPhases')+i*80+12==u32(clock+8)),0)
+                if u32(clock)==fp and u32(clock+12)==status and phase:
+                    anchors=u32(phase+48);count=u32(phase+60);tick=max(0,int(frame_value))
+                    period=u32(phase+44);begin=u32(phase+40)
+                    if period and tick>=begin:tick=begin+(tick-begin)%period
+                    tick=min(tick,count-1);sample=anchors+tick*48
+                    victim_root=u32(u32(cpu+gobj_off)+obj_off);child=u32(victim_root+child_off)
+                    if child:
+                        offset=tuple(-f32(child+position_off+j)*f32(victim_root+scale_off+j) for j in (0,4,8))
+                        local=tuple(f32(sample+36+axis*4)+sum(f32(sample+(axis*3+k)*4)*offset[k] for k in range(3)) for axis in range(3))
+                        from math import sin,cos
+                        yaw=f32(root-position_off+rotation_off+4)
+                        expected=(f32(root)+cos(yaw)*local[0]+sin(yaw)*local[2],f32(root+4)+local[1],f32(root+8)-sin(yaw)*local[0]+cos(yaw)*local[2])
+                        observed=tuple(f32(victim_root+position_off+j) for j in (0,4,8))
+                        axes=(0,2) if status in (167,168) else (0,1,2)
+                        error=max(abs(observed[j]-expected[j]) for j in axes)
+                        pair_position_samples+=1
+                        if error>.2 and len(pair_errors)<8:pair_errors.append((status,frame_value,error,observed,expected))
+            if pair_contact and status==common_statuses['nFTCommonStatusCatch']:
+                mask=sum(1<<aid for aid in range(4) if u32(fp+attack_off+aid*attack_size+attack_state_off))
+                centers=tuple(tuple(f32(fp+attack_off+aid*attack_size+center_off+j) for j in (0,4,8)) for aid in range(4))
+                pair_hits.append((int(frame_value),mask,centers,tuple(f32(root+j) for j in (0,4,8)),s32(fp+lr_off)))
+            pair_trace.append((status,frame_value,u32(fp+catch_off),u32(cpu+capture_off),u32(cpu+status_off),u32(cpu+percent_off),bool(u8(cpu+invisible_off)&invisible_mask),tuple(f32(root+j) for j in (0,4,8))))
+            if pair_contact and status==common_statuses['nFTCommonStatusCatch']:
+                for aid in range(4):
+                    hit=fp+attack_off+aid*attack_size
+                    if u32(hit+attack_state_off):
+                        cpu_root=u32(u32(cpu+gobj_off)+obj_off)+position_off
+                        center=tuple(f32(hit+center_off+j) for j in (0,4,8))
+                        for j,value in zip((0,4,8),(center[0],center[1]-200,center[2])):
+                            wf32(cpu_root+j,value);wf32(cpu+coll_prev_off+j,value)
+                            wf32(cpu+physics_off+vel_air_off+j,0)
+                        wf32(cpu+physics_off+vel_ground_off,0)
+                        break
+                else:
+                    if args.paired_native and pair_first_point is not None:
+                        tick,point=pair_first_point
+                        if frame_value<=tick:
+                            cpu_root=u32(u32(cpu+gobj_off)+obj_off)+position_off;facing=s32(fp+lr_off)
+                            center=(f32(root)+point[2]*facing,f32(root+4)+point[1],f32(root+8)-point[0]*facing)
+                            for j,value in zip((0,4,8),(center[0],center[1]-200,center[2])):
+                                wf32(cpu_root+j,value);wf32(cpu+coll_prev_off+j,value);wf32(cpu+physics_off+vel_air_off+j,0)
+                            wf32(cpu+physics_off+vel_ground_off,0)
+            if pair_direction and status==common_statuses['nFTCommonStatusCatchWait']:
+
+                facing=s32(fp+lr_off);keys(((80*facing*pair_direction)&255)<<16)
+            elif pair_direction and status==235 and u32(fp+kind_off)!=2:
+                pair_cargo_frames+=1
+                keys(0x80 if pair_cargo_frames>=6 and not pair_escape else 0)
+            elif pair_direction and status==235 and args.paired_native:
+                pair_cargo_frames+=1;keys(0x80 if pair_cargo_frames>=6 and not pair_escape else 0)
+            elif pair_direction and status>=common_statuses["nFTCommonStatusThrowF"]:
+                keys(0)
     if args.special_animations and u8(scene)==54:
         fp=fighter()
         if 0x80400000<=fp<0x80800000:
@@ -400,6 +477,7 @@ try:
         preset=case%4;body=(case+2)%12
         if args.mario_animations:body=0
         if args.roster_animations:body=case
+        if args.paired_native:body=case
         w32(addr('sMNOptionBuilderSlot'),preset)
         slot=addr('gSCManagerCharBuilderSlots')+preset*slot_size
         w8(slot,1);w8(slot+1,body)
@@ -411,6 +489,10 @@ try:
             for i in range(13):w8(slot+2+i,(1,2,4,7)[case])
         if args.roster_animations:
             for i in range(13):w8(slot+2+i,(body+1)%12)
+        if args.paired_moves:
+            grab=case if args.paired_native else (5,3,6)[case%3]
+            if grab==body and not args.paired_native:grab=(5,3,6)[(case+1)%3]
+            w8(slot+2+13,grab);w8(slot+2+14,case);w8(slot+2+15,case)
         w8(slot+18,args.superjump if args.superjump is not None and args.superjump!=10 else 11 if args.specials else args.path_donor if args.path_donor in (2,11) else body)
         w8(slot+19,10 if args.superjump==10 else 2 if args.specials else args.path_donor if args.path_donor in (0,4,7) else body)
         if args.mechanic is not None:
@@ -425,14 +507,86 @@ try:
         wait(lambda:u8(scene)==18 and u32(addr('sMNPlayers1PTrainingTotalTimeTics'))>70,'Training character select')
         frames(30);minima.append(heap_ok());pulse(0x10)
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Training stage select')
-        if args.superjump is not None or args.direct_special is not None or args.mechanic is not None or args.normal_mechanics or args.charge_animations:
+        if args.superjump is not None or args.direct_special is not None or args.mechanic is not None or args.normal_mechanics or args.charge_animations or args.paired_moves:
             # Dream Land avoids Castle's bumper/other stage attacks interrupting
             # the scripted rise before source timing/recovery can be measured.
             w32(addr('sMNMapsCursorSlot'),6)
-        if args.normal_mechanics:w8(scene+training_cpu_kind_off,0)
+        if args.normal_mechanics or args.paired_moves:w8(scene+training_cpu_kind_off,0)
         pulse(0x80);wait(lambda:u8(scene)==54 and u32(addr('dSYTaskmanUpdateCount'))>180,'Training match load')
         frames(30);minima.append(heap_ok())
-        if args.normal_mechanics:
+        if args.paired_moves:
+            from pairedMoves import catalog as pair_catalog,phase_data
+            grab_index=next(i for i,c in enumerate(pair_catalog()) if c['donor']==grab and c['phase']=='Catch')
+            grab_frames=phase_data(grab_index)[0]
+            first_tick,first_mask,first_centers=next((tick,mask,centers) for tick,(mask,centers) in enumerate(grab_frames) if mask)
+            pair_first_point=(first_tick,first_centers[next(aid for aid in range(4) if first_mask&(1<<aid))])
+            check(core.CoreDoCommand(17,4,C.byref(C.c_int(200))))
+            check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
+            fp=fighter();cpu=opponent()
+            # Real grab/throw inputs; contact placement only avoids CPU AI wandering.
+            for direction in (1,-1):
+                pair_direction=0;pair_contact=False;keys(0)
+                pulse(0x10);w32(addr('sSC1PTrainingModeMenu'),4);pulse(0x80);frames(240)
+                wait(lambda:u8(scene)==54 and u32(fighter()+status_off)==common_statuses["nFTCommonStatusWait"],"Reset fighter ready")
+                fp=fighter();cpu=opponent();cpu_root=u32(u32(cpu+gobj_off)+obj_off)+position_off
+                wf32(cpu_root,1000);wf32(cpu_root+4,400)
+                pair_trace.clear();pair_hits.clear();pair_errors.clear();pair_position_samples=0;pair_cargo_frames=0;pair_direction=direction;pair_contact=True
+                keys(0xA0);frames(3);keys(0)
+                wait(lambda:any(r[2] for r in pair_trace),'Tether contact/capture',seconds=5)
+                wait(lambda:any(r[2] and r[3] for r in pair_trace),'Bidirectional native capture')
+                wait(lambda:any(r[5]>0 and not r[2] and not r[3] for r in pair_trace),'Paired donor throw release',seconds=8)
+                pair_direction=0;pair_contact=False;keys(0);frames(100)
+                statuses={r[0] for r in pair_trace};captured=[r for r in pair_trace if r[2]]
+                assert common_statuses['nFTCommonStatusCatchPull'] in statuses,('Missing pull',body,case,statuses)
+                assert common_statuses['nFTCommonStatusCatchWait'] in statuses,('Missing wait',body,case,statuses)
+                if case==2 and direction==1:assert 235 in statuses and 244 in statuses,('DK carry/toss phases',statuses)
+                if case==8 and direction==1:assert 228 in statuses and 230 in statuses,('Kirby lift/landing phases',statuses)
+                releases=[r for r in pair_trace if r[5]>0 and not r[2] and not r[3]]
+                assert u32(fp+status_off)<166,("Throw recovery",body,case,pair_trace[-10:])
+                assert releases and not u32(fp+catch_off) and not u32(cpu+capture_off),('Stuck capture',pair_trace[-10:])
+                assert not (u8(cpu+invisible_off)&invisible_mask),('Hidden victim after release',case)
+                assert u32(fp+attr_off)!=0 and u32(addr('gFTCustomMoveValidationFailures'))==0 and u32(addr('gFTCustomAnimationValidationFailures'))==0
+                if grab==6:assert any(r[6] for r in captured),('Yoshi capture visibility',body,case)
+                assert not pair_errors,('Paired victim positioning',body,case,pair_errors)
+                if not args.paired_native:assert pair_position_samples>0,('No paired positions',body,case)
+                first=releases[0]
+                release_phase=next(c for c in pair_catalog() if c['donor']==case and c['status']==first[0])
+                release_ticks=[tick for tick,events in release_phase['timeline'].items() if any(op=='ftMotionCommandSetFlag2' and a[0] for op,a in events)]
+                assert int(first[1]) in set(release_ticks),('Donor release tick',body,case,first,release_ticks)
+                from pairedMoves import throw_descriptors,phase_data
+                descriptors=throw_descriptors(release_phase['fighter'],release_phase['phase']) or throw_descriptors(release_phase['fighter'],'ThrowF')
+                expected_damage=descriptors[0][1]+(8 if case==2 and direction==1 else 0)
+                assert first[5]==expected_damage,('Donor throw damage',body,case,first[5],expected_damage)
+                grab_index=next(i for i,c in enumerate(pair_catalog()) if c['donor']==grab and c['phase']=='Catch')
+                grab_frames=phase_data(grab_index)[0]
+                if not args.paired_native:assert any(mask for tick,mask,centers,root,facing in pair_hits),('Grab never became active',body,grab)
+                for tick,mask,centers,root,facing in pair_hits:
+                    if not 0<=tick<len(grab_frames):continue
+                    expected_mask,points=grab_frames[tick]
+                    assert mask==expected_mask,('Grab active timing',body,grab,tick,mask,expected_mask)
+                    for aid,point in enumerate(points):
+                        if not mask&(1<<aid):continue
+                        expected=(root[0]+point[2]*facing,root[1]+point[1],root[2]-point[0]*facing)
+                        assert max(abs(a-b) for a,b in zip(centers[aid],expected))<.1,('Grab center',body,grab,tick,aid,centers[aid],expected)
+                print('PASS: paired body',body,'grab',grab,'throw',case,'direction',direction,'phases',sorted(statuses),'release',first[:7],'heap',heap_ok(),flush=True)
+            if case==2:
+                pair_direction=0;pair_contact=False;keys(0)
+                pulse(0x10);w32(addr('sSC1PTrainingModeMenu'),4);pulse(0x80);frames(240)
+                wait(lambda:u32(fighter()+status_off)==common_statuses['nFTCommonStatusWait'],'Cargo escape reset')
+                fp=fighter();cpu=opponent();pair_trace.clear();pair_escape=True;pair_direction=1;pair_contact=True;pair_cargo_frames=0
+                keys(0xA0);frames(3);keys(0)
+                wait(lambda:any(r[0]==235 for r in pair_trace),'Cargo hold before mash escape')
+                pair_direction=0;pair_contact=False;keys(0);w32(cpu+pkind_off,0)
+                for i in range(20):
+                    keys_port(u8(cpu+port_off),(0x80 if i%2 else 0x40)|(((80 if i%2 else -80)&255)<<16));frames(2)
+                    keys_port(u8(cpu+port_off),0);frames(1)
+                    if not u32(cpu+capture_off):break
+                keys_port(u8(cpu+port_off),0);pair_escape=False;w32(cpu+pkind_off,1);frames(100)
+                assert not u32(fp+catch_off) and not u32(cpu+capture_off),('Cargo mash escape links',body)
+                assert u32(fp+status_off)<235 and not (u8(cpu+invisible_off)&invisible_mask),('Cargo escape cleanup',body)
+                print('PASS: cargo mash escape body',body,'native bidirectional release and status cleanup.',flush=True)
+            pair_direction=0;pair_contact=False
+        elif args.normal_mechanics:
             # Cap input sampling so short pulses cannot disappear between
             # Python's polls on fast hosts. Speed affects wall time only.
             check(core.CoreDoCommand(17,4,C.byref(C.c_int(300))))

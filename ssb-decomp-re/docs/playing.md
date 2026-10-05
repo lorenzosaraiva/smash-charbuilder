@@ -99,9 +99,11 @@ The hitboxes follow Falcon's original upward kick while Kirby performs the
 retargeted Falcon pose. The same Falcon path works on every foreign body.
 
 Builds and assignments last for the running ROM session and reset when the ROM
-restarts. Specials still use body or temporary poses. Throws copy donor
-damage/knockback but retain body choreography; DK skips cargo when another fighter's
-forward throw is selected. The [checklist](status.md) explains the remaining gaps.
+restarts. Specials, grabs and throws use shared donor attacker poses. Tethers
+retain donor reach and timing; paired throws use donor capture positions, victim
+queues and release timing. Selecting DK forward throw enables cargo carry;
+selecting Kirby forward throw enables the lift/landing throw. Victims keep their
+own rigs. See [controls](paired-grabs-and-throws.md) and the [checklist](status.md).
 
 For donor animations, choose a Mario body and Fox, DK, Luigi or Falcon for any
 normal attack row. Angled attacks and aerial landing poses are included. Try

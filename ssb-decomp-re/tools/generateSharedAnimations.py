@@ -86,5 +86,7 @@ def main():
  prepare_math()
  (ROOT/'src/ft/ftcustomanimationshared.generated.inc').write_bytes(output.encode('utf-8'))
  (ROOT/'build/animation-shared-manifest.json').write_bytes((json.dumps(report,indent=2)+'\n').encode('utf-8'))
+ from generatePairedMoves import main as generate_paired
+ generate_paired()
  print('Generated',len(report['clips']),'shared clips for all twelve bodies;',report['shared_keys'],'keys;',report['bytes'],'data bytes.')
 if __name__=='__main__':main()

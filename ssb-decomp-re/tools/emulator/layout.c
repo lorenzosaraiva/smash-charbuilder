@@ -63,3 +63,10 @@ const u32 sSceneSmokeSpinLayout[] = {
     __builtin_offsetof(WPStruct, attack_coll.size), __builtin_offsetof(WPStruct, lifetime),
     __builtin_offsetof(WPStruct, attack_coll.damage)
 };
+
+const u32 sSceneSmokePairLayout[] = {
+    __builtin_offsetof(FTStruct, catch_gobj), __builtin_offsetof(FTStruct, capture_gobj),
+    __builtin_offsetof(FTStruct, throw_desc), __builtin_offsetof(FTStruct, motion_vars.flags.flag2),
+    __builtin_offsetof(DObj, child)
+};
+const FTStruct sSceneSmokeInvisibleFlags = { .is_invisible = TRUE };

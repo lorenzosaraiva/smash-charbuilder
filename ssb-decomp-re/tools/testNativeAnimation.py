@@ -114,7 +114,7 @@ def main():
         scaling='sOracle'+fighter+'Scale' if scales and not case['flags']&4 else 'NULL'
         action_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{case["flags"]}U,{scaling},{case["duration"]+1},{event_symbol},{source_size(fighter)}F);')
     from sharedAnimation import catalog as shared_catalog
-    special_cases=[c for c in shared_catalog()[0] if c['symbol'].startswith('sFTCustomAnimationSpecial')]
+    special_cases=[c for c in shared_catalog()[0] if c['symbol'].startswith(('sFTCustomAnimationSpecial','sFTCustomAnimationPaired'))]
     special_calls=[]
     output.append('static const OracleEvent sOracleSpecialPoseEvents[] = { {0,0,0,0,{0,0,0},0} };')
     for c in special_cases:
@@ -124,11 +124,25 @@ def main():
         table=next(iter(arrays(us_text(path.read_text()),r'AObjEvent32\s*\*')))
         setup,hidden,scales=attributes(fighter)
         scaling='sOracle'+fighter+'Scale' if scales and not c['flags']&4 else 'NULL'
-        frames=max(c['frames'],3*c['loop_period']+1)
+        frames=max(c.get('start_frame',0)+c['frames'],3*c['loop_period']+1)
         special_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{c["flags"]}U,{scaling},{frames},sOracleSpecialPoseEvents,{source_size(fighter)}F);')
+    from pairedMoves import catalog as paired_catalog,phase_data
+    pair_calls=[]
+    for i,c in enumerate(paired_catalog()):
+        fighter=c['fighter'];path,_=animation(c['name'])
+        if path not in seen_files:
+            output.append('#include "../src/relocData/'+path.name+'"');seen_files.add(path)
+        table=next(iter(arrays(us_text(path.read_text()),r'AObjEvent32\s*\*')))
+        setup,hidden,scales=attributes(fighter)
+        scaling='sOracle'+fighter+'Scale' if scales and not c['flags']&4 else 'NULL'
+        text=next((ROOT/'src/relocData').glob('*_'+fighter+'Main.c')).read_text()
+        joint=int(re.search(r'(\d+),\s*/\* joint_itemheavy_id',text)[1])
+        symbol='sOraclePair'+str(i)
+        output.append('static const OracleEvent '+symbol+'[] = { '+','.join('{3,0,'+str(k)+','+str(joint)+',{'+','.join(map(str,offset))+'},0}' for k,offset in enumerate(((1,0,0),(0,1,0),(0,0,1),(0,0,0))))+',{0,0,0,0,{0,0,0},0} };')
+        pair_calls.append(f'dump(sOracle{fighter}Bind,{table},ARRAY_COUNT({table}),{setup[0]}U,{setup[1]}U,sOracle{fighter}Hidden,ARRAY_COUNT(sOracle{fighter}Hidden),{c["flags"]}U,{scaling},{c["frames"]},{symbol},{source_size(fighter)}F);')
     output.append('static const f32 sOracleBodySizes[] = { '+', '.join(str(source_size(f))+'F' for f in ROSTER)+' };')
     (ROOT/'build/nativeAnimationOracle.inc').write_text('\n'.join(output)+'\n',encoding='utf-8')
-    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls+action_calls+special_calls)+'\n',encoding='utf-8')
+    (ROOT/'build/nativeAnimationCalls.inc').write_text('\n'.join(pose_calls+placement_calls+projectile_calls+action_calls+special_calls+pair_calls)+'\n',encoding='utf-8')
     subprocess.run(['gcc','-m32','-nostdlib','-static','-fno-pie','-fno-stack-protector','-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-O1','-Iinclude','-Isrc','-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US','tools/testNativeAnimation.c','-o','build/testNativeAnimation'],cwd=ROOT,check=True)
     raw=subprocess.check_output([str(ROOT/'build/testNativeAnimation')],cwd=ROOT)
     (ROOT/'build/native-animation-poses.bin').write_bytes(raw)
@@ -223,7 +237,7 @@ def main():
                 assert mask&8 and max(abs(a-b) for a,b in zip(native,probe[frame]))<0.003,(case['fighter'],case['phase'],'socket',frame,native,probe[frame])
     print(f'PASS: 30 neutral phases, DK Hand Slap and {len(path_catalog())} Up/Down B phases, {action_centers} active centers, grounded root movement, charge/boomerang sockets and Yoshi capture anchors match original playback/matrices; max center error {action_error:.7f}.')
     for c in special_cases:
-        poses=sample(c['fighter'],c['name'],max(c['frames'],3*c['loop_period']+1),c['flags']);observed=[]
+        poses=sample(c['fighter'],c['name'],max(c.get('start_frame',0)+c['frames'],3*c['loop_period']+1),c['flags']);observed=[]
         for frame,pose in enumerate(poses):
             native_pose={}
             for joint in sorted(pose):
@@ -234,6 +248,28 @@ def main():
         key=(c['fighter'],c['name'],c['flags'])
         if len(observed)>len(native_poses.get(key,())):native_poses[key]=observed
     print(f'PASS: {len(special_cases)} special pose timelines, including three cycles of every loop, match original C playback.')
+    pair_error=0;pair_samples=0
+    for i,c in enumerate(paired_catalog()):
+        poses=sample(c['fighter'],c['name'],c['frames'],c['flags'])
+        _,anchors,travel=phase_data(i);previous=(0,0,0)
+        for frame,pose in enumerate(poses):
+            trans=(0,0,0)
+            for joint in sorted(pose):
+                native=struct.unpack_from('<9f',raw,cursor);cursor+=36
+                if joint==1:trans=native[3:6]
+            centers=struct.unpack_from('<12f',raw,cursor);cursor+=48
+            assert struct.unpack_from('<I',raw,cursor)[0]==15;cursor+=4
+            basis,origin=anchors[frame]
+            for axis in range(3):
+                for component in range(3):
+                    error=abs((centers[axis*3+component]-centers[9+component])-basis[component][axis])
+                    pair_error=max(pair_error,error);pair_samples+=1
+                    assert error<0.003,(c['fighter'],c['phase'],frame,'capture basis',axis,component,error)
+            assert max(abs(a-b) for a,b in zip(centers[9:],origin))<0.003,(c['fighter'],c['phase'],frame,'capture origin')
+            delta=(0,0,0) if frame==0 else ((trans[2]-previous[2])*source_size(c['fighter']),(trans[1]-previous[1])*source_size(c['fighter']),-(trans[0]-previous[0])*source_size(c['fighter']))
+            assert max(abs(a-b) for a,b in zip(delta,travel[frame]))<0.003,(c['phase'],frame,'paired root travel')
+            previous=trans
+    print(f'PASS: {len(paired_catalog())} paired native capture matrices and root paths, {pair_samples} basis samples; max error {pair_error:.7f}.')
     assert cursor==len(raw),(cursor,len(raw))
     print(f'PASS: all eight projectile-neutral spawn poses match original animation/collision matrices; max error {projectile_error:.7f}.')
     print(f'PASS: {len(cases)} donor timelines, {comparisons} scalar samples match original ftAnimParseDObjFigatree and playback; max error {maximum:.7f}.')

@@ -35,7 +35,8 @@ def verify_shared_poses(native_poses):
     for joint in first:
      assert max(abs((a-b+math.pi)%(2*math.pi)-math.pi) for a,b in zip(first[joint][:3],second[joint][:3]))<0.0001,(c['symbol'],'nonperiodic rotation',joint)
      assert max(abs(a-b) for a,b in zip(first[joint][4:7],second[joint][4:7]))<0.001,(c['symbol'],'nonperiodic translation',joint)
-  poses=native_poses[(c['fighter'],c['name'],c['flags'])][:c['frames']]
+  begin=c.get('start_frame',0)
+  poses=native_poses[(c['fighter'],c['name'],c['flags'])][begin:begin+c['frames']]
   assert len(poses)==c['frames'],c['symbol']
   source,roles=source_rig(c['fighter'],c['flags']);ids=tuple(b['joint'] for b in source)
   address,length,index=symbols[c['symbol']+'Curves'];start=sections[index][4]+address-sections[index][3]

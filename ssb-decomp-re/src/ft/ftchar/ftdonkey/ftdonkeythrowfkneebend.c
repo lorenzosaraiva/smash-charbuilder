@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+extern FTAttributes* ftMainCharBuilderPairAttributes(FTStruct*);
 
 // // // // // // // // // // // //
 //                               //
@@ -10,7 +11,7 @@
 void ftDonkeyThrowFKneeBendProcUpdate(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderPairAttributes(fp);
 
     fp->status_vars.common.throwf.kneebend_anim_frame++;
 

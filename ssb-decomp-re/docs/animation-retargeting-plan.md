@@ -1,6 +1,8 @@
 # Animation work: current milestone and next steps
 
-Version 0.1.13 extends the shared catalog to special startup, charge loops,
+Version 0.1.14 adds donor tether paths, paired positions/release timing and shared
+grab/throw attacker poses. See [paired grabs and throws](paired-grabs-and-throws.md).
+The preceding milestone extends the shared catalog to special startup, charge loops,
 transitions, release and recovery. See [special animations](special-animations.md)
 for phase coverage, safe effects and native props.
 Normal donor poses and gameplay mechanics cover all twelve bodies and donors.
@@ -38,9 +40,10 @@ record earlier milestones.
    after damage/KO. Compare the donor alongside the custom body. Resolve compact
    skeleton issues, then add remaining voice/color/mesh polish without changing
    collision paths or phase clocks. Kirby copy remains outside this milestone.
-3. **Tethers and paired throws.** Model reach, capture/release timing and both
-   attacker/victim positions before adding animation choreography. Keep native
-   identity and valid joint references; never attach raw foreign figatrees.
+3. **Rendered tether and paired throw acceptance.** Source reach, clocks, capture
+   matrices, victim queues and attacker poses are implemented. Compare both fighters
+   against a native donor, including escape/damage, stage edges, DK carry and Kirby
+   landing. Polish body intersections and tether materials while preserving timing.
 
 Every milestone updates the checklist/docs and produces a checked ROM/package.
 Mesh-specific fixes must not restart or stretch the donor clock. Missing required

@@ -3,11 +3,10 @@
 Pick a fighter's body, mix in moves from the other Smash 64 characters, and try
 your creation against friends or a CPU. A little experiment that got out of hand.
 
-Version **0.1.13**, updated **2026-10-04**. All twelve bodies now perform all twelve
+Version **0.1.14**, updated **2026-10-05**. All twelve bodies now perform all twelve
 donors' normal attacks through shared motion curves and body skeleton maps.
 Hitboxes and timing follow the donor independently of body proportions. This is
-still experimental; rendered polish, tethers and paired grab/throw animations
-need more work. Implemented specials now share donor poses, phase transitions,
+still experimental; rendered contact and visual polish need more testing. Implemented specials now share donor poses, phase transitions,
 charge loops, recovery and native effects/props across all twelve bodies.
 
 Mario/Luigi Up B now borrow source hitbox paths, movement, steering, hit phases
@@ -19,6 +18,10 @@ paths, timing, movement and recovery. See [coverage and testing](docs/direct-spe
 Bombs, eggs, Thunder, Fire Fox, Quick Attack, Reflector, PSI Magnet, Sing,
 Falcon Dive, Final Cutter and Stone now use native mechanics with donor clocks,
 paths and sockets on other bodies. See [controls and checks](docs/remaining-special-mechanics.md).
+
+Tether grabs and paired throws now use donor reach, timing, capture positions,
+victim queues and release mechanics, including DK carry and Kirby landing throws.
+See [controls and checks](docs/paired-grabs-and-throws.md).
 
 Donor jab chains, Link down-air bounce, Ness bat reflection and normal movement
 now work across the roster. See [controls and verification](docs/normal-mechanics.md).
@@ -56,7 +59,7 @@ Creator builds currently last for the running ROM session.
 ## What's in it?
 
 - Twelve original fighter bodies and all thirteen normal attack families.
-- Custom grab and forward/back throw selections.
+- Independent grab/forward/back donors, tether paths and paired throw mechanics.
 - Four builds, assigned independently to human or CPU slots.
 - Training hitbox view, quick return to the editor, unlockable fighters and Item Switch.
 - Neutral B: **Body Move** and every non-copy original neutral donor, including charging, returning boomerangs and Egg Lay. See [controls and limits](docs/neutral-specials.md); Up B/Down B remain experimental.
@@ -70,8 +73,8 @@ Creator builds currently last for the running ROM session.
   hitboxes. See the [collision guide](docs/collision-trajectories.md).
 
 The [checkbox list](docs/status.md) covers what is implemented, what still needs
-playtesting and what is missing. In particular, throws currently copy donor
-damage/knockback with body choreography. Shared special poses are implemented;
+playtesting and what is missing. Grabs and throws now retain donor gameplay and
+shared attacker poses, with native victim rigs. Shared special poses are implemented;
 rendered animation/contact acceptance remains pending.
 
 ## Build a ROM inside this repo

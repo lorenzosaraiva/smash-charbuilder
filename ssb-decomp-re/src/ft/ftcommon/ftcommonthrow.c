@@ -1,6 +1,7 @@
 #include <ft/fighter.h>
 
 extern void ftParamSetCaptureImmuneMask(FTStruct*, u8);
+extern sb32 ftMainCharBuilderTryPairedThrow(GObj*, sb32);
 
 // // // // // // // // // // // //
 //                               //
@@ -57,6 +58,8 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
     FTStruct *catch_fp;
     FTThrownStatus *thrown_status;
     s32 thrown_status_queue;
+
+    if (ftMainCharBuilderTryPairedThrow(fighter_gobj, is_throwf)) return;
 
     catch_gobj = this_fp->catch_gobj;
     catch_fp = ftGetStruct(catch_gobj);

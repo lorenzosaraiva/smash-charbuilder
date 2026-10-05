@@ -30,11 +30,23 @@ The four unlockable fighters (Luigi, Captain Falcon, Jigglypuff and Ness) and It
 
 ## Grab and throw compatibility
 
-Grabs replace collision shapes and offsets, with donor capture anchors mapped to the body's own capture joint. Startup, active duration and whiff recovery now follow the donor. Native shield-grab logic, capture callbacks and effects remain intact. A tether donor does not transplant its tether animation or guarantee its original reach on another body.
+Grabs now retain the donor's original collision path, active window, pull starting
+frame and recovery, independently of body proportions. Link/Samus/Yoshi tethers
+use native hook/rope/beam/tongue props and source reach. Shield-grab input and
+native capture callbacks remain active.
 
-Forward and back throws copy the donor's damage, angle, knockback scale/weight/base and element for both throw descriptors. The Grab donor also supplies the grab escape descriptor values. Each player has independent descriptor storage. Native victim status IDs, release timing and capture animations are retained. Kirby's forward throw and Donkey Kong's cargo release use their source throw values without importing their capture states into other bodies. Throw motion collisions and collateral hits remain the body's own.
+Forward/back throws use donor release/facing flags, numeric descriptors,
+collateral collision paths and native victim status queues. Full donor capture
+matrices, including animated scale, position each victim using its own root
+socket and size. The attacker uses shared donor poses; the victim keeps its native
+rig and donor-selected capture/thrown animation. Grab and throw donors can differ.
 
-Exception for DK with another fighter's Forward Throw selected: enter DK's own finite forward release motion directly, instead of his pickup/cargo-wait sequence. The victim queues the common thrown state instead of cargo's shoulder escape loop. Donor throw damage/knockback still apply; the release pose and timing remain DK's. DK's own Forward Throw and vanilla DK retain cargo behavior. Paired donor throw animations remain future work.
+DK forward throw enables the native carry/walk/jump/fall/landing/damage/toss
+sequence on foreign bodies. Kirby forward throw enables lift/fall/landing release.
+Matching body/donor choices retain native callbacks. Player/generation guards
+isolate paired state. See [paired coverage, controls and checks](paired-grabs-and-throws.md).
+Rendered contact, body intersections, tether materials and stage/interrupt
+acceptance remain pending.
 
 ## Neutral-special compatibility
 
@@ -74,3 +86,9 @@ python3 tools/verifyCustomMoveRom.py
 The ROM verifier checks all 396 normal and twelve grab collision tables, 36 two-part throw definitions, semantic and capture maps, donor duration metadata, grab timings, linked creator/assignment/training/frame-clock code at ELF load addresses, N64 byte order and the patched checksum. Its source audit verifies **808 original normal hitbox definitions**, including **511 tilt/smash hitboxes**, and every creation/clear timestamp against the compiled host tables. It checks damage, diameter, offsets, angle and all knockback fields without importing donor skeleton IDs. The modified ROM is expected to differ from vanilla, so the Makefile's vanilla comparison prints `FAILURE` after a successful compile/link. In-emulator playtesting of this expanded build is still required.
 
 Output: `build/smashbrothers.us.z64`, also copied to `C:\Users\Lorenzo\Desktop\Smash 64\roms\smash-character-lab-full-roster.z64`. A companion Windows shortcut opens that copy with the installed RMG-K.
+
+The 0.1.14 paired fixture additionally covers all 61 phases, twelve attacker/victim
+bodies, four slots, both facings, stale owners, release/carry rules and long clip
+boundaries. Original C matrices verify source capture basis/translation and root
+travel; ROM checks verify every phase/descriptor/victim queue/prop pointer. Live
+CPU checks compare donor reach, release ticks, damage and captured positions.

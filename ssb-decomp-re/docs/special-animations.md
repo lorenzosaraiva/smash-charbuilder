@@ -80,7 +80,8 @@ python3 tools/testTrainingScenes.py --special-animations --charge-animations
 These automated CPU checks use null rendering. They do not establish rendered
 mesh, material, lighting, sound or contact quality. Compact bodies can still look
 odd, and donor reach can extend beyond their limbs. Full voice/color polish,
-paired victim rotation/choreography, tethers and Kirby copy remain pending.
+Kirby copy remains pending. Tether grabs and paired normal throws now have their
+own [mechanics and checks](paired-grabs-and-throws.md); rendered acceptance remains pending.
 
 Please report **body + donor + phase/input + emulator + build version**, ideally
 with a short clip. Keep gameplay timing/reach ahead of cosmetic improvements.

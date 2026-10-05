@@ -1,3 +1,4 @@
+sb32 ftMainCharBuilderTryPairedThrow(GObj *g, sb32 f) { return FALSE; } /* Dedicated paired fixture covers this path. */
 /* Exercise actual forward-throw dispatch and actual DK release callbacks. */
 #define _FIGHTER_H_
 #include <ft/ftcommon.h>

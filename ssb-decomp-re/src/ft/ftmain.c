@@ -8,6 +8,7 @@
 #define FTCHARBUILDER_SPECIAL_MECHANICS
 #define FTCHARBUILDER_NORMAL_MECHANICS
 #define FTCHARBUILDER_SPECIAL_ANIMATIONS
+#define FTCHARBUILDER_PAIRED_MOVES
 #ifdef REGION_US
 #define FTCHARBUILDER_ANIMATION_BANK
 #endif
@@ -17,6 +18,7 @@
 static s32 ftMainCharBuilderVisualMotionJoint(FTStruct*, s32);
 static void ftMainCharBuilderUpdateSpecialAttachments(GObj*);
 sb32 ftMainCharBuilderIsSpecialVisual(FTStruct*);
+static s32 ftMainCharBuilderPairedVisualJoint(FTStruct*, s32);
 
 extern alSoundEffect* func_800269C0_275C0(u16);
 extern void func_ovl0_800C9A38();
@@ -392,6 +394,10 @@ DObj* ftMainCharBuilderGetSpecialJoint(FTStruct *fp, s32 joint_id)
 
 static s32 ftMainCharBuilderGetMotionJointID(FTStruct *fp, s32 joint_id, sb32 is_allow_none)
 {
+#ifdef FTCHARBUILDER_PAIRED_MOVES
+    if (is_allow_none && (ftMainCharBuilderGetPairMove(fp) != NULL))
+        return ftMainCharBuilderPairedVisualJoint(fp, joint_id);
+#endif
     if (is_allow_none && (joint_id >= 0) && ftMainCharBuilderIsSpecialVisual(fp))
         return ftMainCharBuilderVisualMotionJoint(fp, joint_id);
     joint_id = ftParamGetJointID(fp, joint_id);
@@ -810,6 +816,7 @@ static void ftMainCharBuilderMakeSamusBomb(GObj *fighter_gobj)
 #include "ftcharbuilderneutral.c.inc"
 #include "ftspecialanimation.c.inc"
 #include "ftspecialattachments.c.inc"
+#include "ftpairedmoves.c.inc"
 
 // // // // // // // // // // // //
 //                               //
@@ -1772,6 +1779,7 @@ void ftMainPlayAnim(GObj *fighter_gobj)
     ftMainCharBuilderApplySpecialVisuals(fighter_gobj);
     ftParamsUpdateFighterPartsTransform(fp->joints[nFTPartsJointTopN]);
     ftMainCharBuilderUpdateSpecialAttachments(fighter_gobj);
+    ftMainCharBuilderUpdatePairProps(fighter_gobj);
 }
 
 // 0x800E0830 - Play fighter animation and run motion scripts normally
@@ -5220,6 +5228,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     s32 charbuilder_motion_id;
     sb32 is_charbuilder_special_status;
     sb32 is_charbuilder_jab_status;
+    const FTCustomPairPhase *charbuilder_pair;
     s32 charbuilder_jab_donor;
     void *event_script_ptr;
     void *charbuilder_script_ptr;
@@ -5253,6 +5262,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         ((status_id < nFTPikachuStatusSpecialLwStart) || (status_id > nFTPikachuStatusSpecialAirLwEnd)))
         ftPikachuSpecialLwProcDamage(fighter_gobj);
     ftMainCharBuilderRestoreSpecialBody(fp);
+    charbuilder_pair = ftMainCharBuilderPairTransition(fp, status_id);
     ftCustomMoveResetClock(fp);
     status_struct = NULL;
     opening_struct = NULL;
@@ -5435,6 +5445,11 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         opening_struct = &D_ovl1_80390BE8;
         status_struct_id = status_id - FTSTAT_OPENING2_START;
     }
+    else if ((charbuilder_pair != NULL) && (status_id >= nFTCommonStatusSpecialStart))
+    {
+        status_struct = dFTMainSpecialStatusDescs[charbuilder_pair->donor];
+        status_struct_id = status_id - nFTCommonStatusSpecialStart;
+    }
     else if (is_charbuilder_jab_status != FALSE)
     {
         status_struct = dFTMainSpecialStatusDescs[charbuilder_jab_donor];
@@ -5502,7 +5517,9 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
     {
         charbuilder_motion_id = status_struct[status_struct_id].mflags.motion_id;
 
-        if (is_charbuilder_special_status != FALSE)
+        if (charbuilder_pair != NULL)
+            motion_id = (fp->ga == nMPKineticsAir) ? nFTCommonMotionFall : nFTCommonMotionWait;
+        else if (is_charbuilder_special_status != FALSE)
         {
             /* Temporary safe pose: no body special root movement or phase replay. */
             motion_id = (fp->ga == nMPKineticsAir) ? nFTCommonMotionFall : nFTCommonMotionWait;
@@ -5717,7 +5734,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         /* Borrowed neutral poses suppress native charge/capture/projectile events. */
         if (sFTCharBuilderNeutralStartingOwner == fp)
             fp->motion_scripts[0][0].p_script = fp->motion_scripts[1][0].p_script = NULL;
-        if (ftCustomMoveGetDefinition(fp) != NULL)
+        if ((charbuilder_pair == NULL) && (ftCustomMoveGetDefinition(fp) != NULL))
         {
             /* Normals own their gameplay events. Grabs retain native release
              * descriptors and capture choreography in the body's script. */
@@ -5745,6 +5762,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         }
         else ftMainCharBuilderStartSuperJumpLandingClock(fp, frame_begin);
         if (is_charbuilder_special_status != FALSE) ftMainCharBuilderStartSpecialVisualScript(fp, frame_begin);
+        if (charbuilder_pair != NULL) ftMainCharBuilderInstallPairPhase(fp, charbuilder_pair, frame_begin, anim_speed);
         if (frame_begin != 0.0F)
         {
             ftMainPlayAnimEventsForward(fighter_gobj);
@@ -5775,6 +5793,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
         fp->proc_lagupdate = NULL;
         fp->proc_lagstart = NULL;
         fp->proc_lagend = NULL;
+        ftMainCharBuilderFinishPairStatus(fp);
     }
     else if (opening_struct != NULL)
     {

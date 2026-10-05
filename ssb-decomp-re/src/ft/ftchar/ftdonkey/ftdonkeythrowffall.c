@@ -1,4 +1,5 @@
 #include <ft/fighter.h>
+extern FTAttributes* ftMainCharBuilderPairAttributes(FTStruct*);
 
 // // // // // // // // // // // //
 //                               //
@@ -47,7 +48,7 @@ void ftDonkeyThrowFFallSetStatus(GObj *fighter_gobj)
 void ftDonkeyThrowFJumpSetStatus(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTAttributes *attr = fp->attr;
+    FTAttributes *attr = ftMainCharBuilderPairAttributes(fp);
     s32 vel_x;
     s32 vel_y;
 

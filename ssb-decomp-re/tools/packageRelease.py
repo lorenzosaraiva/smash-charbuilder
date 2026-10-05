@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.13',
+        'version': '0.1.14',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -69,7 +69,8 @@ Local uncommitted changes: {metadata['source_dirty'] if metadata['source_dirty']
 Mix normal attacks, grabs and throw parameters across the twelve original fighters.
 Normal and implemented special animations follow the selected donor on every
 body, including charge loops, phase transitions, recovery and required props.
-Rendered polish and paired grab/throw choreography still need work.
+Donor tether paths and paired grab/throw mechanics are implemented; rendered
+contact and visual polish still need testing.
 
 1. Enable 8 MB RDRAM / Expansion Pak, then open `character-lab.z64`.
 2. Go to Options -> Character Lab and select a build with A.
@@ -128,11 +129,14 @@ Grabs keep native release setup, and interrupted Egg Lay uses original escape
 descriptors. With 4 MB, startup skips the intro and lab gameplay stays blocked.
 
 Shared special animations are implemented; rendered contact acceptance remains pending.
-Throws use donor damage and
-knockback with body animations; DK skips cargo for a non-DK forward throw.
+Throws retain donor damage/knockback, release timing, capture positions and victim
+queues. DK forward throw enables cargo carry; Kirby forward throw enables its
+lift/landing mechanic. Each fighter keeps its own rig.
 All twelve bodies now perform all twelve donor normal attacks, including angled
 variants, aerial landings and donor jab phases on every body. Shared curves adapt
-motion to the body skeleton. Special phase animations also use the shared catalog. Tether and paired victim/throw animations remain pending.
+motion to the body skeleton. Special, grab and throw phases use the shared catalog.
+Link/Samus/Yoshi tethers retain source reach and native props. Rendered contact,
+victim alignment and materials remain pending.
 Original donor collision paths now cover every normal attack on every foreign
 body, including angled variants, weapon/tail paths, multihits, landing collisions
 and donor jab phases on every body. Size, timing, damage and knockback follow the donor.
@@ -140,8 +144,9 @@ Try Kirby Body -> Up Air: Falcon -> Test in Training -> View: HITBOX, or change
 any normal donor. The visible normal animation now follows the donor on the selected body.
 Full native-code geometry checks pass; in-game acceptance remains pending.
 
+See paired-grabs-and-throws.md for tether/cargo controls and paired throw coverage.
 See the repository README, docs/status.md and CHANGELOG.md for scope and known gaps.
-The package contains the ROM, this guide, build information and SHA-256 checksums.
+The package contains the ROM, guides, build information and SHA-256 checksums.
 '''
     (output / 'PLAY.md').write_text(notes, encoding='utf-8')
     inner_sums = ''.join(f'{hashlib.sha256((output / name).read_bytes()).hexdigest()}  {name}\n'
@@ -150,7 +155,7 @@ The package contains the ROM, this guide, build information and SHA-256 checksum
     with zipfile.ZipFile(output / 'character-lab.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
         for name in ('character-lab.z64', 'PLAY.md', 'build-info.json', 'SHA256SUMS.txt'):
             archive.write(output / name, arcname=name)
-        for name in ('CHANGELOG.md', 'docs/status.md'):
+        for name in ('CHANGELOG.md', 'docs/status.md', 'docs/paired-grabs-and-throws.md'):
             archive.write(ROOT / name, arcname=Path(name).name)
     sums = ''.join(f'{hashlib.sha256((output / name).read_bytes()).hexdigest()}  {name}\n'
                    for name in ('character-lab.z64', 'character-lab.zip', 'build-info.json'))
