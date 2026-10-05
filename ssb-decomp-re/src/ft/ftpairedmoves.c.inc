@@ -22,6 +22,7 @@ static struct FTCustomPairState {
     const FTCustomPairPhase *phase;
     s32 donor, kind, status;
     void (*physics)(GObj*);
+    sb32 is_taunt_scaled;
 } sFTCustomPairStates[4];
 static FTStruct *sFTCustomPairStarting;
 static struct FTCustomPairProps {
@@ -62,6 +63,12 @@ static const FTCustomPairPhase* ftMainCharBuilderPairTransition(FTStruct *fp, s3
     s32 donor;
     if (fp->player >= 4) return NULL;
     s = &sFTCustomPairStates[fp->player];
+    /* Restore before native animation keys run, including guard/damage/KO
+     * interruptions. Never touch a reused fighter's model. */
+    if (s->is_taunt_scaled && (s->owner == fp) && (s->player_num == fp->player_num) &&
+        (fp->fkind >= 0) && (fp->fkind < 12) && (fp->joints[4] != NULL))
+        fp->joints[4]->scale.vec.f = sFTCustomAnimationRigs[fp->fkind].bones[0].scale;
+    s->is_taunt_scaled = FALSE;
     if (slot != NULL)
     {
         if (status == nFTCommonStatusAppeal)
@@ -84,6 +91,26 @@ static const FTCustomPairPhase* ftMainCharBuilderPairTransition(FTStruct *fp, s3
     { s->victim = NULL; s->owner = fp; s->player_num = fp->player_num; }
     s->phase = phase; s->donor = phase->donor; s->status = status;
     return phase;
+}
+
+static void ftMainCharBuilderApplyPairScale(FTStruct *fp)
+{
+    struct FTCustomPairState *s = ftCustomPairState(fp);
+    FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
+    Vec3f base, scale;
+    s32 frame;
+    if ((s == NULL) || (s->donor != nFTKindMario) || (s->status != nFTCommonStatusAppeal) ||
+        (clock == NULL) || (clock->move != &s->phase->move) || (fp->fkind < 0) ||
+        (fp->fkind >= 12) || (fp->joints[4] == NULL)) return;
+    frame = (s32) clock->frame;
+    if (frame < 0) frame = 0;
+    if (frame >= ARRAY_COUNT(sFTCustomPairMarioTauntScales)) frame = ARRAY_COUNT(sFTCustomPairMarioTauntScales) - 1;
+    base = sFTCustomAnimationRigs[fp->fkind].bones[0].scale;
+    scale = sFTCustomPairMarioTauntScales[frame];
+    fp->joints[4]->scale.vec.f.x = base.x * scale.x;
+    fp->joints[4]->scale.vec.f.y = base.y * scale.y;
+    fp->joints[4]->scale.vec.f.z = base.z * scale.z;
+    s->is_taunt_scaled = TRUE;
 }
 
 static const FTCustomMoveDefinition* ftMainCharBuilderGetPairMove(FTStruct *fp)

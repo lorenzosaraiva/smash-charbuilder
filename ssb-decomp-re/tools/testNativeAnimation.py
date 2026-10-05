@@ -271,6 +271,10 @@ def main():
         if len(observed)>len(native_poses.get(key,())):native_poses[key]=observed
     print(f'PASS: {len(special_cases)} special pose timelines, including three cycles of every loop, match original C playback.')
     pair_error=0;pair_samples=0
+    from elfData import read_elf
+    paired_elf,paired_sections,paired_symbols=read_elf(ROOT/'build/testPairedMoves','<')
+    scale_address,scale_length,scale_section=paired_symbols['sFTCustomPairMarioTauntScales']
+    scale_offset=paired_sections[scale_section][4]+scale_address-paired_sections[scale_section][3]
     for i,c in enumerate(paired_catalog()):
         poses=sample(c['fighter'],c['name'],c['frames'],c['flags'])
         _,anchors,travel=phase_data(i);previous=(0,0,0)
@@ -279,6 +283,9 @@ def main():
             for joint in sorted(pose):
                 native=struct.unpack_from('<9f',raw,cursor);cursor+=36
                 if joint==1:trans=native[3:6]
+                if c['fighter']=='Mario' and c['phase']=='Appeal' and joint==4:
+                    compiled_scale=struct.unpack_from('<3f',paired_elf,scale_offset+frame*12)
+                    assert max(abs(a-b) for a,b in zip(native[6:9],compiled_scale))<.000002,('Mario taunt compiled growth track',frame,native[6:9],compiled_scale)
             centers=struct.unpack_from('<12f',raw,cursor);cursor+=48
             assert struct.unpack_from('<I',raw,cursor)[0]==15;cursor+=4
             basis,origin=anchors[frame]
@@ -292,6 +299,7 @@ def main():
             assert max(abs(a-b) for a,b in zip(delta,travel[frame]))<0.003,(c['phase'],frame,'paired root travel')
             previous=trans
     print(f'PASS: {len(paired_catalog())} paired native capture matrices and root paths, {pair_samples} basis samples; max error {pair_error:.7f}.')
+    print('PASS: Mario taunt growth samples match original C animation playback.')
     index=next(i for i,c in enumerate(paired_catalog()) if c['fighter']=='Luigi' and c['phase']=='Appeal')
     c=paired_catalog()[index];poses=sample(c['fighter'],c['name'],c['frames'],c['flags']);hits=phase_data(index)[0]
     for frame,pose in enumerate(poses):

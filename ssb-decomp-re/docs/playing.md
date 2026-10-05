@@ -29,6 +29,7 @@ mix. **B** returns to the lab's main screen.
 **TAUNT**, below **DOWN B**, selects any original fighter's taunt. Press **L**
 in Training or VS: donor poses, duration and cancel windows follow the selection.
 Luigi's taunt keeps its original 1-damage hitbox. See [taunts](custom-taunts.md).
+Mario's taunt also grows/shrinks the chosen body on his original 180-frame timeline.
 
 Neutral B cycles through **Body Move**, **Fox Laser**, **Mario Fireball**,
 **Luigi Fireball**, **Thunder Jolt**, **PK Fire**, **Falcon Punch**, **Pound**,
@@ -106,6 +107,9 @@ the training match keeps that return destination.
 
 ## VS and custom CPU opponents
 
+VS starts with **4 stocks, items off** on each fresh ROM boot. You can change
+the rules and Item Switch through the usual VS menus for the current session.
+
 On the lab's main screen, change **Player One/Two/Three/Four** to a build or
 **Vanilla**, then choose **Play VS**. These are player/controller slots, not team
 colors. Use the game's usual player-type control to make a slot CPU.
@@ -113,6 +117,20 @@ colors. Use the game's usual player-type control to make a slot CPU.
 Keep the assigned build's body selected on character select. Choosing another
 body plays that fighter normally. Two slots can use different builds with the
 same body, or share a build.
+
+After a match, wait for the results animation, then press **Start** to return to
+character select. Version 0.1.18 fixes the results-screen heap overflow that froze
+the game after the match ended.
+
+The optional CPU regression runs with null rendering:
+
+```bash
+python3 tools/testTrainingScenes.py --vs-results --vs-defaults
+```
+
+It checks fresh rules, four assigned builds, native stock KOs, victory/results
+updates, Start back to character select and a rematch. Rendered acceptance remains
+on the checklist.
 
 ## Expectations
 

@@ -3448,6 +3448,9 @@ void mnVSResultsStartScene(void)
 	syVideoInit(&dMNVSResultsVideoSetup);
 
 	dMNVSResultsTaskmanSetup.scene_setup.arena_size = (size_t) ((uintptr_t)&ovl1_VRAM - (uintptr_t)&ovl31_BSS_END);
+    /* Victory fighters load the full roster too; use the same guarded
+     * Expansion Pak arena as battle and character select. */
+    syTaskmanUseExpansionArena(&dMNVSResultsTaskmanSetup.scene_setup);
 	scManagerFuncUpdate(&dMNVSResultsTaskmanSetup);
 
 	for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)

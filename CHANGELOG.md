@@ -1,5 +1,12 @@
 # Changes
 
+## 0.1.18 - 2026-10-05: Taunt growth, VS defaults and match endings
+
+- Apply Mario's original growth/shrink track to borrowed taunts, including Yoshi, and restore body scale on interruption.
+- Start VS with four stocks and items off without changing 1P/demo defaults or preventing later rule changes.
+- Fix the match-end freeze by giving the full-roster results/victory scene the guarded Expansion Pak arena.
+- Add source-animation growth checks and live ROM regressions for Yoshi's L taunt and stock results/Start/rematch flow. Rendered acceptance remains pending.
+
 ## 0.1.17 - 2026-10-05: Normal attack momentum
 
 - Fix the donor normal TransN flag: legacy descriptor macro labels were reversed, so Fox dash attack and Kirby forward smash lost their original movement.

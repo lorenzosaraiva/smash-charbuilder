@@ -1,4 +1,5 @@
 /* Generated paired grab/throw bindings. */
+extern const Vec3f sFTCustomPairMarioTauntScales[181];
 extern const FTCustomPairAnchor sFTCustomPair0Anchors[];
 extern const FTCustomCollisionFrame sFTCustomPair0Collisions[];
 const FTCustomAnimationClip *const sFTCustomPair0Clips[] = { &sFTCustomAnimationPaired429 };

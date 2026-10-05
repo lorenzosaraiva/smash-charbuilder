@@ -9,6 +9,12 @@ def vec(values):
 def render():
     from sharedAnimation import catalog as animation_catalog,paired_rows
     cases,_=animation_catalog();out=['/* Generated paired grab/throw bindings. */'];bank=['/* Generated donor capture/collision geometry in the guarded fighter overlay. */'];seen={};records=[]
+    # Mario's taunt grows the model root. Retargeted rotation curves deliberately
+    # retain body bind scales; add this source scale track without scaling TopN.
+    mario = next(c for c in catalog() if c['fighter']=='Mario' and c['phase']=='Appeal')
+    scales = [pose[4][7:10] for pose in sample('Mario',mario['name'],mario['frames'],mario['flags'])]
+    bank.append('const Vec3f sFTCustomPairMarioTauntScales[] = { '+', '.join(vec(sc) for sc in scales)+' };')
+    out.append('extern const Vec3f sFTCustomPairMarioTauntScales['+str(len(scales))+'];')
     for i,(c,indices) in enumerate(paired_rows()):
         symbol='sFTCustomPair'+str(i);key=(c['fighter'],c['name'],c['flags'],c['frames'])
         collisions,anchors,travel=phase_data(i)

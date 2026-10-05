@@ -5,13 +5,18 @@ they do not mean every matchup has been playtested. Please share weird cases.
 
 ## Playable now
 
+- [x] Default VS rules: four stocks, items off; ordinary menu changes remain available.
+- [x] Results-screen Expansion Pak arena fixes the match-end heap overflow.
+- [x] ROM CPU regression: fresh VS defaults, native stock KOs, results/Start/rematch and Yoshi's Mario taunt growth/cleanup (null rendering).
+- [ ] Rendered results/rematch and Mario-on-Yoshi growth acceptance.
 - [x] Correct donor normal root-movement flag, including Fox dash attack and Kirby forward-smash travel.
 - [x] MIPS flag-packing, original C playback and live ROM movement/recovery checks.
 - [ ] Rendered movement/contact acceptance for the corrected normals.
 - [x] Default Build One uses the [Yoshi starter recipe](playing.md#default-build-one), checked in the linked ROM.
 - [ ] Rendered playtesting of the complete Yoshi starter recipe.
 - [x] Custom taunt donors on every original body: poses, duration/cancel flags, safe effects and Luigi's original hitbox.
-- [ ] Rendered taunt acceptance, animated foreign-body scaling and facial/mesh variants.
+- [x] Mario taunt original growth/shrink track on foreign bodies, with interruption cleanup.
+- [ ] Rendered taunt acceptance and facial/mesh variants.
 - [x] Four editable character builds with any of the twelve original fighter bodies.
 - [x] Thirteen normal attack families: jab, dash attack, three tilts, three smashes and five aerials.
 - [x] Donor damage, knockback, hitbox values and attack/recovery timing for normals.

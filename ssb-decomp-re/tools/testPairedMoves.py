@@ -33,7 +33,7 @@ SCCharBuilderSlot gSCManagerCharBuilderSlots[SCCHARBUILDER_SLOTS_COUNT];
 s8 gSCManagerCharBuilderPlayerSlots[4]={0,1,2,3};
 FTData *dFTManagerDataFiles[32];
 static FTAttributes attributes[12];static FTData files[12];static void *main_files[12];
-static FTStruct a,v;static GObj ag,vg;static DObj ar,vr,child;
+static FTStruct a,v;static GObj ag,vg;static DObj ar,vr,child,model;
 static int release_count,released_lr,released_script,returned,queued_start,queued_end;
 static int catch_calls,guard_calls,catch_result;
 sb32 ftCommonCatchCheckInterruptCommon(GObj *g) { catch_calls++;return catch_result; }
@@ -112,6 +112,7 @@ static int run(void) {
   ftMainCharBuilderResetPairedMoves();bzero(&a,sizeof(a));
   a.fkind=body;a.pkind=nFTPlayerKindMan;a.player=player;a.player_num=100;a.fighter_gobj=&ag;a.attr=&attributes[body];
   a.passive_vars.kirby.copy_id=nFTKindKirby;
+  a.joints[4]=&model;model.scale.vec.f=sFTCustomAnimationRigs[body].bones[0].scale;
   gSCManagerCharBuilderSlots[player].is_enabled=TRUE;gSCManagerCharBuilderSlots[player].body=body;
   gSCManagerCharBuilderSlots[player].taunt=donor;
   a.motion_vars.flags.flag1=1;ftCommonAppealSetStatus(&ag);
@@ -121,11 +122,29 @@ static int run(void) {
    phase=ftCustomPairState(&a)->phase;clock=ftCustomMoveGetClock(&a);
    CHECK(phase->donor==donor && phase->status==nFTCommonStatusAppeal && clock->frame==0);
    CHECK(clock->move->duration==phase->move.duration && a.attr==&attributes[body]);
+   if(donor==nFTKindMario) {
+    Vec3f base=sFTCustomAnimationRigs[body].bones[0].scale;
+    for(t=0;t<phase->count;t++) {
+     clock->frame=t;ftMainCharBuilderApplyPairScale(&a);
+     CHECK(model.scale.vec.f.x==base.x*sFTCustomPairMarioTauntScales[t].x);
+     CHECK(model.scale.vec.f.y==base.y*sFTCustomPairMarioTauntScales[t].y);
+     CHECK(model.scale.vec.f.z==base.z*sFTCustomPairMarioTauntScales[t].z);
+     CHECK(ar.scale.vec.f.x==1 && a.attr==&attributes[body]);
+    }
+    /* Interrupt at full growth; stale identities cannot apply a pose. */
+    clock->frame=60;ftMainCharBuilderApplyPairScale(&a);
+    a.player_num++;model.scale.vec.f=base;ftMainCharBuilderApplyPairScale(&a);
+    CHECK(model.scale.vec.f.x==base.x);a.player_num--;
+    ftMainCharBuilderApplyPairScale(&a);CHECK(model.scale.vec.f.x>base.x*2);
+   }
   }
   catch_calls=guard_calls=catch_result=0;ftCommonAppealProcInterrupt(&ag);CHECK(catch_calls==0 && guard_calls==0);
   a.motion_vars.flags.flag1=1;ftCommonAppealProcInterrupt(&ag);CHECK(catch_calls==1 && guard_calls==1);
   catch_result=TRUE;ftCommonAppealProcInterrupt(&ag);CHECK(catch_calls==2 && guard_calls==1);
   ftMainSetStatus(&ag,nFTCommonStatusWait,0,1,0);CHECK(ftCustomPairState(&a)==NULL && ftCustomMoveGetClock(&a)==NULL);
+  CHECK(model.scale.vec.f.x==sFTCustomAnimationRigs[body].bones[0].scale.x);
+  CHECK(model.scale.vec.f.y==sFTCustomAnimationRigs[body].bones[0].scale.y);
+  CHECK(model.scale.vec.f.z==sFTCustomAnimationRigs[body].bones[0].scale.z);
  }
  for(body=0;body<12;body++)for(i=0;i<ARRAY_COUNT(sFTCustomPairPhases);i++) {
   const FTCustomAnimationClip *clip;

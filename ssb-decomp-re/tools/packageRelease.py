@@ -53,7 +53,7 @@ def package():
         'rom_bytes': len(rom),
         'rom_sha256': hashlib.sha256(rom).hexdigest(),
         'base_sha1': BASE_SHA1,
-        'version': '0.1.17',
+        'version': '0.1.18',
         'built_at': datetime.now(timezone.utc).isoformat(),
     }
     output = ROOT / 'dist'
@@ -73,6 +73,11 @@ Donor tether paths and paired grab/throw mechanics are implemented; rendered
 contact and visual polish still need testing.
 TAUNT selects any original donor's poses, duration and cancel window. Press L;
 Luigi's taunt keeps its original 1-damage hitbox on frames 47-49. See custom-taunts.md.
+Mario's borrowed taunt includes original growth/shrink timing, with immediate
+body-scale restoration on interruption, including on Yoshi.
+VS defaults to four stocks and items off; ordinary rule changes remain available.
+The results-screen arena fix restores match endings. After results, press Start
+to return to character select and play again.
 Build One defaults to the Yoshi starter recipe, with Fox Laser, Pikachu Up B,
 Fox Down B and Mario's taunt. See playing.md for the complete donor list.
 Borrowed normal root movement now uses the native flag, restoring Fox dash attack

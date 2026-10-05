@@ -5,7 +5,8 @@ Checkboxes mean implemented, not tested in every matchup.
 ## Repository
 
 - [x] Custom taunt donors on every original body: poses, duration/cancel flags, safe effects and Luigi's original hitbox.
-- [ ] Rendered taunt acceptance, animated foreign-body scaling and facial/mesh variants.
+- [x] Mario taunt original growth/shrink track on foreign bodies, with interruption cleanup.
+- [ ] Rendered taunt acceptance and facial/mesh variants.
 - [x] Both creator codebases in one project repository.
 - [x] Preserve both source histories and existing creator edits.
 - [x] Root play/build documentation, changelog and issue forms.
@@ -18,6 +19,10 @@ Checkboxes mean implemented, not tested in every matchup.
 
 ## Gameplay
 
+- [x] Default VS rules: four stocks, items off; ordinary menu changes remain available.
+- [x] Results-screen Expansion Pak arena fixes the match-end heap overflow.
+- [x] ROM CPU regression: fresh VS defaults, native stock KOs, results/Start/rematch and Yoshi's Mario taunt growth/cleanup (null rendering).
+- [ ] Rendered results/rematch and Mario-on-Yoshi growth acceptance.
 - [x] Native root-movement flag and regenerated donor normal velocities, including Fox dash attack and Kirby forward smash.
 - [x] MIPS flag-packing, original C playback and live ROM normal movement/recovery checks.
 - [ ] Rendered movement/contact acceptance for the corrected normals.

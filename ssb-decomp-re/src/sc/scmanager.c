@@ -846,6 +846,14 @@ void scManagerRunLoop(sb32 arg)
 	gSCManagerTransferBattleState =
 	gSCManagerVSBattleState       = dSCManagerDefaultBattleState;
 
+    /* VS defaults only: stock counters are zero-based (3 means four stocks).
+     * Keep the common template and 1P/demo rules unchanged. */
+    gSCManagerTransferBattleState.game_rules = SCBATTLE_GAMERULE_STOCK;
+    gSCManagerTransferBattleState.stocks = 3;
+    gSCManagerTransferBattleState.item_toggles = 0;
+    gSCManagerTransferBattleState.item_appearance_rate = nSCBattleItemSwitchNone;
+    gSCManagerVSBattleState = gSCManagerTransferBattleState;
+
 	ftManagerSetupFileSize();
 	dSYAudioPublicSettings.unk31 = 72;
 

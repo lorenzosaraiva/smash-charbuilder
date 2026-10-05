@@ -35,9 +35,12 @@ parser.add_argument('--mario-animations',action='store_true',help='Check four Ma
 parser.add_argument('--roster-animations',action='store_true',help='Check every donor/body pair, live poses, recovery and Training return')
 parser.add_argument('--paired-moves',action='store_true',help='Check native tether contacts and donor paired throw releases')
 parser.add_argument('--taunts',action='store_true',help='Check selectable donor taunt durations, cancel windows and Luigi hitbox/contact')
+parser.add_argument('--taunt-body',type=int,choices=range(12),help='Use a particular body for donor taunt regressions')
 parser.add_argument('--paired-native',action='store_true',help='Run native grab/throw controls for paired checks')
 parser.add_argument('--normal-mechanics',action='store_true',help='Check all donor jab chains, Link bounce and Ness bat windows on each body')
 parser.add_argument('--normal-movement',action='store_true',help='Check Fox dash and Kirby forward-smash root velocities, facing and recovery on each body')
+parser.add_argument('--vs-results',action='store_true',help='Finish stock VS through native KOs, load results and return to character select')
+parser.add_argument('--vs-defaults',action='store_true',help='Check fresh-boot VS defaults: four stocks, stock rules and items off')
 parser.add_argument('--special-animations',action='store_true',help='Compare live borrowed-special poses with native-engine references')
 parser.add_argument('--charge-animations',action='store_true',help='Check partial/full Giant Punch and Charge Shot pose transitions')
 parser.add_argument('--mechanic',type=int,choices=(1,3,5,6,7,8,9,10,11),help='Exercise remaining special mechanics across bodies')
@@ -89,6 +92,8 @@ ftsize,kind_off,port_off,gobj_off,status_off,motion_off,attack_off,attack_size,a
 slot_size,neutral_field,players_field,player_size,pkind_field,fkind_field,man_field,cpu_field,reset_field,stage_field=layout
 value,length,index=layout_symbols['sSceneSmokeTauntLayout'];start=sections[index][4]+value-sections[index][3]
 taunt_field=struct.unpack_from('>I',data,start)[0]
+value,length,index=layout_symbols['sSceneSmokeVSLayout'];start=sections[index][4]+value-sections[index][3]
+rules_off,stocks_off,items_off,item_rate_off,player_stock_off,player_fighter_off,fighter_stock_off=struct.unpack_from('>7I',data,start)
 for name in ('input','video'):
     subprocess.run(['gcc','-shared','-fPIC','-I'+args.headers,str(ROOT/'tools/emulator'/f'{name}.c'),
                     '-o',str(build/f'{name}.so')],check=True)
@@ -223,7 +228,9 @@ def frame_callback(frame):
             hits=tuple((tuple(u32(fp+attack_off+aid*attack_size+j) for j in (damage_off,angle_off,kbs_off,kbw_off,kbb_off)),
                         f32(fp+attack_off+aid*attack_size+radius_off),
                         tuple(f32(fp+attack_off+aid*attack_size+center_off+j) for j in (0,4,8))) for aid in range(4))
-            taunt_trace.append((tick,u32(fp+flag1_off),mask,hits,tuple(f32(root+j) for j in (0,4,8)),s32(fp+lr_off)))
+            model=u32(fp+joints_off+4*4)
+            taunt_trace.append((tick,u32(fp+flag1_off),mask,hits,tuple(f32(root+j) for j in (0,4,8)),s32(fp+lr_off),
+                                tuple(f32(model+scale_off+j) for j in (0,4,8)),tuple(f32(root-position_off+scale_off+j) for j in (0,4,8))))
             if mask:
                 cpu=opponent();target=u32(u32(cpu+gobj_off)+obj_off)+position_off
                 center=hits[0][2]
@@ -501,8 +508,13 @@ try:
     wait(lambda:u8(scene)==57 and u32(addr('sMNOptionTotalTimeTics'))>30,'Options load')
     w32(addr('sMNOptionOption'),3);pulse(0x80)
     wait(lambda:u32(addr('sMNOptionBuilderMode'))==1,'Lab hub')
+    default_build_one=[u8(addr('gSCManagerCharBuilderSlots')+i) for i in range(slot_size)]
+    if args.vs_defaults:
+        transfer=addr('gSCManagerTransferBattleState')
+        assert (u8(transfer+rules_off),u8(transfer+stocks_off),u32(transfer+items_off),u8(transfer+item_rate_off))==(2,3,0,0),'Fresh-boot VS rules must be four stocks/items off'
+        print('PASS: fresh-boot VS stock rules, four stocks and items off.',flush=True)
     minima=[]
-    for case in (range(4) if args.mario_animations else range(args.first_choice,args.first_choice+args.cases)):
+    for case in (range(0) if args.vs_results else range(4) if args.mario_animations else range(args.first_choice,args.first_choice+args.cases)):
         if args.special_animations:animation_seen.clear();animation_errors.clear();animation_samples=0
         choice=0 if args.path_donor is not None or args.superjump is not None else 11 if args.egg_lay else case
         if u32(addr('sMNOptionBuilderMode'))==2:pulse(0x40)
@@ -510,6 +522,7 @@ try:
         if args.mario_animations:body=0
         if args.roster_animations:body=case
         if args.paired_native:body=case
+        if args.taunts and args.taunt_body is not None:body=args.taunt_body
         w32(addr('sMNOptionBuilderSlot'),preset)
         slot=addr('gSCManagerCharBuilderSlots')+preset*slot_size
         w8(slot,1);w8(slot+1,body)
@@ -636,13 +649,19 @@ try:
             pair_direction=0;pair_contact=False
         elif args.taunts:
             from pairedMoves import catalog as pair_catalog,phase_data
+            from customAnimation import sample
+            from sharedAnimation import body_rig
             index=next(i for i,c in enumerate(pair_catalog()) if c['donor']==case and c['phase']=='Appeal')
             taunt=pair_catalog()[index];source_hits=phase_data(index)[0]
+            root_bind=next(bone['scale'] for bone in body_rig(ROSTER[body]) if bone['joint']==4)
+            source_scales=[pose[4][7:10] for pose in sample(taunt['fighter'],taunt['name'],taunt['frames'],taunt['flags'])] if case==0 else None
             cancel=next((tick for tick,commands in taunt['timeline'].items() if any(op=='ftMotionCommandSetFlag1' and a[0] for op,a in commands)),None)
             check(core.CoreDoCommand(17,4,C.byref(C.c_int(200))))
             check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
             frames(200) # Finish GO and native spawn protection before contact checks.
             wait(lambda:u32(fighter()+status_off)==common_statuses['nFTCommonStatusWait'],'Taunt ready')
+            top=u32(u32(fighter()+gobj_off)+obj_off)
+            top_scale=tuple(f32(top+scale_off+j) for j in (0,4,8))
             if case==4:
                 w32(opponent()+pkind_off,0);keys_port(u8(opponent()+port_off),0)
                 # Use the center of the floor so the dummy's native ledge
@@ -659,8 +678,12 @@ try:
             wait(lambda:u32(fighter()+status_off)==common_statuses['nFTCommonStatusWait'],'Taunt natural recovery')
             seen={r[0]:r for r in taunt_trace};assert max(seen)>=taunt['duration']-2,('Taunt duration',body,case,max(seen),taunt['duration'])
             active=[]
-            for tick,flag,mask,hits,root,facing in taunt_trace:
+            for tick,flag,mask,hits,root,facing,model_scale,world_scale in taunt_trace:
                 if tick<0 or tick>=len(source_hits):continue
+                if source_scales is not None:
+                    expected_scale=tuple(a*b for a,b in zip(root_bind,source_scales[tick]))
+                    assert max(abs(a-b) for a,b in zip(model_scale,expected_scale))<.00002,('Mario growth scale',body,tick,model_scale,expected_scale)
+                    assert world_scale==top_scale,('Mario taunt changed TopN/body size',body,tick,world_scale,top_scale)
                 expected_mask,centers=source_hits[tick]
                 assert mask==expected_mask,('Taunt active mask',body,case,tick,mask,expected_mask)
                 if cancel is not None:assert bool(flag)==(tick>=cancel),('Taunt cancel flag',body,case,tick,flag,cancel)
@@ -685,6 +708,9 @@ try:
                 frames(90)
             else:wait(lambda:u32(fighter()+status_off)==common_statuses['nFTCommonStatusWait'],'Uncancelled taunt ending')
             assert u32(addr('sFTCustomMoveClocks'))!=fighter(),'Stale taunt clock after interruption/recovery'
+            if case==0:
+                model=u32(fighter()+joints_off+4*4)
+                assert max(abs(f32(model+scale_off+j)-v) for j,v in zip((0,4,8),root_bind))<.00002,'Mario growth left behind after guard cancel'
             if case==4:w32(opponent()+pkind_off,1)
             print(f'PASS: taunt body {body}, donor {case}, duration {taunt["duration"]}, cancel {cancel}, source hit windows/fields/contact and cleanup.',flush=True)
         elif args.normal_movement:
@@ -1153,10 +1179,12 @@ try:
         action_label='taunts' if args.taunts else 'normal movement' if args.normal_movement else 'normal mechanics' if args.normal_mechanics else 'normal poses' if args.mario_animations or args.roster_animations else 'donor special' if args.path_donor is not None or args.superjump is not None else 'B/store/B'
         print(f'PASS: body {body}, neutral {choice}, preset {preset}: Test -> CSS -> stage -> Training -> {action_label} -> same editor.',flush=True)
     if not args.four_mb:
-        print('PASS: Training heap headroom at least',min(minima),'bytes.',flush=True)
-        pulse(0x40);wait(lambda:u32(addr('sMNOptionBuilderMode'))==1,'Lab hub for VS')
+        if minima:print('PASS: Training heap headroom at least',min(minima),'bytes.',flush=True)
+        if u32(addr('sMNOptionBuilderMode'))==2:pulse(0x40)
+        wait(lambda:u32(addr('sMNOptionBuilderMode'))==1,'Lab hub for VS')
         transfer=addr('gSCManagerTransferBattleState')
         for player,body in enumerate((0,2,8,9)):
+            if args.vs_results and player==0:body=default_build_one[1]
             if args.mario_animations:body=0
             w8(addr('gSCManagerCharBuilderPlayerSlots')+player,player)
             slot=addr('gSCManagerCharBuilderSlots')+player*slot_size
@@ -1170,18 +1198,52 @@ try:
             if args.normal_mechanics:
                 for attack in range(13):w8(slot+2+attack,(1,5,7,11)[player])
             w8(slot+18,args.superjump if args.direct_special in (3,5) else (0,4,0,4)[player] if args.superjump is not None and args.superjump!=10 else body);w8(slot+19,10 if args.superjump==10 else body);w8(slot+neutral_field,(9,10,11,6)[player])
+            if args.vs_results and player==0:
+                for i,value in enumerate(default_build_one):w8(slot+i,value)
             if args.mechanic is not None:
                 w8(slot+18,args.mechanic if args.mechanic_kind=='hi' else body)
                 w8(slot+19,args.mechanic if args.mechanic_kind=='lw' else body)
             record=transfer+players_field+player*player_size
             w8(record+pkind_field,0 if player==0 else 1);w8(record+fkind_field,body)
         w8(transfer+man_field,1);w8(transfer+cpu_field,3);w8(transfer+reset_field,0);w8(transfer+stage_field,1)
+        if args.vs_results and not args.vs_defaults:w8(transfer+rules_off,2)
         w32(addr('sMNOptionBuilderSlot'),8);pulse(0x80)
         wait(lambda:u8(scene)==16 and u32(addr('sMNPlayersVSTotalTimeTics'))>75,'Four-slot VS select')
         frames(30);heap_ok();pulse(0x10)
         wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'VS stage select')
         pulse(0x80);wait(lambda:u8(scene)==22 and u32(addr('dSYTaskmanUpdateCount'))>240,'Four-slot VS battle')
+        if args.vs_defaults:
+            battle=u32(addr('gSCManagerBattleState'))
+            assert (u8(battle+rules_off),u8(battle+stocks_off),u32(battle+items_off),u8(battle+item_rate_off))==(2,3,0,0),'VS menus lost the default rules'
+            for player in range(4):
+                record=battle+players_field+player*player_size
+                fp=u32(u32(record+player_fighter_off)+user_off)
+                assert u8(record+player_stock_off)==u8(fp+fighter_stock_off)==3,('Initial four stocks',player)
         frames(180);heap_ok();pulse(0x40 | ((80 if args.mechanic_kind=='hi' else 176)<<24) if args.mechanic is not None else 0x40 | ((176 if args.superjump==10 else 80)<<24) if args.superjump is not None else 0x40);frames(300 if args.superjump==10 else 160)
         print('PASS: four assigned builds, human/three CPUs: Play VS -> CSS -> stage -> battle/B, upper-bank heap in bounds.',flush=True)
+        if args.vs_results:
+            battle=u32(addr('gSCManagerBattleState'))
+            for player in (1,2,3):
+                record=battle+players_field+player*player_size
+                fp=u32(u32(record+player_fighter_off)+user_off)
+                w8(record+player_stock_off,0);w8(fp+fighter_stock_off,0)
+                root=u32(u32(fp+gobj_off)+obj_off)+position_off
+                wf32(root,-90000);wf32(fp+coll_prev_off,-90000)
+            results_scene=enum_values((ROOT/'src/sc/scdef.h').read_text(),'SCKind')['nSCKindVSResults']
+            wait(lambda:u8(scene)==results_scene,'Native stock KOs -> results scene',seconds=20)
+            frames(240);remaining=heap_ok()
+            assert u32(addr('sMNVSResultsTotalTimeTics'))>120,'Results did not update'
+            print('PASS: stock match end -> results/victory fighters; heap headroom',remaining,'bytes.',flush=True)
+            wait(lambda:u32(addr('sMNVSResultsTotalTimeTics'))>=u32(addr('sMNVSResultsAllowExitWait')),'Native results input gate')
+            pulse(0x10)
+            wait(lambda:u8(scene)==16 and u32(addr('sMNPlayersVSTotalTimeTics'))>30,'Results -> VS character select',seconds=20)
+            frames(30);heap_ok()
+            assert [u8(addr('gSCManagerCharBuilderSlots')+i) for i in range(slot_size)]==default_build_one,'Results changed Build One'
+            print('PASS: results Start input -> character select; creator recipe preserved.',flush=True)
+            pulse(0x10)
+            wait(lambda:u8(scene)==21 and u32(addr('sMNMapsTotalTimeTics'))>30,'Rematch stage select')
+            pulse(0x80);wait(lambda:u8(scene)==22 and u32(addr('dSYTaskmanUpdateCount'))>240,'Rematch battle')
+            frames(180);heap_ok()
+            print('PASS: results -> CSS -> stage -> rematch loads and updates.',flush=True)
 finally:
     keys(0);core.CoreDoCommand(6,0,None);thread.join(timeout=3)

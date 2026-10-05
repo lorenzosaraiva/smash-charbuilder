@@ -11,6 +11,12 @@ const u32 sSceneSmokeLayout[] = {
 };
 
 #include <ft/fighter.h>
+const u32 sSceneSmokeVSLayout[] = {
+    __builtin_offsetof(SCBattleState, game_rules), __builtin_offsetof(SCBattleState, stocks),
+    __builtin_offsetof(SCBattleState, item_toggles), __builtin_offsetof(SCBattleState, item_appearance_rate),
+    __builtin_offsetof(SCPlayerData, stock_count), __builtin_offsetof(SCPlayerData, fighter_gobj),
+    __builtin_offsetof(FTStruct, stock_count)
+};
 const u32 sSceneSmokeFighterLayout[] = {
     sizeof(FTStruct), __builtin_offsetof(FTStruct, fkind), __builtin_offsetof(FTStruct, player),
     __builtin_offsetof(FTStruct, fighter_gobj), __builtin_offsetof(FTStruct, status_id),

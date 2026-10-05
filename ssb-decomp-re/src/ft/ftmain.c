@@ -1776,6 +1776,7 @@ void ftMainPlayAnim(GObj *fighter_gobj)
     fighter_gobj->anim_frame = ftCustomMoveAdvanceClock(fp, fighter_gobj->anim_frame);
     ftMainCharBuilderAdvanceRecoveryPose(fp);
     ftCustomAnimationApplyPose(fp);
+    ftMainCharBuilderApplyPairScale(fp);
     ftMainCharBuilderApplySpecialVisuals(fighter_gobj);
     ftParamsUpdateFighterPartsTransform(fp->joints[nFTPartsJointTopN]);
     ftMainCharBuilderUpdateSpecialAttachments(fighter_gobj);

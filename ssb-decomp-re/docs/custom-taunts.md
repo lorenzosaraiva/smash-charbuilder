@@ -1,6 +1,6 @@
 # Customizable taunts
 
-Version 0.1.15, updated 2026-10-05. Decomp Character Lab.
+Version 0.1.18, updated 2026-10-05. Decomp Character Lab.
 
 In **Options -> Character Lab**, open a build and change **TAUNT** (below
 **DOWN B**) with left/right. Each build has its own donor. **Use Body For All**
@@ -32,9 +32,14 @@ Luigi's taunt also retains its original foot collision path on frames **47-49**:
 **100**, weight knockback **60** and base knockback **0**. Reach stays donor-sized on every body.
 Use **Start -> View -> HITBOX** to see it. The other taunts have no attack hitbox.
 
-Taunts keep the body's native hurtboxes. Cosmetic animated body scaling (Mario's
-growth), facial/texture swaps and donor hand/weapon mesh variants remain pending
-for foreign bodies. Rendered pose/effect acceptance still needs playtesting.
+Mario's borrowed taunt now applies his sampled original model-root growth/shrink
+track on every foreign body, including Yoshi. The source reaches about **2.25x**
+scale, returns to normal on the original timeline, and restores the body's bind
+scale immediately on interruption. It does not change TopN scale, body attributes
+or the donor collision catalog. Taunts retain the body's native hurtbox definitions;
+their joint transforms follow the animated model as usual.
+Facial/texture swaps and donor hand/weapon mesh variants remain pending for foreign
+bodies. Rendered pose/effect acceptance still needs playtesting.
 Kirby's native body copy-drop policy remains native; borrowing its taunt does
 not grant copy abilities. These changes have not been ported to Remix.
 
@@ -45,6 +50,7 @@ clips on all twelve rigs, and the linked ROM. Optional ROM CPU checks (null rend
 ```bash
 python3 tools/testTrainingScenes.py --taunts
 python3 tools/testTrainingScenes.py --taunts --paired-native
+python3 tools/testTrainingScenes.py --taunts --taunt-body 6 --cases 1
 ```
 
 These exercise actual L/guard inputs, donor duration/cancel flags, Luigi's hitbox
@@ -56,6 +62,9 @@ For that small contact window the dummy temporarily uses a human slot with no
 inputs, then returns to CPU control; native AI would jump away. All 501 shared
 clips passed 6,430,305 runtime joint-world orientation checks across twelve rigs.
 These CPU checks use null rendering; rendered visual acceptance remains pending.
+Version 0.1.18 also checks every original Mario growth sample against native C
+playback, scale application/cleanup across the foreign bodies and four slots,
+and a live Yoshi/Mario Training test with natural recovery and guard cancellation.
 
 The mixed twelve-normal-donor Training stress check retains at least 188,532
 bytes of heap headroom on this layout. DK cargo/back-throw/mash-escape and
