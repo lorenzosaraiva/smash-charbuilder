@@ -1,5 +1,14 @@
 # Changes
 
+## 0.1.21 - 2026-10-06: Remix Training launch and menu label
+
+- Release Remix preview 0.1.4; keep the decomp ROM at 0.1.18.
+- Initialize editor-launched Training CSS with the selected build body, valid native costumes, P1 and a Mario dummy, replacing stale/random expanded-roster preview selections.
+- Display **Character Lab** in title case in the Settings menu and update the play guide.
+- Correct the CSS Back hook to Training's overlay, restoring return to the tested editor without modifying the ordinary 1P CSS at the same RAM address.
+- Fix the special-callback importer when invoked through a full asset build, alongside direct runtime builds.
+- Add real-input editor launch/return CPU coverage; distinguish it from direct Training scene fixtures. Rendered acceptance remains pending.
+
 ## 0.1.20 - 2026-10-05: Remix special gameplay and recovery adapters
 
 - Release Remix preview 0.1.3; preserve the decomp 0.1.18 ROM and downloads.

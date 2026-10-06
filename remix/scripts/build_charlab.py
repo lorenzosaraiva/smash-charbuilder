@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.3'
-UPDATED = '2026-10-05'
+VERSION = '0.1.4'
+UPDATED = '2026-10-06'
 
 
 def run(command, stage, cwd=ROOT):
@@ -88,7 +88,7 @@ retain source timing ahead of visual retargeting. Link held-bomb common throws
 retain donor timing, values and release sockets; Falcon Dive uses the source
 attacker socket and frame-16 release with native Remix victim offsets.
 Pikachu/Fox/Ness recovery transform guards remain active.
-Use Settings -> CHARACTER LAB; keep Original 12 Only enabled.
+Use Settings -> Character Lab; keep Original 12 Only enabled.
 Assign Custom Build in the VS/Training CSS Player Settings for human/CPU slots.
 Remix's existing HITBOX/HITBOX+ display and improved combo meter remain available.
 

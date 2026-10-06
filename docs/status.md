@@ -81,6 +81,7 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Preserve body world-root position during native status setup by suspending missing-joint fallbacks.
 - [ ] Full special hitbox/projectile/capture fidelity and rendered two-dash acceptance.
 - [x] Existing SRAM recipes and human/CPU assignments integrated with the port.
+- [x] Editor Test initializes the saved body/P1 and native Mario dummy with valid costumes; Settings displays **Character Lab**.
 - [x] Training exit/CSS Back return to the tested editor.
 - [x] Native hitbox display, improved grab-aware combo meter and unlocks retained.
 - [x] Compiled MIPS execution, linked-data/CRC checks and separate ROM/ZIP packaging.

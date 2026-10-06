@@ -1,6 +1,6 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.3 (2026-10-05)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.4 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
 
@@ -36,6 +36,8 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Suppress donor mesh/texture/hurtbox-part commands and attached motion effects on foreign bodies; retain whole-fighter hit status and native body hurtboxes.
 - [x] Suspend missing-joint fallbacks during native status setup, preserving world-root position; restore safe callback fallbacks afterward.
 - [x] Three Mario pose pilots: Falcon down-air, Fox straight forward tilt, DK straight forward smash.
+- [x] Editor Test initializes the chosen body, P1 and native Mario dummy with valid costumes.
+- [x] Settings label uses **Character Lab** title case.
 - [x] Training exit and Training CSS Back return to the tested preset editor.
 - [x] Native Settings menu style and built-in HITBOX/HITBOX+ display.
 - [x] Existing improved combo meter handles grabs (enabled by default).
@@ -68,7 +70,7 @@ dash status/render setup are isolated; this does not verify rendered movement.
 Additional checks compare normal travel/special geometry to the source host
 binaries and execute production movement/root-placement hooks, donor attribute
 restoration and generation cleanup. Optional real-input CPU checks use isolated saves and null rendering. The
-checked 0.1.3 ROM passes 24 primary Up/Down B casts across all twelve donors:
+checked 0.1.3 ROM passed 24 primary Up/Down B casts across all twelve donors:
 ten donors on Mario, and Mario/Luigi on Kirby, plus Link's common held-bomb
 throw through a second Down B. Entry-position continuity, return to Idle
 without KO, body scale and restored identity are checked. Rendered
@@ -87,7 +89,7 @@ ground/air throw contexts/clocks/sockets, 44 Dive socket adjustments through
 the native-offset delegate and 11 frame-16 releases. Native item/effect/contact
 setup is isolated in these checks. Every installed hook is checked in the ROM.
 
-The Mario Kick/Quick Attack CPU regression also passes on this ROM: 72
+The Mario Kick/Quick Attack CPU regression also passes on preview 0.1.3: 72
 source-velocity samples and two real-input zips, with the second aimed back
 toward the platform, followed by native recovery without KO or scale leaks.
 Controlled live Dive hitbox contact also passes native capture, paired release
@@ -101,3 +103,17 @@ Contact detection and visible in-game behavior still need playtesting.
 The new SRAM revision resets older Remix recipes/settings once. Original-roster
 donor tables use vanilla US values, matching Character Lab; Remix's gameplay
 settings, modifiers, staling and collision engine still apply to the result.
+
+The editor launch regression executes 48 production handlers across four
+slots and twelve original bodies, checking scene initialization and the
+Character Lab label; SRAM I/O and costume lookup are isolated there.
+The optional `--editor-test --editor-slot 1` CPU fixture opens the real
+Settings editor, poisons old Training selections, presses A on Test, waits
+for a running CSS and returns with B (after recalling the selected puck).
+`--editor-play` continues through real CSS Start and stage confirmation into
+Training. These checks use null rendering; visible UI acceptance remains pending.
+
+Preview 0.1.4 passes real-input Test/Back on all four editor slots with
+stale Training selections, plus CSS Start/stage confirmation into a running
+Training match. Kick/Quick Attack still passes 72 source-velocity samples and
+the directional second zip. These CPU results use null rendering.

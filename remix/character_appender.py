@@ -484,7 +484,7 @@ class CharacterAppender:
         source = toggles.read_text(encoding="utf-8")
         source = source.replace('        Render.register_routine(run_)',
                                 '        jal CharLab.resume_editor_\n        nop\n\n        Render.register_routine(run_)', 1)
-        source = source.replace('"CHAR CREATOR"', '"CHARACTER LAB"')
+        source = source.replace('"CHAR CREATOR"', '"Character Lab"')
         toggles.write_text(source, encoding="utf-8")
 
         # Donor files must be loaded in the established pre-match preload

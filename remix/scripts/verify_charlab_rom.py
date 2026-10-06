@@ -481,6 +481,33 @@ def test_specials_and_return(r):
     assert r.reg(UC_MIPS_REG_T4) == 0x12
     print('PASS: Training exit and CSS Back return all four tested presets to the correct editor page; ordinary Training retains its CSS destination.')
 
+    # Execute the actual launch handler; isolate only SRAM I/O and the
+    # native costume lookup, leaving recipe selection and scene setup live.
+    scene = 0x800A4AD0
+    offsets = struct.unpack('>5I', r.read(r.addr('ccTrainingSetupLayout'),20))
+    r.services[r.labels['Toggles.save_']] = lambda: 0
+    r.services[0x800EC0EC] = lambda: r.reg(UC_MIPS_REG_A1)
+    for preset in range(1,5):
+        entry = r.labels[f'Toggles.cc_slot_{preset}_test']
+        table = r.u32(r.labels['CharCreator.slot_tables']+(preset-1)*4)
+        body_value = r.u32(table+4)
+        old_body = r.u32(body_value)
+        for body in range(12):
+            r.u32(body_value,body)
+            for offset in offsets:r.write(scene+offset,b'\xFF')
+            r.write(scene,b'\x39')
+            r.uc.reg_write(UC_MIPS_REG_V0,entry)
+            r.call('test_in_training_',namespace='CharCreator')
+            assert r.read(scene,2)==b'\x12\x39'
+            assert tuple(r.read(scene+offset,1)[0] for offset in offsets)==(0,body,0,0,int(body==0))
+            assert r.u32(r.labels['CharCreator.selected_builds'])==preset
+            assert r.u32(r.labels['CharLab.training_slot'])==preset
+        r.u32(body_value,old_body)
+    assert r.read(r.labels['Toggles.entry_char_creator']+0x28,14)==b'Character Lab\0'
+    del r.services[r.labels['Toggles.save_']]
+    del r.services[0x800EC0EC]
+    print('PASS: 48 actual editor launch handlers replace stale Training selections, select the saved body/P1 and native dummy costumes; Settings label is Character Lab. SRAM/costume services are isolated.')
+
 
 def test_borrowed_specials(r):
     """Execute pose selection, donor clocks and native Quick Attack callbacks.
@@ -769,7 +796,14 @@ def main():
              0x5A8F0: 'CharLabRuntime.ccParse', 0x5C040: 'CharLab.events_all_',
              0x5C068: 'CharLab.events_forward_', 0x5DC4C: 'CharLab.collisions_',
              0xC4C28: 'CharLab.throw_', 0x116ED4: 'CharLab.training_exit_',
-             0x13D9CC: 'CharLab.training_css_back_'}
+             0x144DAC: 'CharLab.training_css_back_'}
+    overlay = re.search(r'- name: ovl28\s+type: code\s+start: (0x[0-9A-Fa-f]+)\s+vram: (0x[0-9A-Fa-f]+)',
+                        (LAB/'smashbrothers.us.yaml').read_text(encoding='utf-8'))
+    assert overlay is not None
+    training_back = int(overlay[1],16) + 0x801357CC - int(overlay[2],16)
+    assert hooks[training_back] == 'CharLab.training_css_back_', 'Back hook must target Training overlay'
+    base_rom = (ROOT/'smashremix/roms/ssb.rom').read_bytes()
+    assert rom[0x13D9CC:0x13D9D4] == base_rom[0x13D9CC:0x13D9D4], 'Ordinary 1P CSS was overwritten by Training Back'
     hooks.update({0xCD4E0: 'CharLab.pikachu_pitch_scale_', 0xD6A94: 'CharLab.fox_pitch_',
                   0xCF198: 'CharLab.ness_pitch_'})
     import json

@@ -224,7 +224,10 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     prepare_headers()
     special_timings()
-    from generate_charlab_specials import generate
+    if __package__:
+        from .generate_charlab_specials import generate
+    else:
+        from generate_charlab_specials import generate
     generate()
     command = ['clang', '-target', 'mips-unknown-none', '-march=mips2', '-mabi=32',
                '-mno-abicalls', '-fno-pic', '-G0', '-O2', '-ffreestanding', '-fno-builtin',

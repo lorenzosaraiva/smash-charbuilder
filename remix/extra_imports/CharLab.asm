@@ -358,7 +358,9 @@ scope CharLab {
         lw s0, 0x0014(sp)
     }
     scope training_css_back_: {
-        OS.patch_start(0x13D9CC, 0x801357CC)
+        // Training CSS is ovl28 (ROM 0x1410E0 -> RAM 0x80131B00).
+        // ovl27's same RAM address belongs to the ordinary 1P CSS.
+        OS.patch_start(0x144DAC, 0x801357CC)
         j training_css_back_
         nop
         OS.patch_end()
@@ -385,7 +387,7 @@ scope CharLab {
         jr ra
         addiu sp, sp, 0x0020
         _original:
-        OS.copy_segment(0x13D9CC, 8)
+        OS.copy_segment(0x144DAC, 8)
         j 0x801357D4
         nop
     }

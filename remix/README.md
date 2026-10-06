@@ -8,7 +8,9 @@ pose pilots, human/CPU preset assignments and return from Training to the editor
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.3 (2026-10-05):** donor helpless/landing recovery, Mario/Luigi steering,
+**0.1.4 (2026-10-06):** Test in Training initializes the selected body and a
+native Mario dummy with valid costumes, and Settings displays **Character Lab**.
+The prior special batch adds donor helpless/landing recovery, Mario/Luigi steering,
 Fire Fox directional hitboxes, Reflector/Magnet source volumes, and independent
 Tornado/egg/Spin Attack/Thunder/PK Thunder state. Source projectile sockets,
 Final Cutter gameplay, Stone armor/timeout, Link held-bomb throws and Falcon
@@ -18,7 +20,7 @@ See the [full decomp-port matrix](docs/decomp-port.md) and
 [checklist](docs/character-lab-status.md) for the still-missing mechanics,
 neutral adapters, animations, taunts and paired throws.
 
-Open **Settings -> CHARACTER LAB** and keep **Original 12 Only** enabled. The
+Open **Settings -> Character Lab** and keep **Original 12 Only** enabled. The
 expanded roster stays playable, with its earlier experimental creator adapters;
 full donor fidelity for those fighters remains pending. Old Remix settings and
 recipes reset once for the new SRAM layout. Rendered gameplay acceptance remains

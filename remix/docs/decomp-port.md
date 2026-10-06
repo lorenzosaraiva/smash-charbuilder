@@ -1,6 +1,6 @@
 # Decomp to Remix port
 
-Updated **2026-10-05**. Remix preview **0.1.3**, project **0.1.20**.
+Updated **2026-10-06**. Remix preview **0.1.4**, project **0.1.21**.
 
 The decomp ROM remains the most complete edition. The Remix preview is a
 partial port for the **original twelve** bodies and donors; exposing Remix's
@@ -23,7 +23,7 @@ contact and stage interactions still require rendered playtesting.
 | Animations | Three Mario normal pilots; borrowed Up/Down B uses safe body idle/fall poses | Stream shared donor animation curves from ROM, then retarget normals/specials |
 | Grab/throw selections | Donor grab collision events/timing and numeric throw values | Tether reach/props, paired positioning/release, DK cargo and Kirby landing throws |
 | Custom taunts | Native body taunts | Add donor selector, source clock/pose, Mario growth and Luigi hitbox |
-| Training/UI/presets | Four SRAM builds, human/CPU assignment, editor return, native menu style | Rendered acceptance and any new selector fields |
+| Training/UI/presets | Four SRAM builds, human/CPU assignment, initialized Test launch, editor return and Character Lab menu label | Rendered acceptance and any new selector fields |
 | Hitbox view / grab combo meter / unlocks | Remix built-in features retained | Rendered regression with custom mechanics |
 | Yoshi Build One / 4-stock items-off defaults | Still decomp only | Update Remix initialization without overwriting saved user presets |
 | Match ending | Decomp results fix is separate; Remix uses its own scenes | Exercise Remix results, victory poses and rematches with assigned builds |
@@ -87,15 +87,29 @@ in the live Dive hitbox to exercise native capture/release and throw damage.
 This checks CPU gameplay, not visible animations or contact fidelity. An old
 core that cannot boot the unchanged preview cannot serve as a port regression.
 Use matching API headers with `--core` / `--headers` for a locally built core.
-Preview 0.1.3 passes 24 primary Up/Down B casts across all twelve donors: ten
+Preview 0.1.3 passed 24 primary Up/Down B casts across all twelve donors: ten
 donors on Mario, and Mario/Luigi on Kirby. Link also passes a second Down B
 through the common held-bomb throw. These are controlled CPU fixtures with
 null rendering; visible animation/contact and broader body/stage acceptance
 remain pending.
 
-The Mario Kick/Quick Attack CPU regression also passes on this ROM: 72
+The Mario Kick/Quick Attack CPU regression also passes on preview 0.1.3: 72
 source-velocity samples and two real-input zips, with the second aimed back
 toward the platform, followed by native recovery without KO or scale leaks.
 Controlled live Dive hitbox contact also passes native capture, paired release
 and throw damage. CPU fixtures use null rendering and do not establish visible
 pose or full contact fidelity.
+
+The editor launch regression executes 48 production handlers across four
+slots and twelve original bodies, checking scene initialization and the
+Character Lab label; SRAM I/O and costume lookup are isolated there.
+The optional `--editor-test --editor-slot 1` CPU fixture opens the real
+Settings editor, poisons old Training selections, presses A on Test, waits
+for a running CSS and returns with B (after recalling the selected puck).
+`--editor-play` continues through real CSS Start and stage confirmation into
+Training. These checks use null rendering; visible UI acceptance remains pending.
+
+Preview 0.1.4 passes real-input Test/Back on all four editor slots with
+stale Training selections, plus CSS Start/stage confirmation into a running
+Training match. Kick/Quick Attack still passes 72 source-velocity samples and
+the directional second zip. These CPU results use null rendering.

@@ -18,8 +18,12 @@ parser.add_argument('--body',type=int,choices=range(12),default=0,help='Original
 parser.add_argument('--donor',type=int,choices=range(12),help='Exercise this donor Up/Down B instead of the Kick/Quick Attack regression')
 parser.add_argument('--special-side',choices=('both','up','down'),default='both')
 parser.add_argument('--falcon-contact',action='store_true',help='Place the CPU in the live Dive hitbox to exercise native capture/release')
+parser.add_argument('--editor-test',action='store_true',help='Enter the editor, activate Test in Training with A, then return with B')
+parser.add_argument('--editor-slot',type=int,choices=range(1,5),default=1)
+parser.add_argument('--editor-play',action='store_true',help='Continue editor Test through CSS Start and stage confirmation into Training')
 args=parser.parse_args()
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
+if args.editor_play:assert args.editor_test
 
 def constant(name):
     address,length,index=syms[name];section=sections[index]
@@ -31,12 +35,12 @@ native={name:int(address,16) for name,address in re.findall(r'^(\w+)\s*=\s*(0x[0
 build=ROOT/'build/char_creator/emulator';build.mkdir(parents=True,exist_ok=True)
 source='''#include <sc/scene.h>
 #include <ft/fighter.h>
-const unsigned int layout[]={__builtin_offsetof(SCCommonData,training_man_fkind),__builtin_offsetof(SCCommonData,training_com_fkind),__builtin_offsetof(SCCommonData,maps_training_gkind),__builtin_offsetof(SCBattleState,players),sizeof(SCPlayerData),__builtin_offsetof(SCPlayerData,fighter_gobj),__builtin_offsetof(FTStruct,item_gobj),__builtin_offsetof(FTStruct,attack_colls),sizeof(FTAttackColl),__builtin_offsetof(FTAttackColl,pos_curr),__builtin_offsetof(FTStruct,percent_damage),__builtin_offsetof(FTStruct,coll_data),sizeof(MPCollData)};
+const unsigned int layout[]={__builtin_offsetof(SCCommonData,training_man_fkind),__builtin_offsetof(SCCommonData,training_com_fkind),__builtin_offsetof(SCCommonData,maps_training_gkind),__builtin_offsetof(SCBattleState,players),sizeof(SCPlayerData),__builtin_offsetof(SCPlayerData,fighter_gobj),__builtin_offsetof(FTStruct,item_gobj),__builtin_offsetof(FTStruct,attack_colls),sizeof(FTAttackColl),__builtin_offsetof(FTAttackColl,pos_curr),__builtin_offsetof(FTStruct,percent_damage),__builtin_offsetof(FTStruct,coll_data),sizeof(MPCollData),__builtin_offsetof(SCCommonData,player),__builtin_offsetof(SCCommonData,training_man_costume),__builtin_offsetof(SCCommonData,training_com_costume)};
 '''
 (build/'layout.c').write_text(source)
 subprocess.run(['clang','--target=mips-unknown-none','-c','-EB','-mabi=32','-march=mips2','-ffreestanding','-I'+str(ROOT/'build/char_creator/runtime/include'),'-I'+str(LAB/'include'),'-I'+str(LAB/'src'),'-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US',str(build/'layout.c'),'-o',str(build/'layout.o')],check=True)
 d,s,y=read_elf(build/'layout.o','>');a,l,i=y['layout'];off=s[i][4]+a-s[i][3]
-man_off,cpu_off,stage_off,players_off,player_size,fighter_off,item_off,attack_off,attack_size,center_off,percent_off,collision_off,collision_size=struct.unpack_from('>13I',d,off)
+man_off,cpu_off,stage_off,players_off,player_size,fighter_off,item_off,attack_off,attack_size,center_off,percent_off,collision_off,collision_size,port_off,man_costume_off,cpu_costume_off=struct.unpack_from('>16I',d,off)
 unpacked=LAB/'build/emulator/root/usr';library=unpacked/'lib/x86_64-linux-gnu'
 headers=args.headers or unpacked/'include/mupen64plus'
 input_source=(LAB/'tools/emulator/input.c').read_text().replace('*a=0x20000','*a=0x20100')
@@ -108,7 +112,13 @@ check(core.CoreDoCommand(15,0,C.cast(frame_callback,C.c_void_p)))
 thread=threading.Thread(target=lambda:check(core.CoreDoCommand(5,0,None)),daemon=True);thread.start()
 def diagnostic():
     fault=u32(native['__osFaultedThread'])
-    return dict(scene=u8(scene),updates=u32(updates),pc=hex(C.c_uint32.from_address(core.DebugGetCPUDataPtr(1)).value),fault=hex(fault),context=[hex(u32(fault+j)) for j in (0x118,0x11c,0x120,0x124,0x128)] if fault else [],fighter=hex(fighter()),trace=trace[-8:])
+    data=dict(scene=u8(scene),updates=u32(updates),pc=hex(C.c_uint32.from_address(core.DebugGetCPUDataPtr(1)).value),fault=hex(fault),context=[hex(u32(fault+j)) for j in (0x118,0x11c,0x120,0x124,0x128)] if fault else [],fighter=hex(fighter()),trace=trace[-8:])
+    if fault:
+        data['registers']={name:hex(u32(fault+offset)) for name,offset in [('v0',0x2C),('a0',0x3C),('a1',0x44),('a2',0x4C),('s0',0x9C),('s1',0xA4),('sp',0xF4),('ra',0x104)]}
+        fp=u32(fault+0x2C)
+        if 0x80000000<=fp<0x807FF000:
+            data['fault_fighter']={name:hex(u32(fp+offset)) for name,offset in [('kind',8),('status',0x24),('attr',0x9C8),('textures',0x9BC)]}
+    return data
 def wait(predicate,label,seconds=20):
     end=time.monotonic()+seconds
     while not predicate():
@@ -138,6 +148,47 @@ try:
     def paused():
         check(core.CoreDoCommand(9,1,C.byref(state)));return state.value==3
     wait(paused,'Pause before Training fixture')
+    if args.editor_test:
+        # Recreate stale 1P selections; production launch must replace them.
+        w8(scene+man_off,255);w8(scene+man_costume_off,255)
+        w8(scene+cpu_off,33);w8(scene+cpu_costume_off,255)
+        w8(scene+port_off,3)
+        w8(labels['Toggles.normal_options'],0)
+        w32(labels['CharLab.return_slot'],args.editor_slot)
+        w8(scene+1,u8(scene));w8(scene,57);w32(native['sSYTaskmanStatus'],1)
+        check(core.CoreDoCommand(8,0,None))
+        wait(lambda:u8(scene)==57 and u8(labels['Toggles.menu_index'])==args.editor_slot+8,'Editor initialization',seconds=40)
+        frames(30)
+        print('EDITOR: before Test input',diagnostic(),flush=True)
+        pulse(0x80)
+        wait(lambda:u8(scene)==18,'Test in Training CSS transition',seconds=40)
+        frames(150)
+        assert not u32(native['__osFaultedThread']),('Training CSS fault',diagnostic())
+        assert u32(labels['CharLab.training_slot'])==args.editor_slot
+        body_entry=u32(u32(labels['CharCreator.slot_tables']+(args.editor_slot-1)*4)+4)
+        body=u8(labels['CharCreatorCatalog.id_table']+u32(body_entry))
+        assert u8(scene+man_off)==body and u8(scene+cpu_off)==0 and u8(scene+port_off)==0
+        print('PASS: real editor A input reaches a running Training CSS.',flush=True)
+        if args.editor_play:
+            pulse(0x10)
+            wait(lambda:u8(scene)==21,'Training stage select',seconds=40)
+            frames(90);pulse(0x80)
+            wait(lambda:u8(scene)==54 and fighter(),'Editor-launched Training match',seconds=60)
+            frames(150)
+            assert not u32(native['__osFaultedThread']) and u32(fighter()+8)==body,diagnostic()
+            report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'editor_slot':args.editor_slot,'checks':['editor Test A input','CSS Start','stage A confirmation','Training match load and updates'],'rendering':'null'}
+            (build/f'cpu-scenes-editor-{args.editor_slot}-play.json').write_text(json.dumps(report,indent=2)+'\n')
+            print('PASS: editor Test, CSS Start and stage confirmation load a running Training match.',flush=True)
+            raise SystemExit(0)
+        pulse(0x40)
+        frames(90);pulse(0x40) # First B recalls the preselected human puck.
+        wait(lambda:u8(scene)==57 and u8(labels['Toggles.menu_index'])==args.editor_slot+8,'CSS Back to editor',seconds=40)
+        frames(30)
+        assert not u32(native['__osFaultedThread']),('Returned editor fault',diagnostic())
+        report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'editor_slot':args.editor_slot,'checks':['editor Test A input','Training CSS continues running','CSS Back to tested editor'],'rendering':'null'}
+        (build/f'cpu-scenes-editor-{args.editor_slot}.json').write_text(json.dumps(report,indent=2)+'\n')
+        print('PASS: Test in Training and CSS Back for editor slot',args.editor_slot,flush=True)
+        raise SystemExit(0)
     # Retain source recipe defaults except the two selected special donors.
     table=u32(labels['CharCreator.slot_tables'])
     for i in range(21):w32(u32(table+i*4),0)

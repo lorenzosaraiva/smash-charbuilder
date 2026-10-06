@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.3 (2026-10-05)**.
+Character Lab has an original-roster Remix preview, **0.1.4 (2026-10-06)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for the shared donor timing and collision system. Most visible poses still
 belong to the body; the [checklist](docs/character-lab-status.md) tracks what remains.
@@ -10,14 +10,15 @@ mechanics are implemented and which still need adapters or playtesting.
 ## Make a build and fight with it
 
 1. Open `remix-character-lab.z64` in your emulator.
-2. Open **Settings -> CHARACTER LAB** and choose BUILD 1, 2, 3 or 4.
+2. Open **Settings -> Character Lab** and choose BUILD 1, 2, 3 or 4.
 3. Edit the name, **Body** and attack donors with the native menu controls.
 4. **USE BODY FOR ALL MOVES** gives you a native starting point.
 5. Change any jab, dash attack, tilt, smash, aerial, grab or throw donor.
 6. Neutral Special offers **Body Move** or **Fox Laser**. Up/Down Special
    remain experimental. Mario with Falcon Kick/Pikachu Up B is the first
    regression target; use native body specials for unverified mechanics.
-7. Select **TEST IN TRAINING**, then select the preset's Body on the Training CSS.
+7. Select **TEST IN TRAINING**. The Training CSS opens with your build's Body
+   selected and a native Mario dummy; choose a stage and start.
 8. Exit Training, or press Back on its CSS, to reopen the same preset editor.
 
 On the VS or Training character-select screen, open **Player Settings -> Custom

@@ -2549,6 +2549,20 @@ scope CharCreator {
         sw t0, 0x0000(t1)
         jal     reset_cache_
         nop
+        // Settings does not initialize the native 1P Training selections.
+        // Use this recipe's body and a native Mario dummy rather than stale
+        // expanded-roster preview IDs/costumes left by another screen.
+        lw      t0, 0x0008(sp)
+        addiu   t0, t0, -1
+        sll     t0, t0, 2
+        li      t1, slot_tables
+        addu    t1, t1, t0
+        lw      t1, 0x0000(t1)
+        lw      t1, 0x0004(t1)
+        jal     catalog_id_
+        lw      a0, 0x0000(t1)
+        jal     CharLabRuntime.ccSetupTraining
+        or      a0, v0, r0
         jal     Menu.change_screen_
         lli     a0, Global.screen.TRAINING_CSS
         lw      ra, 0x0004(sp)

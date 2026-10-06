@@ -1,6 +1,7 @@
 /* Shared donor runtime compiled for Remix's original o32 fighter layout. */
 #include <ft/fttypes.h>
 #include <sc/scdef.h>
+#include <sc/sctypes.h>
 #include <sc/sccharbuilder.h>
 #include <ft/ftmain.h>
 #include <ft/ftparam.h>
@@ -8,6 +9,17 @@
 #include <mp/mpcommon.h>
 #include <ft/fighter.h>
 extern s32 ccBodyKind(FTStruct*);
+
+/* Settings can enter Training CSS without the ordinary 1P menu setup. */
+void ccSetupTraining(s32 body)
+{
+    SCCommonData *scene = (SCCommonData*)0x800A4AD0;
+    scene->player = 0;
+    scene->training_man_fkind = body;
+    scene->training_man_costume = ftParamGetCostumeCommonID(body, 0);
+    scene->training_com_fkind = nFTKindMario;
+    scene->training_com_costume = ftParamGetCostumeCommonID(nFTKindMario, body == nFTKindMario ? 1 : 0);
+}
 
 SCCharBuilderSlot gSCManagerCharBuilderSlots[4];
 s8 gSCManagerCharBuilderPlayerSlots[4] = { 0, 1, 2, 3 };
@@ -346,4 +358,9 @@ const u32 ccVisualCommandLayout[] = {
     nFTMotionEventHideModelPartAll, nFTMotionEventSetTexturePartID,
     nFTMotionEventSetHitStatusPartID, nFTMotionEventResetDamageCollPartAll,
     nFTMotionEventSetDamageCollPartID, nFTMotionEventEffect, nFTMotionEventEffectItemHold
+};
+const u32 ccTrainingSetupLayout[] = {
+    OFF(SCCommonData, player), OFF(SCCommonData, training_man_fkind),
+    OFF(SCCommonData, training_man_costume), OFF(SCCommonData, training_com_fkind),
+    OFF(SCCommonData, training_com_costume)
 };
