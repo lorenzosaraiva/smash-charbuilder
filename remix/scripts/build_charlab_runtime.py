@@ -103,6 +103,8 @@ u32 gFTCustomAnimationValidationFailures;''')
     move=(LAB/'src/ft/ftcustommove.c.inc').read_text(encoding='utf-8')
     assert move.count('(slot->body != fp->fkind)') == 1
     move=move.replace('(slot->body != fp->fkind)','(slot->body != ccBodyKind(fp))')
+    # Unique jab motion IDs belong to the donor selected by action_array_hook_.
+    move=move.replace('sFTCustomBodyExtraMotionIDs[fp->fkind]', 'sFTCustomBodyExtraMotionIDs[slot->attacks[nSCCharBuilderAttackJab]]')
     move=move.replace('#include "ftcustomanimation.c.inc"','#include "animation.c.inc"')
     move=re.sub(r'#include "(ft[^"/]+\.inc)"',r'#include "ft/\1"',move)
     (OUT/'move.c.inc').write_text(move,encoding='utf-8')
@@ -140,6 +142,8 @@ def object_to_bass(path):
         'ccMappedThrownKind': 'CharLab.mapped_thrown_kind_',
         'ccSpecialDonor': 'CharLab.special_donor_',
         'ccBodyKind': 'CharLab.body_kind_',
+        'ccSelectJabDonor': 'CharLab.select_jab_donor_',
+        'ccOriginalKirbyJabEffect': '0x8014F1BC',
         'ccSuspendJoints': 'CharLab.suspend_joints_',
         'ccResumeJoints': 'CharLab.resume_joints_',
         'ccOriginalGroundTravel': 'CharLab.original_ground_travel_',
@@ -236,6 +240,17 @@ def object_to_bass(path):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
+    main=ROOT/'main.asm'
+    assembly=main.read_text(encoding='utf-8')
+    late='include "build/char_creator/runtime/normal-late-hooks.asm"'
+    if late not in assembly:
+        marker='OS.align(16)\nmidi_memory_block:'
+        assert marker in assembly, 'Cannot place final normal hooks before the heap.'
+        main.write_text(assembly.replace(marker,late+'\n\n'+marker),encoding='utf-8')
+    count=(ROOT/'build/char_creator/catalog_count.asm').read_text(encoding='utf-8')
+    count=re.search(r'constant COUNT\((\d+)\)',count)[1]
+    menu=(ROOT/'extra_imports/CharCreatorMenu.inc').read_text(encoding='utf-8')
+    (ROOT/'build/char_creator/menu.inc').write_text(menu.replace('CharCreatorCatalog.COUNT - 1',str(int(count)-1)),encoding='utf-8')
     if __package__:
         from .generate_charlab_animations import generate as generate_animations
     else:
@@ -248,9 +263,14 @@ def main():
     else:
         from generate_charlab_specials import generate
     generate()
+    if __package__:
+        from .generate_charlab_normals import generate as generate_normals
+    else:
+        from generate_charlab_normals import generate as generate_normals
+    generate_normals()
     command = ['clang', '-target', 'mips-unknown-none', '-march=mips2', '-mabi=32',
                '-mno-abicalls', '-fno-pic', '-G0', '-O2', '-ffreestanding', '-fno-builtin',
-               '-fno-stack-protector', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
+               '-fno-stack-protector', '-DFTCHARBUILDER_NORMAL_MECHANICS', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
                '-Ibuild/char_creator/runtime/include', '-I../ssb-decomp-re/include', '-I../ssb-decomp-re/src',
                '-c', 'extra_imports/CharLabRuntime.c', '-o', 'build/char_creator/runtime/runtime.o']
     if os.name == 'nt':

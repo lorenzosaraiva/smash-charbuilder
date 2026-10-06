@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.5'
+VERSION = '0.1.6'
 UPDATED = '2026-10-06'
 
 
@@ -77,7 +77,7 @@ Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 Source commit: `{info['commit']}`; uncommitted changes: {info['source_dirty']}.
 
 Original donor collision paths/timing, normal values, grab/throw choices,
-Body Move/Fox Laser, shared donor pose retargeting and Training editor return.
+Body-name/Fox neutral choices, donor normal mechanics, shared pose retargeting and Training editor return.
 Normals and supported special/recovery poses retarget on twelve original bodies
 through independent 15 KB ROM caches; the three Mario pilots are preserved.
 Donor joint fallbacks are suspended during pose writes to preserve the world
@@ -98,7 +98,7 @@ The ROM is checked with shared host tests, linked-byte/CRC verification and
 production MIPS execution tests. Rendered gameplay acceptance is still pending.
 Full decomp parity is pending: neutral adapters beyond Laser, rendered
 special acceptance,
-normal jab/bounce/reflection mechanics, taunts, special props/effects and paired
+rendered normal contacts/landing, taunts, special props/effects and paired
 grabs/throws. Expanded-roster fidelity and Kirby copy are outside this milestone.
 The changed SRAM layout resets older Remix settings/recipes once.
 

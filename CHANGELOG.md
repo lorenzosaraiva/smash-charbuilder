@@ -1,5 +1,15 @@
 # Changes
 
+## 0.1.23 - 2026-10-06: Remix donor normal mechanics
+
+- Release Remix preview 0.1.6; preserve the decomp 0.1.18 ROM and download.
+- Port donor jab availability, buffering, third/rapid phases and independent source loop/end clocks using body-safe native status setup. Preserve unused Jigglypuff rapid gates and native/expanded fallback, including Mewtwo and Slippy entry patches.
+- Connect Link down-air bounce/late-hit rewind/rehit and Ness bat source reflector windows/socket/size to native weapon/item collision paths.
+- Apply donor angle/landing availability, TransN travel, traction, gravity, terminal velocity and air drift during normals; retain native body hurtboxes, weight and movement outside attacks. Source scalar data avoids loading donor model files for normal physics.
+- Replace the neutral selector labels with fighter names; native neutral follows each build's Body without changing saved values or SRAM layout.
+- Add linked-MIPS normal regressions and real-input jab/contact fixtures. Rendered contact, landing, effects/props and interruption acceptance remain pending.
+- Preserve Remix's aerial-fastfall toggle through complete guarded physics entries, avoiding the old function+4 route that lost the saved return address.
+
 ## 0.1.22 - 2026-10-06: Shared Remix animation catalog
 
 - Release Remix preview 0.1.5; preserve the decomp 0.1.18 ROM and download.

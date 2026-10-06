@@ -1,6 +1,7 @@
 # Donor normal mechanics
 
-Version 0.1.17, updated 2026-10-05. Decomp only; Remix is unchanged.
+Decomp implementation since version 0.1.17 (2026-10-05). Remix preview 0.1.6
+also ports these normal mechanics; see its [guide and checks](../../remix/docs/normal-mechanics.md).
 
 Customized grabs retain native release descriptors and choreography. The VS
 regression also caught an Egg Lay interruption crash: the adapter now installs

@@ -90,8 +90,6 @@ void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gob
         text = source[start:end].replace('fp->fkind', 'ccBodyKind(fp)')
         source = source[:start]+text+source[end:]
     source = source.replace('fp->status_vars.ness.specialhi.pkthunder_gobj', '(*ccNessWeapon(fp))')
-    source = source.replace('(ftMainCharBuilderGetSpecialSphere(fp, donor_matrix, &donor_size) != FALSE) ||\n        (ftMainCharBuilderGetNormalSphere(fp, donor_matrix, &donor_size) != FALSE)',
-                            '(ftMainCharBuilderGetSpecialSphere(fp, donor_matrix, &donor_size) != FALSE)')
     # Reach comes from the source socket; the held egg uses donor scale rather
     # than the unrelated body's head scale. Released eggs relinquish ownership.
     source = source.replace('DObjGetStruct((*ftYoshiSpecialHiGetWeapon(fp)))->scale.vec.f = joint->scale.vec.f;',

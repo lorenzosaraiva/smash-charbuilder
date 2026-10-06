@@ -16,6 +16,7 @@ extern void ccOriginalGroundTravel(GObj*);
 extern void ccOriginalAirTravel(FTStruct*, f32*, f32*, f32*);
 extern void ccOriginalGroundPhysics(GObj*);
 f32 ftMainCharBuilderGetSpecialTravelAngle(FTStruct*);
+void ccn_ftPhysicsApplyGroundVelFriction(GObj*);
 
 static const FTCharBuilderSpecialPath* ccFindSpecialPath(s32 donor,s32 motion)
 {
@@ -90,7 +91,7 @@ void ccGroundPhysics(GObj *g)
     FTStruct *fp=ftGetStruct(g);s32 index=ccNormalIndex(fp);
     if(index<0){ccOriginalGroundPhysics(g);return;}
     if(sFTCustomNormalMechanics[index/33][index%33].flags&0x40000000)ccGroundTravel(g);
-    else ftPhysicsApplyGroundVelFriction(g);
+    else ccn_ftPhysicsApplyGroundVelFriction(g);
 }
 
 static void ccDonorPhysics(GObj *g)

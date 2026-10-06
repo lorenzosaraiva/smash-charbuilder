@@ -74,7 +74,7 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Final Cutter gameplay callbacks and Stone armor/hold/timeout.
 - [x] Link held-bomb common throws and Falcon Dive source attacker positioning/frame-16 release; rendered contacts remain pending.
 - [x] Grab/throw selectors, donor throw values and DK foreign forward release.
-- [x] Body Move/Fox Laser and the three Mario animation pilots.
+- [x] Native-body/Fox neutral selection and the three Mario animation pilots.
 - [x] Shared normal/supported special/recovery retargeted poses on twelve bodies, streamed through independent player caches.
 - [ ] Special visual props/effects and rendered pose acceptance.
 - [x] Safe borrowed-special status setup, shared poses, original-roster phase clocks and recovery transform guards.
@@ -89,7 +89,9 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Compiled MIPS execution, linked-data/CRC checks and separate ROM/ZIP packaging.
 - [ ] Rendered emulator acceptance and contact/interrupt comparison.
 - [ ] Broader neutral specials, special visual attachments and tether choreography.
-- [ ] Donor jab/bounce/bat mechanics, custom taunts and decomp starter defaults.
+- [x] Donor jab chains/rapid phases, Link bounce/rehit, Ness bat geometry, traction/air physics and angle/landing availability.
+- [x] Neutral-B options display fighter names and follow each build's body.
+- [ ] Rendered normal contact/landing/interrupt acceptance; custom taunts and decomp starter defaults.
 - [ ] Shared donor fidelity for Remix-exclusive fighters.
 
 The port uses the same generated vanilla US donor data as Character Lab and

@@ -23,6 +23,18 @@ scope CharLab {
         jr ra
         nop
     }
+    scope select_jab_donor_: {
+        lbu t0, 0x000D(a0)
+        sltiu t1, t0, 4
+        beqz t1, _end
+        sll t0, t0, 2
+        li t1, CharCreator.active_normal_donor
+        addu t1, t1, t0
+        sw a1, 0x0000(t1)
+        _end:
+        jr ra
+        or v0, a1, r0
+    }
     // Source TransN movement is independent of the safe visible body pose.
     OS.patch_start(0x54414, 0x800D8C14)
     j CharLabRuntime.ccGroundTravel
@@ -452,4 +464,5 @@ scope CharLab {
 OS.align(16)
 include "../build/char_creator/runtime/runtime.asm"
 include "../build/char_creator/runtime/special-hooks.asm"
+include "../build/char_creator/runtime/normal-hooks.asm"
 }

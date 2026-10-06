@@ -14,7 +14,7 @@ mechanics are implemented and which still need adapters or playtesting.
 3. Edit the name, **Body** and attack donors with the native menu controls.
 4. **USE BODY FOR ALL MOVES** gives you a native starting point.
 5. Change any jab, dash attack, tilt, smash, aerial, grab or throw donor.
-6. Neutral Special offers **Body Move** or **Fox Laser**. Up/Down Special
+6. Neutral Special offers **your body's fighter name** or **Fox**. Up/Down Special
    remain experimental. Mario with Falcon Kick/Pikachu Up B is the first
    regression target; use native body specials for unverified mechanics.
 7. Select **TEST IN TRAINING**. The Training CSS opens with your build's Body
@@ -43,8 +43,8 @@ Changing the compiled roster later can change selector indexes.
 
 ## What the moves inherit
 
-For original-roster normals, the body keeps native fighter data, hurtboxes,
-action callbacks. Shared donor poses retarget onto its native rig. A separate per-player move clock
+For original-roster normals, the body keeps native fighter data and hurtboxes.
+Normal gameplay callbacks follow the chosen donor. Shared donor poses retarget onto its native rig. A separate per-player move clock
 supplies donor startup, active frames, hitbox clears and total recovery. It
 advances with the native animation update, so hitlag pauses it too.
 
@@ -57,8 +57,10 @@ detection, staling, hit records and swept collision history.
 The tables use vanilla US donor values, matching Character Lab. Remix balance
 changes and enabled gameplay modifiers can affect the resulting battle. This
 ports donor root movement too, including Fox dash and Kirby forward smash.
-Jab phases must still exist on the body. Donor traction/air attributes,
-followups, Link bounce, Ness reflection and landing callbacks remain pending.
+Jab chains, buffering/rapid phases, Link down-air bounce, Ness bat reflection,
+donor traction/air attributes, angle availability and landing behavior follow
+the source. See [normal mechanics](docs/normal-mechanics.md) for jab controls and
+the rendered contact checks still pending.
 
 Grab choices borrow donor hitbox events and timing. Throw choices borrow
 numeric damage/knockback while preserving body capture, victim statuses and
@@ -67,7 +69,7 @@ paired animation and complete donor throw choreography remain unfinished.
 
 Fox Laser uses its original firing frames (25 ground / 15 air), repeat flags
 and finite recovery (55 / 45). DK and Samus use finite neutral end poses instead
-of staying in a charge loop. Body Move restores native neutral behavior. Fox
+of staying in a charge loop. Selecting your body's name restores native neutral behavior. Fox
 itself retains its native laser callbacks.
 
 All shared normal poses now retarget on twelve original bodies. The three

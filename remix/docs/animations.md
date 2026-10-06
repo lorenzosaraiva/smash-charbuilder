@@ -1,6 +1,6 @@
 # Shared Remix animations
 
-Preview **0.1.5**, updated **2026-10-06**.
+Preview **0.1.6**, updated **2026-10-06**.
 
 Original-roster normal attacks now use the decomp's shared donor poses on all
 twelve bodies. This includes tilts, smashes, dash attacks, aerials, landing poses

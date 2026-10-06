@@ -61,7 +61,7 @@ static FTAttributes* ccAttributes(FTStruct *fp, s32 donor)
 }
 
 FTAttributes* ftMainCharBuilderGetSpecialAttributes(FTStruct *fp)
-{ return ccAttributes(fp, ccSpecialDonor(fp)); }
+{ return ccSpecialDonor(fp)<0 ? ccNormalAttributes(fp) : ccAttributes(fp, ccSpecialDonor(fp)); }
 
 static s32 ccRecoveryDonor(FTStruct *fp)
 {
@@ -161,7 +161,7 @@ sb32 ccUseSpecialCallback(void *object, FTStruct *third, s32 donor, s32 kind)
     if (kind == 1) fp = object;
     else if (kind == 2) {
         Mtx44f matrix; Vec3f size;
-        return ftMainCharBuilderGetSpecialSphere(third, matrix, &size);
+        return ftMainCharBuilderGetSpecialSphere(third, matrix, &size) || ftMainCharBuilderGetNormalSphere(third, matrix, &size);
     }
     else if (kind == 3) {
         WPStruct *wp = wpGetStruct((GObj*)object);

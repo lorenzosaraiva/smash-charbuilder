@@ -21,10 +21,12 @@ parser.add_argument('--falcon-contact',action='store_true',help='Place the CPU i
 parser.add_argument('--editor-test',action='store_true',help='Enter the editor, activate Test in Training with A, then return with B')
 parser.add_argument('--editor-slot',type=int,choices=range(1,5),default=1)
 parser.add_argument('--editor-play',action='store_true',help='Continue editor Test through CSS Start and stage confirmation into Training')
+parser.add_argument('--normal-mechanics',action='store_true',help='Exercise donor jab3/rapid phases and controlled live Link down-air contact')
 parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borrow this donor for normals and check real A-input pose streaming')
 args=parser.parse_args()
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
 if args.editor_play:assert args.editor_test
+if args.normal_mechanics:assert args.normal_animations is not None
 
 def constant(name):
     address,length,index=syms[name];section=sections[index]
@@ -86,9 +88,10 @@ def fighter(player=0):
     return u32(gobj+0x84) if 0x80000000<=gobj<0x80800000 else 0
 trace=[];tracking=False;travel_errors=[];travel_samples=0;falcon_contact_done=False
 animation_samples=0;animation_records=set();animation_errors=[]
+normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_samples=0
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
-    global travel_samples,falcon_contact_done,animation_samples
+    global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples
     if tracking and u8(scene)==54:
         fp=fighter()
         if not 0x80000000<=fp<0x80800000:return
@@ -114,6 +117,14 @@ def frame_callback(frame):
                 target=u32(cpu+0x8E8)+layout[12];center=fp+attack_off+center_off
                 for j in (0,4,8):wf32(target+j,f32(center+j)-(200 if j==4 else 0))
                 w32(cpu+layout[2],layout[29]);falcon_contact_done=True
+        if args.normal_mechanics and args.normal_animations==5 and u32(fp+0x24)==normal_fields[24]:
+            if u32(fp+normal_fields[13]) and f32(fp+special[1]+4)>30:link_bounce_samples+=1
+            if not link_contact_done and u32(fp+attack_off):
+                cpu=fighter(1)
+                if cpu:
+                    target=u32(cpu+0x8E8)+layout[12];center=fp+attack_off+center_off
+                    for j in (0,4,8):wf32(target+j,f32(center+j)-(200 if j==4 else 0))
+                    w32(cpu+layout[2],layout[29]);link_contact_done=True
         clock=labels['CharLabRuntime.sCCSpecialClocks'];path=u32(clock+28)
         if u32(clock)==fp and u32(clock+12)==7 and u32(fp+0x14C)==0 and path:
             travel=u32(path+44)
@@ -131,10 +142,16 @@ def diagnostic():
     fault=u32(native['__osFaultedThread'])
     data=dict(scene=u8(scene),updates=u32(updates),pc=hex(C.c_uint32.from_address(core.DebugGetCPUDataPtr(1)).value),fault=hex(fault),context=[hex(u32(fault+j)) for j in (0x118,0x11c,0x120,0x124,0x128)] if fault else [],fighter=hex(fighter()),trace=trace[-8:])
     if fault:
+        (build/'fault-ram.bin').write_bytes(C.string_at(ram,0x800000))
         data['registers']={name:hex(u32(fault+offset)) for name,offset in [('v0',0x2C),('a0',0x3C),('a1',0x44),('a2',0x4C),('s0',0x9C),('s1',0xA4),('sp',0xF4),('ra',0x104)]}
-        fp=u32(fault+0x2C)
+        fp=fighter()
         if 0x80000000<=fp<0x807FF000:
             data['fault_fighter']={name:hex(u32(fp+offset)) for name,offset in [('kind',8),('status',0x24),('attr',0x9C8),('textures',0x9BC)]}
+            data['normal_donor']=hex(u32(labels['CharCreator.active_normal_donor']))
+            data['normal_clock']=[hex(u32(labels['CharLabRuntime.sFTCustomMoveClocks']+j)) for j in range(0,40,4)]
+        stack=u32(fault+0xF4)
+        if 0x80000000<=stack<0x807FFE00:
+            data['stack']=[hex(u32(stack+j)) for j in range(0,128,4)]
     return data
 def wait(predicate,label,seconds=20):
     end=time.monotonic()+seconds
@@ -231,17 +248,52 @@ try:
         # Real A input: jab, up tilt/smash, then jump + forward/down aerials.
         # Native inputs select states; fixtures supply only the saved recipe.
         starting_loads=u32(labels['CharLabRuntime.gCCAnimationLoads'])
+        normal_checks=[]
+        if args.normal_mechanics:
+            third_motions=set()
+            if args.normal_animations==5:
+                # Link forks jab two into jab three OR rapid jabs. Deliberate
+                # taps exercise the third jab before the rapid-input sequence.
+                trace.clear();tracking=True
+                for _ in range(3):pulse(0x80);frames(6)
+                frames(120);tracking=False
+                wait(lambda:u32(fighter()+0x24)==10,'Third jab recovery',seconds=30)
+                third_motions={row[1] for row in trace}
+            trace.clear();tracking=True
+            for _ in range(36):pulse(0x80,1)
+            frames(180);tracking=False
+            wait(lambda:u32(fighter()+0x24)==10,'Jab recovery',seconds=30)
+            observed=third_motions|{row[1] for row in trace}
+            donor=args.normal_animations
+            extra=labels['CharLabRuntime.sFTCustomBodyExtraMotionIDs']+donor*16
+            if donor in (0,4,5,7,11):
+                assert u32(extra) in observed,('Missing donor jab3',donor,observed,diagnostic())
+                normal_checks.append('real donor jab3')
+            if donor in (1,5,7,8):
+                assert u32(extra+8) in observed and u32(extra+12) in observed,('Missing rapid loop/end',donor,observed,diagnostic())
+                normal_checks.append('real donor rapid loop/end')
+            if donor==9:
+                second=u32(labels['CharLabRuntime.sFTCustomMotionIDs']+4)
+                assert second not in observed,('Pikachu entered jab2',observed)
+                normal_checks.append('real Pikachu repeat jab')
+            assert not u32(native['__osFaultedThread']),('Jab fault',diagnostic())
+            print('PASS: real donor jab input, source phase transitions and recovery; motions',sorted(observed),flush=True)
+
         for name,button in (('jab',0x80),('up attack',0x80|(80<<24)),('forward aerial',0x80|(80<<16)),('down aerial',0x80|(176<<24))):
+            print('NORMAL:',name,flush=True)
             wait(lambda:u32(fighter()+0x24)==10,'Normal idle',seconds=30)
             if 'aerial' in name:pulse(0x800);frames(15)
             trace.clear();tracking=True;pulse(button);frames(80);tracking=False
             assert trace and not u32(native['__osFaultedThread']),('Normal fault',name,diagnostic())
             wait(lambda:u32(fighter()+0x24)==10,'Normal recovery',seconds=30)
+        if args.normal_mechanics and args.normal_animations==5:
+            assert link_contact_done and link_bounce_samples,('Link live bounce missing',link_contact_done,link_bounce_samples,diagnostic())
+            normal_checks.append('controlled live Link down-air bounce')
         assert u32(labels['CharLabRuntime.gCCAnimationLoads'])>starting_loads and len(animation_records)>=3,('Missing normal clips',animation_samples,animation_records)
         assert not animation_errors,animation_errors[:8]
         print('PASS: real A-input normals stream distinct donor clips; finite native joints and recovery on body',args.body,flush=True)
         report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'normal_animation_donor':args.normal_animations,
-                'checks':['Training load','real jab/up attack/forward aerial/down aerial input','normal clip DMA','finite native joints','normal recovery'],
+                'checks':['Training load',*normal_checks,'real jab/up attack/forward aerial/down aerial input','normal clip DMA','finite native joints','normal recovery'],
                 'animation_samples':animation_samples,'animation_clips':len(animation_records),'rendering':'null'}
         (build/f'cpu-scenes-normals-{args.body}-{args.normal_animations}.json').write_text(json.dumps(report,indent=2)+'\n')
         raise SystemExit(0)

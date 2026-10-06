@@ -217,6 +217,7 @@ class Runtime:
         self.u32(self.labels['CharCreator.body_character_data']+player*4,0)
         self.u32(self.labels['CharCreator.body_character_id']+player*4,-1)
         self.u32(self.labels['CharCreator.active_special_donor']+player*4,-1)
+        self.u32(self.labels['CharCreator.active_normal_donor']+player*4,-1)
         self.write(self.FP, bytes(self.layout['size']))
         self.write(self.GOBJ, bytes(0x100))
         self.u32(self.FP+8, body)
@@ -274,7 +275,7 @@ def test_runtime(rom, labels):
         for donor in range(12):
             r.setup(body, donor)
             for index in range(33):
-                motion = r.motion(body, index)
+                motion = r.motion(donor if index >= 29 else body, index)
                 if motion == 0xFFFFFFFF:
                     continue
                 r.u32(r.FP+0x24, 100+index)
@@ -291,12 +292,12 @@ def test_runtime(rom, labels):
                     continue  # Donor has no matching extra jab phase.
                 assert r.u32(clocks) == r.FP and r.u32(clocks+r.clock_move) == move, (body, donor, index, motion, hex(r.u32(clocks+r.clock_move)), hex(move))
                 assert r.u32(script) and word_count <= 512
-                assert r.advance() == (-1.0 if flags & 2 else struct.unpack('>f', struct.pack('>f', 0.001))[0])
+                assert r.advance() == struct.unpack('>f', struct.pack('>f', 0.001))[0]
                 assert r.f32(clocks+r.clock_frame) == 0
                 # Test expiry without pretending that body animation duration
                 # or speed determines donor recovery.
                 r.f32(clocks+r.clock_frame, duration-1)
-                assert r.advance(100) == (100 if flags & 2 else -1)
+                assert r.advance(100) == (struct.unpack('>f', struct.pack('>f', 0.001))[0] if flags & 2 else -1)
                 r.u32(r.FP+0x24, 500)
                 assert r.advance(17) == 17
                 cases += 1
@@ -313,7 +314,7 @@ def test_runtime(rom, labels):
     for donor in range(12):
         body = (donor+1) % 12
         for index in range(33):
-            motion = r.motion(body, index)
+            motion = r.motion(donor if index >= 29 else body, index)
             if motion == 0xFFFFFFFF:
                 continue
             r.setup(body, donor)
@@ -431,7 +432,7 @@ def test_specials_and_return(r):
             assert fired == [15 if air else 25], (body, air, fired)
             r.call('ftMainCharBuilderNeutralProcUpdate', r.GOBJ)
             assert any(address == 0x800DEE54 for address, _ in r.calls)
-    print('PASS: Body Move/Fox Laser choice and every foreign original body execute finite 55/45-frame neutral recovery and one laser at frame 25/15; body event suppression is complete.')
+    print('PASS: native-body/Fox neutral choice and every foreign original body execute finite 55/45-frame neutral recovery and one laser at frame 25/15; body event suppression is complete.')
 
     native_desc, command = 0x80213000, 0x80214000
     native_words = (52, 12, 45, 70, 0, 80, 0, 55, 6, 45, 70, 0, 80, 0)
@@ -832,6 +833,8 @@ def main():
     hooks[0x62724]='CharLab.status_changing_'
     for entry in json.loads((ROOT/'build/char_creator/runtime/special-hooks.json').read_text()):
         hooks[entry['offset']]=entry['hook']
+    for entry in json.loads((ROOT/'build/char_creator/runtime/normal-hooks.json').read_text()):
+        hooks[entry['offset']]=entry['hook']
     for offset, label in hooks.items():
         word = struct.unpack_from('>I', rom, offset)[0]
         assert word >> 26 in (2, 3) and word & 0x3FFFFFF == (labels[label] >> 2) & 0x3FFFFFF, label
@@ -845,6 +848,8 @@ def main():
     test_movement_and_special_paths(runtime)
     from test_charlab_special_adapters import test_adapters
     test_adapters(runtime)
+    from test_charlab_normals import test_normals
+    test_normals(runtime)
     from test_charlab_animations import test_animations
     test_animations(runtime, rom)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')

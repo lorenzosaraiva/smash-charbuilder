@@ -107,6 +107,7 @@ static CCSpecialClock* ccSpecialClock(FTStruct *fp)
     return clock;
 }
 #include "CharLabMovement.c.inc"
+#include "CharLabNormals.c.inc"
 #include "CharLabSpecials.c.inc"
 extern s32 **ccGetEntries(s32 player);
 extern void ccOriginalParse(GObj*, FTStruct*, FTMotionScript*, u32);
@@ -195,6 +196,11 @@ void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
             ftMotionEventAdvance(script, FTMotionEventMakeEffect); return;
         }
     }
+    /* Retargeted body animation flags must not overwrite source jab/landing
+     * flags. The external normal event stream supplies their original waits. */
+    if (script != &sCCMotionScripts[fp->player] && ccNormalIndex(fp)>=0 &&
+        opcode>=nFTMotionEventSetFlag0 && opcode<=nFTMotionEventSetFlag3)
+    { ftMotionEventAdvance(script, FTMotionEventDefault); return; }
     if (script != &sCCMotionScripts[fp->player] && ccSpecialClock(fp) != NULL && ccSpecialClock(fp)->path != NULL)
     {
         /* The phase is outside the normal definition table, so skip native
@@ -381,4 +387,24 @@ const u32 ccTrainingSetupLayout[] = {
     OFF(SCCommonData, player), OFF(SCCommonData, training_man_fkind),
     OFF(SCCommonData, training_man_costume), OFF(SCCommonData, training_com_fkind),
     OFF(SCCommonData, training_com_costume)
+};
+
+const u32 ccNormalLayout[] = {
+    sizeof(FTAttributes), OFF(FTAttributes, attack1_followup_frames),
+    OFF(FTAttributes, traction), OFF(FTAttributes, gravity),
+    OFF(FTAttributes, tvel_base), OFF(FTAttributes, tvel_fast),
+    OFF(FTAttributes, air_speed_max_x), OFF(FTAttributes, air_accel), OFF(FTAttributes, air_friction),
+    OFF(FTStruct, attack1_followup_frames), OFF(FTStruct, attack1_input_count), OFF(FTStruct, attack1_status_id),
+    OFF(FTStruct, status_vars.common.attack1.is_goto_followup),
+    OFF(FTStruct, status_vars.common.attackair.rehit_timer),
+    OFF(FTStruct, input.pl.button_release), OFF(FTStruct, input.button_mask_a),
+    OFF(FTStruct, fighter_gobj), OFF(FTStruct, special_coll), OFF(FTStruct, proc_hit),
+    OFF(FTStruct, proc_map), OFF(FTStruct, tics_since_last_z),
+    nFTCommonStatusAttack11, nFTCommonStatusAttack12,
+    nFTCommonStatusAttackAirN, nFTCommonStatusAttackAirLw, nFTCommonStatusAttackS4,
+    nFTCommonStatusLandingAirNull,
+    nFTCommonStatusLandingAirStart, nFTCommonStatusLandingAirEnd,
+    FTCOMMON_ATTACKAIRLW_LINK_REHIT_FRAME_BEGIN, FTCOMMON_ATTACKAIRLW_LINK_REHIT_FRAME_END,
+    FTCOMMON_ATTACKAIRLW_LINK_REHIT_TIMER,
+    nFTMotionEventSetFlag0,nFTMotionEventSetFlag1,nFTMotionEventSetFlag2,nFTMotionEventSetFlag3
 };

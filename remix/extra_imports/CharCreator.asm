@@ -95,9 +95,12 @@ scope CharCreator {
     // republishing the resource behind the projectile descriptor.
     laser_file_pointer:; dw 0
     catalog_mode_last:; dw 0xFFFFFFFF
-    neutral_strings:; dw neutral_body, neutral_fox
-    neutral_body:; String.insert("Body Move")
-    neutral_fox:; String.insert("Fox Laser")
+    // Each recipe owns its native-neutral label; enum values/SRAM stay stable.
+    neutral_string_tables:
+    dw CharCreatorCatalog.string_0, CharCreatorCatalog.string_1
+    dw CharCreatorCatalog.string_1, CharCreatorCatalog.string_1
+    dw CharCreatorCatalog.string_5, CharCreatorCatalog.string_1
+    dw CharCreatorCatalog.string_8, CharCreatorCatalog.string_1
 
     // Runtime breadcrumbs used to verify that the pre-match loader runs after
     // the final cache reset. They are intentionally outside recipe SRAM.
@@ -350,8 +353,6 @@ scope CharCreator {
         sltiu t0, t0, 12
         beqz t0, _legacy
         nop
-        jr ra
-        addiu v0, r0, -1 // Original bodies use compiled donor tables.
         _legacy:
         addiu   sp, sp, -0x0020
         sw      ra, 0x0004(sp)
@@ -453,6 +454,18 @@ scope CharCreator {
         lw      t0, 0x0000(t0)
         jal     catalog_id_
         lw      a0, 0x0000(t0)
+        lw      t0, 0x0008(sp)
+        lw      t0, 0x0008(t0)
+        sltiu   t1, t0, 12
+        beqz    t1, _end
+        nop
+        // Original bodies only own compiled donors 0..11. Expanded selections
+        // fall back to native body commands, matching ccSync's recipe clamp.
+        sltiu   t1, v0, 12
+        beqz    t1, _none
+        nop
+        beq     v0, t0, _none
+        nop
         b       _end
         nop
 
@@ -1749,8 +1762,8 @@ scope CharCreator {
     }
 
     // ftMainSetStatus has resolved the selected action parameter record here.
-    // Shared normals combine the body's animation and flags with the donor's
-    // command stream. Borrowed specials instead copy the donor record and
+    // Shared normals combine safe body animation/flags with compiled donor
+    // events (legacy expanded bodies retain donor commands). Borrowed specials copy the donor record and
     // replace its animation with body Idle/Fall. A separate donor phase clock
     // supplies event time and recovery without applying the donor figatree to
     // an incompatible skeleton or running taunt growth/root displacement.
@@ -1781,9 +1794,9 @@ scope CharCreator {
 
         // A shared normal's selected record belongs to the donor because
         // parameter_base_hook_ temporarily substituted the donor FTData.
-        // Rebuild that record with the matching body animation while retaining
-        // the donor command pointer, whose waits and commands define startup,
-        // active frames, hitbox data, and clear timing.
+        // Rebuild that record with safe body animation. Original bodies use
+        // compiled source events for startup, active/clear timing and flags;
+        // expanded bodies retain the legacy donor command pointer.
         li      t4, active_normal_donor
         addu    t4, t4, t1
         lw      t5, 0x0000(t4)
@@ -1791,8 +1804,12 @@ scope CharCreator {
         nop
         lw      t5, 0x0024(s1)              // current action
         sltiu   t6, t5, 0x00DC
-        beqz    t6, _check_special           // unique follow-ups use donor data
+        bnez    t6, _normal_common
         nop
+        // A donor jab3/rapid phase uses a body Jab1 pose and source event stream.
+        // Never apply its native figatree or model command stream to this rig.
+        lli     t5, Action.Jab1
+        _normal_common:
 
         // Shared action record -> body parameter-array index.
         li      t6, 0x80128DD8
@@ -1820,8 +1837,26 @@ scope CharCreator {
         li      t7, normal_parameter_records
         addu    t4, t4, t7
         lw      t7, 0x0000(t6)              // body animation ID
+        bnez    t7, _normal_pose_ready
+        nop
+        li      t6, 0x80128DD8 + Action.Idle * 20
+        lw      t7, 0x0000(t6)
+        srl     t7, t7, 22
+        sll     t8, t7, 1
+        addu    t8, t8, t7
+        sll     t8, t8, 2
+        lw      t6, 0x0064(t5)
+        addu    t6, t6, t8
+        lw      t7, 0x0000(t6)
+        _normal_pose_ready:
         sw      t7, 0x0000(t4)
-        lw      t7, 0x0004(t3)              // donor command offset/pointer
+        lw      t7, 0x0004(t3)              // legacy donor command offset/pointer
+        lw      t8, 0x0008(s1)
+        sltiu   t8, t8, 12
+        beqz    t8, _normal_command_ready
+        nop
+        li      t7, 0x80000000              // compiled source events own gameplay
+        _normal_command_ready:
         sw      t7, 0x0004(t4)
         lw      t7, 0x0008(t6)              // body animation flags
         sw      t7, 0x0008(t4)
@@ -2370,6 +2405,28 @@ scope CharCreator {
     scope sync_catalog_mode_: {
         addiu   sp, sp, -0x0020
         sw      ra, 0x0004(sp)
+        li      t0, slot_tables
+        li      t1, neutral_string_tables
+        lli     t2, SLOT_COUNT
+        _neutral_labels:
+        lw      t3, 0x0000(t0)
+        lw      t3, FIELD_BODY * 4(t3)
+        lw      t3, 0x0000(t3)
+        sltiu   t4, t3, CharCreatorCatalog.COUNT
+        bnez    t4, _neutral_name
+        nop
+        or      t3, r0, r0
+        _neutral_name:
+        sll     t3, t3, 2
+        li      t4, CharCreatorCatalog.string_table
+        addu    t3, t3, t4
+        lw      t3, 0x0000(t3)
+        sw      t3, 0x0000(t1)
+        addiu   t0, t0, 4
+        addiu   t1, t1, 8
+        addiu   t2, t2, -1
+        bnez    t2, _neutral_labels
+        nop
         li      t0, Toggles.cc_original_12_only
         lw      t0, 0x0004(t0)
         li      t1, catalog_mode_last

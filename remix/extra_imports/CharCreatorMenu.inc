@@ -50,7 +50,7 @@ macro char_creator_slot(slot, next_slot, body, jab, dash, ftilt, utilt, dtilt, f
     cc_slot_{slot}_grab:; Menu.entry("Grab", Menu.type.INT, {body}, 0, 11, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_throwf)
     cc_slot_{slot}_throwf:; Menu.entry("Forward Throw", Menu.type.INT, {body}, 0, 11, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_throwb)
     cc_slot_{slot}_throwb:; Menu.entry("Back Throw", Menu.type.INT, {body}, 0, 11, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_nsp)
-    cc_slot_{slot}_nsp:; Menu.entry("Neutral Special", Menu.type.INT, 0, 0, 1, OS.NULL, OS.NULL, CharCreator.neutral_strings, OS.NULL, cc_slot_{slot}_usp)
+    cc_slot_{slot}_nsp:; Menu.entry("Neutral Special", Menu.type.INT, 0, 0, 1, OS.NULL, OS.NULL, CharCreator.neutral_string_tables + ({slot} - 1) * 8, OS.NULL, cc_slot_{slot}_usp)
     cc_slot_{slot}_usp:; Menu.entry("Up Special", Menu.type.INT, {body}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_dsp)
     cc_slot_{slot}_dsp:; Menu.entry("Down Special", Menu.type.INT, {body}, 0, CharCreatorCatalog.COUNT - 1, OS.NULL, OS.NULL, CharCreatorCatalog.string_table, OS.NULL, cc_slot_{slot}_test)
     cc_slot_{slot}_test:; Menu.entry_title_with_extra("TEST IN TRAINING", CharCreator.test_in_training_, {slot}, OS.NULL)
