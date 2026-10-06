@@ -1,5 +1,6 @@
 /* Shared donor runtime compiled for Remix's original o32 fighter layout. */
 #include <ft/fttypes.h>
+#include <ft/ftcustommove.h>
 #include <sc/scdef.h>
 #include <sc/sctypes.h>
 #include <sc/sccharbuilder.h>
@@ -15,6 +16,13 @@ extern s32 ccBodyKind(FTStruct*);
 extern void ccSuspendJoints(FTStruct*);
 extern void ccResumeJoints(FTStruct*);
 static void ccApplySpecialPose(FTStruct*);
+static void ccVisualTick(GObj*);
+static void ccVisualReset(void);
+static void ccVisualStart(FTStruct*, f32);
+static void ccVisualStatusChanging(GObj*, s32);
+static void ccVisualFalconEffect(GObj*, sb32);
+static void ccVisualCutterEffect(GObj*);
+u32 ccVisualPreserve(FTStruct*, const FTCustomMoveDefinition*);
 
 /* Settings can enter Training CSS without the ordinary 1P menu setup. */
 void ccSetupTraining(s32 body)
@@ -116,6 +124,7 @@ extern void ccRestoreBody(FTStruct*);
 void ccReset(void)
 {
     s32 i;
+    ccVisualReset();
     ftMainCharBuilderResetNeutralAll();
     for (i = 0; i < 4; i++)
     {
@@ -170,10 +179,12 @@ void ccAdvance(GObj *gobj)
         }
         ccApplyAnimation(fp);
         ccApplySpecialPose(fp);
+        ccVisualTick(gobj);
         return;
     }
     gobj->anim_frame = ftCustomMoveAdvanceClock(fp, gobj->anim_frame);
     ccApplyAnimation(fp);
+    ccVisualTick(gobj);
 }
 
 void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
@@ -195,6 +206,11 @@ void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
             ftMotionEventAdvance(script, FTMotionEventSetDamageCollPartID); return;
         case nFTMotionEventEffect: case nFTMotionEventEffectItemHold:
             ftMotionEventAdvance(script, FTMotionEventMakeEffect); return;
+        case nFTMotionEventPlayFGM: case nFTMotionEventPlayFGMStoreInfo:
+        case nFTMotionEventPlayLoopSFXStoreInfo: case nFTMotionEventStopLoopSFX:
+        case nFTMotionEventPlayVoiceStoreInfo: case nFTMotionEventPlayLoopVoiceStoreInfo:
+            if (ccSpecialClock(fp) != NULL) { ftMotionEventAdvance(script, FTMotionEventDefault); return; }
+            break;
         }
     }
     /* Retargeted body animation flags must not overwrite source jab/landing
@@ -287,6 +303,7 @@ void ccPrepare(GObj *gobj, f32 frame_begin)
         script->script_wait=1.0F-frame_begin;script->script_id=0;
         if (clock->physics != NULL) fp->proc_physics=ccDonorPhysics;
     }
+    ccVisualStart(fp, frame_begin);
 }
 
 extern GObj *wpFoxBlasterMakeWeapon(GObj*, Vec3f*);
@@ -304,6 +321,7 @@ static sb32 ccNeutralBoomerangOwner(GObj *owner, GObj *weapon)
     return s->owner == fp && s->generation == fp->player_num && s->body == ccBodyKind(fp) && s->boomerang == weapon;
 }
 #include "CharLabAnimations.c.inc"
+#include "CharLabVisuals.c.inc"
 
 sb32 ccNeutral(GObj *gobj)
 {

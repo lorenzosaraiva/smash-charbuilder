@@ -159,6 +159,9 @@ class Runtime:
         # Stale queue is match-global state; isolate raw donor values in tests.
         self.services[0x800EA54C] = lambda: self.reg(UC_MIPS_REG_A1)
         self.services[self.labels['CharLab.restore_body_']] = lambda: 0
+        # The dedicated visual suite executes these objects/scripts with
+        # allocation/audio fixtures. Numeric suites do not run the renderer.
+        self.services[self.addr('ccVisualTick')] = lambda: 0
         # DMA itself needs the OS scheduler/message queue. Supply ROM bytes,
         # while executing cache selection/decoding/retargeting as linked MIPS.
         dma = int(re.search(r'syDmaReadRom\s*=\s*(0x[0-9A-Fa-f]+)',
@@ -856,6 +859,8 @@ def main():
     test_neutrals(runtime)
     from test_charlab_neutral_weapons import test_weapons
     test_weapons(runtime)
+    from test_charlab_visuals import test_visuals
+    test_visuals(Runtime(rom, labels))
     from test_charlab_animations import test_animations
     test_animations(runtime, rom)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')

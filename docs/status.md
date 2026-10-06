@@ -76,7 +76,8 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Grab/throw selectors, donor throw values and DK foreign forward release.
 - [x] Native-body plus eleven original neutral donors (Kirby copy excluded), source timing/poses and private projectile callbacks.
 - [x] Shared normal/supported special/recovery retargeted poses on twelve bodies, streamed through independent player caches.
-- [ ] Special visual props/effects and rendered pose acceptance.
+- [x] Remix Cutter sword/trails, Stone replacement, Falcon flames, blaster/tongue and charge orb with owned cleanup and source visual/audio clocks.
+- [ ] Full rendered special attachment/pose acceptance and remaining actor-specific overlays/materials.
 - [x] Safe borrowed-special status setup, shared poses, original-roster phase clocks and recovery transform guards.
 - [x] Retained actual-body recipes, donor normal TransN momentum and 96 shared special source paths/travel phases.
 - [x] Special donor attributes around native phase physics, source gameplay clocks and generation cleanup.
@@ -88,7 +89,7 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Native hitbox display, improved grab-aware combo meter and unlocks retained.
 - [x] Compiled MIPS execution, linked-data/CRC checks and separate ROM/ZIP packaging.
 - [ ] Rendered emulator acceptance and contact/interrupt comparison.
-- [ ] Neutral rendered contact/reflect/absorb acceptance, charge orb/props/effects, paired alignment and tether choreography.
+- [ ] Neutral rendered contact/reflect/absorb and broad attachment acceptance, paired alignment and tether choreography.
 - [x] Donor jab chains/rapid phases, Link bounce/rehit, Ness bat geometry, traction/air physics and angle/landing availability.
 - [x] Neutral-B options display fighter names and follow each build's body.
 - [ ] Rendered normal contact/landing/interrupt acceptance; custom taunts and decomp starter defaults.

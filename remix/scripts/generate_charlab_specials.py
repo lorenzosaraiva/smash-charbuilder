@@ -26,7 +26,7 @@ FILES = {
 }
 SELECTED = {
     'ft/ftcommon/ftcommonfallspecial.c': (('ftCommonFallSpecialProcPhysics', 'ftCommonFallSpecialSetStatus'), -1),
-    'ft/ftchar/ftcaptain/ftcaptainspeciallw.c': (('ftCaptainSpecialLwAirSetStatus',), 7),
+    'ft/ftchar/ftcaptain/ftcaptainspeciallw.c': (('ftCaptainSpecialLwAirSetStatus', 'ftCaptainSpecialLwUpdateEffect'), 7),
     'gm/gmcollision.c': (('gmCollisionCheckWeaponAttackSpecialCollide', 'gmCollisionCheckItemAttackSpecialCollide'), -2),
     'wp/wppikachu/wppikachuthunder.c': (('wpPikachuThunderHeadSetDestroy',), 9),
     'wp/wpness/wpnesspkthunder.c': (('wpNessPKThunderHeadSetDestroyTrails', 'wpNessPKThunderTrailUpdatePositions', 'wpNessPKThunderHeadMakeTrail', 'wpNessPKThunderHeadProcUpdate', 'wpNessPKThunderHeadMakeWeapon', 'wpNessPKThunderTrailProcUpdate', 'wpNessPKThunderTrailMakeWeapon'), 11),
@@ -96,9 +96,9 @@ void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gob
                             'DObjGetStruct((*ftYoshiSpecialHiGetWeapon(fp)))->scale.vec.f.x =\n        DObjGetStruct((*ftYoshiSpecialHiGetWeapon(fp)))->scale.vec.f.y =\n        DObjGetStruct((*ftYoshiSpecialHiGetWeapon(fp)))->scale.vec.f.z = ftMainCharBuilderGetSpecialAttributes(fp)->size;')
     source = source.replace('gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTLINK_SPINATTACK_SPAWN_JOINT), &pos);',
                             'if (!ftMainCharBuilderGetSpecialSpawn(fighter_gobj, &pos))\n                gmCollisionGetFighterPartsWorldPosition(ftMainCharBuilderGetSpecialJoint(fp, FTLINK_SPINATTACK_SPAWN_JOINT), &pos);')
-    # Body-safe visuals are a separate milestone. Do not attach donor sword
-    # effects to unrelated body joints or run a donor-only effect error loop.
-    for name, body in {'ftKirbySpecialHiUpdateEffect': 'FTStruct *fp = ftGetStruct(fighter_gobj); fp->motion_vars.flags.flag1 = fp->motion_vars.flags.flag2 = 0;'}.items():
+    # Private constructors and semantic sockets never install donor body parts.
+    for name, body in {'ftKirbySpecialHiUpdateEffect': 'ccVisualCutterEffect(fighter_gobj);',
+                       'ftCaptainSpecialLwUpdateEffect': 'ccVisualFalconEffect(fighter_gobj, TRUE);'}.items():
         fn = next(fn for fn in functions(source) if fn['name'] == name)
         replacement = '// '+hex(fn['address'])+'\n'+fn['signature']+'\n{ '+body+' }'
         source = source.replace(fn['text'], replacement)

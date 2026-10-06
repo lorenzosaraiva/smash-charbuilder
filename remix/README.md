@@ -8,7 +8,10 @@ retargeted poses, human/CPU preset assignments and return from Training to the e
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.7 (2026-10-06):** All remaining original neutral donors now use source
+**0.1.8 (2026-10-06):** Cutter sword/trails, Stone replacement, Falcon flames,
+blaster/tongue props and Samus's charging orb now follow source timing with
+owned cleanup. See [effects and attachments](docs/special-effects.md).
+All original neutral donors except Kirby copy use source
 phases/poses, private projectile resources, charging/storage/release, Boomerang
 return/catch and Egg Lay capture. Kirby copy remains excluded. See
 [neutral controls and limits](docs/neutral-specials.md). Normals now use donor jab chains, buffering and rapid

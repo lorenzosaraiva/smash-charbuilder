@@ -26,6 +26,7 @@ parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borro
 parser.add_argument('--neutral',type=int,choices=range(1,12),help='Exercise a Neutral B choice with real controller input')
 parser.add_argument('--egg-contact',action='store_true',help='Place the CPU in Egg Lay reach to test capture, egg handoff and damage')
 parser.add_argument('--projectile-contact',action='store_true',help='Place the CPU at a PK Fire spark to test native flame-pillar creation')
+parser.add_argument('--visuals',action='store_true',help='Check real effect/model allocation, finite transforms and recovery cleanup (null renderer)')
 args=parser.parse_args()
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
 if args.editor_play:assert args.editor_test
@@ -97,13 +98,37 @@ trace=[];tracking=False;travel_errors=[];travel_samples=0;falcon_contact_done=Fa
 animation_samples=0;animation_records=set();animation_errors=[]
 normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_samples=0
 egg_contact_done=False;egg_observed=set();neutral_samples=[]
+visual_layout=constant('ccVisualLayout')
+visual_objects=set();visual_samples=0;visual_hidden=False;visual_errors=[]
 weapon_kinds=set();item_kinds=set();projectile_contact_done=False
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
-    global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples,egg_contact_done,projectile_contact_done
+    global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples,egg_contact_done,projectile_contact_done,visual_samples,visual_hidden
     if tracking and u8(scene)==54:
         fp=fighter()
         if not 0x80000000<=fp<0x80800000:return
+        if args.visuals:
+            vs=labels['CharLabRuntime.sCCVisualStates']
+            if u32(vs)==fp:
+                visual_hidden|=bool(u32(vs+visual_layout[4]))
+                for field in visual_layout[1:4]:
+                    obj=u32(vs+field)
+                    if not obj:continue
+                    # Native SetStatus may eject attachments between this
+                    # port's visual updates. The sidecar validates membership
+                    # on its next tick; do not dereference that stale handle.
+                    live=u32(native['gGCCommonLinks']+24)
+                    for _ in range(256):
+                        if not live or live==obj:break
+                        live=u32(live+visual_layout[7])
+                    if live!=obj:continue
+                    user=u32(obj+0x84);dobj=u32(obj+layout[10])
+                    if not user or u32(user+4)!=u32(fp+visual_layout[8]):visual_errors.append(('owner',hex(obj)))
+                    if not dobj:visual_errors.append(('model',hex(obj)));continue
+                    for offset in layout[12:15]:
+                        values=tuple(f32(dobj+offset+j) for j in (0,4,8))
+                        if not all(math.isfinite(v) and abs(v)<50000 for v in values):visual_errors.append(('transform',hex(obj),values))
+                    visual_objects.add(obj);visual_samples+=1
         top=u32(fp+0x8E8);model=u32(fp+0x8E8+16)
         trace.append((u32(fp+0x24),u32(fp+0x28),tuple(f32(top+layout[12]+j) for j in (0,4,8)),
                       tuple(f32(model+layout[14]+j) for j in (0,4,8)),tuple(f32(fp+special[1]+j) for j in (0,4,8))))
@@ -176,7 +201,8 @@ check(core.CoreDoCommand(15,0,C.cast(frame_callback,C.c_void_p)))
 thread=threading.Thread(target=lambda:check(core.CoreDoCommand(5,0,None)),daemon=True);thread.start()
 def diagnostic():
     fault=u32(native['__osFaultedThread'])
-    data=dict(scene=u8(scene),updates=u32(updates),pc=hex(C.c_uint32.from_address(core.DebugGetCPUDataPtr(1)).value),fault=hex(fault),context=[hex(u32(fault+j)) for j in (0x118,0x11c,0x120,0x124,0x128)] if fault else [],fighter=hex(fighter()),trace=trace[-8:])
+    pc_pointer=core.DebugGetCPUDataPtr(1)
+    data=dict(scene=u8(scene),updates=u32(updates),pc=hex(C.c_uint32.from_address(pc_pointer).value) if pc_pointer else 'unavailable',fault=hex(fault),context=[hex(u32(fault+j)) for j in (0x118,0x11c,0x120,0x124,0x128)] if fault else [],fighter=hex(fighter()),trace=trace[-8:])
     if fault:
         (build/'fault-ram.bin').write_bytes(C.string_at(ram,0x800000))
         data['registers']={name:hex(u32(fault+offset)) for name,offset in [('v0',0x2C),('a0',0x3C),('a1',0x44),('a2',0x4C),('s0',0x9C),('s1',0xA4),('sp',0xF4),('ra',0x104)]}
@@ -197,6 +223,19 @@ def wait(predicate,label,seconds=20):
 def frames(n):
     tick=u32(updates);wait(lambda:u32(updates)>=tick+n,'Frames stopped')
 def pulse(value,n=3):keys(value);frames(n);keys(0);frames(3)
+def visual_report(report):
+    if not args.visuals:return
+    vs=labels['CharLabRuntime.sCCVisualStates']
+    assert not visual_errors,visual_errors[:8]
+    assert not any(u32(vs+field) for field in visual_layout[1:5]),('Visual survived recovery',diagnostic())
+    counters={name:u32(labels['CharLabRuntime.gCCVisual'+name]) for name in ('Models','Effects','Sounds','Stops')}
+    if args.neutral in (1,9,11) or args.donor==8:assert counters['Models']>0,('No donor prop/orb',counters)
+    if args.neutral==6 or args.donor in (7,8) or (args.neutral is None and args.donor is None):assert counters['Effects']>0,('No donor attached FX',counters)
+    if args.donor==8 and args.special_side!='up':assert visual_hidden,('Stone did not replace body',counters)
+    if args.neutral==9:assert counters['Models']==2,('Charge orb restarted during internal phases',counters)
+    assert visual_samples>0,('No source visual updates',counters)
+    report['visual_cpu_checks']={'checks':['native prop/effect allocation','source-clock audio dispatch','finite transforms','owned recovery cleanup'],
+                               'samples':visual_samples,'objects':len(visual_objects),'stone_replacement':visual_hidden,**counters}
 try:
     print('BOOT: starting CPU.',flush=True)
     time.sleep(2);ram=core.DebugMemGetPointer(1)
@@ -317,6 +356,7 @@ try:
         if args.egg_contact:report['checks'].append('controlled native Egg Lay capture, handoff and damage')
         if args.projectile_contact:report['checks'].append('controlled PK Fire contact and native flame-pillar item/damage')
         report['weapon_kinds']=sorted(weapon_kinds);report['item_kinds']=sorted(item_kinds)
+        visual_report(report)
         suffix='-contact' if args.egg_contact or args.projectile_contact else ''
         (build/f'cpu-scenes-neutral-{args.body}-{args.neutral}{suffix}.json').write_text(json.dumps(report,indent=2)+'\n')
         print('PASS: Neutral B',args.neutral,'input/native callbacks/charge/recovery on body',args.body,'statuses',sorted({row[0] for row in trace}),flush=True)
@@ -440,11 +480,15 @@ try:
     report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'donor':args.donor,'checks':['Training load',*[name+' input/recovery' for name,_ in moves],'body scale/identity'],'rendering':'null','kick_source_samples':travel_samples}
     assert not animation_errors,animation_errors[:8]
     report['animation_samples']=animation_samples;report['animation_clips']=len(animation_records)
+    visual_report(report)
     if args.normal_animations is not None:report['normal_animation_donor']=args.normal_animations
     if args.falcon_contact:report['controlled_dive_contact']='native capture, release and throw damage passed'
     report_name='cpu-scenes.json' if args.donor is None else f'cpu-scenes-{args.body}-{args.donor}-{args.special_side}.json'
     if args.falcon_contact:report_name=report_name.replace('.json','-contact.json')
     if args.normal_animations is not None:report_name=report_name.replace('.json','-normals-'+str(args.normal_animations)+'.json')
     (build/report_name).write_text(json.dumps(report,indent=2)+'\n')
+except BaseException as exc:
+    if not isinstance(exc,SystemExit):print('SCENE FAILURE:',repr(exc),flush=True)
+    raise
 finally:
     keys(0);core.CoreDoCommand(6,0,None);thread.join(timeout=3)

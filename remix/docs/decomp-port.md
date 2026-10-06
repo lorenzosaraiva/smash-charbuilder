@@ -1,6 +1,6 @@
 # Decomp to Remix port
 
-Updated **2026-10-06**. Remix preview **0.1.7**, project **0.1.24**.
+Updated **2026-10-06**. Remix preview **0.1.8**, project **0.1.25**.
 
 The decomp ROM remains the most complete edition. The Remix preview is a
 partial port for the **original twelve** bodies and donors; exposing Remix's
@@ -19,8 +19,8 @@ contact and stage interactions still require rendered playtesting.
 | Up/Down B collision paths | All 96 shared phases connected; directional Fire Fox placement and donor Reflector/Magnet volumes added | Rendered contacts and paired Dive acceptance |
 | Up/Down B movement | Source TransN travel, separate Mario/Luigi/Falcon angles, imported callbacks and donor recovery attributes | Rendered steering, slopes, wall/ledge and interruption acceptance |
 | Mario + Falcon Kick / Pikachu Up B | Regression targets: original travel, retained recipe and body scale | Two-dash steering, aerial starts, walls/ledges and interruptions in rendered play |
-| Neutral B | All eleven original neutral donors except Kirby copy, source phase poses, private weapons, charge/store/release and Egg Lay capture | Rendered projectile/contact/reflect/absorb, paired victim alignment and charge-orb/props/effects polish |
-| Animations | Shared normal/supported special/recovery curves retarget on twelve original bodies through independent ROM caches; three Mario pilots retained | Rendered acceptance, special effects/props, paired-grab/throw and taunt entry points |
+| Neutral B | All eleven original neutral donors except Kirby copy, source poses, private weapons, charge/store/release and Egg Lay capture; held orb, blaster/tongue and Falcon flames | Full rendered projectile/contact/reflect/absorb, paired victim alignment and material acceptance |
+| Animations | Shared normal/supported special/recovery curves on twelve bodies through independent ROM caches; Cutter sword/trails and Stone replacement added | Full rendered acceptance, remaining overlays/materials, paired-grab/throw and taunt entry points |
 | Grab/throw selections | Donor grab collision events/timing and numeric throw values | Tether reach/props, paired positioning/release, DK cargo and Kirby landing throws |
 | Custom taunts | Native body taunts | Add donor selector, source clock/pose, Mario growth and Luigi hitbox |
 | Training/UI/presets | Four SRAM builds, human/CPU assignment, initialized Test launch, editor return and Character Lab menu label | Rendered acceptance and any new selector fields |
@@ -65,15 +65,16 @@ milestone. Use body-native specials when testing a mechanic not yet verified.
    implemented; it does not establish acceptance for every body/stage.
 2. Normal-specific callbacks and all eleven neutral donors (excluding Kirby copy)
    are ported; finish rendered normal/neutral contact and interruption acceptance.
-3. Check rendered retargeted poses, then port safe special effects/attachments.
+3. Safe source effects/attachments are ported; check broader rendered acceptance.
    Shared curves now stream from ROM through bounded per-player caches;
    neutral phase entry points are connected; tether/paired and taunt entry points remain.
+   See [effects and attachments](special-effects.md) for source clocks and cleanup.
 4. Port tether/paired throws and taunts, followed by starter defaults and results
    acceptance. Update the relevant checklist and build a checked ROM each batch.
 
 ## Checks
 
-For preview 0.1.7 normal callback coverage and real-input jab/bounce results,
+For preview 0.1.8 normal callback coverage and real-input jab/bounce results,
 see [normal mechanics](normal-mechanics.md). Kick/Quick Attack and the editor
 Test -> CSS Start -> stage -> Training regression also pass on this preview;
 these CPU checks use null rendering.

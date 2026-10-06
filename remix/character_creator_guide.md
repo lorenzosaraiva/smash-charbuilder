@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.7 (2026-10-06)**.
+Character Lab has an original-roster Remix preview, **0.1.8 (2026-10-06)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -80,8 +80,10 @@ restores native behavior. See [neutral controls and limits](docs/neutral-special
 All shared normal poses now retarget on twelve original bodies. The three
 Mario pilots (Falcon down-air, Fox straight forward tilt and DK straight forward
 smash) remain unchanged. Supported borrowed specials and recovery use the same
-ROM-backed catalog. Effects, props and rendered acceptance remain pending; see
-[animation coverage](docs/animations.md).
+ROM-backed catalog. Cutter sword/trails, Stone replacement, Falcon flames,
+blaster/tongue props and the charging orb now use source clocks and owned
+cleanup; see [effects](docs/special-effects.md) and [animations](docs/animations.md).
+Broader rendered acceptance remains pending.
 
 ## Expanded roster and experimental specials
 
@@ -108,13 +110,13 @@ timing, values and release sockets. Falcon Dive uses the donor attacker socket
 and frame-16 release while keeping native Remix victim offsets. Their rendered
 contacts, interruptions and visual attachments still need playtesting.
 Missing-joint fallbacks are suspended during native status setup so animation
-initialization preserves the body's world-root position. Donor mesh/part effects
-are suppressed until compatible visual attachments are implemented.
+initialization preserves the body's world-root position. Foreign body-part
+commands remain suppressed; the supported props use separately owned effect objects.
 
 Expanded Remix donors retain the earlier finite taunt fallback because their
 phase clocks are not yet compiled.
 
-Special props/effects and rendered retargeting acceptance remain pending. Projectile placement, directional
+Rendered special props/effects and retargeting acceptance remain pending. Projectile placement, directional
 paths, model changes and capture mechanics still need rendered acceptance.
 In particular, check Mario with Pikachu Up B:
 first dash, direction change for a second dash, recovery, interruption and
@@ -148,6 +150,10 @@ Report body, donor, move, emulator, enabled Remix settings and source commit.
 - `extra_imports/CharLabRuntime.c`: shared donor runtime with the native Remix ABI.
 - `extra_imports/CharLabMovement.c.inc`: donor normal/special travel, attributes and source collision placement.
 - `extra_imports/CharLabSpecials.c.inc`: independent state, source sockets/volumes and donor recovery.
+- `extra_imports/CharLabVisuals.c.inc`: source visual/audio clocks, attachments and cleanup.
+- `extra_imports/CharLabVisuals.inc`: private pre-match effect resources.
+- `scripts/generate_charlab_visuals.py`: source prop/audio/effect imports.
+- `scripts/test_charlab_visuals.py`: linked-MIPS timing, placement and ownership checks.
 - `scripts/generate_charlab_specials.py`: reviewed callback imports and borrowed-only native bridges.
 - `scripts/build_charlab_runtime.py`: freestanding MIPS compilation and ELF relocation import.
 - `scripts/verify_charlab_rom.py`: ROM/data checks and production MIPS execution tests.

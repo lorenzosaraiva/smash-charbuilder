@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.7'
+VERSION = '0.1.8'
 UPDATED = '2026-10-06'
 
 
@@ -99,10 +99,12 @@ production MIPS execution tests. Rendered gameplay acceptance is still pending.
 Neutral source phases/poses, private projectile resources, charging/storage/release,
 Boomerang return/catch and Egg Lay capture are connected.
 Full decomp parity is pending: rendered neutral/special acceptance,
-rendered normal contacts/landing, taunts, special props/effects and paired
+rendered normal contacts/landing, taunts, special visual acceptance and paired
 grabs/throws. Expanded-roster fidelity and Kirby copy are outside this milestone.
 This neutral expansion preserves existing Character Lab presets and recipe bits.
-Full choices use spare creator-options bytes. Charge orb/props/effects remain pending.
+Full choices use spare creator-options bytes. Cutter sword/trails, Stone replacement,
+Falcon flames, blaster/tongue props and a source-sized charge orb are connected,
+with source audio clocks and owned interruption/death/scene cleanup.
 
 SHA-256: `{info['rom_sha256']}`
 '''
@@ -115,6 +117,9 @@ SHA-256: `{info['rom_sha256']}`
         'docs/neutral-specials.md': (ROOT/'docs/neutral-specials.md').read_bytes(),
         'docs/decomp-port.md': (ROOT/'docs/decomp-port.md').read_bytes(),
         'docs/animations.md': (ROOT/'docs/animations.md').read_bytes(),
+        'docs/special-effects.md': (ROOT/'docs/special-effects.md').read_bytes(),
+        'docs/normal-mechanics.md': (ROOT/'docs/normal-mechanics.md').read_bytes(),
+        'docs/character-lab-status.md': (ROOT/'docs/character-lab-status.md').read_bytes(),
         'CHANGELOG.md': (PROJECT/'CHANGELOG.md').read_bytes(),
         'release-notes.md': notes.encode(),
     }
@@ -169,6 +174,7 @@ def main():
     run(linux(['build/testCustomMove']), 'Run shared host tests', lab)
     run(linux(['python3','tools/testNormalMechanics.py']), 'Check source normal travel', lab)
     run(linux(['python3','tools/testSpecialTiming.py']), 'Check source special paths', lab)
+    run(linux(['python3','tools/testSpecialAnimations.py']), 'Check source special visuals', lab)
     run([sys.executable, 'scripts/verify_charlab_rom.py'], 'Verify ROM')
     if not args.package_only:
         receipt = {'source_sha256': source_hash(), 'rom_sha256': hashlib.sha256((ROOT/'ssb64asm_extra.z64').read_bytes()).hexdigest()}

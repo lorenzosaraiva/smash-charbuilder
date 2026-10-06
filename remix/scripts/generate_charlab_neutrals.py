@@ -68,10 +68,16 @@ def generate():
     for file in ('ftcharbuilderprojectiles.c.inc', 'ftcharbuilderneutralactions.c.inc'):
         text = (LAB/'src/ft'/file).read_text(encoding='utf-8')
         text = rename(text)
+        text = text.replace('        func_800269C0_275C0(nSYAudioFGMMarioSpecialN);', '')
         text = text.replace('fp->motion_scripts[i][2]', 'sCCMotionScripts[fp->player]')
         text = text.replace('    FTStruct *owner;', '    FTStruct *owner;\n    u32 generation;')
         # State cannot survive player-struct recycling on stocks/rematches.
         if 'neutralactions' in file:
+            anchor = '    ftMainCharBuilderActionAccessory(g);\n}'
+            assert text.count(anchor) == 1
+            text = text.replace(anchor, '    ftMainCharBuilderActionAccessory(g);\n    ccApplyAnimation(fp);\n    ccVisualTick(g);\n}')
+            text = text.replace('#ifdef FTCHARBUILDER_SPECIAL_ANIMATIONS\n    if (pair == 0) ftCaptainSpecialNUpdateEffect(g);\n#endif',
+                                '    if (pair == 0) ccVisualFalconEffect(g, FALSE);')
             text = text.replace('fp->fkind', 'ccBodyKind(fp)')
             text = text.replace('s->owner = fp; s->body', 's->owner = fp; s->generation = fp->player_num; s->body')
             text = text.replace('(s->owner != fp)', '(s->owner != fp || s->generation != fp->player_num)')
@@ -81,6 +87,9 @@ def generate():
                 'if (fp->is_special_interrupt && ftCustomMoveGetSlot(fp) != NULL)\n'
                 '    { ftMainCharBuilderClearSpecialDonor(fp); ftMainCharBuilderStartAction(g, 22, 0); }')
         else:
+            anchor = '        sCCMotionScripts[fp->player].script_wait = 1.0F - frame_begin;\n    }\n}'
+            assert text.count(anchor) == 1
+            text = text.replace(anchor, '        sCCMotionScripts[fp->player].script_wait = 1.0F - frame_begin;\n    }\n    ccApplyAnimation(fp);\n    ccVisualTick(gobj);\n}')
             state = 'sFTCharBuilderProjectileStates[fp->player]'
             text = text.replace(state+'.owner = fp;', state+'.owner = fp; '+state+'.generation = fp->player_num;')
             text = text.replace(state+'.owner != fp', state+'.owner != fp || '+state+'.generation != fp->player_num')

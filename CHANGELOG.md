@@ -1,5 +1,15 @@
 # Changes
 
+## 0.1.25 - 2026-10-06: Remix special effects and attachments
+
+- Release Remix preview 0.1.8; preserve the decomp 0.1.18 ROM and links.
+- Add Final Cutter sword/trails, Stone replacement, Falcon Punch/Kick flames, Fox blaster, Yoshi tongue and the source-sized Samus charging orb.
+- Reuse source prop samples and semantic joints on foreign bodies; keep gameplay clocks, collision paths and native body hurtboxes independent.
+- Play safe source-timed effects, sounds, voices and loops; keep the charge orb through release startup and remove it at projectile handoff.
+- Preserve neutral attachments and loop audio across internal body-pose phase changes; real interruptions still clear them.
+- Preload private effect resources before the match; validate effect/fighter ownership and clean up attachments, sound loops and Stone visibility on interruptions, death and scene resets.
+- Add source-prop and linked-MIPS timing/cleanup checks, plus optional real-input native effect allocation checks. Full rendered acceptance remains separate.
+
 ## 0.1.24 - 2026-10-06: Remix remaining neutral specials
 
 - Release Remix preview 0.1.7; preserve the decomp 0.1.18 ROM and download.

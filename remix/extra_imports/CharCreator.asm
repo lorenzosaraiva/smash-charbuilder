@@ -102,6 +102,7 @@ scope CharCreator {
     dw CharCreatorCatalog.string_5, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
     dw CharCreatorCatalog.string_8, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
     include "CharLabNeutrals.inc"
+    include "CharLabVisuals.inc"
 
     // Runtime breadcrumbs used to verify that the pre-match loader runs after
     // the final cache reset. They are intentionally outside recipe SRAM.
@@ -301,6 +302,10 @@ scope CharCreator {
         addiu t1, r0, -1
         sw t1, 0(t0)
         sw t1, 4(t0)
+        li t0, CharLabRuntime.sCCVisualFiles
+        sw r0, 0(t0)
+        sw r0, 4(t0)
+        sw r0, 8(t0)
         li      t0, laser_file_pointer
         sw      r0, 0x0000(t0)
         li      t0, diagnostic_laser_stage
@@ -662,6 +667,13 @@ scope CharCreator {
         nop
         jal ensure_neutral_files_
         nop
+        lw t0, FIELD_NSP * 4(s1)
+        lw t0, 0(t0)
+        sll t0, t0, 2
+        li t1, neutral_donors
+        addu t1, t1, t0
+        jal ensure_visual_files_
+        lw a0, 0(t1)
         b _next_field
         nop
 
@@ -708,6 +720,8 @@ scope CharCreator {
         // reserved; the dispatcher can safely reuse the body's heap whenever
         // it is large enough for this donor.
         jal     ensure_special_preloads_
+        or      a0, s4, r0
+        jal     ensure_visual_files_
         or      a0, s4, r0
 
         _next_field:

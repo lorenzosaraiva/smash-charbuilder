@@ -71,7 +71,12 @@ def prepare_headers():
     assert neutral.count('fp->motion_scripts[i][2]') == 3
     neutral = neutral.replace('fp->motion_scripts[i][2]', 'sCCMotionScripts[fp->player]')
     neutral = neutral.replace('    sFTCharBuilderNeutralStartingOwner = fp;',
-                              '    fp->proc_status = NULL;\n    sFTCharBuilderNeutralStartingOwner = fp;')
+                              '    u32 visual_preserve = ccVisualPreserve(fp, move);\n    fp->proc_status = NULL;\n    sFTCharBuilderNeutralStartingOwner = fp;')
+    neutral = neutral.replace('air ? FTSTATUS_PRESERVE_FASTFALL : FTSTATUS_PRESERVE_NONE',
+                              'visual_preserve | (air ? FTSTATUS_PRESERVE_FASTFALL : FTSTATUS_PRESERVE_NONE)')
+    neutral = neutral.replace('    ftCustomMoveStartClock(fp, move, frame_begin + 1.0F);',
+                              '    ftCustomMoveStartClock(fp, move, frame_begin + 1.0F);\n    ccVisualStart(fp, frame_begin);')
+    neutral = neutral.replace('    func_800269C0_275C0(nSYAudioFGMFoxSpecialN);', '')
     (OUT / 'neutral.c.inc').write_text(neutral, encoding='utf-8')
     # Keep the shared retargeter; stream selected curves instead of embedding
     # the decomp's entire resident animation catalog in Remix expansion RAM.
@@ -156,6 +161,7 @@ def object_to_bass(path):
         'ccOriginalDivePositions': 'CharLabSpecials.hook_ftCommonCaptureCaptainUpdatePositions._original',
         'wpFoxBlasterMakeWeapon': 'CharCreator.neutral_make_weapon_',
         'ccNeutralMakeWeapon': 'CharCreator.neutral_weapon_factory_',
+        'ccVisualMainFile': 'CharCreator.visual_main_file_',
         'func_800269C0_275C0': '0x800269C0',
     }
     # Engine symbols come from the decompilation's original US function labels,
@@ -280,6 +286,11 @@ def main():
     else:
         from generate_charlab_neutrals import generate as generate_neutrals
     generate_neutrals()
+    if __package__:
+        from .generate_charlab_visuals import generate as generate_visuals
+    else:
+        from generate_charlab_visuals import generate as generate_visuals
+    generate_visuals()
     command = ['clang', '-target', 'mips-unknown-none', '-march=mips2', '-mabi=32',
                '-mno-abicalls', '-fno-pic', '-G0', '-O2', '-ffreestanding', '-fno-builtin',
                '-fno-stack-protector', '-DFTCHARBUILDER_NORMAL_MECHANICS', '-DFTCHARBUILDER_NEUTRAL_EXTENDED', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',

@@ -1,6 +1,6 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.7 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.8 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
 
@@ -37,7 +37,10 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Suspend missing-joint fallbacks during native status setup, preserving world-root position; restore safe callback fallbacks afterward.
 - [x] Shared normal/supported special/recovery retargeting on twelve original bodies, with four bounded ROM caches.
 - [x] Preserve the three Mario pose pilots: Falcon down-air, Fox straight forward tilt, DK straight forward smash.
-- [ ] Safe special effects/attachments and rendered pose acceptance.
+- [x] Cutter sword/trails, Stone replacement, Falcon flames, blaster/tongue props and source-sized held charge orb.
+- [x] Safe source visual/audio clocks; owned attachment, loop/voice and Stone visibility cleanup on interruptions/death/scene reset.
+- [x] Independent source-prop/linked-MIPS checks, including four-port reset, plus real-input CPU allocation/recovery for Cutter/Stone, Punch/Kick, blaster, tongue and orb.
+- [ ] Full rendered special attachment/pose acceptance and remaining actor-specific overlays/materials.
 - [x] Editor Test initializes the chosen body, P1 and native Mario dummy with valid costumes.
 - [x] Settings label uses **Character Lab** title case.
 - [x] Training exit and Training CSS Back return to the tested preset editor.
@@ -51,7 +54,7 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Falcon Dive source attacker socket and frame-16 release, retaining the native extended-victim lookup.
 - [ ] Rendered special steering, weapon contacts, reflection/absorption, self-launch, stage transitions and interruptions.
 - [x] Shared normal/supported special/recovery pose retargeting on all twelve original bodies and donors.
-- [ ] Special props/effects and tether/paired/taunt pose entry points.
+- [ ] Tether/paired/taunt pose entry points.
 - [x] Donor jab availability/buffering, third/rapid phases and source loop boundaries on original bodies.
 - [x] Donor angle/landing availability, traction, gravity, terminal velocity and aerial drift during normals.
 - [x] Link down-air contact bounce, fastfall cancellation, late-hit rewind and delayed rehit.
@@ -63,7 +66,7 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Boomerang empty/return/catch lifecycle and Egg Lay source capture/release with native egg states.
 - [x] Existing saved recipe bit layout preserved with four validated neutral choices in spare options bytes.
 - [x] Null-rendering CPU scenes: all ten new neutrals plus Laser, charged storage/release, PK Fire flame contact and Egg Lay capture/egg damage on Mario/Kirby.
-- [ ] Neutral rendered contact/reflect/absorb, stage/interrupt acceptance, charge orb and attached props/effects.
+- [ ] Neutral rendered contact/reflect/absorb and broad stage/interrupt/attachment acceptance.
 - [ ] Donor tether/capture/paired-throw choreography and visuals.
 - [ ] Custom taunts, Yoshi starter build and four-stock/items-off VS defaults.
 - [ ] Remix results/rematch regression with assigned builds.

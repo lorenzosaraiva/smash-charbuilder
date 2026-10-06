@@ -71,6 +71,6 @@ SHA-256.
 
 Rendered contact, bat projectiles/items, slopes, aerial starts, Z-cancel windows,
 hitlag, interruptions, four-player stress and expanded native-fighter regressions
-remain acceptance work. Safe attached normal/special props and effects remain a
-later visual milestone. This release does not port additional neutral specials,
-tether/paired throws or taunts.
+remain acceptance work. The listed special attachments are now ported; see
+[special effects](special-effects.md). Other normal overlays/materials,
+tether/paired throws and taunts remain separate work.

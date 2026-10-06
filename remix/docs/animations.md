@@ -1,6 +1,6 @@
 # Shared Remix animations
 
-Preview **0.1.7**, updated **2026-10-06**.
+Preview **0.1.8**, updated **2026-10-06**.
 
 Original-roster normal attacks now use the decomp's shared donor poses on all
 twelve bodies. This includes tilts, smashes, dash attacks, aerials, landing poses
@@ -49,11 +49,13 @@ including missing-joint callback aliases on all twelve bodies.
 Existing collision, movement, special, editor-launch and recovery regressions
 remain part of the build.
 
-Optional real-input Mupen checks use null rendering. Their CPU results do not
-establish rendered mesh/material/contact quality. Special props such as Cutter's
-sword and Stone's model replacement, safe attached effects and visual-script
-polish still need porting. Native donor part/texture/hurtbox commands remain
-suppressed on foreign bodies. Kirby copy remains excluded.
+Optional real-input Mupen checks normally use null rendering. Their CPU results
+do not establish rendered mesh/material/contact quality. The listed special
+props, native flames/sword effects and safe source visual/audio scripts are now
+ported; see [effects and attachments](special-effects.md). Full rendered
+acceptance and other actor-specific overlays/materials remain pending.
+Native donor part/texture/hurtbox commands remain suppressed on foreign bodies.
+Kirby copy remains excluded.
 
 For rendered acceptance, try body + donor combinations with HITBOX/HITBOX+ and
 report the phase/input, emulator and ROM version, ideally with a short clip.

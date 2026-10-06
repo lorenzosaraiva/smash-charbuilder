@@ -1,6 +1,6 @@
 # Remix neutral donors
 
-Preview **0.1.7**, updated **2026-10-06**. Keep **Original 12 Only** enabled.
+Preview **0.1.8**, updated **2026-10-06**. Keep **Original 12 Only** enabled.
 Neutral Special now offers the body's name (native behavior) and Fox, Mario,
 Luigi, Pikachu, Ness, Captain Falcon, Jigglypuff, Donkey Kong, Samus, Link and
 Yoshi. Choosing the same donor as the body keeps its native routines. Kirby's
@@ -31,9 +31,10 @@ body's native victim rig; Egg Lay uses source anchors and native egg states.
 
 Shared donor poses follow the source clock, including charge loops and release
 transitions. Gameplay collision centers, reach and sizes stay independent of
-the body rig. Body hurtboxes remain native. A held Charge Shot orb, blaster and
-tongue props, attached effects, voice/material polish and paired victim rotation
-are separate visual work.
+the body rig. Body hurtboxes remain native. The held Charge Shot orb, blaster,
+tongue, Falcon flames and safe source sound/voice/effect events are connected;
+see [special effects](special-effects.md). Full rendered/material acceptance
+and paired victim rotation remain separate work.
 
 Private descriptors/resources keep these borrowed weapons independent of
 Remix's native and expanded-fighter globals. Resources load before the match;

@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.24 (experimental)** | **Last updated: 2026-10-06**
+**Project version: 0.1.25 (experimental)** | **Last updated: 2026-10-06**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -36,7 +36,7 @@ restores match endings and rematches.
 | Build | ROM last updated | ROM download | Play package | Source build |
 | --- | --- | --- | --- | --- |
 | **Character Lab** | 2026-10-05 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
-| **Character Lab on Remix (preview 0.1.7)** | 2026-10-06 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
+| **Character Lab on Remix (preview 0.1.8)** | 2026-10-06 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
 
 Dates use Sao Paulo time and refer to the published ROMs. The project version
 above tracks this repository; each source build identifies the exact ROM.
@@ -52,14 +52,17 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
 
-Remix **0.1.7** adds every original Neutral B donor except Kirby copy, with source
+Remix **0.1.8** adds Cutter sword/trails, Stone replacement, Falcon flames,
+Fox blaster, Yoshi tongue and Samus's charging orb, with source clocks and
+owned cleanup. See [effects and attachments](remix/docs/special-effects.md).
+It includes every original Neutral B donor except Kirby copy, with source
 projectiles, Punch/Pound, charge storage/release, Boomerang and Egg Lay.
 See [neutral controls and limits](remix/docs/neutral-specials.md). It also ports donor jab chains, Link bounce, Ness bat reflection,
 normal physics and landing behavior. It retargets the decomp's shared normal and supported special/recovery
 poses onto all twelve original bodies. Selected clips stream from ROM into
 separate 15 KB player caches; timing, donor collision paths and world movement
 remain independent of the visual pose. The three Mario pilots are preserved.
-See [Remix animations](remix/docs/animations.md) for coverage and remaining props.
+See [Remix animations](remix/docs/animations.md) for coverage and rendered acceptance.
 This is a partial port: the [decomp-to-Remix feature matrix](remix/docs/decomp-port.md)
 lists every remaining special, animation, neutral, normal acceptance and paired
 grab/throw milestone. The decomp download remains **0.1.18**.
