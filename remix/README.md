@@ -1,24 +1,22 @@
 # Character Lab on Remix
 
 An original-roster partial port of Character Lab features inside Smash
-Remix +EXTRA: donor hitbox paths/timing, grabs/throws, Body Move/Fox Laser, Mario
-pose pilots, human/CPU preset assignments and return from Training to the editor.
+Remix +EXTRA: donor hitbox paths/timing, grabs/throws, Body Move/Fox Laser, shared
+retargeted poses, human/CPU preset assignments and return from Training to the editor.
 
 - [Download ROM](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64)
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.4 (2026-10-06):** Test in Training initializes the selected body and a
-native Mario dummy with valid costumes, and Settings displays **Character Lab**.
-The prior special batch adds donor helpless/landing recovery, Mario/Luigi steering,
-Fire Fox directional hitboxes, Reflector/Magnet source volumes, and independent
-Tornado/egg/Spin Attack/Thunder/PK Thunder state. Source projectile sockets,
-Final Cutter gameplay, Stone armor/timeout, Link held-bomb throws and Falcon
-Dive source positioning/release are connected. Safe idle/fall
-visuals remain; contact and animation acceptance is separate from CPU checks.
+**0.1.5 (2026-10-06):** Shared normal animations now retarget onto all twelve
+original bodies, along with the existing borrowed special and recovery phases.
+The bank streams selected clips into independent player caches; gameplay clocks,
+hitbox paths and movement keep their existing source timing. The three Mario
+pilots remain unchanged. [Animation coverage](docs/animations.md) separates poses
+from the still-pending prop/effect work and rendered acceptance.
 See the [full decomp-port matrix](docs/decomp-port.md) and
 [checklist](docs/character-lab-status.md) for the still-missing mechanics,
-neutral adapters, animations, taunts and paired throws.
+neutral adapters, visual attachments, taunts and paired throws.
 
 Open **Settings -> Character Lab** and keep **Original 12 Only** enabled. The
 expanded roster stays playable, with its earlier experimental creator adapters;

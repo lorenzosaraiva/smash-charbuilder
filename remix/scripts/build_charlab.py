@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 UPDATED = '2026-10-06'
 
 
@@ -77,14 +77,16 @@ Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 Source commit: `{info['commit']}`; uncommitted changes: {info['source_dirty']}.
 
 Original donor collision paths/timing, normal values, grab/throw choices,
-Body Move/Fox Laser, Mario animation pilots and return from Training to the
-tested editor. Borrowed Up/Down B now connects original donor collision paths,
-phase clocks, TransN travel and donor physics attributes while showing safe
-body idle/falling poses. Donor helpless/landing recovery, Mario/Luigi steering,
+Body Move/Fox Laser, shared donor pose retargeting and Training editor return.
+Normals and supported special/recovery poses retarget on twelve original bodies
+through independent 15 KB ROM caches; the three Mario pilots are preserved.
+Donor joint fallbacks are suspended during pose writes to preserve the world
+root. Borrowed Up/Down B connects source collision paths, phase clocks, TransN
+travel and donor physics attributes. Donor helpless/landing recovery, Mario/Luigi steering,
 Fire Fox directional geometry, Reflector/Magnet volumes and source projectile
 sockets are connected. Tornado, egg, Spin Attack, Thunder and PK Thunder own
 state outside the body's unions; Final Cutter and Stone gameplay callbacks
-retain source timing ahead of visual retargeting. Link held-bomb common throws
+retain source timing alongside shared pose retargeting. Link held-bomb common throws
 retain donor timing, values and release sockets; Falcon Dive uses the source
 attacker socket and frame-16 release with native Remix victim offsets.
 Pikachu/Fox/Ness recovery transform guards remain active.
@@ -96,7 +98,7 @@ The ROM is checked with shared host tests, linked-byte/CRC verification and
 production MIPS execution tests. Rendered gameplay acceptance is still pending.
 Full decomp parity is pending: neutral adapters beyond Laser, rendered
 special acceptance,
-normal jab/bounce/reflection mechanics, taunts, retargeted animations and paired
+normal jab/bounce/reflection mechanics, taunts, special props/effects and paired
 grabs/throws. Expanded-roster fidelity and Kirby copy are outside this milestone.
 The changed SRAM layout resets older Remix settings/recipes once.
 

@@ -8,7 +8,13 @@
 #include <ft/ftphysics.h>
 #include <mp/mpcommon.h>
 #include <ft/fighter.h>
+/* IDO headers erase attributes; the Remix Clang build needs real alignment
+ * for DMA buffers and retained descriptors for the complete ROM catalog. */
+#undef __attribute__
 extern s32 ccBodyKind(FTStruct*);
+extern void ccSuspendJoints(FTStruct*);
+extern void ccResumeJoints(FTStruct*);
+static void ccApplySpecialPose(FTStruct*);
 
 /* Settings can enter Training CSS without the ordinary 1P menu setup. */
 void ccSetupTraining(s32 body)
@@ -26,6 +32,15 @@ s8 gSCManagerCharBuilderPlayerSlots[4] = { 0, 1, 2, 3 };
 static struct { s32 scene_curr; } gSCManagerSceneData;
 static FTStruct *sFTCharBuilderNeutralStartingOwner;
 #include "../build/char_creator/runtime/move.c.inc"
+
+void ccApplyAnimation(FTStruct *fp)
+{
+    /* Callback aliases for absent donor joints must never become visual
+     * bones: cosmetic/optional pose writes would reset the world root. */
+    ccSuspendJoints(fp);
+    ftCustomAnimationApplyPose(fp);
+    ccResumeJoints(fp);
+}
 
 #define ABI_CHECK(field, offset) _Static_assert(__builtin_offsetof(FTStruct, field) == offset, #field " Remix ABI")
 ABI_CHECK(fkind, 0x8);
@@ -151,10 +166,12 @@ void ccAdvance(GObj *gobj)
             ftCustomMoveGetClock(fp)->frame = special->frame;
             ftCustomMoveGetClock(fp)->native_frame = gobj->anim_frame;
         }
+        ccApplyAnimation(fp);
+        ccApplySpecialPose(fp);
         return;
     }
     gobj->anim_frame = ftCustomMoveAdvanceClock(fp, gobj->anim_frame);
-    ftCustomAnimationApplyPose(fp);
+    ccApplyAnimation(fp);
 }
 
 void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
@@ -269,6 +286,7 @@ extern GObj *wpFoxBlasterMakeWeapon(GObj*, Vec3f*);
 extern alSoundEffect *func_800269C0_275C0(u16);
 static void ftMainCharBuilderClearSpecialDonor(FTStruct *fp) { ccRestoreBody(fp); }
 #include "../build/char_creator/runtime/neutral.c.inc"
+#include "CharLabAnimations.c.inc"
 
 sb32 ccNeutral(GObj *gobj)
 {

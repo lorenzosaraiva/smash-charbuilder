@@ -1,9 +1,9 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.4 (2026-10-06)**.
+Character Lab has an original-roster Remix preview, **0.1.5 (2026-10-06)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
-for the shared donor timing and collision system. Most visible poses still
-belong to the body; the [checklist](docs/character-lab-status.md) tracks what remains.
+for shared donor timing, collision paths and retargeted normal/special poses.
+The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
 This is a partial port. The [full port matrix](docs/decomp-port.md) lists which
 mechanics are implemented and which still need adapters or playtesting.
 
@@ -44,7 +44,7 @@ Changing the compiled roster later can change selector indexes.
 ## What the moves inherit
 
 For original-roster normals, the body keeps native fighter data, hurtboxes,
-action callbacks and usually its animation. A separate per-player move clock
+action callbacks. Shared donor poses retarget onto its native rig. A separate per-player move clock
 supplies donor startup, active frames, hitbox clears and total recovery. It
 advances with the native animation update, so hitlag pauses it too.
 
@@ -70,9 +70,11 @@ and finite recovery (55 / 45). DK and Samus use finite neutral end poses instead
 of staying in a charge loop. Body Move restores native neutral behavior. Fox
 itself retains its native laser callbacks.
 
-Three Mario-only pose pilots are carried over: Falcon down-air, Fox straight
-forward tilt and DK straight forward smash. Broader animation retargeting and
-rendered acceptance of these pilots remain pending.
+All shared normal poses now retarget on twelve original bodies. The three
+Mario pilots (Falcon down-air, Fox straight forward tilt and DK straight forward
+smash) remain unchanged. Supported borrowed specials and recovery use the same
+ROM-backed catalog. Effects, props and rendered acceptance remain pending; see
+[animation coverage](docs/animations.md).
 
 ## Expanded roster and experimental specials
 
@@ -83,8 +85,8 @@ fall back to their own normal when a donor outside the original twelve is
 selected. Grab/throw donors stay limited to the original twelve.
 
 Up/Down Special mixing temporarily borrows donor code/resources. Borrowed
-phases with original-roster donors use body idle/falling poses instead of taunts, avoiding Mario growth
-and taunt displacement. Original-roster donors have separate phase clocks
+phases with original-roster donors retarget the source pose onto the body.
+Native status setup still uses safe idle/fall assets before the shared pose is applied. Original-roster donors have separate phase clocks
 for recovery/events, respecting frozen dash phases and animation speed.
 Pikachu stretching and Fox/Ness recovery pitching are suppressed on borrowed
 bodies while their movement callbacks remain active.
@@ -105,7 +107,7 @@ are suppressed until compatible visual attachments are implemented.
 Expanded Remix donors retain the earlier finite taunt fallback because their
 phase clocks are not yet compiled.
 
-Full special retargeting remains pending. Projectile placement, directional
+Special props/effects and rendered retargeting acceptance remain pending. Projectile placement, directional
 paths, model changes and capture mechanics still need rendered acceptance.
 In particular, check Mario with Pikachu Up B:
 first dash, direction change for a second dash, recovery, interruption and

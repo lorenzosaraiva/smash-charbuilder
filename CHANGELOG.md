@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.22 - 2026-10-06: Shared Remix animation catalog
+
+- Release Remix preview 0.1.5; preserve the decomp 0.1.18 ROM and download.
+- Reuse the decomp compressed curves, bind/semantic rigs and quaternion retargeter for normals and supported special/recovery poses on all twelve original bodies. Keep the three accepted Mario pilots unchanged.
+- Pack 501 clips into a 2,180,944-byte ROM bank; load selected clips into independent 15,200-byte caches for four players instead of consuming a resident bank in Expansion Pak RAM. Paired/taunt data is reserved for their later mechanics port.
+- Suspend missing-joint callback aliases during pose writes, preventing cosmetic-joint resets from teleporting the world root. Preserve original move clocks, collision paths, native body hurtboxes and world movement. Apply directional Fire Fox/Quick Attack and Mario/Luigi steering presentation separately.
+- Add independent decomp ELF checks for packed keys/roots/rigs and production MIPS joint/cache/isolation checks. Rendered mesh, effects/props and contact acceptance remain pending.
+
 ## 0.1.21 - 2026-10-06: Remix Training launch and menu label
 
 - Release Remix preview 0.1.4; keep the decomp ROM at 0.1.18.

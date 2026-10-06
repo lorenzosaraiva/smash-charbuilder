@@ -1,6 +1,6 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.4 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.5 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
 
@@ -18,7 +18,7 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] DK foreign forward throw releases directly instead of entering cargo.
 - [x] Remix's extended throw-victim lookup retained.
 - [x] Body Move/Fox Laser neutral selection with finite ground/air laser recovery.
-- [x] Borrowed original-roster specials use body idle/falling poses instead of growing/displacing taunts.
+- [x] Borrowed original-roster specials use safe native status setup followed by shared donor poses.
 - [x] Original-roster special phase clocks retain donor recovery/events, speed and frozen phases.
 - [x] Retain recipes by actual body identity during borrowed special phases.
 - [x] Compile 96 special source collision/travel phases; connect borrowed Up/Down B status events and root placements.
@@ -35,7 +35,9 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Final Cutter gameplay callbacks and Stone armor/hold/timeout without donor-only body mutations.
 - [x] Suppress donor mesh/texture/hurtbox-part commands and attached motion effects on foreign bodies; retain whole-fighter hit status and native body hurtboxes.
 - [x] Suspend missing-joint fallbacks during native status setup, preserving world-root position; restore safe callback fallbacks afterward.
-- [x] Three Mario pose pilots: Falcon down-air, Fox straight forward tilt, DK straight forward smash.
+- [x] Shared normal/supported special/recovery retargeting on twelve original bodies, with four bounded ROM caches.
+- [x] Preserve the three Mario pose pilots: Falcon down-air, Fox straight forward tilt, DK straight forward smash.
+- [ ] Safe special effects/attachments and rendered pose acceptance.
 - [x] Editor Test initializes the chosen body, P1 and native Mario dummy with valid costumes.
 - [x] Settings label uses **Character Lab** title case.
 - [x] Training exit and Training CSS Back return to the tested preset editor.
@@ -48,7 +50,8 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Link held-bomb common throw ownership, source clock/events, donor throw values and release socket.
 - [x] Falcon Dive source attacker socket and frame-16 release, retaining the native extended-victim lookup.
 - [ ] Rendered special steering, weapon contacts, reflection/absorption, self-launch, stage transitions and interruptions.
-- [ ] Full animation retargeting on every body and donor.
+- [x] Shared normal/supported special/recovery pose retargeting on all twelve original bodies and donors.
+- [ ] Special props/effects and tether/paired/taunt pose entry points.
 - [ ] Normal donor traction/air physics, landing behavior, jab availability, Link bounce and Ness bat reflection.
 - [ ] Neutral specials beyond Body Move/Fox Laser; Kirby copy excluded.
 - [ ] Donor tether/capture/paired-throw choreography and visuals.
@@ -117,3 +120,10 @@ Preview 0.1.4 passes real-input Test/Back on all four editor slots with
 stale Training selections, plus CSS Start/stage confirmation into a running
 Training match. Kick/Quick Attack still passes 72 source-velocity samples and
 the directional second zip. These CPU results use null rendering.
+
+The 0.1.5 pose check passes 501 packed clips / 583,853 keys, 164,829 linked-MIPS
+joint orientations on twelve rigs, 1,848 special selections, twelve callback-alias
+world-root guards and four independent caches. Real-input CPU checks pass
+Falcon normals on Mario/Kirby, Kirby normals on Yoshi, Falcon Kick source travel
+and both Quick Attack zips/recovery. These checks use null rendering; visible
+meshes, special props/effects and rendered contacts remain acceptance work.

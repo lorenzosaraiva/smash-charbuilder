@@ -1,6 +1,6 @@
 # Decomp to Remix port
 
-Updated **2026-10-06**. Remix preview **0.1.4**, project **0.1.21**.
+Updated **2026-10-06**. Remix preview **0.1.5**, project **0.1.22**.
 
 The decomp ROM remains the most complete edition. The Remix preview is a
 partial port for the **original twelve** bodies and donors; exposing Remix's
@@ -20,7 +20,7 @@ contact and stage interactions still require rendered playtesting.
 | Up/Down B movement | Source TransN travel, separate Mario/Luigi/Falcon angles, imported callbacks and donor recovery attributes | Rendered steering, slopes, wall/ledge and interruption acceptance |
 | Mario + Falcon Kick / Pikachu Up B | Regression targets: original travel, retained recipe and body scale | Two-dash steering, aerial starts, walls/ledges and interruptions in rendered play |
 | Neutral B | Body Move and finite Fox Laser adapter | Fireballs, Jolt, PK Fire, Punch/Pound, charge/store, Boomerang and Egg Lay |
-| Animations | Three Mario normal pilots; borrowed Up/Down B uses safe body idle/fall poses | Stream shared donor animation curves from ROM, then retarget normals/specials |
+| Animations | Shared normal/supported special/recovery curves retarget on twelve original bodies through independent ROM caches; three Mario pilots retained | Rendered acceptance, special effects/props, paired-grab/throw and taunt entry points |
 | Grab/throw selections | Donor grab collision events/timing and numeric throw values | Tether reach/props, paired positioning/release, DK cargo and Kirby landing throws |
 | Custom taunts | Native body taunts | Add donor selector, source clock/pose, Mario growth and Luigi hitbox |
 | Training/UI/presets | Four SRAM builds, human/CPU assignment, initialized Test launch, editor return and Character Lab menu label | Rendered acceptance and any new selector fields |
@@ -64,9 +64,9 @@ milestone. Use body-native specials when testing a mechanic not yet verified.
    shared angles, sockets, volumes, independent passives and recovery layer is
    implemented; it does not establish acceptance for every body/stage.
 2. Complete normal-specific callbacks and the ten remaining neutral adapters.
-3. Stream the donor animation bank and retarget the full catalog. Embedding the
-   entire decomp catalog in Remix's already occupied Expansion Pak RAM is too
-   large; selected clips need a bounded per-player cache.
+3. Check rendered retargeted poses, then port safe special effects/attachments.
+   Shared curves now stream from ROM through bounded per-player caches;
+   neutral, tether/paired and taunt mechanics still need their own entry points.
 4. Port tether/paired throws and taunts, followed by starter defaults and results
    acceptance. Update the relevant checklist and build a checked ROM each batch.
 
@@ -109,7 +109,19 @@ for a running CSS and returns with B (after recalling the selected puck).
 `--editor-play` continues through real CSS Start and stage confirmation into
 Training. These checks use null rendering; visible UI acceptance remains pending.
 
-Preview 0.1.4 passes real-input Test/Back on all four editor slots with
+Preview 0.1.5 passes real-input Test/Back on all four editor slots with
 stale Training selections, plus CSS Start/stage confirmation into a running
 Training match. Kick/Quick Attack still passes 72 source-velocity samples and
 the directional second zip. These CPU results use null rendering.
+
+Preview 0.1.5 uses the decomp retargeter and compressed curves in a ROM bank,
+with independent 15,200-byte caches for four players. See [animation coverage](animations.md).
+The standard verifier compares every packed clip with the original decomp ELF
+and executes joint poses on all twelve rigs. Rendered acceptance remains pending.
+
+The 0.1.5 pose check passes 501 packed clips / 583,853 keys, 164,829 linked-MIPS
+joint orientations on twelve rigs, 1,848 special selections, twelve callback-alias
+world-root guards and four independent caches. Real-input CPU checks pass
+Falcon normals on Mario/Kirby, Kirby normals on Yoshi, Falcon Kick source travel
+and both Quick Attack zips/recovery. These checks use null rendering; visible
+meshes, special props/effects and rendered contacts remain acceptance work.

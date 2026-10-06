@@ -71,24 +71,35 @@ def prepare_headers():
     assert neutral.count('fp->motion_scripts[i][2]') == 3
     neutral = neutral.replace('fp->motion_scripts[i][2]', 'sCCMotionScripts[fp->player]')
     (OUT / 'neutral.c.inc').write_text(neutral, encoding='utf-8')
-    # Full shared animation curves need a streamed bank on Remix: its code,
-    # menus and expanded roster already occupy most Expansion Pak RAM. Keep
-    # the three existing pilots until that bank is implemented, rather than
-    # silently embedding the decomp's entire resident animation catalog.
+    # Keep the shared retargeter; stream selected curves instead of embedding
+    # the decomp's entire resident animation catalog in Remix expansion RAM.
     animation = (LAB/'src/ft/ftcustomanimation.c.inc').read_text(encoding='utf-8')
-    def function(name):
-        start=animation.index('static ', animation.index('static const FTCustomAnimationFrame* '+name) if name=='ftCustomAnimationGetFrame' else animation.index('static void '+name))
-        opening=animation.index('{',start);end=opening+1;depth=1
-        while depth:
-            depth += (animation[end]=='{')-(animation[end]=='}');end+=1
-        return animation[start:end]
-    apply=function('ftCustomAnimationApplyPose')
-    apply=re.sub(r'    const FTCustomAnimationClip \*clip;\n','',apply)
-    apply=apply.replace('s32 i, frame;', 's32 i;')
-    apply=re.sub(r'    if \(pilot == NULL\)\n    \{.*?\n    \}', '    if (pilot == NULL) return;',apply,flags=re.S)
-    prefix=animation[:animation.index('typedef struct FTCustomAnimationQuat')]
-    prefix=prefix.replace('#include "ftcustomanimations.generated.inc"','#include "ft/ftcustomanimations.generated.inc"')
-    (OUT/'animation.c.inc').write_text(prefix+'u32 gFTCustomAnimationValidationFailures;\n'+function('ftCustomAnimationGetFrame')+'\n'+apply+'\n',encoding='utf-8')
+    animation=animation.replace('#include "ftcustomanimations.generated.inc"','#include "ft/ftcustomanimations.generated.inc"')
+    animation=animation.replace('    const u16 *channels;', '    const u16 *channels;\n    const FTCustomAnimationCurve *curves;\n    const FTCustomAnimationKey *keys;')
+    animation=animation.replace('#include "ftcustomanimationshared.generated.inc"',
+        'static const FTCustomAnimationClip* ccSelectAnimation(FTStruct*, s32*);')
+    animation=animation.replace('ftCustomAnimationReadCurve(const FTCustomAnimationCurve *curve, s32 frame)',
+        'ftCustomAnimationReadCurve(const FTCustomAnimationKey *bank, const FTCustomAnimationCurve *curve, s32 frame)')
+    animation=animation.replace('&sFTCustomAnimationKeys[curve->first]', '&bank[curve->first]')
+    animation=animation.replace('ftCustomAnimationReadCurve(&sFTCustomAnimationCurves[', 'ftCustomAnimationReadCurve(clip->keys, &clip->curves[')
+    start=animation.index('static const FTCustomAnimationClip* ftCustomAnimationGetClip(')
+    end=animation.index('static void ftCustomAnimationSharedPose(',start)
+    animation=animation[:start]+'''static const FTCustomAnimationClip* ftCustomAnimationGetClip(FTStruct *fp, s32 *frame)
+{ return ccSelectAnimation(fp, frame); }
+
+'''+animation[end:]
+    animation=animation.replace('sFTCustomAnimationRigs[fp->fkind]', 'sFTCustomAnimationRigs[ccBodyKind(fp)]')
+    # Rigs/descriptors are needed before the shared pose function, while the
+    # selector is defined after the special/recovery clock types in runtime C.
+    animation=animation.replace('u32 gFTCustomAnimationValidationFailures;', '''typedef struct CCAnimationRecord
+{
+    const FTCustomAnimationSourceRig *rig;
+    u32 offset, size, keys, root;
+    s32 count, loop_start, loop_period;
+} CCAnimationRecord;
+#include "animations.inc"
+u32 gFTCustomAnimationValidationFailures;''')
+    (OUT/'animation.c.inc').write_text(animation,encoding='utf-8')
     move=(LAB/'src/ft/ftcustommove.c.inc').read_text(encoding='utf-8')
     assert move.count('(slot->body != fp->fkind)') == 1
     move=move.replace('(slot->body != fp->fkind)','(slot->body != ccBodyKind(fp))')
@@ -129,6 +140,8 @@ def object_to_bass(path):
         'ccMappedThrownKind': 'CharLab.mapped_thrown_kind_',
         'ccSpecialDonor': 'CharLab.special_donor_',
         'ccBodyKind': 'CharLab.body_kind_',
+        'ccSuspendJoints': 'CharLab.suspend_joints_',
+        'ccResumeJoints': 'CharLab.resume_joints_',
         'ccOriginalGroundTravel': 'CharLab.original_ground_travel_',
         'ccOriginalAirTravel': 'CharLab.original_air_travel_',
         'ccOriginalGroundPhysics': 'CharLab.original_ground_physics_',
@@ -215,13 +228,19 @@ def object_to_bass(path):
             if offset in relocations.get(i, {}):
                 lines.append(f'dw {relocations[i][offset]}')
         lines.append('pullvar base, origin')
-    lines += ['end:', '}', '']
+    lines += ['end:', '}', 'pushvar origin, base', 'origin 0x5000000',
+              'insert "animations.bin"', 'pullvar base, origin', '']
     (OUT / 'runtime.asm').write_text('\n'.join(lines), encoding='utf-8')
     print(f'Compiled shared Character Lab runtime: {sum(sections[i][5] for i in allocated):,} bytes; {sum(len(r) for r in relocations.values())} relocations.')
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
+    if __package__:
+        from .generate_charlab_animations import generate as generate_animations
+    else:
+        from generate_charlab_animations import generate as generate_animations
+    generate_animations()
     prepare_headers()
     special_timings()
     if __package__:

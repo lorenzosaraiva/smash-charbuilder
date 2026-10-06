@@ -6,6 +6,7 @@ playtest or verification of contact detection, rendering or every special.
 """
 from pathlib import Path
 import hashlib
+import json
 import re
 import struct
 import sys
@@ -90,6 +91,8 @@ def linked_object(rom, labels):
         if name in ('sFTCustomMoves', 'sFTCustomGrabMoves', 'sFTCustomAnimationPilots',
                     'sFTCustomCollisionTrajectories', 'sFTCharBuilderLaserMoves'):
             continue
+        if name.startswith(('sFTCustomAnimationRig', 'sFTCustomAnimationSourceRig', 'sFTCustomAnimationSemantic')):
+            continue  # Mixed byte/float rig records are checked independently.
         start = hs[index][4] + address - hs[index][3]
         fmt = 'B' if name in ('sFTCustomJointMaps', 'sFTCustomGrabJointMap') else 'H' if name == 'sFTCustomGrabTimings' else 'I'
         count_values = length // struct.calcsize(fmt)
@@ -137,9 +140,13 @@ class Runtime:
         self.uc.mem_write(0x131B00, rom[0xAC540:0x109FB0])
         self.uc.mem_write(0x80131B00, rom[0xAC540:0x109FB0])
         self.uc.reg_write(UC_MIPS_REG_CP0_STATUS, 0x20000000)
-        self.services = {}
+        class Services(dict):
+            def __setitem__(services, address, handler):
+                if address not in services:
+                    self.uc.hook_add(UC_HOOK_CODE, self.service, begin=address, end=address)
+                super().__setitem__(address, handler)
+        self.services = Services()
         self.calls = []
-        self.uc.hook_add(UC_HOOK_CODE, self.service)
         names = ('size', 'pkind', 'ga', 'flags', 'attack_id', 'throw_desc', 'update', 'interrupt',
                  'accessory', 'attr_size', 'obj', 'frame', 'translate', 'rotate', 'scale', 'speed',
                  'dobj_size', 'catch', 'capture', 'catch_status', 'catch_motion', 'throw_status',
@@ -150,6 +157,18 @@ class Runtime:
         # Stale queue is match-global state; isolate raw donor values in tests.
         self.services[0x800EA54C] = lambda: self.reg(UC_MIPS_REG_A1)
         self.services[self.labels['CharLab.restore_body_']] = lambda: 0
+        # DMA itself needs the OS scheduler/message queue. Supply ROM bytes,
+        # while executing cache selection/decoding/retargeting as linked MIPS.
+        dma = int(re.search(r'syDmaReadRom\s*=\s*(0x[0-9A-Fa-f]+)',
+                            (LAB/'symbols/symbols_us.txt').read_text()).group(1), 16)
+        bank_info = json.loads((ROOT/'build/char_creator/runtime/animations.json').read_text())
+        bank_size = (ROOT/'build/char_creator/runtime/animations.bin').stat().st_size
+        def read_pose_bank():
+            source, target, length = (self.reg(r) for r in (UC_MIPS_REG_A0, UC_MIPS_REG_A1, UC_MIPS_REG_A2))
+            assert bank_info['rom_start'] <= source and source + length <= bank_info['rom_start'] + bank_size
+            assert 0 < length <= bank_info['cache_bytes'] and length % 16 == 0
+            self.write(target, rom[source:source+length])
+        self.services[dma] = read_pose_bank
 
     def addr(self, name):
         return self.labels['CharLabRuntime.'+name]
@@ -210,6 +229,9 @@ class Runtime:
         for i in range(37):
             joint = self.JOINTS+i*0x100
             self.u32(self.FP+0x8E8+i*4, joint)
+            # Special-context fixtures may install body FTData directly;
+            # mirror the native fallback backup before exercising pose guards.
+            self.u32(self.labels['CharCreator.special_joint_backups']+player*148+i*4,joint)
             for axis in range(3):
                 self.f32(joint+self.layout['scale']+axis*4, 2.0)
         self.f32(self.JOINTS+self.layout['speed'], 1.0)
@@ -823,6 +845,8 @@ def main():
     test_movement_and_special_paths(runtime)
     from test_charlab_special_adapters import test_adapters
     test_adapters(runtime)
+    from test_charlab_animations import test_animations
+    test_animations(runtime, rom)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')
 
 

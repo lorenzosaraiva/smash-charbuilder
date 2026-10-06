@@ -21,6 +21,7 @@ parser.add_argument('--falcon-contact',action='store_true',help='Place the CPU i
 parser.add_argument('--editor-test',action='store_true',help='Enter the editor, activate Test in Training with A, then return with B')
 parser.add_argument('--editor-slot',type=int,choices=range(1,5),default=1)
 parser.add_argument('--editor-play',action='store_true',help='Continue editor Test through CSS Start and stage confirmation into Training')
+parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borrow this donor for normals and check real A-input pose streaming')
 args=parser.parse_args()
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
 if args.editor_play:assert args.editor_test
@@ -84,15 +85,29 @@ def fighter(player=0):
     gobj=u32(battle+players_off+player_size*player+fighter_off)
     return u32(gobj+0x84) if 0x80000000<=gobj<0x80800000 else 0
 trace=[];tracking=False;travel_errors=[];travel_samples=0;falcon_contact_done=False
+animation_samples=0;animation_records=set();animation_errors=[]
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
-    global travel_samples,falcon_contact_done
+    global travel_samples,falcon_contact_done,animation_samples
     if tracking and u8(scene)==54:
         fp=fighter()
         if not 0x80000000<=fp<0x80800000:return
         top=u32(fp+0x8E8);model=u32(fp+0x8E8+16)
         trace.append((u32(fp+0x24),u32(fp+0x28),tuple(f32(top+layout[12]+j) for j in (0,4,8)),
                       tuple(f32(model+layout[14]+j) for j in (0,4,8)),tuple(f32(fp+special[1]+j) for j in (0,4,8))))
+        record=u32(labels['CharLabRuntime.sCCAnimationLoaded'])
+        clock=labels['CharLabRuntime.sFTCustomMoveClocks']
+        special_clock=labels['CharLabRuntime.sCCSpecialClocks']
+        if record and (u32(clock)==fp or u32(special_clock)==fp):
+            clip=labels['CharLabRuntime.sCCAnimationClips']
+            count=u32(clip+20)
+            if not (0<count<=256):animation_errors.append(('bad clip',hex(record),count))
+            for joint in range(4,37):
+                obj=u32(fp+0x8E8+joint*4)
+                if obj:
+                    rotation=tuple(f32(obj+layout[13]+j) for j in (0,4,8))
+                    if not all(math.isfinite(v) and abs(v)<10 for v in rotation):animation_errors.append(('bad joint',joint,rotation))
+            animation_samples+=1;animation_records.add(record)
         if args.falcon_contact and u32(fp+0x24) in (235,238) and u32(fp+attack_off):
             cpu=fighter(1)
             if cpu:
@@ -105,6 +120,8 @@ def frame_callback(frame):
             if travel:
                 tick=max(0,min(int(f32(clock+20)),u32(path+32)-1))
                 expected=f32(travel+tick*16)
+                facing=u32(fp+0x44);facing=facing if facing<0x80000000 else facing-0x100000000
+                if facing*f32(top+layout[13]+4)<0:expected=-expected
                 actual=f32(fp+special[2])
                 if abs(expected-actual)>.004:travel_errors.append((u32(fp+0x28),tick,expected,actual))
                 if abs(expected)>1:travel_samples+=1
@@ -192,6 +209,8 @@ try:
     # Retain source recipe defaults except the two selected special donors.
     table=u32(labels['CharCreator.slot_tables'])
     for i in range(21):w32(u32(table+i*4),0)
+    if args.normal_animations is not None:
+        for i in range(2,15):w32(u32(table+i*4),args.normal_animations)
     w32(u32(table),1);w32(u32(table+4),args.body)
     w32(u32(table+16*4),args.donor if args.donor is not None else 9)
     w32(u32(table+17*4),args.donor if args.donor is not None else 7)
@@ -208,6 +227,24 @@ try:
     collision_fixture=C.string_at(ram+((fighter()+collision_off)&0x7fffff),collision_size)
     initial_kinetics=u32(fighter()+layout[2])
     print('PASS: Remix Training loads body',args.body,'with donor',args.donor if args.donor is not None else 'Kick/Quick Attack','; no CPU fault.',flush=True)
+    if args.normal_animations is not None:
+        # Real A input: jab, up tilt/smash, then jump + forward/down aerials.
+        # Native inputs select states; fixtures supply only the saved recipe.
+        starting_loads=u32(labels['CharLabRuntime.gCCAnimationLoads'])
+        for name,button in (('jab',0x80),('up attack',0x80|(80<<24)),('forward aerial',0x80|(80<<16)),('down aerial',0x80|(176<<24))):
+            wait(lambda:u32(fighter()+0x24)==10,'Normal idle',seconds=30)
+            if 'aerial' in name:pulse(0x800);frames(15)
+            trace.clear();tracking=True;pulse(button);frames(80);tracking=False
+            assert trace and not u32(native['__osFaultedThread']),('Normal fault',name,diagnostic())
+            wait(lambda:u32(fighter()+0x24)==10,'Normal recovery',seconds=30)
+        assert u32(labels['CharLabRuntime.gCCAnimationLoads'])>starting_loads and len(animation_records)>=3,('Missing normal clips',animation_samples,animation_records)
+        assert not animation_errors,animation_errors[:8]
+        print('PASS: real A-input normals stream distinct donor clips; finite native joints and recovery on body',args.body,flush=True)
+        report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'normal_animation_donor':args.normal_animations,
+                'checks':['Training load','real jab/up attack/forward aerial/down aerial input','normal clip DMA','finite native joints','normal recovery'],
+                'animation_samples':animation_samples,'animation_clips':len(animation_records),'rendering':'null'}
+        (build/f'cpu-scenes-normals-{args.body}-{args.normal_animations}.json').write_text(json.dumps(report,indent=2)+'\n')
+        raise SystemExit(0)
     moves=(('Falcon Kick',0x40|(176<<24)),('Quick Attack',0x40|(80<<24)))
     if args.donor is not None:
         moves=tuple((name,button) for name,button,side in (('Donor Up B',0x40|(80<<24),'up'),('Donor Down B',0x40|(176<<24),'down')) if args.special_side in ('both',side))
@@ -272,9 +309,13 @@ try:
         print('PASS:',name,'real B input, native callbacks, stable body scale, movement and recovery; travel',round(distance,2),'statuses',sorted(set(row[0] for row in trace)),flush=True)
     print('PASS: live Remix CPU special checks (null rendering).',flush=True)
     report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'donor':args.donor,'checks':['Training load',*[name+' input/recovery' for name,_ in moves],'body scale/identity'],'rendering':'null','kick_source_samples':travel_samples}
+    assert not animation_errors,animation_errors[:8]
+    report['animation_samples']=animation_samples;report['animation_clips']=len(animation_records)
+    if args.normal_animations is not None:report['normal_animation_donor']=args.normal_animations
     if args.falcon_contact:report['controlled_dive_contact']='native capture, release and throw damage passed'
     report_name='cpu-scenes.json' if args.donor is None else f'cpu-scenes-{args.body}-{args.donor}-{args.special_side}.json'
     if args.falcon_contact:report_name=report_name.replace('.json','-contact.json')
+    if args.normal_animations is not None:report_name=report_name.replace('.json','-normals-'+str(args.normal_animations)+'.json')
     (build/report_name).write_text(json.dumps(report,indent=2)+'\n')
 finally:
     keys(0);core.CoreDoCommand(6,0,None);thread.join(timeout=3)
