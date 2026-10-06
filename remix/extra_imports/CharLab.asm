@@ -117,6 +117,78 @@ scope CharLab {
         ctc1 t0, 31
         addiu sp, sp, 0x0080
     }
+    // Return the common held-bomb exception without changing live registers.
+    // The caller additionally preserves v0 when it consumes this result.
+    scope keep_bomb_context_: {
+        OS.save_registers()
+        save_fpu()
+        lw a0, 0x0090(sp)
+        lw a1, 0x0094(sp)
+        jal CharLabRuntime.ccKeepSpecialContext
+        nop
+        sw v0, 0x0088(sp)
+        restore_fpu()
+        OS.restore_registers()
+        jr ra
+        nop
+    }
+    // Missing donor joints may alias TopN only while callbacks run. Body
+    // part/animation initialization must see its original null slots, or a
+    // reset of a missing part overwrites the fighter's world-root transform.
+    scope suspend_joints_: {
+        lbu t0, 0x000D(a0)
+        sltiu t1, t0, 4
+        beqz t1, _end
+        sll t0, t0, 2
+        li t1, CharCreator.body_character_data
+        addu t1, t1, t0
+        lw t1, 0x0000(t1)
+        beqz t1, _end
+        nop
+        j CharCreator.restore_joint_fallbacks_
+        nop
+        _end:
+        jr ra
+        nop
+    }
+    scope resume_joints_: {
+        lbu t0, 0x000D(a0)
+        sltiu t1, t0, 4
+        beqz t1, _end
+        sll t0, t0, 2
+        li t1, CharCreator.body_character_data
+        addu t1, t1, t0
+        lw t1, 0x0000(t1)
+        beqz t1, _end
+        nop
+        j CharCreator.install_joint_fallbacks_
+        nop
+        _end:
+        jr ra
+        nop
+    }
+    // Observe transitions before the shared status union/context is reused.
+    scope status_changing_: {
+        OS.patch_start(0x62724, 0x800E6F24)
+        j status_changing_
+        nop
+        OS.patch_end()
+        OS.save_registers()
+        save_fpu()
+        lw a0, 0x0090(sp)
+        lw a1, 0x0094(sp)
+        jal CharLabRuntime.ccStatusChanging
+        nop
+        lw a0, 0x0090(sp)
+        lw a0, 0x0084(a0)
+        jal suspend_joints_
+        nop
+        restore_fpu()
+        OS.restore_registers()
+        OS.copy_segment(0x62724, 8)
+        j 0x800E6F2C
+        nop
+    }
     scope reset_: {
         OS.save_registers()
         save_fpu()
@@ -142,6 +214,10 @@ scope CharLab {
         lw a0, 0x0180(sp)
         lw a1, 0x0188(sp)
         jal CharLabRuntime.ccPrepare
+        nop
+        lw a0, 0x0180(sp)
+        lw a0, 0x0084(a0)
+        jal resume_joints_
         nop
         restore_fpu()
         OS.restore_registers()
@@ -373,4 +449,5 @@ scope CharLab {
 }
 OS.align(16)
 include "../build/char_creator/runtime/runtime.asm"
+include "../build/char_creator/runtime/special-hooks.asm"
 }

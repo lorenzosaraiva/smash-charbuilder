@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 UPDATED = '2026-10-05'
 
 
@@ -61,11 +61,13 @@ def package(desktop=None):
         'scope': 'Character Lab features for original twelve bodies/donors on Smash Remix +EXTRA',
         'in_game_acceptance': 'pending',
     }
-    scene_report=ROOT/'build/char_creator/emulator/cpu-scenes.json'
-    if scene_report.exists():
+    scene_reports=[]
+    for scene_report in sorted((ROOT/'build/char_creator/emulator').glob('cpu-scenes*.json')):
         report=json.loads(scene_report.read_text())
         if report.get('rom_sha256')==info['rom_sha256']:
-            info['optional_cpu_scene_checks']=report
+            scene_reports.append(report)
+    if scene_reports:
+        info['optional_cpu_scene_checks']=scene_reports
     DIST.mkdir(exist_ok=True)
     play = (ROOT/'character_creator_guide.md').read_bytes()
     notes = f'''# Character Lab on Remix {VERSION} - original-roster preview
@@ -78,8 +80,13 @@ Original donor collision paths/timing, normal values, grab/throw choices,
 Body Move/Fox Laser, Mario animation pilots and return from Training to the
 tested editor. Borrowed Up/Down B now connects original donor collision paths,
 phase clocks, TransN travel and donor physics attributes while showing safe
-body idle/falling poses. Fixes include retaining recipes during donor identity,
-Fox dash/Kirby forward-smash momentum and Falcon Kick source travel.
+body idle/falling poses. Donor helpless/landing recovery, Mario/Luigi steering,
+Fire Fox directional geometry, Reflector/Magnet volumes and source projectile
+sockets are connected. Tornado, egg, Spin Attack, Thunder and PK Thunder own
+state outside the body's unions; Final Cutter and Stone gameplay callbacks
+retain source timing ahead of visual retargeting. Link held-bomb common throws
+retain donor timing, values and release sockets; Falcon Dive uses the source
+attacker socket and frame-16 release with native Remix victim offsets.
 Pikachu/Fox/Ness recovery transform guards remain active.
 Use Settings -> CHARACTER LAB; keep Original 12 Only enabled.
 Assign Custom Build in the VS/Training CSS Player Settings for human/CPU slots.
@@ -87,8 +94,8 @@ Remix's existing HITBOX/HITBOX+ display and improved combo meter remain availabl
 
 The ROM is checked with shared host tests, linked-byte/CRC verification and
 production MIPS execution tests. Rendered gameplay acceptance is still pending.
-Full decomp parity is pending: neutral adapters beyond Laser, special sockets/
-independent weapons/passives, directional collision transforms/recovery,
+Full decomp parity is pending: neutral adapters beyond Laser, rendered
+special acceptance,
 normal jab/bounce/reflection mechanics, taunts, retargeted animations and paired
 grabs/throws. Expanded-roster fidelity and Kirby copy are outside this milestone.
 The changed SRAM layout resets older Remix settings/recipes once.

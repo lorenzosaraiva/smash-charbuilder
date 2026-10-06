@@ -69,11 +69,16 @@ The [Remix guide](../remix/character_creator_guide.md) and
 ## Character Lab on Remix
 
 - [x] Original-roster donor normal timing, collision paths and numeric values.
+- [x] Donor helpless/landing recovery, independent Mario/Luigi/Falcon steering and Fire Fox directional hitboxes.
+- [x] Source Reflector/Magnet volumes, special projectile positions and independent Tornado/egg/Spin Attack/Thunder/PK Thunder state.
+- [x] Final Cutter gameplay callbacks and Stone armor/hold/timeout.
+- [x] Link held-bomb common throws and Falcon Dive source attacker positioning/frame-16 release; rendered contacts remain pending.
 - [x] Grab/throw selectors, donor throw values and DK foreign forward release.
 - [x] Body Move/Fox Laser and the three Mario animation pilots.
 - [x] Borrowed-special idle/falling poses, original-roster phase clocks and recovery transform guards.
 - [x] Retained actual-body recipes, donor normal TransN momentum and 96 shared special source paths/travel phases.
 - [x] Special donor attributes around native phase physics, source gameplay clocks and generation cleanup.
+- [x] Preserve body world-root position during native status setup by suspending missing-joint fallbacks.
 - [ ] Full special hitbox/projectile/capture fidelity and rendered two-dash acceptance.
 - [x] Existing SRAM recipes and human/CPU assignments integrated with the port.
 - [x] Training exit/CSS Back return to the tested editor.
@@ -81,7 +86,7 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Compiled MIPS execution, linked-data/CRC checks and separate ROM/ZIP packaging.
 - [ ] Rendered emulator acceptance and contact/interrupt comparison.
 - [ ] Full animation retargeting, broader neutral specials and tether choreography.
-- [ ] Donor jab/bounce/bat mechanics, special sockets/ownership/recovery, custom taunts and decomp starter defaults.
+- [ ] Donor jab/bounce/bat mechanics, custom taunts and decomp starter defaults.
 - [ ] Shared donor fidelity for Remix-exclusive fighters.
 
 The port uses the same generated vanilla US donor data as Character Lab and

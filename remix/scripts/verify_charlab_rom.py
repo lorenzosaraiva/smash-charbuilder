@@ -772,6 +772,10 @@ def main():
              0x13D9CC: 'CharLab.training_css_back_'}
     hooks.update({0xCD4E0: 'CharLab.pikachu_pitch_scale_', 0xD6A94: 'CharLab.fox_pitch_',
                   0xCF198: 'CharLab.ness_pitch_'})
+    import json
+    hooks[0x62724]='CharLab.status_changing_'
+    for entry in json.loads((ROOT/'build/char_creator/runtime/special-hooks.json').read_text()):
+        hooks[entry['offset']]=entry['hook']
     for offset, label in hooks.items():
         word = struct.unpack_from('>I', rom, offset)[0]
         assert word >> 26 in (2, 3) and word & 0x3FFFFFF == (labels[label] >> 2) & 0x3FFFFFF, label
@@ -783,6 +787,8 @@ def main():
     test_specials_and_return(runtime)
     test_borrowed_specials(runtime)
     test_movement_and_special_paths(runtime)
+    from test_charlab_special_adapters import test_adapters
+    test_adapters(runtime)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')
 
 

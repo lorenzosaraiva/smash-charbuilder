@@ -1,6 +1,6 @@
 # Decomp to Remix port
 
-Updated **2026-10-05**. Remix preview **0.1.2**, project **0.1.19**.
+Updated **2026-10-05**. Remix preview **0.1.3**, project **0.1.20**.
 
 The decomp ROM remains the most complete edition. The Remix preview is a
 partial port for the **original twelve** bodies and donors; exposing Remix's
@@ -15,9 +15,9 @@ contact and stage interactions still require rendered playtesting.
 | Normal attack damage, knockback, sizes and source hitbox paths | Shared donor data and independent clocks implemented | Rendered contact, slopes and interruption acceptance |
 | Normal root movement | Donor TransN travel and flag selection ported, including Fox dash and Kirby forward smash | Donor traction/air attributes and movement callbacks |
 | Jab chains, Link down-air bounce, Ness bat reflection | Body callbacks remain | Port donor availability, chain states, contact bounce and reflector geometry |
-| Up/Down B timing | Donor phase clocks, frozen phases and gameplay duration overrides implemented | Donor helpless/landing recovery across body transitions |
-| Up/Down B collision paths | All 96 shared source phases compiled; source events and body-size-compensated root placement connected | Directional collision transforms, weapons and special volumes |
-| Up/Down B movement | Source TransN travel and donor attributes around native phase physics connected | Separate steering angles, recovery attributes and move-specific callbacks |
+| Up/Down B timing | Donor phase clocks, frozen phases, gameplay duration overrides and eight donor helpless/landing clocks implemented | Rendered landing/interrupt and held-bomb contact acceptance |
+| Up/Down B collision paths | All 96 shared phases connected; directional Fire Fox placement and donor Reflector/Magnet volumes added | Rendered contacts and paired Dive acceptance |
+| Up/Down B movement | Source TransN travel, separate Mario/Luigi/Falcon angles, imported callbacks and donor recovery attributes | Rendered steering, slopes, wall/ledge and interruption acceptance |
 | Mario + Falcon Kick / Pikachu Up B | Regression targets: original travel, retained recipe and body scale | Two-dash steering, aerial starts, walls/ledges and interruptions in rendered play |
 | Neutral B | Body Move and finite Fox Laser adapter | Fireballs, Jolt, PK Fire, Punch/Pound, charge/store, Boomerang and Egg Lay |
 | Animations | Three Mario normal pilots; borrowed Up/Down B uses safe body idle/fall poses | Stream shared donor animation curves from ROM, then retarget normals/specials |
@@ -36,29 +36,33 @@ through Remix's compatibility context.
 
 | Donor | Up B still needing acceptance or additional adapters | Down B still needing acceptance or additional adapters |
 | --- | --- | --- |
-| Mario / Luigi | Steering-relative path rotation, sweetspots, helpless/landing recovery | Tornado independent state, B-tap rise and transitions |
-| Fox | Fire Fox direction, map collisions and directional hitboxes | Reflector source volume, turning and reflection |
+| Mario / Luigi | Steering travel and donor helpless/landing ported; sweetspot/contact/map acceptance remains | Independent Tornado expenditure and source rise/transition callbacks ported; real-input acceptance remains |
+| Fox | Fire Fox directional hitboxes and donor recovery ported; map/steering contact acceptance remains | Donor source volume connected; rendered turning/reflection acceptance remains |
 | Donkey Kong | Spin ground/air limits, recovery and contact | Slap repeats, ground transitions and contact |
-| Samus | Screw Attack recovery/landing, intangibility and contact | Bomb spawn socket and ownership |
-| Link | Ground Spin Attack weapon and source socket; aerial recovery | Bomb creation/held-bomb toss and source release socket |
-| Yoshi | Egg launch/release socket and ownership | Bomb drop/landing and interruption |
-| Kirby | Final Cutter sword/projectile socket, movement and transitions | Stone model/armor, hold/timeout, landing and interrupts |
-| Pikachu | Second-dash direction gate, wall/floor/ledge transitions and landing | Thunder socket, independent weapon/passive ownership and self-contact |
+| Samus | Donor landing clock ported; Screw Attack intangibility/contact acceptance remains | Donor-relative bomb position and callbacks ported; rendered bomb contact acceptance remains |
+| Link | Independent Spin Attack weapon, interruption cleanup and aerial recovery ported; rendered contacts remain | Held-bomb common ground/air throw clock, events, donor values and release socket ported; rendered contact/interrupt acceptance remains |
+| Yoshi | Source held/release socket and independent egg ownership ported; rendered trajectory/contact acceptance remains | Bomb drop/landing and interruption acceptance |
+| Kirby | Final Cutter movement/projectile placement/transitions ported; sword/effect attachments and rendered contacts remain | Armor, hold/timeout and body-safe callbacks ported; Stone prop and landing/interruption acceptance remain |
+| Pikachu | Donor recovery ported; second-dash direction gate and wall/floor/ledge acceptance remain | Thunder source socket and independent weapon/passive ownership ported; rendered self-contact/interrupt acceptance remains |
 | Jigglypuff | Sing source sleep volume and transitions | Rest invulnerability, one-frame contact and sleep recovery |
-| Captain Falcon | Dive catch volume, paired capture/release and recovery | Kick slopes, aerial branches, hit/contact and interruption |
-| Ness | PK Thunder independent ownership/socket, steering and self-launch | PSI Magnet source volume, absorption/healing and ownership |
+| Captain Falcon | Source Dive socket, frame-16 release and donor recovery ported; rendered paired contact/positioning acceptance remains | Kick slopes, aerial branches, hit/contact and interruption |
+| Ness | Independent PK Thunder pointer/passives/trails, source socket and recovery ported; steering/self-launch/contact acceptance remains | Donor source volume connected; rendered absorption/healing and contact acceptance remain |
 
-The shared 96-phase dataset includes Link's held-bomb common throw actions;
-those still need a dedicated adapter. Compilation of their source data does
-not connect those common item states to borrowed-special ownership.
+Link's held-bomb common throw actions retain borrowed ownership through all
+parameter/command hooks and use source clocks/events, throw values and release
+sockets. Falcon Dive adjusts the attacker socket while retaining Remix's
+native victim-offset lookup. Their rendered contacts and interruptions remain
+acceptance work.
 
 Kirby copy and Remix-exclusive donor fidelity remain outside the original-roster
 milestone. Use body-native specials when testing a mechanic not yet verified.
 
 ## Port order
 
-1. Finish the reported Kick/Quick Attack regressions, then directional geometry,
-   special sockets, independent passives and donor recovery.
+1. Check rendered special contacts, steering, recovery and interruptions,
+   including Link's held-bomb throws and Falcon Dive paired captures. The
+   shared angles, sockets, volumes, independent passives and recovery layer is
+   implemented; it does not establish acceptance for every body/stage.
 2. Complete normal-specific callbacks and the ten remaining neutral adapters.
 3. Stream the donor animation bank and retarget the full catalog. Embedding the
    entire decomp catalog in Remix's already occupied Expansion Pak RAM is too
@@ -75,11 +79,23 @@ relocations, source geometry bytes, ROM CRC and Expansion RAM headroom.
 Optional `scripts/test_charlab_scenes.py` boots Remix in a compatible
 Mupen64Plus core with isolated saves and null rendering, reaches the main menu
 with real Start input, loads a Training fixture and enters Kick/Quick Attack
-through real B input. It records native status/position/velocity/scale traces.
+through real B input. Optional donor selections exercise other Up/Down B
+callbacks; Link includes a second Down B to throw its held bomb. It records
+native status/position/velocity/scale traces and checks entry-position continuity,
+return to Idle without KO, and body identity. `--falcon-contact` places the CPU
+in the live Dive hitbox to exercise native capture/release and throw damage.
 This checks CPU gameplay, not visible animations or contact fidelity. An old
 core that cannot boot the unchanged preview cannot serve as a port regression.
 Use matching API headers with `--core` / `--headers` for a locally built core.
-Preview 0.1.2 passes the Mario CPU fixture: 72 live Kick source-velocity samples,
-two Quick Attack dashes entered by real directional input, native landing/
-recovery, stable scale and restored Mario identity. Its rendering is null;
-visible animation/contact and broader body/stage acceptance remain pending.
+Preview 0.1.3 passes 24 primary Up/Down B casts across all twelve donors: ten
+donors on Mario, and Mario/Luigi on Kirby. Link also passes a second Down B
+through the common held-bomb throw. These are controlled CPU fixtures with
+null rendering; visible animation/contact and broader body/stage acceptance
+remain pending.
+
+The Mario Kick/Quick Attack CPU regression also passes on this ROM: 72
+source-velocity samples and two real-input zips, with the second aimed back
+toward the platform, followed by native recovery without KO or scale leaks.
+Controlled live Dive hitbox contact also passes native capture, paired release
+and throw damage. CPU fixtures use null rendering and do not establish visible
+pose or full contact fidelity.

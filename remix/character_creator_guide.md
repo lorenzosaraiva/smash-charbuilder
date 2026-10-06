@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.2 (2026-10-05)**.
+Character Lab has an original-roster Remix preview, **0.1.3 (2026-10-05)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for the shared donor timing and collision system. Most visible poses still
 belong to the body; the [checklist](docs/character-lab-status.md) tracks what remains.
@@ -91,16 +91,22 @@ bodies while their movement callbacks remain active.
 Source special collision events/paths and TransN travel are now connected.
 Collision placement compensates for body size, and native special physics uses
 donor attributes during its callback. The actual body keeps recipe ownership
-through the donor compatibility context. These foundations are shared;
-directional hitbox rotation, projectile sockets, independent passives and
-helpless/landing recovery are not yet a complete port.
+through the donor compatibility context. Fire Fox directional hitboxes, donor
+Reflector/Magnet volumes, source projectile sockets, independent passives and
+donor helpless/landing clocks are connected. Link held-bomb throws retain donor
+timing, values and release sockets. Falcon Dive uses the donor attacker socket
+and frame-16 release while keeping native Remix victim offsets. Their rendered
+contacts, interruptions and visual attachments still need playtesting.
+Missing-joint fallbacks are suspended during native status setup so animation
+initialization preserves the body's world-root position. Donor mesh/part effects
+are suppressed until compatible visual attachments are implemented.
 
 Expanded Remix donors retain the earlier finite taunt fallback because their
 phase clocks are not yet compiled.
 
 Full special retargeting remains pending. Projectile placement, directional
-paths, model changes and capture mechanics still need
-work and per-pair playtesting. In particular, check Mario with Pikachu Up B:
+paths, model changes and capture mechanics still need rendered acceptance.
+In particular, check Mario with Pikachu Up B:
 first dash, direction change for a second dash, recovery, interruption and
 landing. The body should keep its size and finish at the position it moved to. Original-roster
 normals use compiled data without consuming donor-file cache slots; legacy
@@ -131,8 +137,11 @@ Report body, donor, move, emulator, enabled Remix settings and source commit.
 - `extra_imports/CharLab.asm`: native engine, parser, clock, collision and Training hooks.
 - `extra_imports/CharLabRuntime.c`: shared donor runtime with the native Remix ABI.
 - `extra_imports/CharLabMovement.c.inc`: donor normal/special travel, attributes and source collision placement.
+- `extra_imports/CharLabSpecials.c.inc`: independent state, source sockets/volumes and donor recovery.
+- `scripts/generate_charlab_specials.py`: reviewed callback imports and borrowed-only native bridges.
 - `scripts/build_charlab_runtime.py`: freestanding MIPS compilation and ELF relocation import.
 - `scripts/verify_charlab_rom.py`: ROM/data checks and production MIPS execution tests.
+- `scripts/test_charlab_special_adapters.py`: steering, recovery, ownership, volume and native fallback regressions.
 - `scripts/test_charlab_scenes.py`: optional real-input CPU fixture, isolated saves and null rendering.
 - `scripts/build_charlab.py`: asset generation, build, verification and packaging.
 - `character_appender.py`: generated source/catalog, owned overrides and menu injection.

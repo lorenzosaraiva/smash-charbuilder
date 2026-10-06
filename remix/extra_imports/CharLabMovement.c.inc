@@ -15,6 +15,7 @@ extern FTData *dFTManagerDataFiles[];
 extern void ccOriginalGroundTravel(GObj*);
 extern void ccOriginalAirTravel(FTStruct*, f32*, f32*, f32*);
 extern void ccOriginalGroundPhysics(GObj*);
+f32 ftMainCharBuilderGetSpecialTravelAngle(FTStruct*);
 
 static const FTCharBuilderSpecialPath* ccFindSpecialPath(s32 donor,s32 motion)
 {
@@ -47,8 +48,10 @@ static sb32 ccSourceTravel(FTStruct *fp,Vec3f *out,sb32 ground)
         if(ground)return TRUE;
         x=out->x*fp->lr;y=out->y;angle=path->travel[frame].angle;
         /* Falcon's ground-to-air kick pitches TransN by the ground slope. */
-        if(path->donor==nFTKindCaptain && path->motion==nFTCaptainMotionSpecialLwAir)
-            angle+=fp->joints[nFTPartsJointTransN]->rotate.vec.f.z;
+        if((path->donor==nFTKindCaptain && path->motion==nFTCaptainMotionSpecialLwAir) ||
+           ((path->donor==nFTKindMario || path->donor==nFTKindLuigi) &&
+            (path->motion==nFTMarioMotionSpecialHi || path->motion==nFTMarioMotionSpecialAirHi)))
+            angle+=ftMainCharBuilderGetSpecialTravelAngle(fp);
         out->x=x*__cosf(angle)-y*__sinf(angle);
         out->y=x*__sinf(angle)+y*__cosf(angle);out->z*=fp->lr;
         return TRUE;
@@ -115,6 +118,15 @@ static void ccSpecialCollision(FTStruct *fp)
         FTAttackColl *hit=&fp->attack_colls[i];Vec3f center;
         if(hit->attack_state==nGMAttackStateOff || !(frame->active_mask&(1<<i)))continue;
         center=frame->centers[i];hit->joint_id=0;hit->joint=fp->joints[0];
+        if(special->donor==nFTKindFox && special->path->spawn &&
+           (fp->status_id==nFTFoxStatusSpecialHi || fp->status_id==nFTFoxStatusSpecialAirHi))
+        {
+            s32 tick=(s32)special->frame;f32 x,y,angle=fp->status_vars.fox.specialhi.angle;
+            if(tick<0)tick=0;if(tick>=special->path->trajectory.count)tick=special->path->trajectory.count-1;
+            x=center.z-special->path->spawn[tick].x;y=center.y-special->path->spawn[tick].y;
+            center.z=special->path->spawn[tick].x+x*__cosf(angle)-y*__sinf(angle);
+            center.y=special->path->spawn[tick].y+x*__sinf(angle)+y*__cosf(angle);
+        }
         hit->offset.x=center.x/fp->attr->size;hit->offset.y=center.y/fp->attr->size;hit->offset.z=center.z/fp->attr->size;
         hit->is_scale_pos=FALSE;
     }

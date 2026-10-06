@@ -80,6 +80,7 @@ static CCSpecialClock* ccSpecialClock(FTStruct *fp)
     return clock;
 }
 #include "CharLabMovement.c.inc"
+#include "CharLabSpecials.c.inc"
 extern s32 **ccGetEntries(s32 player);
 extern void ccOriginalParse(GObj*, FTStruct*, FTMotionScript*, u32);
 extern void ccRestoreBody(FTStruct*);
@@ -94,6 +95,8 @@ void ccReset(void)
         gSCManagerCharBuilderSlots[i].is_enabled = FALSE;
         sCCMotionScripts[i].p_script = NULL;
         sCCSpecialClocks[i].owner = NULL;
+        sCCSpecialStates[i].owner = NULL;
+        sCCRecovery[i].owner = NULL;
     }
 }
 
@@ -146,6 +149,23 @@ void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
 {
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
     f32 frame = gobj->anim_frame;
+    if ((u32)ccSpecialDonor(fp) < 12)
+    {
+        /* Donor mesh/hurtbox IDs and attached effects cannot address a
+         * foreign body's parts. Preserve body hurtboxes and whole-fighter
+         * invulnerability while leaving source flags/weapon timing intact. */
+        switch (opcode)
+        {
+        case nFTMotionEventSetModelPartID: case nFTMotionEventResetModelPartAll:
+        case nFTMotionEventHideModelPartAll: case nFTMotionEventSetTexturePartID:
+        case nFTMotionEventSetHitStatusPartID: case nFTMotionEventResetDamageCollPartAll:
+            ftMotionEventAdvance(script, FTMotionEventDefault); return;
+        case nFTMotionEventSetDamageCollPartID:
+            ftMotionEventAdvance(script, FTMotionEventSetDamageCollPartID); return;
+        case nFTMotionEventEffect: case nFTMotionEventEffectItemHold:
+            ftMotionEventAdvance(script, FTMotionEventMakeEffect); return;
+        }
+    }
     if (script != &sCCMotionScripts[fp->player] && ccSpecialClock(fp) != NULL && ccSpecialClock(fp)->path != NULL)
     {
         /* The phase is outside the normal definition table, so skip native
@@ -204,12 +224,15 @@ void ccPrepare(GObj *gobj, f32 frame_begin)
     CCSpecialClock *clock;
     ccSyncCurrent(fp);
     ccStart(fp, frame_begin);
+    ccStartRecovery(fp, frame_begin);
     if (fp->player >= 4) return;
     clock = &sCCSpecialClocks[fp->player];
+    if (clock->owner != fp || clock->player_num != fp->player_num || clock->donor != ccSpecialDonor(fp) || fp->status_id < 0xDC)
+        ccSpecialState(fp)->angle = 0.0F;
     clock->owner = NULL;
     donor = ccSpecialDonor(fp);
     if ((u32)donor >= 12 || (u32)fp->motion_id >= 276 ||
-        fp->status_id < 0xDC || !sCCSpecialTimings[donor][fp->motion_id]) return;
+        (fp->status_id < 0xDC && !ccKeepSpecialContext(fp, fp->status_id)) || !sCCSpecialTimings[donor][fp->motion_id]) return;
     clock->owner = fp;
     clock->status = fp->status_id;
     clock->motion = fp->motion_id;
@@ -288,4 +311,39 @@ const u32 ccMovementLayout[] = {
     OFF(FTCharBuilderSpecialPath, trajectory), OFF(FTCharBuilderSpecialPath, travel),
     sizeof(FTCustomNormalMechanics), OFF(FTCustomNormalMechanics, count),
     OFF(FTStruct, coll_data.floor_angle), OFF(FTAttributes, traction)
+};
+const u32 ccAdapterLayout[] = {
+    sizeof(CCSpecialState), OFF(CCSpecialState, angle), OFF(CCSpecialState, tornado),
+    OFF(CCSpecialState, ness), OFF(CCSpecialState, weapons), OFF(FTStruct, fighter_gobj),
+    OFF(FTStruct, motion_attack_id), OFF(FTStruct, special_coll),
+    OFF(FTStruct, passive_vars), sizeof(((FTStruct*)0)->passive_vars),
+    OFF(FTStruct, status_vars.common.fallspecial.is_fall_accelerate),
+    OFF(FTStruct, status_vars.fox.specialhi.angle), OFF(FTStruct, damage_resist),
+    OFF(FTAttributes, gravity), OFF(FTAttributes, tvel_base),
+    OFF(FTAttributes, air_speed_max_x), OFF(FTAttributes, air_accel),
+    nFTCommonStatusFallSpecial, nFTCommonStatusLandingFallSpecial,
+    nFTMotionAttackIDSpecialHi, nFTMotionAttackIDSpecialLw,
+    nFTMarioMotionSpecialHi, nFTMarioMotionSpecialAirHi, nFTMarioStatusSpecialHi,
+    nFTMarioStatusSpecialAirHi, nFTFoxStatusSpecialHi, nFTFoxStatusSpecialAirHi,
+    nFTFoxMotionSpecialHi, nFTFoxMotionSpecialAirHi,
+    nFTYoshiMotionSpecialHi, nFTPikachuMotionSpecialLwStart,
+    nFTNessMotionSpecialHiHold, nFTFoxMotionSpecialLwLoop, nFTNessMotionSpecialLwHold,
+    OFF(FTStruct, status_vars.ness.specialhi.pkjibaku_delay),
+    OFF(FTStruct, status_vars.kirby.speciallw.duration),
+    nFTKirbyMotionSpecialLwHold, nFTYoshiStatusSpecialHi,
+    OFF(WPStruct, weapon_vars), OFF(WPStruct, player_num), OFF(WPStruct, weapon_gobj)
+};
+const u32 ccPairedSpecialLayout[] = {
+    OFF(FTStruct, item_gobj), OFF(ITStruct, kind), OFF(ITStruct, owner_gobj), nITKindLinkBomb,
+    nFTCommonStatusLightThrowF4, nFTCommonStatusLightThrowAirF4,
+    nFTCommonMotionLightThrowF4, nFTCommonMotionLightThrowAirF4,
+    nFTCaptainMotionSpecialHiCatch, nFTCaptainStatusSpecialHiCatch,
+    OFF(ITStruct, physics.vel_air), OFF(ITStruct, vel_scale),
+    OFF(FTStruct, status_vars.common.capturecaptain.capture_flag)
+};
+const u32 ccVisualCommandLayout[] = {
+    nFTMotionEventSetModelPartID, nFTMotionEventResetModelPartAll,
+    nFTMotionEventHideModelPartAll, nFTMotionEventSetTexturePartID,
+    nFTMotionEventSetHitStatusPartID, nFTMotionEventResetDamageCollPartAll,
+    nFTMotionEventSetDamageCollPartID, nFTMotionEventEffect, nFTMotionEventEffectItemHold
 };

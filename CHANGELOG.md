@@ -1,5 +1,23 @@
 # Changes
 
+## 0.1.20 - 2026-10-05: Remix special gameplay and recovery adapters
+
+- Release Remix preview 0.1.3; preserve the decomp 0.1.18 ROM and downloads.
+- Import reviewed decomp callbacks through borrowed-only hooks; native and expanded Remix fighters retain their own entry routines.
+- Keep Mario/Luigi steering and Falcon Kick slope angles outside body joints. Rotate Fire Fox hitboxes around the source launch pivot.
+- Carry donor air attributes through helpless fall and use independent source landing clocks for Mario/Luigi, Link, Samus, Fox, Pikachu, Falcon and Ness.
+- Connect donor-sized Reflector/PSI Magnet weapon/item collision volumes and source projectile sockets.
+- Isolate Tornado expenditure, held eggs, Spin Attack weapons, Thunder and PK Thunder pointers/passives/trails from the body's unions; clean owned weapons on interruption and reject stale generations.
+- Port Final Cutter movement/projectile placement and Stone armor/hold/timeout without installing donor-only model overlays.
+- Preserve native PC-relative branches in callback trampolines and Dark Samus's initializer patch. Replace register-dependent borrowed PK Thunder wave/weapon creation paths.
+- Guard donor mesh/texture/hurtbox-part commands and attached effects on borrowed bodies, fixing Samus Bomb morph/reset crashes while keeping source gameplay flags and native body hurtboxes.
+- Add MIPS steering, recovery, volume, socket, interruption, armor, body-part command and native-fallback checks; extend the optional real-input CPU fixture with donor selections.
+- Connect Link held-bomb common throw ownership, timing/events, donor throw values and source release sockets; preserve body-safe animation records.
+- Connect Falcon Dive source attacker positioning and frame-16 release while retaining Remix native victim offsets.
+- Suspend missing-joint fallbacks during native status setup, preserving the body's world position when starting borrowed specials.
+- Check 24 real-input Up/Down B casts across all twelve donors, Link's second-input bomb throw, 72 Kick velocity samples, two Quick Attack zips and controlled Dive capture/release/damage with null rendering.
+- Remaining special work includes rendered contact/steering acceptance and visual attachments. Full neutral, normal-specific callbacks, animations, paired grabs/throws and taunts remain later milestones.
+
 ## 0.1.19 - 2026-10-05: Remix port audit and donor movement foundation
 
 - Release Remix preview 0.1.2; keep the decomp ROM at 0.1.18.

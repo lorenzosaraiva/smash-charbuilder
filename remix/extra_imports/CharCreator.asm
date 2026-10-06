@@ -1611,6 +1611,18 @@ scope CharCreator {
         sltiu   t9, t9, 0x00DC
         beqz    t9, _load_current           // unique donor follow-up
         nop
+        OS.save_registers()
+        or      a0, s1, r0
+        lw      a1, 0x0024(s1)
+        jal     CharLab.keep_bomb_context_
+        nop
+        beqz    v0, _restore_common
+        nop
+        OS.restore_registers()
+        b       _load_current
+        nop
+        _restore_common:
+        OS.restore_registers()
         addiu   sp, sp, -0x0020
         sw      ra, 0x0004(sp)
         sw      t6, 0x0008(sp)
@@ -1833,6 +1845,10 @@ scope CharCreator {
         lw      t6, 0x0000(t6)              // donor ID
         bltz    t6, _return
         nop
+        lw      t7, 0x0024(s1)
+        sltiu   t7, t7, 0x00DC
+        bnez    t7, _special_record         // retained Link bomb common throw
+        nop
         li      t7, Character.ACTION_ARRAY_TABLE
         sll     t8, t6, 0x0002
         addu    t7, t7, t8
@@ -1860,6 +1876,7 @@ scope CharCreator {
         lw      t3, 0x0064(t3)              // donor parameter array
         addu    t3, t3, t7
 
+        _special_record:
         // t4 = this port's 12-byte synthetic parameter record.
         sll     t4, t0, 0x0003              // port * 8
         addu    t4, t4, t1                  // port * 12
@@ -1960,8 +1977,15 @@ scope CharCreator {
         // parameter_base_hook_. Shared actions start a new ownership decision.
         lw      t5, 0x0024(s1)
         sltiu   t5, t5, 0x00DC
-        bnez    t5, _shared
+        beqz    t5, _select_unique
         nop
+        or      a0, s1, r0
+        lw      a1, 0x0024(s1)
+        jal     CharLab.keep_bomb_context_
+        nop
+        beqz    v0, _shared
+        nop
+        _select_unique:
         lbu     t0, 0x000D(s1)
         li      t1, active_special_donor
         sll     t0, t0, 0x0002
@@ -2283,6 +2307,16 @@ scope CharCreator {
         sltiu   t0, a1, 0x00DC             // first unique action ID
         beqz    t0, _end
         nop
+        OS.save_registers()
+        jal     CharLab.keep_bomb_context_
+        nop
+        beqz    v0, _restore_body
+        nop
+        OS.restore_registers()
+        jr      ra
+        nop
+        _restore_body:
+        OS.restore_registers()
         lbu     t0, 0x000D(a0)
         sll     t0, t0, 0x0002
         li      t1, active_special_donor

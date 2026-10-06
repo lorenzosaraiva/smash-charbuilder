@@ -8,10 +8,12 @@ pose pilots, human/CPU preset assignments and return from Training to the editor
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.2 (2026-10-05):** donor normal momentum and special source collision/
-travel are connected, with donor physics attributes and retained recipes during
-borrowed phases. Mario with Falcon Kick/Pikachu Up B is the first CPU regression
-target. Safe idle/fall visuals and recovery transform guards remain.
+**0.1.3 (2026-10-05):** donor helpless/landing recovery, Mario/Luigi steering,
+Fire Fox directional hitboxes, Reflector/Magnet source volumes, and independent
+Tornado/egg/Spin Attack/Thunder/PK Thunder state. Source projectile sockets,
+Final Cutter gameplay, Stone armor/timeout, Link held-bomb throws and Falcon
+Dive source positioning/release are connected. Safe idle/fall
+visuals remain; contact and animation acceptance is separate from CPU checks.
 See the [full decomp-port matrix](docs/decomp-port.md) and
 [checklist](docs/character-lab-status.md) for the still-missing mechanics,
 neutral adapters, animations, taunts and paired throws.

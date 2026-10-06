@@ -132,6 +132,7 @@ def object_to_bass(path):
         'ccOriginalGroundTravel': 'CharLab.original_ground_travel_',
         'ccOriginalAirTravel': 'CharLab.original_air_travel_',
         'ccOriginalGroundPhysics': 'CharLab.original_ground_physics_',
+        'ccOriginalDivePositions': 'CharLabSpecials.hook_ftCommonCaptureCaptainUpdatePositions._original',
         'wpFoxBlasterMakeWeapon': 'CharCreator.neutral_make_weapon_',
         'func_800269C0_275C0': '0x800269C0',
     }
@@ -223,6 +224,8 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     prepare_headers()
     special_timings()
+    from generate_charlab_specials import generate
+    generate()
     command = ['clang', '-target', 'mips-unknown-none', '-march=mips2', '-mabi=32',
                '-mno-abicalls', '-fno-pic', '-G0', '-O2', '-ffreestanding', '-fno-builtin',
                '-fno-stack-protector', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
