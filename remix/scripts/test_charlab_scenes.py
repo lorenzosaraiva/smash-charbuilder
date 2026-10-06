@@ -23,10 +23,15 @@ parser.add_argument('--editor-slot',type=int,choices=range(1,5),default=1)
 parser.add_argument('--editor-play',action='store_true',help='Continue editor Test through CSS Start and stage confirmation into Training')
 parser.add_argument('--normal-mechanics',action='store_true',help='Exercise donor jab3/rapid phases and controlled live Link down-air contact')
 parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borrow this donor for normals and check real A-input pose streaming')
+parser.add_argument('--neutral',type=int,choices=range(1,12),help='Exercise a Neutral B choice with real controller input')
+parser.add_argument('--egg-contact',action='store_true',help='Place the CPU in Egg Lay reach to test capture, egg handoff and damage')
+parser.add_argument('--projectile-contact',action='store_true',help='Place the CPU at a PK Fire spark to test native flame-pillar creation')
 args=parser.parse_args()
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
 if args.editor_play:assert args.editor_test
 if args.normal_mechanics:assert args.normal_animations is not None
+if args.egg_contact:assert args.neutral==11
+if args.projectile_contact:assert args.neutral==5
 
 def constant(name):
     address,length,index=syms[name];section=sections[index]
@@ -39,11 +44,13 @@ build=ROOT/'build/char_creator/emulator';build.mkdir(parents=True,exist_ok=True)
 source='''#include <sc/scene.h>
 #include <ft/fighter.h>
 const unsigned int layout[]={__builtin_offsetof(SCCommonData,training_man_fkind),__builtin_offsetof(SCCommonData,training_com_fkind),__builtin_offsetof(SCCommonData,maps_training_gkind),__builtin_offsetof(SCBattleState,players),sizeof(SCPlayerData),__builtin_offsetof(SCPlayerData,fighter_gobj),__builtin_offsetof(FTStruct,item_gobj),__builtin_offsetof(FTStruct,attack_colls),sizeof(FTAttackColl),__builtin_offsetof(FTAttackColl,pos_curr),__builtin_offsetof(FTStruct,percent_damage),__builtin_offsetof(FTStruct,coll_data),sizeof(MPCollData),__builtin_offsetof(SCCommonData,player),__builtin_offsetof(SCCommonData,training_man_costume),__builtin_offsetof(SCCommonData,training_com_costume)};
+const unsigned int egg_statuses[]={nFTCommonStatusCaptureYoshi,nFTCommonStatusYoshiEgg};
 '''
 (build/'layout.c').write_text(source)
 subprocess.run(['clang','--target=mips-unknown-none','-c','-EB','-mabi=32','-march=mips2','-ffreestanding','-I'+str(ROOT/'build/char_creator/runtime/include'),'-I'+str(LAB/'include'),'-I'+str(LAB/'src'),'-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US',str(build/'layout.c'),'-o',str(build/'layout.o')],check=True)
 d,s,y=read_elf(build/'layout.o','>');a,l,i=y['layout'];off=s[i][4]+a-s[i][3]
 man_off,cpu_off,stage_off,players_off,player_size,fighter_off,item_off,attack_off,attack_size,center_off,percent_off,collision_off,collision_size,port_off,man_costume_off,cpu_costume_off=struct.unpack_from('>16I',d,off)
+a,l,i=y['egg_statuses'];egg_statuses=struct.unpack_from('>2I',d,s[i][4]+a-s[i][3])
 unpacked=LAB/'build/emulator/root/usr';library=unpacked/'lib/x86_64-linux-gnu'
 headers=args.headers or unpacked/'include/mupen64plus'
 input_source=(LAB/'tools/emulator/input.c').read_text().replace('*a=0x20000','*a=0x20100')
@@ -89,15 +96,44 @@ def fighter(player=0):
 trace=[];tracking=False;travel_errors=[];travel_samples=0;falcon_contact_done=False
 animation_samples=0;animation_records=set();animation_errors=[]
 normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_samples=0
+egg_contact_done=False;egg_observed=set();neutral_samples=[]
+weapon_kinds=set();item_kinds=set();projectile_contact_done=False
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
-    global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples
+    global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples,egg_contact_done,projectile_contact_done
     if tracking and u8(scene)==54:
         fp=fighter()
         if not 0x80000000<=fp<0x80800000:return
         top=u32(fp+0x8E8);model=u32(fp+0x8E8+16)
         trace.append((u32(fp+0x24),u32(fp+0x28),tuple(f32(top+layout[12]+j) for j in (0,4,8)),
                       tuple(f32(model+layout[14]+j) for j in (0,4,8)),tuple(f32(fp+special[1]+j) for j in (0,4,8))))
+        if args.neutral is not None:
+            state=labels['CharLabRuntime.sFTCharBuilderNeutralStates']
+            if u32(state)==fp:neutral_samples.append(tuple(u32(state+j) for j in (12,16,20,24)))
+            # Native common links: weapon=5, item=4; these GObj/user_data ABI
+            # offsets are shared with the production loader and fighter ABI.
+            for link,kinds in ((5,weapon_kinds),(4,item_kinds)):
+                g=u32(native['gGCCommonLinks']+link*4)
+                for _ in range(64):
+                    if not 0x80000000<=g<0x80800000:break
+                    user=u32(g+0x84)
+                    if 0x80000000<=user<0x80800000:
+                        kind=u32(user+12);kinds.add(kind)
+                        if args.projectile_contact and link==5 and kind==13 and not projectile_contact_done:
+                            cpu=fighter(1);obj=u32(g+layout[10])
+                            if cpu and obj:
+                                target=u32(cpu+0x8E8)+layout[12]
+                                for j in (0,4,8):wf32(target+j,f32(obj+layout[12]+j)-(80 if j==4 else 0))
+                                w32(cpu+layout[2],layout[29]);projectile_contact_done=True
+                    g=u32(g+4)
+        if args.egg_contact:
+            cpu=fighter(1)
+            if cpu:
+                egg_observed.add(u32(cpu+0x24))
+                if not egg_contact_done and u32(fp+attack_off):
+                    target=u32(cpu+0x8E8)+layout[12];center=fp+attack_off+center_off
+                    for j in (0,4,8):wf32(target+j,f32(center+j)-(200 if j==4 else 0))
+                    w32(cpu+layout[2],layout[29]);egg_contact_done=True
         record=u32(labels['CharLabRuntime.sCCAnimationLoaded'])
         clock=labels['CharLabRuntime.sFTCustomMoveClocks']
         special_clock=labels['CharLabRuntime.sCCSpecialClocks']
@@ -231,6 +267,7 @@ try:
     w32(u32(table),1);w32(u32(table+4),args.body)
     w32(u32(table+16*4),args.donor if args.donor is not None else 9)
     w32(u32(table+17*4),args.donor if args.donor is not None else 7)
+    if args.neutral is not None:w32(u32(table+15*4),args.neutral)
     w32(labels['CharCreator.selected_builds'],1)
     w8(scene+man_off,args.body);w8(scene+cpu_off,8);w8(scene+stage_off,6)
     w8(scene+1,u8(scene));w8(scene,54);w32(native['sSYTaskmanStatus'],1)
@@ -244,6 +281,46 @@ try:
     collision_fixture=C.string_at(ram+((fighter()+collision_off)&0x7fffff),collision_size)
     initial_kinetics=u32(fighter()+layout[2])
     print('PASS: Remix Training loads body',args.body,'with donor',args.donor if args.donor is not None else 'Kick/Quick Attack','; no CPU fault.',flush=True)
+    if args.neutral is not None:
+        trace.clear();tracking=True;pulse(0x40)
+        if args.neutral in (8,9):
+            frames(100)
+            # Store with Z, start charging again, then release with B.
+            pulse(0x20);frames(35)
+            wait(lambda:u32(fighter()+0x24)==10,'Charge store recovery',seconds=30)
+            pulse(0x40);frames(30);pulse(0x40)
+        frames(150);tracking=False
+        assert trace and any(row[0]>=220 for row in trace),('Neutral was not entered',args.neutral,diagnostic())
+        assert not u32(native['__osFaultedThread']),('Neutral CPU fault',args.neutral,diagnostic())
+        wait(lambda:u32(fighter()+0x24)==10,'Neutral recovery',seconds=30)
+        assert u32(fighter()+8)==args.body
+        assert all(math.isfinite(v) and abs(v)<50000 for row in trace for v in row[2])
+        assert not animation_errors,animation_errors[:8]
+        expected_weapon={1:1,2:0,3:0,4:9,5:13,9:2,10:7}.get(args.neutral)
+        if expected_weapon is not None:assert expected_weapon in weapon_kinds,('Neutral weapon missing',args.neutral,weapon_kinds)
+        if args.neutral in (8,9):
+            index=1 if args.neutral==8 else 2
+            release_pairs=(8,10) if args.neutral==8 else (16,)
+            assert any(sample[index]>0 for sample in neutral_samples),('No stored charge',neutral_samples[-8:])
+            assert any((sample[0]&~1) in release_pairs and sample[3]>0 for sample in neutral_samples),('No charged release',neutral_samples[-8:])
+        if args.egg_contact:
+            assert egg_contact_done and set(egg_statuses)<=egg_observed,('Egg capture/handoff missing',egg_statuses,egg_observed,diagnostic())
+            assert u32(fighter(1)+percent_off)>=5,('Egg damage missing',diagnostic())
+        if args.projectile_contact:
+            pk_item=constant('ccPairedSpecialLayout')[3]-1
+            assert projectile_contact_done and pk_item in item_kinds,('PK Fire flame missing',pk_item,item_kinds,diagnostic())
+            assert u32(fighter(1)+percent_off)>0,('PK Fire contact damage missing',diagnostic())
+        report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'neutral':args.neutral,
+                'checks':['Training resource load','real Neutral B input','native projectile/callback execution','finite joints','neutral recovery']+
+                         (['charge Z store and B release'] if args.neutral in (8,9) else []),
+                'animation_samples':animation_samples,'animation_clips':len(animation_records),'rendering':'null'}
+        if args.egg_contact:report['checks'].append('controlled native Egg Lay capture, handoff and damage')
+        if args.projectile_contact:report['checks'].append('controlled PK Fire contact and native flame-pillar item/damage')
+        report['weapon_kinds']=sorted(weapon_kinds);report['item_kinds']=sorted(item_kinds)
+        suffix='-contact' if args.egg_contact or args.projectile_contact else ''
+        (build/f'cpu-scenes-neutral-{args.body}-{args.neutral}{suffix}.json').write_text(json.dumps(report,indent=2)+'\n')
+        print('PASS: Neutral B',args.neutral,'input/native callbacks/charge/recovery on body',args.body,'statuses',sorted({row[0] for row in trace}),flush=True)
+        raise SystemExit(0)
     if args.normal_animations is not None:
         # Real A input: jab, up tilt/smash, then jump + forward/down aerials.
         # Native inputs select states; fixtures supply only the saved recipe.

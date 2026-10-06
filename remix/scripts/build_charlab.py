@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.6'
+VERSION = '0.1.7'
 UPDATED = '2026-10-06'
 
 
@@ -77,7 +77,7 @@ Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 Source commit: `{info['commit']}`; uncommitted changes: {info['source_dirty']}.
 
 Original donor collision paths/timing, normal values, grab/throw choices,
-Body-name/Fox neutral choices, donor normal mechanics, shared pose retargeting and Training editor return.
+All eleven original neutral donors except Kirby copy, donor normal mechanics, shared pose retargeting and Training editor return.
 Normals and supported special/recovery poses retarget on twelve original bodies
 through independent 15 KB ROM caches; the three Mario pilots are preserved.
 Donor joint fallbacks are suspended during pose writes to preserve the world
@@ -96,11 +96,13 @@ Remix's existing HITBOX/HITBOX+ display and improved combo meter remain availabl
 
 The ROM is checked with shared host tests, linked-byte/CRC verification and
 production MIPS execution tests. Rendered gameplay acceptance is still pending.
-Full decomp parity is pending: neutral adapters beyond Laser, rendered
-special acceptance,
+Neutral source phases/poses, private projectile resources, charging/storage/release,
+Boomerang return/catch and Egg Lay capture are connected.
+Full decomp parity is pending: rendered neutral/special acceptance,
 rendered normal contacts/landing, taunts, special props/effects and paired
 grabs/throws. Expanded-roster fidelity and Kirby copy are outside this milestone.
-The changed SRAM layout resets older Remix settings/recipes once.
+This neutral expansion preserves existing Character Lab presets and recipe bits.
+Full choices use spare creator-options bytes. Charge orb/props/effects remain pending.
 
 SHA-256: `{info['rom_sha256']}`
 '''
@@ -110,6 +112,9 @@ SHA-256: `{info['rom_sha256']}`
         'PLAY.md': play,
         'STATUS.md': (ROOT/'docs/character-lab-status.md').read_bytes(),
         'PORT-STATUS.md': (ROOT/'docs/decomp-port.md').read_bytes(),
+        'docs/neutral-specials.md': (ROOT/'docs/neutral-specials.md').read_bytes(),
+        'docs/decomp-port.md': (ROOT/'docs/decomp-port.md').read_bytes(),
+        'docs/animations.md': (ROOT/'docs/animations.md').read_bytes(),
         'CHANGELOG.md': (PROJECT/'CHANGELOG.md').read_bytes(),
         'release-notes.md': notes.encode(),
     }

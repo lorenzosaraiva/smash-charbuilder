@@ -62,6 +62,12 @@ static const FTCustomAnimationClip* ccSelectAnimation(FTStruct *fp, s32 *frame)
     }
     else
     {
+        FTCharBuilderNeutralState *neutral = ftMainCharBuilderNeutralState(fp);
+        index = ftMainCharBuilderGetProjectileIndex(fp);
+        if (clock != NULL && index >= 0)
+            return ccLoadAnimation(fp, sCCProjectileAnimations[index*2 + (fp->ga == nMPKineticsAir)], clock->frame, frame);
+        if (neutral != NULL)
+            return ccLoadAnimation(fp, sCCActionAnimations[neutral->row], clock->frame, frame);
         index = ccNormalIndex(fp);
         if (index < 0) return NULL;
         return ccLoadAnimation(fp, sCCNormalAnimations[index/33][index%33], clock->frame, frame);

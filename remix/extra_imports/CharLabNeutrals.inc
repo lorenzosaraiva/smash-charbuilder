@@ -1,0 +1,190 @@
+// Included inside CharCreator. Values 0/1 and all legacy recipe bits stay stable.
+neutral_donors:; dw -1, 1, 0, 4, 9, 11, 7, 10, 2, 3, 5, 6
+neutral_resources:; dw -1, -1, 0, 1, 2, 3, -1, -1, -1, 4, 5, -1
+
+// PikaShared's generic factory hook reads the caller's saved s1 as FTStruct,
+// and caller stack +0x5C as its Thunder owner. Supply the expected ABI even
+// when a Clang constructor chose different saved registers/local variables.
+scope neutral_weapon_factory_: {
+    addiu sp, sp, -0x80
+    sw ra, 0x10(sp)
+    sw s1, 0x14(sp)
+    andi t0, a3, 0xF
+    bnez t0, _create
+    nop
+    lw s1, 0x84(a0)
+    sw s1, 0x5C(sp)
+    _create:
+    jal 0x801655C8
+    nop
+    lw s1, 0x14(sp)
+    lw ra, 0x10(sp)
+    addiu sp, sp, 0x80
+    jr ra
+    nop
+}
+
+scope ensure_neutral_files_: {
+    lli t0, 1
+    beq a0, t0, ensure_laser_file_
+    nop
+    addiu sp, sp, -0x30
+    sw ra, 0x04(sp)
+    sw a0, 0x08(sp)
+    sltiu t0, a0, 12
+    beqz t0, _end
+    sll t0, a0, 2
+    li t1, neutral_donors
+    addu t1, t1, t0
+    lw a1, 0(t1)
+    li t1, 0x80116E10
+    sll t2, a1, 2
+    addu t1, t1, t2
+    lw t2, 0(t1)
+    lli t1, 11
+    beq a0, t1, _egg
+    li t1, neutral_resources
+    addu t1, t1, t0
+    lw t1, 0(t1)
+    bltz t1, _end
+    sll t1, t1, 2
+    li a1, CharLabRuntime.sCCNeutralFiles
+    addu a1, a1, t1
+    lw v0, 0(a1)
+    bnez v0, _extra
+    nop
+    lw a0, 0x14(t2) // donor special1 file ID
+    jal Render.load_file_
+    nop
+    _extra:
+    lw t0, 0x08(sp)
+    lli t1, 5
+    beq t0, t1, _particles
+    nop
+    lli t1, 4
+    bne t0, t1, _end
+    nop
+    li t0, 0x80116E10 + 9 * 4
+    lw t0, 0(t0)
+    lw a0, 0x1C(t0)
+    li a1, CharLabRuntime.sCCNeutralFiles + 28
+    lw v0, 0(a1)
+    bnez v0, _particles
+    nop
+    jal Render.load_file_
+    nop
+    _particles:
+    lw a0, 0x08(sp)
+    jal ensure_neutral_particles_
+    nop
+    b _end
+    nop
+    _egg:
+    // Native egg victims need Yoshi's egg effect, independent of captor body.
+    lw a0, 0x1C(t2) // Yoshi special3 file ID
+    li a1, CharLabRuntime.sCCNeutralFiles + 24
+    lw v0, 0(a1)
+    bnez v0, _end
+    nop
+    jal Render.load_file_
+    nop
+    _end:
+    lw ra, 0x04(sp)
+    addiu sp, sp, 0x30
+    jr ra
+    nop
+}
+
+scope ensure_neutral_particles_: {
+    addiu sp, sp, -0x30
+    // Native C may spill all four arguments to the o32 home area 0..0x0F.
+    sw ra, 0x10(sp)
+    addiu t0, a0, -4 // choice 4 = Pikachu, 5 = Ness
+    sll t0, t0, 2
+    li t1, CharLabRuntime.sCCNeutralParticleBanks
+    addu t1, t1, t0
+    sw t1, 0x14(sp)
+    lw v0, 0(t1)
+    bgez v0, _end
+    nop
+    li t1, neutral_donors
+    sll t0, a0, 2
+    addu t1, t1, t0
+    lw t0, 0(t1)
+    li t1, 0x80116E10
+    sll t0, t0, 2
+    addu t1, t1, t0
+    lw t0, 0(t1)
+    lw a0, 0x50(t0)
+    lw a1, 0x54(t0)
+    lw a2, 0x58(t0)
+    lw a3, 0x5C(t0)
+    jal 0x801159F8 // native bank lookup/load, pre-match only
+    nop
+    lw t0, 0x14(sp)
+    sw v0, 0(t0)
+    _end:
+    lw ra, 0x10(sp)
+    addiu sp, sp, 0x30
+    jr ra
+    nop
+}
+
+// The existing one-bit recipe field remains packed exactly as before. Full
+// choices occupy unused bytes of the existing 16-byte creator-options payload.
+scope export_neutral_choices_: {
+    li t0, Toggles.block_char_creator_options + 0x14
+    li t1, 0x4E535031 // NSP1
+    sw t1, 0(t0)
+    li t1, slot_tables
+    lli t2, 4
+    _loop:
+    lw t3, 0(t1)
+    lw t3, FIELD_NSP * 4(t3)
+    lw t3, 0(t3)
+    sb t3, 4(t0)
+    // Menu.export_ does not mask a value to its declared bit width.
+    // Temporarily write its legacy bit; restore all choices after SRAM save.
+    lw t4, 0(t1)
+    lw t4, FIELD_NSP * 4(t4)
+    sltiu t5, t3, 2
+    bnez t5, _legacy
+    nop
+    or t3, r0, r0
+    _legacy:
+    sw t3, 0(t4)
+    addiu t0, t0, 1
+    addiu t1, t1, 4
+    addiu t2, t2, -1
+    bnez t2, _loop
+    nop
+    jr ra
+    nop
+}
+
+scope import_neutral_choices_: {
+    li t0, Toggles.block_char_creator_options + 0x14
+    lw t1, 0(t0)
+    li t2, 0x4E535031
+    bne t1, t2, _end // pre-upgrade SRAM keeps its native/Fox selections
+    li t1, slot_tables
+    lli t2, 4
+    _loop:
+    lw t3, 0(t1)
+    lw t3, FIELD_NSP * 4(t3)
+    lbu t4, 4(t0)
+    sltiu t5, t4, 12
+    bnez t5, _valid
+    nop
+    or t4, r0, r0
+    _valid:
+    sw t4, 0(t3)
+    addiu t0, t0, 1
+    addiu t1, t1, 4
+    addiu t2, t2, -1
+    bnez t2, _loop
+    nop
+    _end:
+    jr ra
+    nop
+}

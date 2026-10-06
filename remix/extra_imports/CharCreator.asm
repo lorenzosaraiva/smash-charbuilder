@@ -97,10 +97,11 @@ scope CharCreator {
     catalog_mode_last:; dw 0xFFFFFFFF
     // Each recipe owns its native-neutral label; enum values/SRAM stay stable.
     neutral_string_tables:
-    dw CharCreatorCatalog.string_0, CharCreatorCatalog.string_1
-    dw CharCreatorCatalog.string_1, CharCreatorCatalog.string_1
-    dw CharCreatorCatalog.string_5, CharCreatorCatalog.string_1
-    dw CharCreatorCatalog.string_8, CharCreatorCatalog.string_1
+    dw CharCreatorCatalog.string_0, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
+    dw CharCreatorCatalog.string_1, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
+    dw CharCreatorCatalog.string_5, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
+    dw CharCreatorCatalog.string_8, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
+    include "CharLabNeutrals.inc"
 
     // Runtime breadcrumbs used to verify that the pre-match loader runs after
     // the final cache reset. They are intentionally outside recipe SRAM.
@@ -287,6 +288,19 @@ scope CharCreator {
         sw      r0, 0x0004(t0)
         sw      r0, 0x0008(t0)
         sw      r0, 0x000C(t0)
+        li      t0, CharLabRuntime.sCCNeutralFiles
+        sw r0, 0(t0)
+        sw r0, 4(t0)
+        sw r0, 8(t0)
+        sw r0, 12(t0)
+        sw r0, 16(t0)
+        sw r0, 20(t0)
+        sw r0, 24(t0)
+        sw r0, 28(t0)
+        li t0, CharLabRuntime.sCCNeutralParticleBanks
+        addiu t1, r0, -1
+        sw t1, 0(t0)
+        sw t1, 4(t0)
         li      t0, laser_file_pointer
         sw      r0, 0x0000(t0)
         li      t0, diagnostic_laser_stage
@@ -643,15 +657,12 @@ scope CharCreator {
 
         _fox_nsp:
         lw t0, FIELD_NSP * 4(s1)
-        lw t0, 0x0000(t0)
-        beqz t0, _next_field
+        lw a0, 0(t0)
+        beqz a0, _next_field
         nop
-        // Neutral-B owns only Fox's projectile attributes. Loading Fox's
-        // complete main/special bundle wastes heap space and leaves the stock
-        // constructor dependent on shared globals that later loaders mutate.
-        jal     ensure_laser_file_
+        jal ensure_neutral_files_
         nop
-        b       _next_field
+        b _next_field
         nop
 
         _donor_ready:
@@ -1319,7 +1330,12 @@ scope CharCreator {
         lw t1, 0x0020(sp)
         sltiu t2, t1, 12
         beqz t2, _body
-        lli t2, Character.id.FOX
+        sltiu t2, t0, 12
+        beqz t2, _body
+        sll t0, t0, 2
+        li t2, neutral_donors
+        addu t2, t2, t0
+        lw t2, 0(t2)
         beq t1, t2, _body
         nop
         lui t9, CharLabRuntime.ccNeutral >> 16
@@ -1398,7 +1414,8 @@ scope CharCreator {
         nop
         lw t0, FIELD_NSP * 4(v0)
         lw t0, 0x0000(t0)
-        beqz t0, _no
+        lli t1, 1
+        bne t0, t1, _no
         nop
         lw      t0, 0x0004(v0)             // configured body entry
         jal     catalog_id_
@@ -1791,6 +1808,19 @@ scope CharCreator {
 
         lbu     t0, 0x000D(s1)              // port
         sll     t1, t0, 0x0002
+
+        li t4, CharLabRuntime.sFTCharBuilderNeutralStartingOwner
+        lw t4, 0(t4)
+        bne t4, s1, _check_normal
+        lli t5, Action.Idle
+        lw t6, 0x14C(s1)
+        beqz t6, _neutral_pose
+        nop
+        lli t5, Action.Fall
+        _neutral_pose:
+        b _normal_common
+        nop
+        _check_normal:
 
         // A shared normal's selected record belongs to the donor because
         // parameter_base_hook_ temporarily substituted the donor FTData.
@@ -2423,7 +2453,7 @@ scope CharCreator {
         lw      t3, 0x0000(t3)
         sw      t3, 0x0000(t1)
         addiu   t0, t0, 4
-        addiu   t1, t1, 8
+        addiu   t1, t1, 48
         addiu   t2, t2, -1
         bnez    t2, _neutral_labels
         nop
@@ -2487,8 +2517,13 @@ scope CharCreator {
 
         _lock_nsp:
         sw r0, 0x0004(t1)
-        lli t0, 1
+        lli t0, 11
         sw t0, 0x0008(t1)
+        lw t0, 0(t1)
+        sltiu at, t0, 12
+        bnez at, _field_next
+        nop
+        sw r0, 0(t1)
 
         _field_next:
         addiu   t4, t4, 0x0004

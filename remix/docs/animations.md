@@ -1,6 +1,6 @@
 # Shared Remix animations
 
-Preview **0.1.6**, updated **2026-10-06**.
+Preview **0.1.7**, updated **2026-10-06**.
 
 Original-roster normal attacks now use the decomp's shared donor poses on all
 twelve bodies. This includes tilts, smashes, dash attacks, aerials, landing poses
@@ -31,8 +31,8 @@ aligned, and no donor animation heap or foreign skeleton is installed.
 
 The bank contains 501 clips, including paired/taunt data reserved for their
 later mechanics port. That count is data coverage, not 501 newly selectable
-moves. Neutral adapters that Remix does not yet expose still need their gameplay
-entry points. Tether/paired-throw and customizable-taunt entry points remain
+moves. All eleven neutral donor adapters now select their source phase clips,
+including startup, charge loops, release, Boomerang catch and Egg Lay. Tether/paired-throw and customizable-taunt entry points remain
 separate checklist items. Expanded-roster bodies keep the earlier Remix path.
 
 Build from the root with `tools/build-remix-character-lab.ps1`; generated banks

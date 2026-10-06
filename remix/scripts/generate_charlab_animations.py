@@ -84,6 +84,12 @@ def generate():
             seen.add(identity)
             out.append('    { '+str(identity[0])+', '+str(motion)+', &'+cases[index]['symbol']+' },')
     out.append('};')
+    neutral = (LAB/'src/ft/ftspecialanimations.generated.inc').read_text(encoding='utf-8')
+    projectiles = re.findall(r'\{ &sFTCharBuilderProjectileMoves\[\d+\]\[\d+\], &(\w+),', neutral)
+    actions = re.findall(r'\{ &sFTCharBuilderActions\[\d+\].move, &(\w+),', neutral)
+    assert len(projectiles) == 8 and len(actions) == 30
+    out.append('static const CCAnimationRecord *const sCCProjectileAnimations[8] = { '+', '.join('&'+v for v in projectiles)+' };')
+    out.append('static const CCAnimationRecord *const sCCActionAnimations[30] = { '+', '.join('&'+v for v in actions)+' };')
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT/'animations.inc').write_text('\n'.join(out)+'\n', encoding='utf-8')
     (OUT/'animations.bin').write_bytes(bank)

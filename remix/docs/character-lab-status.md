@@ -1,6 +1,6 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.6 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.7 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
 
@@ -17,7 +17,7 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Grab/forward-throw/back-throw donor selectors; donor numeric throw values.
 - [x] DK foreign forward throw releases directly instead of entering cargo.
 - [x] Remix's extended throw-victim lookup retained.
-- [x] Body-name/Fox neutral selection with finite ground/air laser recovery.
+- [x] Body-name/native and all eleven original neutral donors; Kirby copy excluded.
 - [x] Borrowed original-roster specials use safe native status setup followed by shared donor poses.
 - [x] Original-roster special phase clocks retain donor recovery/events, speed and frozen phases.
 - [x] Retain recipes by actual body identity during borrowed special phases.
@@ -56,9 +56,14 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Donor angle/landing availability, traction, gravity, terminal velocity and aerial drift during normals.
 - [x] Link down-air contact bounce, fastfall cancellation, late-hit rewind and delayed rehit.
 - [x] Ness bat source reflector flags/socket/size and native weapon/item reflection path.
-- [x] Neutral selector shows the current body name or Fox; each saved build owns its label table.
+- [x] Neutral selector shows fighter names; each build keeps its native body label and twelve choices.
 - [ ] Rendered jab/bounce/bat contact, landing/Z-cancel, slopes and interruptions.
-- [ ] Neutral specials beyond native body/Fox Laser; Kirby copy excluded.
+- [x] Fireballs/Jolt/PK Fire private weapon resources, source firing/recovery and ground/air continuation.
+- [x] Punch/Pound source collision and momentum; Giant Punch/Charge Shot charge, storage and release.
+- [x] Boomerang empty/return/catch lifecycle and Egg Lay source capture/release with native egg states.
+- [x] Existing saved recipe bit layout preserved with four validated neutral choices in spare options bytes.
+- [x] Null-rendering CPU scenes: all ten new neutrals plus Laser, charged storage/release, PK Fire flame contact and Egg Lay capture/egg damage on Mario/Kirby.
+- [ ] Neutral rendered contact/reflect/absorb, stage/interrupt acceptance, charge orb and attached props/effects.
 - [ ] Donor tether/capture/paired-throw choreography and visuals.
 - [ ] Custom taunts, Yoshi starter build and four-stock/items-off VS defaults.
 - [ ] Remix results/rematch regression with assigned builds.
@@ -70,7 +75,7 @@ allocated runtime bytes; 657 shared data tables/poses; 4,048 foreign normal
 variants and all 144 grab pairings; 14,226 native parser frames with 6,776 root
 placements; 432 throw selections; laser frame 25/15 and recovery 55/45; all
 sixteen player/preset assignments and all four Training return destinations.
-Preview 0.1.6 adds forty normal entry guards, 528 jab-chain and 528 rapid-jab
+Preview 0.1.7 adds forty normal entry guards, 528 jab-chain and 528 rapid-jab
 cases, 132 donor-physics cases, 132 bounce/rehit cases, 132 bat-flag cases,
 60 landing branches and 48 dynamic body-name labels. Bat placement/size on both
 facings and both aerial-fastfall toggle routes are checked. Real-input CPU

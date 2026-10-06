@@ -1,14 +1,17 @@
 # Character Lab on Remix
 
 An original-roster partial port of Character Lab features inside Smash
-Remix +EXTRA: donor hitbox paths/timing, grabs/throws, native-body/Fox neutral selection, shared
+Remix +EXTRA: donor hitbox paths/timing, grabs/throws, all eleven neutral donors except Kirby copy, shared
 retargeted poses, human/CPU preset assignments and return from Training to the editor.
 
 - [Download ROM](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64)
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.6 (2026-10-06):** Normals now use donor jab chains, buffering and rapid
+**0.1.7 (2026-10-06):** All remaining original neutral donors now use source
+phases/poses, private projectile resources, charging/storage/release, Boomerang
+return/catch and Egg Lay capture. Kirby copy remains excluded. See
+[neutral controls and limits](docs/neutral-specials.md). Normals now use donor jab chains, buffering and rapid
 phases; Link down-air bounce/rehit; Ness bat reflection; donor traction/air
 physics; angle availability and aerial landing behavior. Shared animations and
 source clocks remain independent of the body's rig. Neutral Special displays
@@ -17,12 +20,13 @@ fighter names, with its native option following the selected Body.
 rendered acceptance. [Animation coverage](docs/animations.md) tracks props/effects.
 See the [full decomp-port matrix](docs/decomp-port.md) and
 [checklist](docs/character-lab-status.md) for the still-missing mechanics,
-neutral adapters, visual attachments, taunts and paired throws.
+rendered neutral acceptance, visual attachments, taunts and paired throws.
 
 Open **Settings -> Character Lab** and keep **Original 12 Only** enabled. The
 expanded roster stays playable, with its earlier experimental creator adapters;
 full donor fidelity for those fighters remains pending. Old Remix settings and
-recipes reset once for the new SRAM layout. Rendered gameplay acceptance remains
+recipes reset only on the initial preview migration; this neutral expansion
+preserves existing Character Lab presets and all recipe bit widths. Rendered gameplay acceptance remains
 pending even though the compiled runtime passes automated checks.
 
 From the root on Windows/WSL, build and package with

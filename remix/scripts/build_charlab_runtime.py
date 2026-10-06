@@ -70,6 +70,8 @@ def prepare_headers():
     neutral = (LAB / 'src/ft/ftcharbuilderneutral.c.inc').read_text(encoding='utf-8')
     assert neutral.count('fp->motion_scripts[i][2]') == 3
     neutral = neutral.replace('fp->motion_scripts[i][2]', 'sCCMotionScripts[fp->player]')
+    neutral = neutral.replace('    sFTCharBuilderNeutralStartingOwner = fp;',
+                              '    fp->proc_status = NULL;\n    sFTCharBuilderNeutralStartingOwner = fp;')
     (OUT / 'neutral.c.inc').write_text(neutral, encoding='utf-8')
     # Keep the shared retargeter; stream selected curves instead of embedding
     # the decomp's entire resident animation catalog in Remix expansion RAM.
@@ -103,6 +105,8 @@ u32 gFTCustomAnimationValidationFailures;''')
     move=(LAB/'src/ft/ftcustommove.c.inc').read_text(encoding='utf-8')
     assert move.count('(slot->body != fp->fkind)') == 1
     move=move.replace('(slot->body != fp->fkind)','(slot->body != ccBodyKind(fp))')
+    move=move.replace('&fp->motion_scripts[0][2]', '&sCCMotionScripts[fp->player]')
+    move=move.replace('&fp->motion_scripts[1][2]', '&sCCMotionScripts[fp->player]')
     # Unique jab motion IDs belong to the donor selected by action_array_hook_.
     move=move.replace('sFTCustomBodyExtraMotionIDs[fp->fkind]', 'sFTCustomBodyExtraMotionIDs[slot->attacks[nSCCharBuilderAttackJab]]')
     move=move.replace('#include "ftcustomanimation.c.inc"','#include "animation.c.inc"')
@@ -151,11 +155,14 @@ def object_to_bass(path):
         'ccOriginalGroundPhysics': 'CharLab.original_ground_physics_',
         'ccOriginalDivePositions': 'CharLabSpecials.hook_ftCommonCaptureCaptainUpdatePositions._original',
         'wpFoxBlasterMakeWeapon': 'CharCreator.neutral_make_weapon_',
+        'ccNeutralMakeWeapon': 'CharCreator.neutral_weapon_factory_',
         'func_800269C0_275C0': '0x800269C0',
     }
     # Engine symbols come from the decompilation's original US function labels,
     # not addresses of the relocated Character Lab build.
     wanted = {name for name,_,_,_,index in symbols if not index and name}
+    for name,address in re.findall(r'^(\w+)\s*=\s*(0x[0-9a-fA-F]+);', (LAB/'symbols/reloc_data_symbols.us.txt').read_text(),re.M):
+        if name in wanted: bindings[name]=address
     for name,address in re.findall(r'^(\w+)\s*=\s*(0x[0-9a-fA-F]+);', (LAB/'symbols/symbols_us.txt').read_text(),re.M):
         if name in wanted and name not in bindings:bindings[name]=address
     for path in (LAB / 'src').rglob('*.c'):
@@ -268,9 +275,14 @@ def main():
     else:
         from generate_charlab_normals import generate as generate_normals
     generate_normals()
+    if __package__:
+        from .generate_charlab_neutrals import generate as generate_neutrals
+    else:
+        from generate_charlab_neutrals import generate as generate_neutrals
+    generate_neutrals()
     command = ['clang', '-target', 'mips-unknown-none', '-march=mips2', '-mabi=32',
                '-mno-abicalls', '-fno-pic', '-G0', '-O2', '-ffreestanding', '-fno-builtin',
-               '-fno-stack-protector', '-DFTCHARBUILDER_NORMAL_MECHANICS', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
+               '-fno-stack-protector', '-DFTCHARBUILDER_NORMAL_MECHANICS', '-DFTCHARBUILDER_NEUTRAL_EXTENDED', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
                '-Ibuild/char_creator/runtime/include', '-I../ssb-decomp-re/include', '-I../ssb-decomp-re/src',
                '-c', 'extra_imports/CharLabRuntime.c', '-o', 'build/char_creator/runtime/runtime.o']
     if os.name == 'nt':

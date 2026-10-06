@@ -31,6 +31,7 @@ SCCharBuilderSlot gSCManagerCharBuilderSlots[4];
 s8 gSCManagerCharBuilderPlayerSlots[4] = { 0, 1, 2, 3 };
 static struct { s32 scene_curr; } gSCManagerSceneData;
 static FTStruct *sFTCharBuilderNeutralStartingOwner;
+static FTMotionScript sCCMotionScripts[4];
 #include "../build/char_creator/runtime/move.c.inc"
 
 void ccApplyAnimation(FTStruct *fp)
@@ -81,7 +82,6 @@ void ccSync(FTStruct *fp, s32 **entries, s32 scene)
     slot->is_enabled = TRUE;
 }
 
-static FTMotionScript sCCMotionScripts[4];
 #include "../build/char_creator/runtime/special-timings.inc"
 extern s32 ccSpecialDonor(FTStruct*);
 typedef struct FTCharBuilderSpecialPath FTCharBuilderSpecialPath;
@@ -116,6 +116,7 @@ extern void ccRestoreBody(FTStruct*);
 void ccReset(void)
 {
     s32 i;
+    ftMainCharBuilderResetNeutralAll();
     for (i = 0; i < 4; i++)
     {
         sFTCustomMoveClocks[i].owner = NULL;
@@ -238,7 +239,7 @@ void ccEvents(GObj *gobj)
         if (((DObj*)gobj->obj)->anim_speed <= gobj->anim_frame) return;
         script->script_wait = -gobj->anim_frame;
     }
-    else script->script_wait -= ccSpecialClock(fp) ? ((DObj*)gobj->obj)->anim_speed : 1.0F;
+    else script->script_wait -= ccSpecialClock(fp) ? ((DObj*)gobj->obj)->anim_speed : clock->speed;
     while (script->p_script != NULL && script->script_wait <= 0.0F && limit-- > 0)
         ccParse(gobj, fp, script, *script->p_script >> 26);
     if (limit <= 0) { script->p_script = NULL; gFTCustomMoveValidationFailures++; }
@@ -291,12 +292,26 @@ void ccPrepare(GObj *gobj, f32 frame_begin)
 extern GObj *wpFoxBlasterMakeWeapon(GObj*, Vec3f*);
 extern alSoundEffect *func_800269C0_275C0(u16);
 static void ftMainCharBuilderClearSpecialDonor(FTStruct *fp) { ccRestoreBody(fp); }
+#include "../build/char_creator/runtime/neutral-weapons.inc"
 #include "../build/char_creator/runtime/neutral.c.inc"
+
+static sb32 ccNeutralBoomerangOwner(GObj *owner, GObj *weapon)
+{
+    FTStruct *fp = ftGetStruct(owner);
+    FTCharBuilderNeutralState *s;
+    if (fp == NULL || fp->player >= 4) return FALSE;
+    s = &sFTCharBuilderNeutralStates[fp->player];
+    return s->owner == fp && s->generation == fp->player_num && s->body == ccBodyKind(fp) && s->boomerang == weapon;
+}
 #include "CharLabAnimations.c.inc"
 
 sb32 ccNeutral(GObj *gobj)
 {
     ccSyncCurrent(ftGetStruct(gobj));
+    if (ftGetStruct(gobj)->player < 4 && gSCManagerCharBuilderSlots[ftGetStruct(gobj)->player].special_n == nSCCharBuilderNeutralPikachuJolt)
+        gFTDataPikachuParticleBankID = sCCNeutralParticleBanks[0];
+    if (ftGetStruct(gobj)->player < 4 && gSCManagerCharBuilderSlots[ftGetStruct(gobj)->player].special_n == nSCCharBuilderNeutralEggLay)
+        gFTDataYoshiSpecial3 = sCCNeutralFiles[6];
     return ftMainCharBuilderTrySpecialN(gobj);
 }
 
@@ -407,4 +422,13 @@ const u32 ccNormalLayout[] = {
     FTCOMMON_ATTACKAIRLW_LINK_REHIT_FRAME_BEGIN, FTCOMMON_ATTACKAIRLW_LINK_REHIT_FRAME_END,
     FTCOMMON_ATTACKAIRLW_LINK_REHIT_TIMER,
     nFTMotionEventSetFlag0,nFTMotionEventSetFlag1,nFTMotionEventSetFlag2,nFTMotionEventSetFlag3
+};
+
+const u32 ccNeutralWeaponLayout[] = {
+    sizeof(WPStruct), OFF(WPStruct, lifetime), OFF(WPStruct, physics.vel_air),
+    OFF(WPStruct, weapon_vars.boomerang.parent_gobj), OFF(WPStruct, owner_gobj),
+    OFF(WPStruct, attack_coll.damage), OFF(WPStruct, attack_coll.size),
+    OFF(WPStruct, weapon_vars.charge_shot.owner_gobj), OFF(DObj, mobj),
+    WPBOOMERANG_LIFETIME_TILT, WPBOOMERANG_LIFETIME_SMASH, WPBOOMERANG_VEL_TILT,
+    WPBOOMERANG_VEL_SMASH, WPPIKACHUJOLT_LIFETIME, WPPKFIRE_LIFETIME
 };

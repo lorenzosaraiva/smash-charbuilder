@@ -60,7 +60,7 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Link Boomerang: return/catch lifecycle; Yoshi Egg Lay: paired capture state.
 - [x] Borrowed neutral phase animations, charge orb, native props and safe source sound/effect events.
 - [ ] Complete donor voice/color/model polish and paired victim rotation. Kirby copy remains outside this milestone.
-- [ ] Port the ten new neutral adapters to Remix.
+- [x] Port the ten new neutral adapters to Remix: source phases/poses, private weapon resources, charge/store/release, Boomerang and Egg Lay.
 - [x] Fix Training/VS heap overflow using separate Expansion Pak memory (8 MB required).
 - [x] Fix cold-boot opening-room overflow; all nineteen intro scenes use Expansion Pak memory.
 - [x] Uninterrupted CPU boot through all nineteen intro scenes, title and Start into the main menu (null rendering).
@@ -74,7 +74,7 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Final Cutter gameplay callbacks and Stone armor/hold/timeout.
 - [x] Link held-bomb common throws and Falcon Dive source attacker positioning/frame-16 release; rendered contacts remain pending.
 - [x] Grab/throw selectors, donor throw values and DK foreign forward release.
-- [x] Native-body/Fox neutral selection and the three Mario animation pilots.
+- [x] Native-body plus eleven original neutral donors (Kirby copy excluded), source timing/poses and private projectile callbacks.
 - [x] Shared normal/supported special/recovery retargeted poses on twelve bodies, streamed through independent player caches.
 - [ ] Special visual props/effects and rendered pose acceptance.
 - [x] Safe borrowed-special status setup, shared poses, original-roster phase clocks and recovery transform guards.
@@ -88,7 +88,7 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [x] Native hitbox display, improved grab-aware combo meter and unlocks retained.
 - [x] Compiled MIPS execution, linked-data/CRC checks and separate ROM/ZIP packaging.
 - [ ] Rendered emulator acceptance and contact/interrupt comparison.
-- [ ] Broader neutral specials, special visual attachments and tether choreography.
+- [ ] Neutral rendered contact/reflect/absorb acceptance, charge orb/props/effects, paired alignment and tether choreography.
 - [x] Donor jab chains/rapid phases, Link bounce/rehit, Ness bat geometry, traction/air physics and angle/landing availability.
 - [x] Neutral-B options display fighter names and follow each build's body.
 - [ ] Rendered normal contact/landing/interrupt acceptance; custom taunts and decomp starter defaults.
@@ -175,7 +175,8 @@ remain on the detailed checklist.
 - [x] Live ROM CPU checks: all 144 donor/body jab chains, twelve controlled Link
   bounces and Ness bat reflections, editor returns and four assigned VS builds.
 - [ ] Rendered contact/shield, slopes/edges, interruptions and part-intangibility acceptance.
-- [ ] Normal mesh/effect/audio polish and port this mechanics batch to Remix.
+- [x] Port normal gameplay mechanics to Remix for the original twelve bodies/donors.
+- [ ] Normal mesh/effect/audio polish and rendered acceptance in both editions.
 
 See the [normal mechanics guide](../ssb-decomp-re/docs/normal-mechanics.md).
 

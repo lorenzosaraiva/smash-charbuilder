@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.5 (2026-10-06)**.
+Character Lab has an original-roster Remix preview, **0.1.7 (2026-10-06)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -14,7 +14,8 @@ mechanics are implemented and which still need adapters or playtesting.
 3. Edit the name, **Body** and attack donors with the native menu controls.
 4. **USE BODY FOR ALL MOVES** gives you a native starting point.
 5. Change any jab, dash attack, tilt, smash, aerial, grab or throw donor.
-6. Neutral Special offers **your body's fighter name** or **Fox**. Up/Down Special
+6. Neutral Special offers **your body's fighter name** and all eleven original
+   donor choices except Kirby copy. See [neutral controls](docs/neutral-specials.md). Up/Down Special
    remain experimental. Mario with Falcon Kick/Pikachu Up B is the first
    regression target; use native body specials for unverified mechanics.
 7. Select **TEST IN TRAINING**. The Training CSS opens with your build's Body
@@ -37,8 +38,9 @@ Link and Kirby. Names and move selections use Remix's native SRAM serializer.
 **TEST IN TRAINING** saves before leaving the editor. Per-port Custom Build
 assignments are match settings rather than part of a recipe.
 
-This preview changes the SRAM layout/revision, so older Remix recipes and
-settings reset once. Keep emulator saves separate from other Remix versions.
+The earlier initial preview changed the upstream Remix SRAM revision. This
+neutral expansion preserves existing Character Lab presets: full neutral choices
+use spare creator-options bytes while the original recipe bit layout stays fixed. Keep emulator saves separate from other Remix versions.
 Changing the compiled roster later can change selector indexes.
 
 ## What the moves inherit
@@ -67,10 +69,13 @@ numeric damage/knockback while preserving body capture, victim statuses and
 release choreography. DK skips cargo for a foreign forward throw. Tether reach,
 paired animation and complete donor throw choreography remain unfinished.
 
-Fox Laser uses its original firing frames (25 ground / 15 air), repeat flags
-and finite recovery (55 / 45). DK and Samus use finite neutral end poses instead
-of staying in a charge loop. Selecting your body's name restores native neutral behavior. Fox
-itself retains its native laser callbacks.
+All eleven original neutral donors except Kirby copy now use the shared source
+clock and phase poses on foreign original bodies. Projectiles keep their donor
+resources and native flight/contact callbacks. Giant Punch and Charge Shot
+support B/A release, Z/roll storage, full charge and interruptions. Boomerang
+keeps one outstanding weapon and its empty/catch phases; Egg Lay keeps source
+capture/release anchors and native egg damage/escape. Selecting the body's name
+restores native behavior. See [neutral controls and limits](docs/neutral-specials.md).
 
 All shared normal poses now retarget on twelve original bodies. The three
 Mario pilots (Falcon down-air, Fox straight forward tilt and DK straight forward

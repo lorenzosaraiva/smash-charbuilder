@@ -1,5 +1,17 @@
 # Changes
 
+## 0.1.24 - 2026-10-06: Remix remaining neutral specials
+
+- Release Remix preview 0.1.7; preserve the decomp 0.1.18 ROM and download.
+- Add Mario/Luigi Fireball, Pikachu Thunder Jolt and Ness PK Fire; keep source spawn/fire/recovery timing and private native weapon/item callbacks.
+- Add Falcon Punch/Pound source collision paths, travel and aerial boosts; Giant Punch and Charge Shot charging, storage, partial/full release, recoil and interruption behavior.
+- Add Boomerang throw/empty/catch and private return/reflection lifecycle, plus Egg Lay source grab/capture/release timing and native egg damage/escape. Kirby copy stays excluded.
+- Connect shared neutral phase poses with body-safe status assets and original gameplay clocks. Charge orb, attached props/effects and rendered acceptance remain pending.
+- Preserve existing SRAM recipe bit layout with a validated four-choice supplement in spare creator-options bytes.
+- Supply the caller register/stack contract expected by Remix's generic weapon hook, avoiding borrowed projectile freezes.
+- Preload private Jolt/PK Fire particle banks with the native call convention; clear Boomerang ownership using the actual body during another borrowed special.
+- Extend linked-MIPS and real-input CPU coverage; keep rendered contact/reflect/absorb and broader stage/interrupt acceptance separate.
+
 ## 0.1.23 - 2026-10-06: Remix donor normal mechanics
 
 - Release Remix preview 0.1.6; preserve the decomp 0.1.18 ROM and download.

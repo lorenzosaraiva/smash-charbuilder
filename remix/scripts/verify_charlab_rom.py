@@ -82,14 +82,16 @@ def linked_object(rom, labels):
     for name, (address, length, index) in syms.items():
         if name not in symbols or not length or hs[index][1] == 8:
             continue
-        if not (name.startswith('sFTCustom') or name.startswith('sFTCharBuilderLaser')):
+        if not name.startswith(('sFTCustom', 'sFTCharBuilderLaser', 'sFTCharBuilderAction',
+                                'sFTCharBuilderProjectile', 'sFTCharBuilderYoshiInterrupt')):
             continue
         actual, actual_length, actual_index = symbols[name]
         if actual_length != length or length % 4:
             continue
         # Records containing pointers are covered by the relocation check.
         if name in ('sFTCustomMoves', 'sFTCustomGrabMoves', 'sFTCustomAnimationPilots',
-                    'sFTCustomCollisionTrajectories', 'sFTCharBuilderLaserMoves'):
+                    'sFTCustomCollisionTrajectories', 'sFTCharBuilderLaserMoves',
+                    'sFTCharBuilderActions', 'sFTCharBuilderProjectileMoves'):
             continue
         if name.startswith(('sFTCustomAnimationRig', 'sFTCustomAnimationSourceRig', 'sFTCustomAnimationSemantic')):
             continue  # Mixed byte/float rig records are checked independently.
@@ -850,6 +852,10 @@ def main():
     test_adapters(runtime)
     from test_charlab_normals import test_normals
     test_normals(runtime)
+    from test_charlab_neutrals import test_neutrals
+    test_neutrals(runtime)
+    from test_charlab_neutral_weapons import test_weapons
+    test_weapons(runtime)
     from test_charlab_animations import test_animations
     test_animations(runtime, rom)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')
