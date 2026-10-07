@@ -1,7 +1,14 @@
 # Donor normal mechanics on Remix
 
-Preview **0.1.6**, updated **2026-10-06**. Original twelve bodies/donors only.
+Preview **0.1.11**, updated **2026-10-07**. Original twelve bodies/donors only.
 Implementation and automated checks are separate from rendered acceptance.
+
+Foreign normal effect commands resolve donor bones to valid body joints or
+TopN before native effect placement. Donor model/texture and part-hurtbox
+commands cannot address foreign body parts. This fixes both DK/Samus borrowed
+down-smash freezes; both combinations pass real-input CPU recovery checks,
+alongside 396 missing-effect-joint production MIPS cases. Original donor
+collision paths, timing, damage and knockback remain unchanged.
 
 The Jab row chooses the donor's whole playable chain. Mario/Luigi/Ness have
 three jabs; DK/Samus/Yoshi/Jigglypuff have two; Pikachu repeats jab one;

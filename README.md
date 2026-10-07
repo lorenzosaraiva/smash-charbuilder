@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.27 (experimental)** | **Last updated: 2026-10-07**
+**Project version: 0.1.28 (experimental)** | **Last updated: 2026-10-07**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -36,7 +36,7 @@ restores match endings and rematches.
 | Build | ROM last updated | ROM download | Play package | Source build |
 | --- | --- | --- | --- | --- |
 | **Character Lab** | 2026-10-05 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
-| **Character Lab on Remix (preview 0.1.10)** | 2026-10-07 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
+| **Character Lab on Remix (preview 0.1.11)** | 2026-10-07 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
 
 Dates use Sao Paulo time and refer to the published ROMs. The project version
 above tracks this repository; each source build identifies the exact ROM.
@@ -52,7 +52,11 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
 
-Remix **0.1.10** fixes borrowed Mario taunt growth around planted feet, updates
+Remix **0.1.11** fixes both DK/Samus borrowed down-smash freezes and adds Samus
+Bomb's Morph Ball and the missing tether glow on foreign bodies. DK Down B
+keeps its original two slaps in one cycle; another cycle requires another B tap.
+Automated checks pass; rendered visual acceptance remains pending.
+It also retains fixes for borrowed Mario taunt growth around planted feet, updates
 Neutral B when choosing **All moves from body**, and rejects unavailable aerial
 donor specials without falling back to the body's move. See
 [special edge-case checks and remaining acceptance](remix/docs/special-edge-cases.md).

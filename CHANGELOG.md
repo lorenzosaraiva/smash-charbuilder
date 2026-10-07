@@ -1,5 +1,14 @@
 # Changes
 
+## 0.1.28 - 2026-10-07: Remix smash safety and Samus visuals
+
+- Release Remix preview 0.1.11; preserve decomp 0.1.18 and its download.
+- Fix both DK/Samus borrowed down-smash crashes: native donor effects now resolve valid body joints; donor mesh/part-hurtbox commands cannot modify foreign bodies.
+- Add Samus Bomb's donor-sized Morph Ball replacement on source frames 10-42, with native body restoration at recovery and interruption. Body hurtboxes remain native.
+- Preload paired visual dependencies independently of special animation heaps. Add Samus's missing native tether glow at sampled donor joint 23 alongside the six existing beam parts, with owned cleanup.
+- Check single-tap DK Down B on native DK and a foreign body: one cycle contains the original slap windows at 16-17 and 26-27; another B tap requests another cycle. Preserve this source behavior.
+- Add production MIPS checks for 396 missing normal-effect joints, all foreign-body Morph Ball placements and 88 tether-glow placements. Real-input CPU fixtures cover both reported smash combinations, Bomb and tether miss/contact/recovery; rendered appearance remains pending.
+
 ## 0.1.27 - 2026-10-07: Remix taunt, presets and special edge cases
 
 - Release Remix preview 0.1.10; preserve decomp 0.1.18 and its download.

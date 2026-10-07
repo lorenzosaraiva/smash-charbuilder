@@ -1,6 +1,6 @@
 # Remix special effects and attachments
 
-Preview **0.1.9**, updated **2026-10-06**. Keep **Original 12 Only** enabled.
+Preview **0.1.11**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
 
 | Donor move | Borrowed presentation |
 | --- | --- |
@@ -9,6 +9,8 @@ Preview **0.1.9**, updated **2026-10-06**. Keep **Original 12 Only** enabled.
 | Falcon Punch / Falcon Kick | Native flames attached to the retargeted hand/foot; original create/remove flags |
 | Fox Laser | Source blaster model and sampled open/close transforms, firing sparkle and sound |
 | Yoshi Egg Lay | Native tongue part and sampled extension/retraction through catch/release phases |
+| Samus Bomb | Donor Morph Ball replaces the foreign body on frames 10-42; native body flags return at frame 43 or interruption |
+| Samus tether grab | Six donor beam parts plus native glow tree/materials at sampled source joint 23, independent of body joints |
 | Samus Charge Shot | Cosmetic orb at the donor socket, all eight source sizes and charging sound; retain through release startup until firing |
 
 The same source prop samples work on all eleven foreign original bodies. Their
@@ -30,7 +32,7 @@ can retain attachments; donor/attack-family changes clean them up. Short-lived
 common particles finish their native lifetimes; the scene arena clears them on exit.
 
 The standard build compares source prop tables with an independent host ELF
-and executes 990 placements across foreign bodies/facings, 66 private native
+and executes 1,122 prop placements and 88 Samus beam-glow placements across foreign bodies/facings, 66 private native
 constructors, Cutter/Falcon effect flags, all eight orb sizes, release handoff,
 audio waits/idempotence and interruption/death/four-port reset/stale-owner cleanup.
 Allocation and audio services are fixtures in these linked-MIPS checks.

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.10'
+VERSION = '0.1.11'
 UPDATED = '2026-10-07'
 
 
@@ -74,8 +74,10 @@ def package(desktop=None):
 
 Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
-Fixes: planted Mario taunt growth, explicit body Neutral B presets, and unavailable
-aerial donor special rejection. See docs/special-edge-cases.md for automated
+Fixes: safe donor normal effects (including DK/Samus down smash), Samus Bomb
+Morph Ball replacement and donor-positioned Samus tether glow. Native DK keeps
+two slap windows in one cycle; a second cycle requires another B press.
+See docs/special-edge-cases.md for automated
 contact/recovery checks and the remaining rendered stage acceptance.
 
 Source commit: `{info['commit']}`; uncommitted changes: {info['source_dirty']}.

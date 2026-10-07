@@ -410,6 +410,30 @@ static void ccVisualTick(GObj *g)
     prop = def->attachment;
     frame = ccVisualFrame(def->clip, time);
     sample = prop ? &prop->frames[frame] : NULL;
+    if (def->donor == nFTKindSamus && def->family == 4 && fp->status_id == nFTCommonStatusCatch && sCCVisualFiles[3])
+    {
+        /* Preserve the native glow tree/materials with a source joint-23
+         * root rather than attaching it to the receiving body's joint 23. */
+        const FTCustomSpecialAttachmentFrame *beam;
+        s->effect = ccVisualLive(s->effect, g);
+        if (!s->effect)
+        {
+            s->effect = ccVisualOwn(efManagerMakeEffectNoForce(&sCCSamusGrappleBeamEffectDesc), g);
+            if (s->effect) gCCVisualEffects++;
+        }
+        i = time < 0 ? 0 : (s32)time;
+        if (i >= ARRAY_COUNT(sCCSamusTetherGlow)) i = ARRAY_COUNT(sCCSamusTetherGlow)-1;
+        beam = &sCCSamusTetherGlow[i];
+        if (s->effect)
+        {
+            dobj = DObjGetStruct(s->effect); pos = DObjGetStruct(g)->translate.vec.f;
+            pos.x += beam->translate.z*fp->lr; pos.y += beam->translate.y; pos.z -= beam->translate.x*fp->lr;
+            dobj->translate.vec.f = pos; dobj->scale.vec.f = beam->scale;
+            dobj->rotate.vec.f = ftCustomAnimationToEuler(ftCustomAnimationMultiply(
+                ftCustomAnimationFromEuler(0, fp->lr*F_CST_DTOR32(90.0F), 0),
+                ftCustomAnimationFromEuler(beam->rotate.x, beam->rotate.y, beam->rotate.z)));
+        }
+    }
     if (sample && !sample->active) prop = NULL;
     if (s->prop != prop) { ccVisualEject(s, &s->model); s->prop = prop; }
     if (prop && ccVisualMainFile(def->donor))

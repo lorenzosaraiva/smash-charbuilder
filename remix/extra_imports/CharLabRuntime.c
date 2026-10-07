@@ -20,6 +20,7 @@ static void ccVisualTick(GObj*);
 static void ccVisualReset(void);
 static void ccVisualStart(FTStruct*, f32);
 static void ccVisualStatusChanging(GObj*, s32);
+DObj* ftMainCharBuilderGetSpecialVisualJoint(FTStruct*, s32, s32);
 static void ccVisualFalconEffect(GObj*, sb32);
 static void ccVisualCutterEffect(GObj*);
 u32 ccVisualPreserve(FTStruct*, const FTCustomMoveDefinition*);
@@ -204,6 +205,40 @@ void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
 {
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
     f32 frame = gobj->anim_frame;
+    s32 normal = ccNormalIndex(fp);
+    if (normal >= 0 && normal / 33 != ccBodyKind(fp))
+    {
+        /* Native donor streams also contain cosmetic bone/mesh commands.
+         * A borrowed smash must never index them through the body skeleton. */
+        switch (opcode)
+        {
+        case nFTMotionEventSetModelPartID: case nFTMotionEventResetModelPartAll:
+        case nFTMotionEventHideModelPartAll: case nFTMotionEventSetTexturePartID:
+        case nFTMotionEventSetHitStatusPartID: case nFTMotionEventResetDamageCollPartAll:
+        case nFTMotionEventSetHitStatusPartAll:
+            ftMotionEventAdvance(script, FTMotionEventDefault); return;
+        case nFTMotionEventSetDamageCollPartID:
+            ftMotionEventAdvance(script, FTMotionEventSetDamageCollPartID); return;
+        case nFTMotionEventEffect: case nFTMotionEventEffectItemHold:
+        {
+            const FTMotionEventMakeEffect *event = (const FTMotionEventMakeEffect*)script->p_script;
+            Vec3f offset = { event->s2.off_x, event->s2.off_y, event->s3.off_z };
+            Vec3f scatter = { event->s3.rng_x, event->s4.rng_y, event->s4.rng_z };
+            DObj *part;
+            s32 i, joint = -1;
+            if (event->s1.joint_id != -1 && event->s1.joint_id != 127)
+            {
+                part = ftMainCharBuilderGetSpecialVisualJoint(fp, normal / 33, event->s1.joint_id);
+                for (i = 0; i < FTPARTS_JOINT_NUM_MAX; i++)
+                    if (fp->joints[i] == part) { joint = i; break; }
+            }
+            if (!fp->is_effect_skip)
+                ftParamMakeEffect(gobj, event->s1.effect_id, joint, &offset, &scatter, fp->lr,
+                    opcode == nFTMotionEventEffectItemHold, event->s1.flag);
+            ftMotionEventAdvance(script, FTMotionEventMakeEffect); return;
+        }
+        }
+    }
     if ((u32)ccSpecialDonor(fp) < 12)
     {
         /* Donor mesh/hurtbox IDs and attached effects cannot address a

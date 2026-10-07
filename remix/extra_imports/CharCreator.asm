@@ -308,6 +308,7 @@ scope CharCreator {
         sw r0, 0(t0)
         sw r0, 4(t0)
         sw r0, 8(t0)
+        sw r0, 12(t0)
         li      t0, laser_file_pointer
         sw      r0, 0x0000(t0)
         li      t0, diagnostic_laser_stage
@@ -660,6 +661,13 @@ scope CharCreator {
         addu a1, a1, t0
         jal ensure_main_file_
         lw a1, 0(a1)
+        // Paired actions bypass native special setup; preload their glow
+        // and prop dependencies here alongside the donor's primary model.
+        sll t0, s3, 2
+        addu t0, s1, t0
+        lw t0, 0(t0)
+        jal ensure_visual_files_
+        lw a0, 0(t0)
         b _next_field
         nop
         _check_original:

@@ -1,6 +1,6 @@
 # Decomp to Remix port
 
-Updated **2026-10-07**. Remix preview **0.1.10**, project **0.1.27**.
+Updated **2026-10-07**. Remix preview **0.1.11**, project **0.1.28**.
 
 The current special-edge-case checks and remaining rendered stage acceptance
 are tracked in [special edge cases](special-edge-cases.md). Mario taunt growth
@@ -10,6 +10,12 @@ Current CPU checks cover two Quick Attack zips, a native Hyrule wall and slope,
 PK Thunder steering/self-launch, Thunder owner contact, reflection/absorption,
 Sing/Rest contacts, repeated DK hit windows, aerial landing and Training reset.
 These targeted fixtures do not establish rendered acceptance across all bodies/stages.
+
+Preview 0.1.11 also fixes both DK/Samus down-smash crashes, adds Samus Bomb's
+Morph Ball and restores Samus's missing borrowed tether glow. Their production
+MIPS and targeted real-input CPU checks are separate from rendered acceptance.
+DK's two slap windows are one original cycle, verified on native DK and Mario;
+another cycle requires another B tap.
 
 The decomp ROM remains the most complete edition. The Remix preview is a
 partial port for the **original twelve** bodies and donors; exposing Remix's

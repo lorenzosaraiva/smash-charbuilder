@@ -47,9 +47,13 @@ grab-preserving combo counters, full-roster normal animations and remaining work
 The [Remix guide](../remix/character_creator_guide.md) and
 [port checklist](../remix/docs/character-lab-status.md) cover the separate preview.
 
-Remix preview 0.1.10 adds the following fixes. See
+Remix preview 0.1.11 adds the following fixes. See
 [special edge-case evidence](../remix/docs/special-edge-cases.md).
 
+- [x] Both DK/Samus borrowed down-smash freezes fixed; missing effect joints resolve safely.
+- [x] Samus Bomb Morph Ball and source-positioned tether glow with owned cleanup.
+- [x] Single-tap DK retains one original two-slap cycle; second cycles need another tap.
+- [ ] Rendered acceptance for these Samus models/effects across bodies and interruptions.
 - [x] Planted body pivot for borrowed Mario taunt growth.
 - [x] All moves from body sets the explicit original Neutral B donor.
 - [x] Unavailable aerial donor moves reject input without a body fallback.

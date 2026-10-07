@@ -98,10 +98,18 @@ def test_visuals(r):
         d=definitions+index*layout['def_size'];p=r.u32(d+16)
         if p:
             sample=r.u32(p);name='sFTCustomSpecialAttachment'+str(index)
-            raw=original(name)
-            expected=b''.join(struct.pack('>9fI',*struct.unpack_from('<9fI',raw,offset)) for offset in range(0,len(raw),40))
-            assert r.read(sample,len(expected))==expected,name
-            props.append((index,r.u32(d+12),p,len(expected)//40))
+            if r.u32(d+12)==3:
+                # Remix-only Morph Ball: source mesh and explicit native
+                # model-change boundaries (part 2 at 10, part 1 at 43).
+                count=r.u32(r.u32(d+4)+20)
+                assert [i for i in range(count) if r.u32(sample+i*40+36)]==list(range(10,43))
+                assert r.u32(p+4)==6 and r.u32(p+8)==2 and r.u32(p+12)==1
+            else:
+                raw=original(name)
+                expected=b''.join(struct.pack('>9fI',*struct.unpack_from('<9fI',raw,offset)) for offset in range(0,len(raw),40))
+                assert r.read(sample,len(expected))==expected,name
+                count=len(expected)//40
+            props.append((index,r.u32(d+12),p,count))
     placements=0
     for index,donor,prop,count in props:
         source=r.u32(prop)
@@ -128,6 +136,12 @@ def test_visuals(r):
                     assert r.read(model+r.layout['scale'],12)==r.read(source+frame*40+24,12)
                     placements+=1
             hidden=bool(r.u32(prop+12));assert bool(r.u32(s+layout['hidden']))==hidden
+            if donor==3:
+                for time in (9,10,42,43,49):
+                    tick(c,time)
+                    active=10<=time<43
+                    assert bool(r.u32(s+layout['hidden']))==active
+                    assert bool(r.u32(s+layout['model']))==active
             r.call('ccStatusChanging',r.GOBJ,18) # native damage/common interrupt
             assert not any(r.u32(s+layout[f]) for f in ('model','charge','effect','hidden'))
             for i in range(4,37):assert not r.read(r.JOINTS+i*0x100+layout['dobj_flags'],1)[0]&layout['hidden_mask']
@@ -208,6 +222,34 @@ def test_visuals(r):
             r.u32(r.u32(g+0x84)+layout['update'],r.addr('ccVisualEffectUpdate'));r.u32(s+layout['effect'],g)
             r.call('ccStatusChanging',r.GOBJ,18);assert g in stopped
             constructors+=1;counter=0
+    # Samus Catch glow keeps the native effect tree but uses independent
+    # source joint-23 placement on every foreign body and both facings.
+    pair_layout=struct.unpack('>15I',r.read(r.addr('ccPairLayout'),60))
+    phase=r.addr('sFTCustomPairPhases')+23*pair_layout[1]
+    assert r.u32(phase)==3 and r.u32(phase+4)==166
+    beam_samples=r.addr('sCCSamusTetherGlow')
+    for body in range(12):
+        if body==3:continue
+        for facing in (-1,1):
+            r.call('ccReset');r.setup(body,3)
+            r.u32(r.FP+layout['fighter'],r.GOBJ);r.u32(links+12,r.GOBJ)
+            r.u32(r.FP+0x24,166);r.u32(r.FP+0x28,146)
+            r.write(r.addr('sFTCustomPairStates'),struct.pack('>10I',r.FP,0,r.u32(r.FP+r.player_num),0,phase,3,0,166,0,0))
+            r.u32(r.addr('sCCPairDonors'),3);r.u32(r.addr('sCCVisualFiles')+12,main)
+            c=r.addr('sFTCustomMoveClocks');move=phase+pair_layout[5]
+            r.write(c,struct.pack('>6I2fIIf',r.FP,r.u32(r.FP+r.player_num),move,166,146,100,0,0,0,0,1))
+            r.u32(r.FP+0x44,facing)
+            for axis,value in enumerate((120,300,40)):r.f32(r.JOINTS+r.layout['translate']+axis*4,value)
+            r.call('ccVisualStart',r.FP,0);r.u32(state+32,0)
+            for time in (0,20,44,99):
+                tick(c,time);g=r.u32(state+layout['effect']);assert g
+                model=r.u32(g+r.layout['obj']);values=struct.unpack('>9fI',r.read(beam_samples+time*40,40))
+                wanted=(120+values[5]*facing,300+values[4],40-values[3]*facing)
+                actual=struct.unpack('>3f',r.read(model+r.layout['translate'],12))
+                assert max(abs(a-b) for a,b in zip(actual,wanted))<.005
+                assert r.read(model+r.layout['scale'],12)==r.read(beam_samples+time*40+24,12)
+            r.call('ccStatusChanging',r.GOBJ,18);assert g in stopped
+            counter=0
     # Orphaned effects may reuse an address: never dereference or eject a GObj
     # outside its native link list/owner tag, and never hide a replacement body.
     index=next(i for i,_,p,_ in props if r.u32(p+12))
@@ -240,4 +282,4 @@ def test_visuals(r):
         assert all(not r.read(joints+i*0x100+layout['dobj_flags'],1)[0]&layout['hidden_mask'] for i in range(4,37))
     r.FP,r.GOBJ,r.JOINTS=previous;r.u32(links+12,0)
     assert r.u32(r.addr('gFTCustomMoveValidationFailures'))==0
-    print(f'PASS: {len(props)} source prop tables, {placements} linked-MIPS placements, {constructors} attached constructors, Cutter/Falcon flag windows, eight charge sizes/release handoff, source audio clocks and interruption/death/four-port reset/stale-owner cleanup (allocation/audio fixtures).')
+    print(f'PASS: {len(props)} source prop tables including ground/air Morph Ball windows, {placements} linked-MIPS placements, 88 Samus tether-glow placements, {constructors} attached constructors, Cutter/Falcon flag windows, eight charge sizes/release handoff, source audio clocks and interruption/death/four-port reset/stale-owner cleanup (allocation/audio fixtures).')

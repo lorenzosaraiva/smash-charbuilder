@@ -1,10 +1,23 @@
 # Special edge cases
 
-Updated **2026-10-07**, Remix preview **0.1.10**, project **0.1.27**.
+Updated **2026-10-07**, Remix preview **0.1.11**, project **0.1.28**.
 This milestone covers the original twelve bodies and donors. Body hurtboxes
 remain native; donor attack values, paths and clocks stay independent of poses.
 
 ## Fixes
+
+- DK/Samus borrowed down smashes no longer send donor effect bone IDs to
+  absent body joints. Cosmetic effects map to valid body roles or TopN;
+  donor mesh and part-hurtbox commands leave the foreign body intact.
+- Samus Bomb uses a separate donor Morph Ball on frames 10-42, restoring
+  native body visibility at frame 43 or interruption. Native body hurtboxes
+  stay unchanged; bomb creation, movement and recovery retain source timing.
+- Samus tether's glow tree/materials are preloaded for paired actions and
+  follow source joint 23 rather than the selected body's joint 23. The six
+  original beam-part samples remain unchanged.
+- A single DK Down B cycle deliberately has two slap windows at 16-17 and
+  26-27. Single-tap CPU checks on native DK and Mario's borrowed DK both
+  produce exactly one cycle. Another B tap requests a second cycle.
 
 - Mario's borrowed taunt grows around the selected body's planted pivot.
   Shared poses retain body bind translations, so applying Mario's root drop
@@ -35,6 +48,9 @@ release result is injected.
 
 | Check | Evidence | Rendered acceptance still needed |
 | --- | --- | --- |
+| DK/Samus down smash | Both donor/body directions execute real down-smash input and recover without CPU fault; 396 absent-effect-joint cases pass linked MIPS | Visible effects and contacts across the wider roster |
+| Samus Bomb | DK allocates a Morph Ball, hides its body on the source clock and restores visibility/owned handles on recovery; both ground/air prop tables checked on all foreign bodies | Visible ball size/position, grounded and airborne interruptions |
+| Samus tether | DK's missed tether allocates six beam parts plus native glow; full extension/retraction and seven-object cleanup; donor glow placements checked on all foreign bodies/facings | Visible alignment with DK's hand, hitbox and victim |
 | Missing aerial DK Down B | Mario rejects aerial input and performs grounded donor slaps after landing | Other bodies, ledges and buffered inputs |
 | Repeated DK slaps | Mario repeats frames 16–17 / 26–27, including native hitlag and opponent damage | Slopes, stage edges and interruption chains |
 | Quick Attack | Two real-input zips, direction change and recovery; native position/velocity/scale checked | Walls, ceilings, ledge snaps and all directional gates |

@@ -28,6 +28,9 @@ scope ensure_visual_files_: {
     lli t0, 1
     beq a0, t0, _main
     nop
+    lli t0, 3
+    beq a0, t0, _main
+    nop
     lli t0, 6
     beq a0, t0, _main
     nop
@@ -42,6 +45,9 @@ scope ensure_visual_files_: {
     lw t2, 0x18(sp)
     lli t1, 8
     beq t0, t1, _cutter
+    nop
+    lli t1, 3
+    beq t0, t1, _samus
     nop
     lli t1, 7
     bne t0, t1, _end
@@ -62,6 +68,11 @@ scope ensure_visual_files_: {
     _cutter:
     lw a0, 0x18(t2) // Kirby special2: Final Cutter sword and trails
     li a1, CharLabRuntime.sCCVisualFiles
+    b _load
+    nop
+    _samus:
+    lw a0, 0x18(t2) // Samus special2: native grapple glow tree/materials
+    li a1, CharLabRuntime.sCCVisualFiles + 12
     _load:
     lw v0, 0(a1)
     bnez v0, _end

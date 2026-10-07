@@ -23,11 +23,13 @@ parser.add_argument('--editor-slot',type=int,choices=range(1,5),default=1)
 parser.add_argument('--editor-play',action='store_true',help='Continue editor Test through CSS Start and stage confirmation into Training')
 parser.add_argument('--normal-mechanics',action='store_true',help='Exercise donor jab3/rapid phases and controlled live Link down-air contact')
 parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borrow this donor for normals and check real A-input pose streaming')
+parser.add_argument('--down-smash',action='store_true',help='Focus normal regression on a real down-smash input')
 parser.add_argument('--neutral',type=int,choices=range(1,12),help='Exercise a Neutral B choice with real controller input')
 parser.add_argument('--egg-contact',action='store_true',help='Place the CPU in Egg Lay reach to test capture, egg handoff and damage')
 parser.add_argument('--projectile-contact',action='store_true',help='Place the CPU at a PK Fire spark to test native flame-pillar creation')
 parser.add_argument('--visuals',action='store_true',help='Check real effect/model allocation, finite transforms and recovery cleanup (null renderer)')
 parser.add_argument('--paired-donor',type=int,choices=range(12),help='Real grab/contact and forward/back release with this grab donor')
+parser.add_argument('--paired-miss',action='store_true',help='Exercise full missed tether extension/retraction and cleanup')
 parser.add_argument('--throw-donor',type=int,choices=range(12),help='Independent throw donor for paired tests')
 parser.add_argument('--back-throw',action='store_true')
 parser.add_argument('--paired-airborne',action='store_true',help='Raise the captured pair to exercise the fall phase before landing')
@@ -35,13 +37,15 @@ parser.add_argument('--cargo-jump',action='store_true',help='Walk and jump with 
 parser.add_argument('--taunt-donor',type=int,choices=range(12),help='Real L input, source taunt duration and cancellation')
 parser.add_argument('--run-id',help='Isolated emulator workspace for independent CPU checks')
 parser.add_argument('--stage',type=int,choices=range(9),default=6)
-parser.add_argument('--edge',choices=('grounded-only','dk-repeat','ness-launch','thunder-contact','reflect','absorb','sing','rest','air-land','interrupt','quick-wall','quick-ledge','slope'),help='Controlled contact/transition regression')
+parser.add_argument('--edge',choices=('grounded-only','dk-single','dk-repeat','ness-launch','thunder-contact','reflect','absorb','sing','rest','air-land','interrupt','quick-wall','quick-ledge','slope'),help='Controlled contact/transition regression')
 args=parser.parse_args()
 if args.edge:
-    args.donor={'grounded-only':2,'dk-repeat':2,'ness-launch':11,'thunder-contact':9,'reflect':1,'absorb':11,'sing':10,'rest':10,'air-land':0,'interrupt':11,'quick-wall':9,'quick-ledge':9,'slope':7}[args.edge]
+    args.donor={'grounded-only':2,'dk-single':2,'dk-repeat':2,'ness-launch':11,'thunder-contact':9,'reflect':1,'absorb':11,'sing':10,'rest':10,'air-land':0,'interrupt':11,'quick-wall':9,'quick-ledge':9,'slope':7}[args.edge]
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
 if args.editor_play:assert args.editor_test
 if args.normal_mechanics:assert args.normal_animations is not None
+if args.down_smash:assert args.normal_animations is not None
+if args.paired_miss:assert args.paired_donor is not None
 if args.egg_contact:assert args.neutral==11
 if args.projectile_contact:assert args.neutral==5
 
@@ -165,7 +169,7 @@ def frame_callback(frame):
             if cpu:
                 held=u32(fp+layout[17]);capture=u32(cpu+layout[18])
                 pair_samples.append((u32(fp+0x24),u32(cpu+0x24),tick,held,capture,u32(cpu+percent_off)))
-                if args.paired_donor is not None and not held and u32(fp+attack_off)>=2:
+                if args.paired_donor is not None and not args.paired_miss and not held and u32(fp+attack_off)>=2:
                     center=fp+attack_off+center_off;target=u32(cpu+0x8E8)+layout[12]
                     for j in (0,4,8):wf32(target+j,f32(center+j)-(200 if j==4 else 0))
                     w32(cpu+layout[2],layout[29]);pair_contact=True
@@ -269,13 +273,15 @@ def visual_report(report):
     assert not visual_errors,visual_errors[:8]
     assert not any(u32(vs+field) for field in visual_layout[1:5]),('Visual survived recovery',diagnostic())
     counters={name:u32(labels['CharLabRuntime.gCCVisual'+name]) for name in ('Models','Effects','Sounds','Stops')}
-    if args.neutral in (1,9,11) or args.donor==8:assert counters['Models']>0,('No donor prop/orb',counters)
-    if args.neutral==6 or args.donor in (7,8) or (args.neutral is None and args.donor is None):assert counters['Effects']>0,('No donor attached FX',counters)
+    if args.neutral in (1,9,11) or args.donor==8 or (args.donor==3 and args.special_side!='up'):assert counters['Models']>0,('No donor prop/orb',counters)
+    if args.neutral==6 or args.donor in (7,8) or (args.neutral is None and args.donor is None and args.paired_donor is None and args.taunt_donor is None):assert counters['Effects']>0,('No donor attached FX',counters)
     if args.donor==8 and args.special_side!='up':assert visual_hidden,('Stone did not replace body',counters)
+    if args.donor==3 and args.special_side!='up':assert visual_hidden,('Bomb did not replace body',counters)
+    if args.paired_donor==3:assert counters['Effects']>0,('Missing Samus beam glow',counters,[hex(u32(labels['CharLabRuntime.sCCVisualFiles']+i*4)) for i in range(4)])
     if args.neutral==9:assert counters['Models']==2,('Charge orb restarted during internal phases',counters)
     assert visual_samples>0,('No source visual updates',counters)
     report['visual_cpu_checks']={'checks':['native prop/effect allocation','source-clock audio dispatch','finite transforms','owned recovery cleanup'],
-                               'samples':visual_samples,'objects':len(visual_objects),'stone_replacement':visual_hidden,**counters}
+                               'samples':visual_samples,'objects':len(visual_objects),'body_replacement':visual_hidden,**counters}
 try:
     print('BOOT: starting CPU.',flush=True)
     time.sleep(2);ram=core.DebugMemGetPointer(1)
@@ -381,6 +387,15 @@ try:
             for j in (0,4,8):wf32(target+j,f32(start_top+layout[12]+j)+(200*facing if j==0 else 0))
             pair_contact=True
         tracking=True;pulse(0xA0)
+        if args.paired_miss:
+            frames(160);tracking=False
+            wait(lambda:u32(fighter()+0x24)==10,'Missed tether recovery')
+            assert not u32(native['__osFaultedThread']),diagnostic()
+            assert not any(row[3] and row[4] for row in pair_samples),('Missed tether fixture captured opponent',pair_samples)
+            report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'grab_donor':args.paired_donor,'checks':['real missed tether input','full extension/retraction','recovery cleanup'],'rendering':'null'}
+            visual_report(report)
+            (report_directory/f'cpu-scenes-tether-miss-{args.body}-{args.paired_donor}.json').write_text(json.dumps(report,indent=2)+'\n')
+            print('PASS: missed tether',report,flush=True);raise SystemExit(0)
         wait(lambda:u32(fighter()+layout[17])!=0,'Donor grab contact',seconds=30)
         frames(12)
         if args.paired_airborne:
@@ -410,6 +425,7 @@ try:
             if args.paired_airborne:assert 229 in seen,('Kirby airborne fall phase absent',seen)
         if args.back_throw:assert 170 in seen,('Back throw input did not enter donor backward phase',seen)
         report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'grab_donor':args.paired_donor,'throw_donor':donor,'back_throw':args.back_throw,'airborne_start':args.paired_airborne,'cargo_jump':args.cargo_jump,'observed_phases':sorted(seen),'checks':['real Z+A grab/contact','native paired ownership','throw input/release/damage','native body identity and recovery'],'rendering':'null'}
+        visual_report(report)
         (report_directory/f'cpu-scenes-paired-{args.body}-{args.paired_donor}-{donor}-{int(args.back_throw)}-{int(args.paired_airborne)}-{int(args.cargo_jump)}.json').write_text(json.dumps(report,indent=2)+'\n')
         print('PASS: real donor grab/paired throw release',report,flush=True);raise SystemExit(0)
     if args.taunt_donor is not None:
@@ -520,23 +536,25 @@ try:
             assert not u32(native['__osFaultedThread']),('Jab fault',diagnostic())
             print('PASS: real donor jab input, source phase transitions and recovery; motions',sorted(observed),flush=True)
 
-        for name,button in (('jab',0x80),('up attack',0x80|(80<<24)),('forward aerial',0x80|(80<<16)),('down aerial',0x80|(176<<24))):
+        inputs=(('down smash',0x80|(176<<24)),) if args.down_smash else (('jab',0x80),('up attack',0x80|(80<<24)),('forward aerial',0x80|(80<<16)),('down aerial',0x80|(176<<24)))
+        for name,button in inputs:
             print('NORMAL:',name,flush=True)
             wait(lambda:u32(fighter()+0x24)==10,'Normal idle',seconds=30)
             if 'aerial' in name:pulse(0x800);frames(15)
             trace.clear();tracking=True;pulse(button);frames(80);tracking=False
             assert trace and not u32(native['__osFaultedThread']),('Normal fault',name,diagnostic())
+            if args.down_smash:assert 208 in {row[0] for row in trace},('Down-smash status absent',trace)
             wait(lambda:u32(fighter()+0x24)==10,'Normal recovery',seconds=30)
         if args.normal_mechanics and args.normal_animations==5:
             assert link_contact_done and link_bounce_samples,('Link live bounce missing',link_contact_done,link_bounce_samples,diagnostic())
             normal_checks.append('controlled live Link down-air bounce')
-        assert u32(labels['CharLabRuntime.gCCAnimationLoads'])>starting_loads and len(animation_records)>=3,('Missing normal clips',animation_samples,animation_records)
+        assert u32(labels['CharLabRuntime.gCCAnimationLoads'])>starting_loads and len(animation_records)>=(1 if args.down_smash else 3),('Missing normal clips',animation_samples,animation_records)
         assert not animation_errors,animation_errors[:8]
         print('PASS: real A-input normals stream distinct donor clips; finite native joints and recovery on body',args.body,flush=True)
         report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'normal_animation_donor':args.normal_animations,
-                'checks':['Training load',*normal_checks,'real jab/up attack/forward aerial/down aerial input','normal clip DMA','finite native joints','normal recovery'],
+                'checks':['Training load',*normal_checks,'real down-smash input' if args.down_smash else 'real jab/up attack/forward aerial/down aerial input','normal clip DMA','finite native joints','normal recovery'],
                 'animation_samples':animation_samples,'animation_clips':len(animation_records),'rendering':'null'}
-        (build/f'cpu-scenes-normals-{args.body}-{args.normal_animations}.json').write_text(json.dumps(report,indent=2)+'\n')
+        (report_directory/(f'cpu-scenes-normals-{args.body}-{args.normal_animations}'+('-dsmash.json' if args.down_smash else '.json'))).write_text(json.dumps(report,indent=2)+'\n')
         raise SystemExit(0)
     moves=(('Falcon Kick',0x40|(176<<24)),('Quick Attack',0x40|(80<<24)))
     if args.donor is not None:
@@ -610,7 +628,7 @@ try:
     report_name='cpu-scenes.json' if args.donor is None else f'cpu-scenes-{args.body}-{args.donor}-{args.special_side}.json'
     if args.falcon_contact:report_name=report_name.replace('.json','-contact.json')
     if args.normal_animations is not None:report_name=report_name.replace('.json','-normals-'+str(args.normal_animations)+'.json')
-    (build/report_name).write_text(json.dumps(report,indent=2)+'\n')
+    (report_directory/report_name).write_text(json.dumps(report,indent=2)+'\n')
 except BaseException as exc:
     if not isinstance(exc,SystemExit):print('SCENE FAILURE:',repr(exc),flush=True)
     raise

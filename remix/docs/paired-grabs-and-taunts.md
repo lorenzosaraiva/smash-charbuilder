@@ -1,6 +1,6 @@
 # Paired grabs, throws and taunts
 
-Remix preview **0.1.10**, updated **2026-10-07**. Original twelve bodies/donors.
+Remix preview **0.1.11**, updated **2026-10-07**. Original twelve bodies/donors.
 
 ## Controls and behavior
 
@@ -10,6 +10,11 @@ Training. Z+A grabs; A/forward or back throws; L taunts. Selecting the actual
 body retains native behavior.
 
 Link and Samus keep donor tether reach, source prop samples and pull timing.
+Samus now includes the native beam glow, which was missing from borrowed
+grabs. Paired-resource preloads run before the match; the glow follows sampled
+donor joint 23 independently of the body's joints and clears on exit/interruption.
+DK's full missed extension/retraction and native cleanup pass CPU checks;
+rendered alignment still needs an in-game check.
 Yoshi uses donor tongue capture. Capture/throw positions use donor socket
 matrices and native victim child offsets/scales. Source facing and release
 flags determine direction and timing. Attacker source poses and movement use

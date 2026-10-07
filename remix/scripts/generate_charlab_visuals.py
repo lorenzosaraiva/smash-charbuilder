@@ -26,6 +26,8 @@ def generate():
     from generateSpecialTiming import path_catalog, special_commands
     from customMoveCatalog import motion_descriptors
     from customAnimation import flag_word
+    from customAnimation import sample, rig, world, euler, source_size
+    from generateCustomAnimations import vec
     audio = {'ftMotionPlayFGM', 'ftMotionCommandPlayFGMStoreInfo',
              'ftMotionCommandPlayLoopSFXStoreInfo', 'ftMotionCommandStopLoopSFX',
              'ftMotionPlayVoice', 'ftMotionPlayInterruptableVoice'}
@@ -59,6 +61,29 @@ def generate():
         pattern = r'(sFTCustomSpecialVisual'+str(i)+r', \d+, (?:NULL|&sFTCustomSpecialProp\d+)) \}'
         text, count = re.subn(pattern, lambda m:m[1]+', '+str(family)+' }', text)
         assert count == 1, ('family', i)
+        if phase['fighter']=='Samus' and phase['phase'].endswith('Lw'):
+            # Export Bomb's Morph Ball without changing the body's mesh.
+            bones,_=rig('Samus',phase['flags']); size=source_size('Samus')
+            samples=[]
+            for frame,pose in enumerate(sample('Samus',phase['name'],phase['frames'],phase['flags'])):
+                matrix,point=world(bones,pose)[6]
+                unit,_=world(bones,{j:(*v[:7],1,1,1) for j,v in pose.items()})[6]
+                scale=tuple(sum(matrix[r][a]**2 for r in range(3))**.5*size for a in range(3))
+                samples.append('    { '+vec(euler(unit))+', '+vec(tuple(v*size for v in point))+', '+vec(scale)+', '+str(int(10<=frame<43))+' },')
+            symbol='sCCSamusBomb'+str(i)
+            text='const FTCustomSpecialAttachmentFrame '+symbol+'Frames[] = {\n'+'\n'.join(samples)+'\n};\nconst FTCustomSpecialAttachment '+symbol+' = { '+symbol+'Frames, 6, 2, TRUE };\n'+text
+            text,count=re.subn(r'(sFTCustomSpecialVisual'+str(i)+r', \d+, )NULL(, \d+ \})',r'\1&'+symbol+r'\2',text)
+            assert count==1
+    # Native beam glow follows Samus joint 23, independently of body joints.
+    from pairedMoves import catalog as paired_catalog
+    phase=next(c for c in paired_catalog() if c['fighter']=='Samus' and c['phase']=='Catch')
+    bones,_=rig('Samus',phase['flags']); size=source_size('Samus'); glow=[]
+    for pose in sample('Samus',phase['name'],phase['frames'],phase['flags']):
+        matrix,point=world(bones,pose)[23]
+        unit,_=world(bones,{j:(*v[:7],1,1,1) for j,v in pose.items()})[23]
+        scale=tuple(sum(matrix[r][a]**2 for r in range(3))**.5*size for a in range(3))
+        glow.append('    { '+vec(euler(unit))+', '+vec(tuple(v*size for v in point))+', '+vec(scale)+', TRUE },')
+    text+='\nstatic const FTCustomSpecialAttachmentFrame sCCSamusTetherGlow[] = {\n'+'\n'.join(glow)+'\n};\n'
     (OUT/'visual-data.inc').write_text(text, encoding='utf-8')
 
     ef = (LAB/'src/ef/efmanager.c').read_text(encoding='utf-8')
@@ -74,6 +99,10 @@ def generate():
         body = body.replace('dEFManager'+name+'EffectDesc', 'sCC'+name+'EffectDesc')
         source.append(body)
     source = '\n'.join(source)
+    beam=re.search(r'EFDesc dEFManagerSamusGrappleBeamEffectDesc =\s*\{.*?\n\};',ef,re.S)[0]
+    beam=beam.replace('dEFManagerSamusGrappleBeamEffectDesc','sCCSamusGrappleBeamEffectDesc').replace('gFTDataSamusSpecial2','sCCVisualFiles[3]')
+    beam=beam.replace('0x4F,','nGCMatrixKindTraRotRpyRSca,')
+    source+='\n'+beam+'\n'
     source = source.replace('gFTDataKirbySpecial2', 'sCCVisualFiles[0]')
     source = source.replace('gFTDataCaptainSpecial2', 'sCCVisualFiles[1]')
     source = source.replace('gFTDataCaptainSpecial3', 'sCCVisualFiles[2]')
@@ -82,8 +111,8 @@ def generate():
     source = re.sub(r'joint = \(\(fp->fkind.*?;\n    if \(ftMainCharBuilderIsSpecialVisual\(fp\)\) joint = .*?;',
                     'joint = ftMainCharBuilderGetSpecialVisualJoint(fp, nFTKindCaptain, 16);', source)
     source = source.replace('efManagerMakeEffectForce(', 'efManagerMakeEffectNoForce(')
-    (OUT/'visual-effects.inc').write_text('void *sCCVisualFiles[3];\n'+source, encoding='utf-8')
-    print('Imported source-timed visual/audio scripts, prop samples and six private attached FX descriptors.')
+    (OUT/'visual-effects.inc').write_text('void *sCCVisualFiles[4];\n'+source, encoding='utf-8')
+    print('Imported source-timed visual/audio scripts, Morph Ball/prop samples and seven private attached FX descriptors.')
 
 
 if __name__ == '__main__':

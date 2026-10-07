@@ -62,7 +62,8 @@ def run(e):
         nonlocal reflected,contact
         fp=fighter();status=u32(fp+0x24)
         clock=labels['CharLabRuntime.sCCSpecialClocks']
-        frame=int(f32(clock+20)) if u32(clock)==fp else -1
+        move_clock=labels['CharLabRuntime.sFTCustomMoveClocks']
+        frame=int(f32(clock+20)) if u32(clock)==fp else int(f32(move_clock+24)) if u32(move_clock)==fp else int(f32(gobj()+0x78))
         mask=sum(1<<i for i in range(4) if u32(fp+e['attack_off']+i*e['attack_size']))
         rows.append((status,frame,mask,u32(fighter(1)+0x24),u32(fighter(1)+e['percent_off']),u32(fp+ex[7])))
         seen.add(status)
@@ -138,16 +139,18 @@ def run(e):
         pulse(0x40|(176<<24));frames(160)
         assert ex[15] in seen,('Grounded DK move lost after rejection',seen)
         checks=['airborne Down B rejected without body fallback','configured grounded move still works']
-    elif mode=='dk-repeat':
+    elif mode in ('dk-single','dk-repeat'):
         place(1,(f32(root())+150,f32(root()+4),f32(root()+8)))
         pulse(0x40|(176<<24));wait(lambda:u32(fighter()+0x24)==ex[15],'DK slap loop')
-        frames(5);pulse(0x40);frames(170)
+        frames(5)
+        if mode=='dk-repeat':pulse(0x40)
+        frames(170)
         # Hitlag repeats the same source frame while the native clock is paused.
         distinct=[r for i,r in enumerate(rows) if i==0 or r[:3]!=rows[i-1][:3]]
         active=[r[1] for r in distinct if r[0]==ex[15] and r[2]]
-        assert active==[16,17,26,27]*2,('Donor repeated slap windows',active)
+        assert active==[16,17,26,27]*(2 if mode=='dk-repeat' else 1),('Donor slap windows',active)
         assert max(r[4] for r in rows)>0, 'Repeated DK attacks never contacted opponent'
-        checks=['two native DK cycles','original slap hit windows repeated exactly including hitlag','native opponent contact/damage']
+        checks=['two native DK cycles' if mode=='dk-repeat' else 'single tap produces one DK cycle','original slap hit windows including hitlag','native opponent contact/damage']
     elif mode=='ness-launch':
         place(1,(f32(root())+1800,f32(root()+4),f32(root()+8)))
         pulse(0x40|(80<<24));wait(lambda:u32(fighter()+0x24) in ex[9:11],'PK Thunder hold')

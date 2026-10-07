@@ -2,10 +2,37 @@
 import json
 import struct
 from pathlib import Path
-from unicorn.mips_const import UC_MIPS_REG_V0, UC_MIPS_REG_T9
+from unicorn.mips_const import UC_MIPS_REG_V0, UC_MIPS_REG_T9, UC_MIPS_REG_A2
 
 
 def test_edge_fixes(r):
+    # Missing donor FX bones must be resolved before the native effect call.
+    # Use absent parts and execute the production parser, rather than its
+    # usual external collision stream alone (which missed the smash crash).
+    effects=[]
+    # Original US symbol gives the engine service, independent of the hook.
+    import re
+    lab=Path(__file__).resolve().parents[2]/'ssb-decomp-re'
+    source=(lab/'src/ft/ftparam.c').read_text()
+    effect_service=int(re.search(r'// (0x[0-9A-Fa-f]+)[^\n]*\nvoid\* ftParamMakeEffect\(',source)[1],16)
+    r.services[effect_service]=lambda:effects.append(r.reg(UC_MIPS_REG_A2)) or 0
+    for body in range(12):
+        for donor in range(12):
+            if body==donor:continue
+            r.setup(body,donor)
+            r.u32(r.FP+0x24,208);r.u32(r.FP+0x28,r.motion(donor,18))
+            r.call('ccStart',r.FP,0)
+            for joint in (21,33,35):
+                r.u32(r.FP+0x8E8+joint*4,0)
+                words=(38<<26|joint<<19|1<<10,0,0,0)
+                r.write(r.VALUES,struct.pack('>4I',*words))
+                ms=r.FP+0x868;r.u32(ms+4,r.VALUES)
+                r.call('ccParse',r.GOBJ,r.FP,ms,38)
+                assert r.u32(ms+4)==r.VALUES+16
+                mapped=effects[-1]
+                assert mapped==0xFFFFFFFF or mapped<37 and r.u32(r.FP+0x8E8+mapped*4),(body,donor,joint,mapped)
+                assert r.u32(r.FP+8)==body
+    del r.services[effect_service]
     saved=dict(r.services)
     r.services[r.labels['Menu.update_pointer_']]=lambda:0
     r.services[r.labels['CharCreator.reset_cache_']]=lambda:0
@@ -60,4 +87,4 @@ def test_edge_fixes(r):
             assert standing>0 and abs(pivot-standing)<.001,(body,tick,pivot,standing)
             assert r.f32(root+r.layout['translate']+4)==1234
     r.call('ccReset')
-    print('PASS: copy-body Neutral B/all fields on twelve bodies/four slots; unavailable aerial DK Down B never calls body fallback; Mario growth pivots stay planted on eleven foreign rigs without moving TopN.')
+    print('PASS: 396 absent normal FX joints resolve safely across all foreign original bodies; copy-body Neutral B/all fields on twelve bodies/four slots; unavailable aerial DK Down B never calls body fallback; Mario growth pivots stay planted on eleven foreign rigs without moving TopN.')
