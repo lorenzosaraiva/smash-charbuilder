@@ -1,11 +1,19 @@
 # Special edge cases
 
-Updated **2026-10-07**, Remix preview **0.1.11**, project **0.1.28**.
+Updated **2026-10-07**, Remix preview **0.1.12**, project **0.1.29**.
 This milestone covers the original twelve bodies and donors. Body hurtboxes
 remain native; donor attack values, paths and clocks stay independent of poses.
 
 ## Fixes
 
+- Samus Bomb creates one weapon per input, including DK's body. Resuming the
+  source script on landing or entering the air skips consumed one-shot flags
+  instead of replaying the frame-10 bomb. Fresh inputs keep their own spawn.
+  The external donor stream exclusively owns supported special gameplay flags.
+- Aerial Down B availability follows the selected original donor rather than
+  the body's attribute bit. DK can use Samus Bomb in the air; selecting DK's
+  own grounded-only Down B still rejects aerial input. Native and expanded
+  fighters without a shared recipe retain their original attribute gate.
 - DK/Samus borrowed down smashes no longer send donor effect bone IDs to
   absent body joints. Cosmetic effects map to valid body roles or TopN;
   donor mesh and part-hurtbox commands leave the foreign body intact.
@@ -40,6 +48,18 @@ ports for airborne DK rejection, and all eleven foreign Mario taunt pivots
 through eight source growth/shrink samples. These are production-code checks,
 with menu helpers isolated where appropriate.
 
+Bomb regressions execute 88 native/source flag cases and 44 casts across all
+eleven foreign bodies, verifying the frame-10 spawn and three ground/air phase
+resumes per cast. The native weapon allocator is isolated in these MIPS checks.
+Another 576 cases cover original donor aerial availability on all bodies/four
+ports, with separate native-fallback checks.
+
+The `--bomb-count` CPU fixture counts live, fighter-owned Samus weapon births
+for two grounded and two aerial controller inputs on DK, Mario and native Samus.
+Each input creates exactly one bomb; native transitions, recovery and new casts
+execute normally. Earlier Morph Ball checks verified presentation/cleanup only
+and did not establish weapon counts.
+
 Optional CPU fixtures boot the built ROM with a native Mupen64Plus core and
 real controller input. Positioning fixtures make contacts repeatable; native
 weapon/collision/status code determines the outcome. Absorption starts from an
@@ -49,7 +69,7 @@ release result is injected.
 | Check | Evidence | Rendered acceptance still needed |
 | --- | --- | --- |
 | DK/Samus down smash | Both donor/body directions execute real down-smash input and recover without CPU fault; 396 absent-effect-joint cases pass linked MIPS | Visible effects and contacts across the wider roster |
-| Samus Bomb | DK allocates a Morph Ball, hides its body on the source clock and restores visibility/owned handles on recovery; both ground/air prop tables checked on all foreign bodies | Visible ball size/position, grounded and airborne interruptions |
+| Samus Bomb | One actual weapon per grounded/aerial input on DK, Mario and native Samus, including landing and fresh casts; all-foreign-body source flag/timing checks; Morph Ball visibility and cleanup checked independently | Visible ball size/position, grounded and airborne interruptions, wider stages/contacts |
 | Samus tether | DK's missed tether allocates six beam parts plus native glow; full extension/retraction and seven-object cleanup; donor glow placements checked on all foreign bodies/facings | Visible alignment with DK's hand, hitbox and victim |
 | Missing aerial DK Down B | Mario rejects aerial input and performs grounded donor slaps after landing | Other bodies, ledges and buffered inputs |
 | Repeated DK slaps | Mario repeats frames 16–17 / 26–27, including native hitlag and opponent damage | Slopes, stage edges and interruption chains |

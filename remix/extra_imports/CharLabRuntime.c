@@ -261,15 +261,17 @@ void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
             break;
         }
     }
-    /* Retargeted body animation flags must not overwrite source jab/landing
-     * flags. The external normal event stream supplies their original waits. */
-    if (script != &sCCMotionScripts[fp->player] && ccNormalIndex(fp)>=0 &&
+    /* Native body events must not fire donor gameplay a second time. Both
+     * normals and collision-path specials have a source stream that owns
+     * these flags (including projectile creation and movement gates). */
+    if (script != &sCCMotionScripts[fp->player] &&
+        (ccNormalIndex(fp)>=0 || (ccSpecialClock(fp) != NULL && ccSpecialClock(fp)->path != NULL)) &&
         opcode>=nFTMotionEventSetFlag0 && opcode<=nFTMotionEventSetFlag3)
     { ftMotionEventAdvance(script, FTMotionEventDefault); return; }
     if (script != &sCCMotionScripts[fp->player] && ccSpecialClock(fp) != NULL && ccSpecialClock(fp)->path != NULL)
     {
         /* The phase is outside the normal definition table, so skip native
-         * collision commands explicitly. Numeric flags still run natively. */
+         * collision commands explicitly. Source flags execute above. */
         switch(opcode)
         {
         case nFTMotionEventMakeAttackColl: case nFTMotionEventMakeAttackCollScaled:
@@ -290,7 +292,7 @@ void ccParse(GObj *gobj, FTStruct *fp, FTMotionScript *script, u32 opcode)
     if (opcode == nFTMotionEventSetThrow) ftCustomMoveApplyThrow(fp);
 }
 
-void ccEvents(GObj *gobj)
+static void ccRunEvents(GObj *gobj, sb32 forward)
 {
     FTStruct *fp = gobj->user_data.p;
     FTCustomMoveClock *clock = ftCustomMoveGetClock(fp);
@@ -305,7 +307,16 @@ void ccEvents(GObj *gobj)
     }
     else script->script_wait -= ccSpecialClock(fp) ? ((DObj*)gobj->obj)->anim_speed : clock->speed;
     while (script->p_script != NULL && script->script_wait <= 0.0F && limit-- > 0)
-        ccParse(gobj, fp, script, *script->p_script >> 26);
+    {
+        u32 opcode = *script->p_script >> 26;
+        /* SetStatus resumes ground/air phases at the current donor frame.
+         * Match the native forward parser: consumed one-shot flags must not
+         * fire again while seeking through earlier events. Flag3 is stateful
+         * and still reconstructs the source movement gate. */
+        if (forward && opcode >= nFTMotionEventSetFlag0 && opcode <= nFTMotionEventSetFlag2)
+            ftMotionEventAdvance(script, FTMotionEventDefault);
+        else ccParse(gobj, fp, script, opcode);
+    }
     if (limit <= 0) { script->p_script = NULL; gFTCustomMoveValidationFailures++; }
 }
 
@@ -354,6 +365,19 @@ void ccPrepare(GObj *gobj, f32 frame_begin)
     }
     ccVisualStart(fp, frame_begin);
 }
+
+sb32 ccCanAirDownB(FTStruct *fp)
+{
+    SCCharBuilderSlot *slot;
+    ccSyncCurrent(fp);
+    slot = ftCustomMoveGetSlot(fp);
+    if (slot != NULL && (u32)slot->special_lw < 12)
+        return slot->special_lw != nFTKindDonkey;
+    return fp->attr->is_have_specialairlw;
+}
+
+void ccEvents(GObj *gobj) { ccRunEvents(gobj, FALSE); }
+void ccEventsForward(GObj *gobj) { ccRunEvents(gobj, TRUE); }
 
 extern GObj *wpFoxBlasterMakeWeapon(GObj*, Vec3f*);
 extern alSoundEffect *func_800269C0_275C0(u16);

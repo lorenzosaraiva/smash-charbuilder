@@ -302,6 +302,38 @@ scope CharLab {
         j CharCreator.on_action_changed_
         or a1, r0, r0
     }
+    // The native air-input gate precedes donor dispatch. DK's body has no
+    // aerial Down B, but that must not block a selected Samus Bomb (or other
+    // original donor with an aerial entry). Preserve native/expanded fallback.
+    scope air_down_b_available_: {
+        OS.patch_start(0xCB9E4, 0x80150FA4)
+        j air_down_b_available_
+        nop
+        OS.patch_end()
+        addiu sp, sp, -0x0030
+        sw ra, 0x0000(sp)
+        sw a0, 0x0004(sp)
+        sw a1, 0x0008(sp)
+        sw a2, 0x000C(sp)
+        sw v0, 0x0010(sp)
+        sw v1, 0x0014(sp)
+        sw at, 0x0018(sp)
+        save_fpu()
+        jal CharLabRuntime.ccCanAirDownB
+        or a0, a1, r0
+        subu t6, r0, v0
+        restore_fpu()
+        lw ra, 0x0000(sp)
+        lw a0, 0x0004(sp)
+        lw a1, 0x0008(sp)
+        lw a2, 0x000C(sp)
+        lw v0, 0x0010(sp)
+        lw v1, 0x0014(sp)
+        lw at, 0x0018(sp)
+        j 0x80150FAC
+        addiu sp, sp, 0x0030
+    }
+
     // Both native streams are initialized before the external stream starts.
     scope prepare_: {
         OS.patch_start(0x631B0, 0x800E79B0)
@@ -375,7 +407,7 @@ scope CharLab {
         sw a0, 0x0018(sp)
         jal 0x800E0478
         nop
-        jal CharLabRuntime.ccEvents
+        jal CharLabRuntime.ccEventsForward
         lw a0, 0x0018(sp)
         lw ra, 0x0014(sp)
         jr ra

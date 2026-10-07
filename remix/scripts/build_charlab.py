@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.11'
+VERSION = '0.1.12'
 UPDATED = '2026-10-07'
 
 
@@ -74,7 +74,10 @@ def package(desktop=None):
 
 Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
-Fixes: safe donor normal effects (including DK/Samus down smash), Samus Bomb
+Fixes: one Samus bomb per Down B, including DK's body and ground/air
+transitions. Consumed spawn flags cannot replay; fresh inputs retain source timing.
+DK's body can use a selected aerial Down B; DK's own slaps remain grounded-only.
+Also retains safe donor normal effects (including DK/Samus down smash), Samus Bomb
 Morph Ball replacement and donor-positioned Samus tether glow. Native DK keeps
 two slap windows in one cycle; a second cycle requires another B press.
 See docs/special-edge-cases.md for automated

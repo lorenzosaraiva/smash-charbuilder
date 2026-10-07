@@ -17,6 +17,7 @@ parser.add_argument('--headers',type=Path,help='Matching Mupen64Plus API header 
 parser.add_argument('--body',type=int,choices=range(12),default=0,help='Original fighter body (0 = Mario)')
 parser.add_argument('--donor',type=int,choices=range(12),help='Exercise this donor Up/Down B instead of the Kick/Quick Attack regression')
 parser.add_argument('--special-side',choices=('both','up','down'),default='both')
+parser.add_argument('--bomb-count',action='store_true',help='Count actual Samus Bomb births across two grounded and two aerial Down B inputs')
 parser.add_argument('--falcon-contact',action='store_true',help='Place the CPU in the live Dive hitbox to exercise native capture/release')
 parser.add_argument('--editor-test',action='store_true',help='Enter the editor, activate Test in Training with A, then return with B')
 parser.add_argument('--editor-slot',type=int,choices=range(1,5),default=1)
@@ -42,6 +43,7 @@ args=parser.parse_args()
 if args.edge:
     args.donor={'grounded-only':2,'dk-single':2,'dk-repeat':2,'ness-launch':11,'thunder-contact':9,'reflect':1,'absorb':11,'sing':10,'rest':10,'air-land':0,'interrupt':11,'quick-wall':9,'quick-ledge':9,'slope':7}[args.edge]
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
+if args.bomb_count:assert args.donor==3 and args.special_side=='down'
 if args.editor_play:assert args.editor_test
 if args.normal_mechanics:assert args.normal_animations is not None
 if args.down_smash:assert args.normal_animations is not None
@@ -130,6 +132,7 @@ visual_layout=constant('ccVisualLayout')
 visual_objects=set();visual_samples=0;visual_hidden=False;visual_errors=[]
 pair_contact=False;pair_samples=[];taunt_samples=[]
 weapon_kinds=set();item_kinds=set();projectile_contact_done=False
+bomb_live=set();bomb_births=[];bomb_casts=[]
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
     global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples,egg_contact_done,projectile_contact_done,visual_samples,visual_hidden,pair_contact
@@ -162,6 +165,20 @@ def frame_callback(frame):
         top=u32(fp+0x8E8);model=u32(fp+0x8E8+16)
         trace.append((u32(fp+0x24),u32(fp+0x28),tuple(f32(top+layout[12]+j) for j in (0,4,8)),
                       tuple(f32(model+layout[14]+j) for j in (0,4,8)),tuple(f32(fp+special[1]+j) for j in (0,4,8))))
+        if args.bomb_count:
+            live=set();g=u32(native['gGCCommonLinks']+5*4)
+            for _ in range(64):
+                if not 0x80000000<=g<0x80800000:break
+                wp=u32(g+0x84)
+                if 0x80000000<=wp<0x80800000 and u32(wp+edge_layout[0])==3 and u32(wp+edge_layout[1])==u32(fp+visual_layout[8]):
+                    live.add(g)
+                g=u32(g+4)
+            clock=labels['CharLabRuntime.sCCSpecialClocks']
+            for g in sorted(live-bomb_live):
+                bomb_births.append({'update':u32(updates),'weapon':hex(g),'status':u32(fp+0x24),
+                                    'source_frame':f32(clock+20) if u32(clock)==fp else None,
+                                    'animation_frame':f32(u32(fp+visual_layout[8])+layout[11])})
+            bomb_live.clear();bomb_live.update(live)
         if args.paired_donor is not None or args.taunt_donor is not None:
             clock=labels['CharLabRuntime.sFTCustomMoveClocks']
             tick=f32(clock+24) if u32(clock)==fp else -1
@@ -559,6 +576,8 @@ try:
     moves=(('Falcon Kick',0x40|(176<<24)),('Quick Attack',0x40|(80<<24)))
     if args.donor is not None:
         moves=tuple((name,button) for name,button,side in (('Donor Up B',0x40|(80<<24),'up'),('Donor Down B',0x40|(176<<24),'down')) if args.special_side in ('both',side))
+    if args.bomb_count:
+        moves=tuple((name,0x40|(176<<24)) for name in ('Ground bomb 1','Ground bomb 2','Air bomb 1','Air bomb 2'))
     for name,button in moves:
         fp=fighter();top=u32(fp+0x8E8);model=u32(fp+0x8E8+16)
         # Position/collision state is a fixture, like the Training scene itself.
@@ -570,8 +589,12 @@ try:
         for j,value in zip((0,4,8),start_position):
             wf32(top+layout[12]+j,value);wf32(fp+special[1]+j,0);wf32(fp+special[2]+j,0)
         check(core.CoreDoCommand(8,0,None));frames(3)
+        if args.bomb_count and name.startswith('Air'):
+            pulse(0x800);frames(18)
+            assert u32(fighter()+layout[2])!=initial_kinetics,('Bomb fixture did not jump',diagnostic())
         initial_scale=tuple(f32(model+layout[14]+j) for j in (0,4,8))
         cast_position=tuple(f32(top+layout[12]+j) for j in (0,4,8))
+        birth_start=len(bomb_births)
         trace.clear();tracking=True;pulse(button)
         if name=='Quick Attack':
             wait(lambda:u32(fighter()+0x24) in (special[5],special[7]),'First Quick Attack endpoint')
@@ -579,8 +602,21 @@ try:
             # horizontal full-strength zip legitimately exits this stage's
             # floor and cannot serve as a no-KO recovery regression.
             keys(176<<24);frames(12);keys(0)
-        wait(lambda:u32(fighter()+0x24)==10 and any(row[0]>=220 for row in trace),'Special recovery/landing',seconds=30)
+        try:
+            wait(lambda:u32(fighter()+0x24)==10 and any(row[0]>=220 for row in trace),'Special recovery/landing',seconds=30)
+        except AssertionError:
+            (build/('failed-'+name.replace(' ','-')+'.json')).write_text(json.dumps(trace))
+            raise
         frames(3);tracking=False
+        if args.bomb_count:
+            births=bomb_births[birth_start:]
+            bomb_casts.append({'cast':name,'births':births,'statuses':sorted({row[0] for row in trace})})
+            (build/'bomb-count-trace.json').write_text(json.dumps(bomb_casts,indent=2)+'\n')
+            print('BOMBS:',name,births,flush=True)
+            assert len(births)==1,('Expected one Samus Bomb per Down B input',name,births)
+            entered=next(row[0] for row in trace if row[0] in (229,230))
+            assert entered==(230 if name.startswith('Air') else 229),('Wrong bomb entry phase',name,entered)
+            if args.body!=3:assert births[0]['source_frame']==10,('Bomb source timing changed',name,births)
         if args.donor==5 and name=='Donor Down B':
             assert u32(fighter()+item_off),('Link did not create a held bomb',diagnostic())
             trace.clear();tracking=True;pulse(button)
@@ -624,10 +660,14 @@ try:
     report['animation_samples']=animation_samples;report['animation_clips']=len(animation_records)
     visual_report(report)
     if args.normal_animations is not None:report['normal_animation_donor']=args.normal_animations
+    if args.bomb_count:
+        report['bomb_casts']=bomb_casts
+        report['checks'].append('one actual bomb per grounded/aerial input, including new casts and ground/air handoff')
     if args.falcon_contact:report['controlled_dive_contact']='native capture, release and throw damage passed'
     report_name='cpu-scenes.json' if args.donor is None else f'cpu-scenes-{args.body}-{args.donor}-{args.special_side}.json'
     if args.falcon_contact:report_name=report_name.replace('.json','-contact.json')
     if args.normal_animations is not None:report_name=report_name.replace('.json','-normals-'+str(args.normal_animations)+'.json')
+    if args.bomb_count:report_name=report_name.replace('.json','-bomb-count.json')
     (report_directory/report_name).write_text(json.dumps(report,indent=2)+'\n')
 except BaseException as exc:
     if not isinstance(exc,SystemExit):print('SCENE FAILURE:',repr(exc),flush=True)

@@ -843,7 +843,8 @@ def main():
     labels = {name: int(address, 16) for address, name in re.findall(r'^([0-9a-fA-F]{8}) (.+)$', (ROOT/'logfile.log').read_text(), re.M)}
     assert rom[:4] == b'\x80\x37\x12\x40'
     assert calculate_crcs(rom) == struct.unpack_from('>II', rom, 0x10)
-    hooks = {0x631B0: 'CharLab.prepare_', 0x5C00C: 'CharLab.anim_update_',
+    hooks = {0xCB9E4: 'CharLab.air_down_b_available_',
+             0x631B0: 'CharLab.prepare_', 0x5C00C: 'CharLab.anim_update_',
              0x5A8F0: 'CharLabRuntime.ccParse', 0x5C040: 'CharLab.events_all_',
              0x5C068: 'CharLab.events_forward_', 0x5DC4C: 'CharLab.collisions_',
              0xC4C28: 'CharLab.throw_', 0x116ED4: 'CharLab.training_exit_',

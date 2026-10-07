@@ -1,12 +1,15 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.11 (2026-10-07)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.12 (2026-10-07)** is a partial port into Smash Remix +EXTRA.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
 
 See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundown.
 
 - [x] Safe foreign normal effects and model commands; DK/Samus down smash recovers in both directions.
+- [x] One Samus bomb per grounded/aerial Down B; phase resumes skip consumed spawn flags.
+- [x] Donor aerial Down B availability, including Samus Bomb on DK's body; native DK's aerial move stays unavailable.
+- [x] Weapon-count CPU checks on DK, Mario and native Samus, plus all-foreign-body event/timing regressions.
 - [x] Samus Bomb's donor Morph Ball replacement, source window and interruption cleanup.
 - [x] Samus tether's native glow at donor joint 23; paired visual resource preloads and cleanup.
 - [x] Single-tap DK cycle checks; original two-slap cycle and explicitly requested repeats.

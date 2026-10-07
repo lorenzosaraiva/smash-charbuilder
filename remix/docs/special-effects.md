@@ -1,6 +1,6 @@
 # Remix special effects and attachments
 
-Preview **0.1.11**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
+Preview **0.1.12**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
 
 | Donor move | Borrowed presentation |
 | --- | --- |
@@ -9,7 +9,7 @@ Preview **0.1.11**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
 | Falcon Punch / Falcon Kick | Native flames attached to the retargeted hand/foot; original create/remove flags |
 | Fox Laser | Source blaster model and sampled open/close transforms, firing sparkle and sound |
 | Yoshi Egg Lay | Native tongue part and sampled extension/retraction through catch/release phases |
-| Samus Bomb | Donor Morph Ball replaces the foreign body on frames 10-42; native body flags return at frame 43 or interruption |
+| Samus Bomb | Donor Morph Ball replaces the foreign body on frames 10-42; native body flags return at frame 43 or interruption; one damaging bomb per input, independent of the visual prop |
 | Samus tether grab | Six donor beam parts plus native glow tree/materials at sampled source joint 23, independent of body joints |
 | Samus Charge Shot | Cosmetic orb at the donor socket, all eight source sizes and charging sound; retain through release startup until firing |
 

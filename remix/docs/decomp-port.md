@@ -1,6 +1,6 @@
 # Decomp to Remix port
 
-Updated **2026-10-07**. Remix preview **0.1.11**, project **0.1.28**.
+Updated **2026-10-07**. Remix preview **0.1.12**, project **0.1.29**.
 
 The current special-edge-case checks and remaining rendered stage acceptance
 are tracked in [special edge cases](special-edge-cases.md). Mario taunt growth
@@ -11,7 +11,11 @@ PK Thunder steering/self-launch, Thunder owner contact, reflection/absorption,
 Sing/Rest contacts, repeated DK hit windows, aerial landing and Training reset.
 These targeted fixtures do not establish rendered acceptance across all bodies/stages.
 
-Preview 0.1.11 also fixes both DK/Samus down-smash crashes, adds Samus Bomb's
+Preview 0.1.12 prevents duplicate Samus bombs when borrowed phases land or
+enter the air, and allows donor aerial Down B on DK's body. Each input creates
+one bomb; fresh inputs retain source timing. Actual weapon counts are checked
+on DK, Mario and native Samus, alongside all-foreign-body MIPS event checks.
+It also retains both DK/Samus down-smash fixes, Samus Bomb's
 Morph Ball and restores Samus's missing borrowed tether glow. Their production
 MIPS and targeted real-input CPU checks are separate from rendered acceptance.
 DK's two slap windows are one original cycle, verified on native DK and Mario;

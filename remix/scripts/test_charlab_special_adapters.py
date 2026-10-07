@@ -9,7 +9,7 @@ import math
 import struct
 import re
 from pathlib import Path
-from unicorn.mips_const import UC_MIPS_REG_A0, UC_MIPS_REG_A1, UC_MIPS_REG_A2, UC_MIPS_REG_S1, UC_MIPS_REG_T2, UC_MIPS_REG_T3, UC_MIPS_REG_V1
+from unicorn.mips_const import UC_MIPS_REG_A0, UC_MIPS_REG_A1, UC_MIPS_REG_A2, UC_MIPS_REG_S1, UC_MIPS_REG_T2, UC_MIPS_REG_T3, UC_MIPS_REG_T6, UC_MIPS_REG_V1
 
 
 def test_adapters(r):
@@ -313,6 +313,75 @@ def test_adapters(r):
         assert not delegated and r.read(r.FP,r.layout['size'])==before
         assert r.read(r.JOINTS,37*0x100)==joints_before
     del r.services[parser]
+    # Both Samus Bomb phases have a source gameplay stream. A native motion
+    # flag must not re-arm bomb creation or change the donor movement gates;
+    # the same command from the external source stream must still execute.
+    flag_checks=0
+    for body in range(12):
+        if body==3:continue
+        for motion,status in ((204,229),(205,230)):
+            clock=context(body,3,motion,status,attack=layout['lw_id'])
+            assert r.u32(clock+28),('Samus Bomb source path missing',body,motion)
+            flags=r.FP+r.layout['flags']
+            r.write(flags,struct.pack('>4I',0,0,0,0))
+            for flag in range(4):
+                opcode=21+flag
+                r.write(words,struct.pack('>I',opcode<<26|1))
+                r.u32(script+4,words)
+                r.call('ccParse',r.GOBJ,r.FP,script,opcode)
+                assert r.u32(script+4)==words+4
+                assert r.read(flags,16)==bytes(16),('Native events re-armed special flags',body,motion,flag)
+                external=r.addr('sCCMotionScripts')
+                r.u32(external+4,words)
+                r.call('ccParse',r.GOBJ,r.FP,external,opcode)
+                assert r.u32(flags+flag*4)==1,('Source special flag suppressed',body,motion,flag)
+                assert r.u32(external+4)==words+4
+                r.u32(flags+flag*4,0)
+                flag_checks+=1
+    # Run real source event parsing and the imported bomb callback. Only the
+    # native weapon allocator is isolated. Resuming either phase after the
+    # frame-10 spawn must seek past it without spawning another weapon.
+    bomb_spawns=[]
+    r.services[native['wpSamusBombMakeWeapon']]=lambda:bomb_spawns.append(1) or 0
+    for body in range(12):
+        if body==3:continue
+        for start_air in (False,True):
+            for repeat in range(2):
+                motion,status=(205,230) if start_air else (204,229)
+                clock=context(body,3,motion,status,attack=layout['lw_id'])
+                before=len(bomb_spawns)
+                for tick in range(57):
+                    if tick in (11,44,45):
+                        motion,status=(204,229) if motion==205 else (205,230)
+                        r.u32(r.FP+0x24,status);r.u32(r.FP+0x28,motion)
+                        r.f32(r.GOBJ+r.layout['frame'],tick)
+                        r.call('ccPrepare',r.GOBJ,struct.unpack('>I',struct.pack('>f',tick))[0])
+                        r.call('ccEventsForward',r.GOBJ)
+                    r.advance();r.events()
+                    r.call('cc_ftSamusSpecialLwMakeBomb',r.GOBJ)
+                    assert len(bomb_spawns)-before==(1 if tick>=10 else 0),('Bomb timing/replay',body,start_air,repeat,tick,len(bomb_spawns)-before)
+    del r.services[native['wpSamusBombMakeWeapon']]
+    air_gates=0
+    for port in range(4):
+        table=r.u32(r.labels['CharCreator.slot_tables']+port*4)
+        for body in range(12):
+            for donor in range(12):
+                r.setup(body,donor,port)
+                r.u32(r.labels['CharCreator.selected_builds']+port*4,port+1)
+                r.u32(r.u32(table),1);r.u32(r.u32(table+4),body)
+                r.u32(r.u32(table+17*4),donor)
+                assert r.call('ccCanAirDownB',r.FP)==(donor!=2),('Aerial Down B body gate',port,body,donor)
+                if body==2 and donor in (2,3):
+                    r.uc.reg_write(UC_MIPS_REG_V1,r.ATTR)
+                    r.call('air_down_b_available_',r.GOBJ,r.FP,r.GOBJ,end=0x80150FAC,namespace='CharLab')
+                    assert r.reg(UC_MIPS_REG_T6)==(0 if donor==2 else 0xFFFFFFFF)
+                    assert r.reg(UC_MIPS_REG_A1)==r.FP and r.reg(UC_MIPS_REG_A2)==r.GOBJ and r.reg(UC_MIPS_REG_V1)==r.ATTR
+                air_gates+=1
+        r.setup(2,3,port)
+        r.u32(r.labels['CharCreator.selected_builds']+port*4,0)
+        for enabled in (False,True):
+            r.u32(r.ATTR+0x100,0x1000 if enabled else 0)
+            assert r.call('ccCanAirDownB',r.FP)==enabled,('Native aerial gate fallback',port,enabled)
     # Missing body slots stay null through status/animation initialization;
     # callback fallbacks resume afterward without resetting the world root.
     context(8,0,layout['mario_air_hi'],layout['mario_air_status'])
@@ -335,4 +404,4 @@ def test_adapters(r):
         assert r.read(r.FP+0x8E8,37*4)==before
     r.write(r.FP+0xD,b'\0')
     r.call('ccReset')
-    print(f'PASS: {len(manifest)} installed special adapters; {angles} Mario/Luigi steering/travel cases, {recovery} donor helpless/landing/interrupt/generation cases, {sockets} source socket/facing cases, {volumes} reflector/magnet volumes, {turns} Fire Fox directional placements, {bombs} Link common throws, {dives} Dive socket adjustments and {releases} original frame-16 releases; held egg interruption, Stone armor/timeout, four-port passive isolation and native branch fallbacks. Item/effect/contact setup is isolated; rendering remains pending.')
+    print(f'PASS: {len(manifest)} installed special adapters; {angles} Mario/Luigi steering/travel cases, {recovery} donor helpless/landing/interrupt/generation cases, {sockets} source socket/facing cases, {volumes} reflector/magnet volumes, {turns} Fire Fox directional placements, {bombs} Link common throws, {dives} Dive socket adjustments and {releases} original frame-16 releases; {flag_checks} native/source Samus Bomb flag ownership cases and {len(bomb_spawns)} single-bomb casts with frame-10 timing and three ground/air continuations each; {air_gates} donor aerial availability cases across all bodies/four ports plus native fallback; held egg interruption, Stone armor/timeout, four-port passive isolation and native branch fallbacks. Item/effect/contact setup is isolated; rendering remains pending.')

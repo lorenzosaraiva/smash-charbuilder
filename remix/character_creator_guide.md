@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.11 (2026-10-07)**.
+Character Lab has an original-roster Remix preview, **0.1.12 (2026-10-07)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -48,7 +48,10 @@ Changing the compiled roster later can change selector indexes.
 
 ## What the moves inherit
 
-DK Down B has two slaps in one native cycle; tap B again during the move to
+Samus Bomb creates one bomb per Down B input, even on DK's body. Landing or
+entering the air cannot replay that spawn. A new input creates a new bomb;
+aerial availability follows the selected donor, so DK can use Samus Bomb in
+the air. DK Down B has two slaps in one native cycle; tap B again during the move to
 request another cycle. Samus Bomb becomes the donor Morph Ball on frames
 10-42 and restores the selected body on exit. Samus tether includes its native
 glow alongside the donor beam parts. These changes pass CPU checks; visible

@@ -1,6 +1,6 @@
 # Paired grabs, throws and taunts
 
-Remix preview **0.1.11**, updated **2026-10-07**. Original twelve bodies/donors.
+Remix preview **0.1.12**, updated **2026-10-07**. Original twelve bodies/donors.
 
 ## Controls and behavior
 

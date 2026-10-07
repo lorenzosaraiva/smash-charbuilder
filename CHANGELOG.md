@@ -1,5 +1,14 @@
 # Changes
 
+## 0.1.29 - 2026-10-07: One Samus bomb per Down B
+
+- Release Remix preview 0.1.12; preserve the decomp ROM and download.
+- Fix extra Samus bombs on DK and other foreign bodies. Ground/air phase resumes now fast-forward consumed one-shot flags, matching the native event parser, instead of replaying the frame-10 spawn after landing. New inputs retain their own bomb and source timing.
+- Let the external donor stream exclusively own gameplay flags during supported specials, preventing native scripts from re-arming projectile and movement events.
+- Follow the selected donor's aerial Down B availability before native dispatch, allowing DK's body to use Samus Bomb in the air. Check all original bodies/donors across four slots; keep native/expanded fallback and DK's grounded-only rejection.
+- Add linked-MIPS checks for 88 flag-ownership cases and 44 casts across all eleven foreign bodies, each with three ground/air continuations. Real-input CPU checks count actual weapon births on DK, Mario and native Samus, with two grounded and two aerial casts each. Morph Ball visibility and cleanup remain checked separately; rendered acceptance remains pending.
+- Earlier Bomb visual checks did not count weapons and missed this duplication; the new regression checks actual spawn counts.
+
 ## 0.1.28 - 2026-10-07: Remix smash safety and Samus visuals
 
 - Release Remix preview 0.1.11; preserve decomp 0.1.18 and its download.

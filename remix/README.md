@@ -8,7 +8,9 @@ retargeted poses, human/CPU preset assignments and return from Training to the e
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.11 (2026-10-07):** DK/Samus borrowed down-smash crash fixes, Samus Bomb
+**0.1.12 (2026-10-07):** one Samus bomb per Down B on foreign bodies, with
+source timing and no replay when landing or entering the air. New Down B
+inputs still make new bombs. Also retains DK/Samus down-smash fixes, Samus Bomb
 Morph Ball replacement and native tether glow. DK's single cycle retains both
 original slap windows; another B tap requests another cycle. Rendered acceptance
 is pending. Also includes planted Mario taunt growth, complete body Neutral B presets,
