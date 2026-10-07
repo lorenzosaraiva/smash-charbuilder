@@ -141,7 +141,8 @@ scope CharCreator {
     constant FIELD_GRAB(18)
     constant FIELD_THROWF(19)
     constant FIELD_THROWB(20)
-    constant FIELD_COUNT(21)
+    constant FIELD_TAUNT(21)
+    constant FIELD_COUNT(22)
 
     macro slot_entry_table(slot) {
         slot_{slot}_entries:
@@ -166,6 +167,7 @@ scope CharCreator {
         dw Toggles.cc_slot_{slot}_grab + 0x4
         dw Toggles.cc_slot_{slot}_throwf + 0x4
         dw Toggles.cc_slot_{slot}_throwb + 0x4
+        dw Toggles.cc_slot_{slot}_taunt + 0x4
     }
 
     slot_entry_table(1)
@@ -641,7 +643,26 @@ scope CharCreator {
 
         _field_loop:
         sltiu t0, s3, FIELD_GRAB
+        bnez t0, _check_original
+        nop
+        sltiu t0, s2, 12
         beqz t0, _next_field
+        nop
+        sll t0, s3, 2
+        addu t0, s1, t0
+        lw t0, 0(t0)
+        lw a0, 0(t0)
+        sltiu t0, a0, 12
+        beqz t0, _next_field
+        nop
+        sll t0, a0, 2
+        li a1, 0x80116E10
+        addu a1, a1, t0
+        jal ensure_main_file_
+        lw a1, 0(a1)
+        b _next_field
+        nop
+        _check_original:
         sltiu t0, s2, 12
         beqz t0, _legacy_field
         sltiu t0, s3, FIELD_NSP
@@ -1610,6 +1631,13 @@ scope CharCreator {
     // unique action array only while a borrowed special owns the action chain.
     scope action_array_hook_: {
         addiu   t0, v0, 0xFF24             // original instruction
+        lbu t8, 0xD(s1)
+        sll t8, t8, 2
+        li t9, CharLabRuntime.sCCPairDonors
+        addu t9, t9, t8
+        lw t8, 0(t9)
+        bgez t8, _selected
+        nop
         lbu     t8, 0x000D(s1)
         li      t9, active_special_donor
         sll     t8, t8, 0x0002
@@ -1703,6 +1731,19 @@ scope CharCreator {
         sw      r0, 0x0000(t7)
 
         _load_current:
+        lbu t0, 0xD(s1)
+        sll t0, t0, 2
+        li t1, CharLabRuntime.sCCPairDonors
+        addu t1, t1, t0
+        lw t0, 0(t1)
+        bltz t0, _body_data
+        nop
+        li t1, 0x80116E10
+        sll t0, t0, 2
+        addu t0, t0, t1
+        b _end
+        lw v1, 0(t0)
+        _body_data:
         lw      v1, 0x09C4(s1)             // body character struct fallback
         lbu     t0, 0x000D(s1)
         li      t1, active_special_donor
@@ -1822,6 +1863,15 @@ scope CharCreator {
 
         lbu     t0, 0x000D(s1)              // port
         sll     t1, t0, 0x0002
+
+        li t4, CharLabRuntime.sCCPairDonors
+        addu t4, t4, t1
+        lw t4, 0(t4)
+        bltz t4, _check_neutral
+        lli t5, Action.Idle
+        b _normal_common
+        nop
+        _check_neutral:
 
         li t4, CharLabRuntime.sFTCharBuilderNeutralStartingOwner
         lw t4, 0(t4)
@@ -2051,6 +2101,17 @@ scope CharCreator {
         sw      t8, 0x0040(sp)
         sw      t9, 0x0044(sp)
         sw      v0, 0x0048(sp)             // body command address fallback
+
+        lbu t0, 0xD(s1)
+        sll t0, t0, 2
+        li t1, CharLabRuntime.sCCPairDonors
+        addu t1, t1, t0
+        lw t0, 0(t1)
+        bltz t0, _check_command_context
+        nop
+        b _clear_active
+        or v0, r0, r0
+        _check_command_context:
 
         // Unique actions already use the retained donor's parameter struct via
         // parameter_base_hook_. Shared actions start a new ownership decision.

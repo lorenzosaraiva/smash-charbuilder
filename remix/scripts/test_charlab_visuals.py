@@ -52,7 +52,11 @@ def test_visuals(r):
     for path in (root.parent/'ssb-decomp-re/src').rglob('*.c'):
         native.update({name:int(address,16) for address,name in re.findall(
             r'// (0x[0-9A-Fa-f]{8})[^\n]*\n(?:[\w*]+\s+)+(\w+)\(',path.read_text(encoding='utf-8'))})
-    for name in ('lbCommonAddMObjForFighterPartsDObj','gcAddMObjAll','ftParamMakeEffect'):
+    r.services[r.addr('ccPropMaterials')] = lambda:0
+    # Status transitions now refresh the active recipe, as real Training does.
+    r.services[r.labels['CharCreator.get_slot_']] = lambda:r.ENTRIES
+    r.write(0x800A4AD0, bytes([r.layout['training']]))
+    for name in ('gcAddMObjAll','ftParamMakeEffect'):
         r.services[native[name]] = lambda:0
     r.services[0x800269C0] = lambda:sounds.append(r.reg(UC_MIPS_REG_A0))
     def play(field,records):

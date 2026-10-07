@@ -23,6 +23,14 @@ static void ccVisualStatusChanging(GObj*, s32);
 static void ccVisualFalconEffect(GObj*, sb32);
 static void ccVisualCutterEffect(GObj*);
 u32 ccVisualPreserve(FTStruct*, const FTCustomMoveDefinition*);
+static void ccPairTransition(GObj*, s32);
+static sb32 ccPairPrepare(FTStruct*, f32);
+static void ccPairTick(GObj*);
+static void ccPairReset(void);
+static void ccPairCollisionApply(FTStruct*);
+static sb32 ccPairEffectLive(GObj*);
+static void ccSyncCurrent(FTStruct*);
+extern s32 sCCPairDonors[4];
 
 /* Settings can enter Training CSS without the ordinary 1P menu setup. */
 void ccSetupTraining(s32 body)
@@ -40,6 +48,7 @@ s8 gSCManagerCharBuilderPlayerSlots[4] = { 0, 1, 2, 3 };
 static struct { s32 scene_curr; } gSCManagerSceneData;
 static FTStruct *sFTCharBuilderNeutralStartingOwner;
 static FTMotionScript sCCMotionScripts[4];
+#include "CharLabCollisionStorage.c.inc"
 #include "../build/char_creator/runtime/move.c.inc"
 
 void ccApplyAnimation(FTStruct *fp)
@@ -87,6 +96,7 @@ void ccSync(FTStruct *fp, s32 **entries, s32 scene)
     for (i = 0; i < 3; i++) slot->attacks[13 + i] = (u32)*entries[18 + i] < 12 ? *entries[18 + i] : body;
     slot->special_n = *entries[15];
     slot->special_hi = *entries[16]; slot->special_lw = *entries[17];
+    slot->taunt = (u32)*entries[21] < 12 ? *entries[21] : body;
     slot->is_enabled = TRUE;
 }
 
@@ -125,6 +135,7 @@ void ccReset(void)
 {
     s32 i;
     ccVisualReset();
+    ccPairReset();
     ftMainCharBuilderResetNeutralAll();
     for (i = 0; i < 4; i++)
     {
@@ -132,6 +143,7 @@ void ccReset(void)
         sFTCustomLastAirAttack[i] = -1;
         gSCManagerCharBuilderSlots[i].is_enabled = FALSE;
         sCCMotionScripts[i].p_script = NULL;
+        sCCCollisionSource[i] = 0;
         sCCSpecialClocks[i].owner = NULL;
         sCCSpecialStates[i].owner = NULL;
         sCCRecovery[i].owner = NULL;
@@ -184,6 +196,7 @@ void ccAdvance(GObj *gobj)
     }
     gobj->anim_frame = ftCustomMoveAdvanceClock(fp, gobj->anim_frame);
     ccApplyAnimation(fp);
+    ccPairTick(gobj);
     ccVisualTick(gobj);
 }
 
@@ -261,7 +274,7 @@ void ccEvents(GObj *gobj)
     if (limit <= 0) { script->p_script = NULL; gFTCustomMoveValidationFailures++; }
 }
 
-void ccCollision(FTStruct *fp) { ccSpecialCollision(fp); }
+void ccCollision(FTStruct *fp) { ccPairCollisionApply(fp); ccSpecialCollision(fp); }
 
 static void ccSyncCurrent(FTStruct *fp)
 {
@@ -275,6 +288,7 @@ void ccPrepare(GObj *gobj, f32 frame_begin)
     s32 donor;
     CCSpecialClock *clock;
     ccSyncCurrent(fp);
+    if (ccPairPrepare(fp, frame_begin)) return;
     ccStart(fp, frame_begin);
     ccStartRecovery(fp, frame_begin);
     if (fp->player >= 4) return;
@@ -322,6 +336,7 @@ static sb32 ccNeutralBoomerangOwner(GObj *owner, GObj *weapon)
 }
 #include "CharLabAnimations.c.inc"
 #include "CharLabVisuals.c.inc"
+#include "CharLabPairs.c.inc"
 
 sb32 ccNeutral(GObj *gobj)
 {

@@ -92,7 +92,9 @@ The [Remix guide](../remix/character_creator_guide.md) and
 - [ ] Neutral rendered contact/reflect/absorb and broad attachment acceptance, paired alignment and tether choreography.
 - [x] Donor jab chains/rapid phases, Link bounce/rehit, Ness bat geometry, traction/air physics and angle/landing availability.
 - [x] Neutral-B options display fighter names and follow each build's body.
-- [ ] Rendered normal contact/landing/interrupt acceptance; custom taunts and decomp starter defaults.
+- [x] Donor tether/tongue pulls, paired throws, DK cargo and Kirby lift/fall/landing mechanics.
+- [x] Custom taunt selector/poses/clocks/cancel flags/effects, Mario growth and Luigi damage.
+- [ ] Rendered normal contact/landing/interrupt acceptance; decomp starter defaults; rendered taunt/victim acceptance.
 - [ ] Shared donor fidelity for Remix-exclusive fighters.
 
 The port uses the same generated vanilla US donor data as Character Lab and
@@ -160,7 +162,7 @@ remain on the detailed checklist.
 - [x] Live CPU checks for thirteen donor specials on all twelve bodies: 312 ground/air casts, native projectile creation, recovery, reset/editor return and four-slot VS; controlled Falcon Dive capture/throw and Thunder owner contact included (null rendering).
 - [ ] Rendered projectile/contact, sleep/capture, slopes/ledges, interruption and visual acceptance across bodies and stages.
 - [x] Retarget implemented special phases, charge loops and recovery; add semantic effects and native props.
-- [ ] Port this special mechanics/animation batch to Remix.
+- [x] Port this special mechanics/animation batch to Remix for original bodies/donors; rendered acceptance remains separate.
 - [ ] Rendered contact, steering, self-launch, reflection and interruption acceptance.
 
 ## Decomp normal-specific mechanics
@@ -191,7 +193,8 @@ See the [normal mechanics guide](../ssb-decomp-re/docs/normal-mechanics.md).
 - [x] Per-player ownership/generation guards, original-C geometry and linked-ROM checks.
 - [x] Paired ROM CPU checks: 24 foreign and 24 native forward/back releases, donor reach/ticks/damage, live victim positions and DK mash escape (null rendering).
 - [ ] Rendered contact, materials, compact-body intersections, slopes/edges and damage/escape acceptance.
-- [ ] Port this paired mechanics/animation batch to Remix.
+- [x] Port paired mechanics and customizable taunts to Remix 0.1.9.
+- [ ] Rendered Remix paired/victim/taunt acceptance and stage/interrupt coverage.
 
 See [controls and verification](../ssb-decomp-re/docs/paired-grabs-and-throws.md).
 

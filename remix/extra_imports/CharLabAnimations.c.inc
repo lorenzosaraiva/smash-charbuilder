@@ -35,6 +35,7 @@ static const FTCustomAnimationClip* ccLoadAnimation(FTStruct *fp, const CCAnimat
     return clip;
 }
 
+static const FTCustomAnimationClip* ccPairAnimation(FTStruct*, s32*);
 static const FTCustomAnimationClip* ccSelectAnimation(FTStruct *fp, s32 *frame)
 {
     CCSpecialClock *special = ccSpecialClock(fp);
@@ -42,6 +43,7 @@ static const FTCustomAnimationClip* ccSelectAnimation(FTStruct *fp, s32 *frame)
     s32 i, index, donor = ccRecoveryDonor(fp), motion = fp->motion_id;
     f32 time;
     if (fp->player >= 4 || (u32)ccBodyKind(fp) >= 12 || ftCustomMoveGetSlot(fp) == NULL) return NULL;
+    if (sCCPairDonors[fp->player] >= 0) return ccPairAnimation(fp, frame);
     if (donor < 0) sCCAnimationRecovery[fp->player].owner = NULL;
     if (special != NULL) { donor = special->donor; time = special->frame; }
     else if (donor >= 0)

@@ -1,6 +1,6 @@
 # Shared Remix animations
 
-Preview **0.1.8**, updated **2026-10-06**.
+Preview **0.1.9**, updated **2026-10-06**.
 
 Original-roster normal attacks now use the decomp's shared donor poses on all
 twelve bodies. This includes tilts, smashes, dash attacks, aerials, landing poses
@@ -29,11 +29,12 @@ separate 15,200-byte cache. The native synchronous DMA service loads a clip on
 selection changes; repeated frames/loops reuse it. DMA buffers and lengths are
 aligned, and no donor animation heap or foreign skeleton is installed.
 
-The bank contains 501 clips, including paired/taunt data reserved for their
-later mechanics port. That count is data coverage, not 501 newly selectable
-moves. All eleven neutral donor adapters now select their source phase clips,
-including startup, charge loops, release, Boomerang catch and Egg Lay. Tether/paired-throw and customizable-taunt entry points remain
-separate checklist items. Expanded-roster bodies keep the earlier Remix path.
+The bank contains 501 clips. Original neutral, tether/grab/pull, paired
+throw/cargo/lift/fall/landing and taunt phase entry points now select these
+source clips. Long phases and loops use bounded chunk selection and donor
+clocks; geometry remains independent of body proportions. Expanded bodies
+keep the earlier Remix path. Rendered mesh and victim alignment acceptance
+remains pending.
 
 Build from the root with `tools/build-remix-character-lab.ps1`; generated banks
 stay in ignored build directories and the checked ROM/ZIP go into `dist/`.

@@ -8,9 +8,12 @@ retargeted poses, human/CPU preset assignments and return from Training to the e
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.8 (2026-10-06):** Cutter sword/trails, Stone replacement, Falcon flames,
-blaster/tongue props and Samus's charging orb now follow source timing with
-owned cleanup. See [effects and attachments](docs/special-effects.md).
+**0.1.9 (2026-10-06):** donor tether grabs, paired throws, DK cargo carry/toss,
+Kirby lift/fall/landing and customizable taunts now use shared source poses,
+clocks and props. Mario grows/shrinks; Luigi keeps his damage and cancel window.
+See [controls and verification](docs/paired-grabs-and-taunts.md).
+Cutter sword/trails, Stone replacement, Falcon flames, blaster/tongue props
+and Samus's charging orb remain available with owned cleanup.
 All original neutral donors except Kirby copy use source
 phases/poses, private projectile resources, charging/storage/release, Boomerang
 return/catch and Egg Lay capture. Kirby copy remains excluded. See
@@ -23,7 +26,7 @@ fighter names, with its native option following the selected Body.
 rendered acceptance. [Animation coverage](docs/animations.md) tracks props/effects.
 See the [full decomp-port matrix](docs/decomp-port.md) and
 [checklist](docs/character-lab-status.md) for the still-missing mechanics,
-rendered neutral acceptance, visual attachments, taunts and paired throws.
+rendered neutral/effect/taunt acceptance, paired alignment and stage interactions.
 
 Open **Settings -> Character Lab** and keep **Original 12 Only** enabled. The
 expanded roster stays playable, with its earlier experimental creator adapters;

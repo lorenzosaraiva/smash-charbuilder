@@ -1,5 +1,17 @@
 # Changes
 
+## 0.1.26 - 2026-10-06: Remix paired grabs, throws and taunts
+
+- Release Remix preview 0.1.9; preserve decomp 0.1.18 and its download.
+- Port Link/Samus tether and Yoshi tongue reach/props, donor pull timing, attacker/victim sockets, facing and source release flags.
+- Connect DK cargo wait/walk/turn/jump/fall/toss and Kirby lift/fall/landing throws, donor physics and independent long-phase clocks.
+- Add twelve-donor Taunt selection, source poses/duration/cancel flags/effects, Mario growth/shrink and Luigi's original damage window.
+- Stream 73 source paired/taunt geometry phases through independent eight-frame player caches; retain donor reach independently of body proportions and native victim rigs/parent mapping.
+- Stream 96 existing special collision tracks through independent 80-byte player caches, freeing about 240 KiB of native menu RAM while preserving exact source samples.
+- Keep old recipe fields/bits; save full four-slot taunt choices in spare options bytes with validated body defaults for older saves.
+- Avoid Remix costume hooks for independent effect props; install a donor clock for native CatchWait's null animation and clean phase props/scales on interruptions and scene resets. Guard menu objects sharing the fighter list and distinguish native throw callbacks from compiled fallbacks. Prevent duplicate cargo release on air-to-ground transitions; defer expanded CSS model preloads for original-roster CSS screens to preserve native UI/heap space. Track the native Expansion Pak allocation cursor so UI scene changes cannot overwrite live GC pools.
+- Add independent source ELF/bank, production MIPS cache/save checks and real-input CPU capture/release/cargo/landing/taunt regressions. Rendered alignment/effects, broader stage/interrupt acceptance and expanded-roster fidelity remain pending.
+
 ## 0.1.25 - 2026-10-06: Remix special effects and attachments
 
 - Release Remix preview 0.1.8; preserve the decomp 0.1.18 ROM and links.

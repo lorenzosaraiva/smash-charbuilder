@@ -112,7 +112,7 @@ static void ccSpecialCollision(FTStruct *fp)
     s32 i;
     if(!special || !special->path){ftCustomCollisionApply(fp);return;}
     if(fp->attr==NULL || fp->attr->size<=0 || fp->joints[0]==NULL)return;
-    frame=ftCustomCollisionSample(&special->path->trajectory,(s32)special->frame);
+    frame=ccCollisionSourceFrame(fp,ftCustomCollisionSample(&special->path->trajectory,(s32)special->frame));
     if(frame==NULL)return;
     for(i=0;i<4;i++)
     {

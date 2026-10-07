@@ -1,6 +1,6 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.8 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.9 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
 
@@ -15,7 +15,7 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Angled variants, weapon/tail hitboxes, landing collision paths and supported jab phases.
 - [x] Bounded rapid-jab loops, interruption cleanup and four independent player clocks.
 - [x] Grab/forward-throw/back-throw donor selectors; donor numeric throw values.
-- [x] DK foreign forward throw releases directly instead of entering cargo.
+- [x] Foreign DK forward throw enters donor cargo carry/toss phases.
 - [x] Remix's extended throw-victim lookup retained.
 - [x] Body-name/native and all eleven original neutral donors; Kirby copy excluded.
 - [x] Borrowed original-roster specials use safe native status setup followed by shared donor poses.
@@ -54,7 +54,7 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Falcon Dive source attacker socket and frame-16 release, retaining the native extended-victim lookup.
 - [ ] Rendered special steering, weapon contacts, reflection/absorption, self-launch, stage transitions and interruptions.
 - [x] Shared normal/supported special/recovery pose retargeting on all twelve original bodies and donors.
-- [ ] Tether/paired/taunt pose entry points.
+- [x] Tether/grab/pull, paired throw/cargo/lift/fall/landing and taunt pose entry points.
 - [x] Donor jab availability/buffering, third/rapid phases and source loop boundaries on original bodies.
 - [x] Donor angle/landing availability, traction, gravity, terminal velocity and aerial drift during normals.
 - [x] Link down-air contact bounce, fastfall cancellation, late-hit rewind and delayed rehit.
@@ -67,8 +67,12 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Existing saved recipe bit layout preserved with four validated neutral choices in spare options bytes.
 - [x] Null-rendering CPU scenes: all ten new neutrals plus Laser, charged storage/release, PK Fire flame contact and Egg Lay capture/egg damage on Mario/Kirby.
 - [ ] Neutral rendered contact/reflect/absorb and broad stage/interrupt/attachment acceptance.
-- [ ] Donor tether/capture/paired-throw choreography and visuals.
-- [ ] Custom taunts, Yoshi starter build and four-stock/items-off VS defaults.
+- [x] Donor tether/tongue reach and props, pull clocks, attacker/victim sockets/facing/release, DK cargo and Kirby landing throws.
+- [ ] Rendered paired alignment/contact, slopes/edges, interruptions and native/expanded victim acceptance.
+- [x] Twelve taunt donors, source poses/clocks/cancel flags/effects, Mario growth/shrink and Luigi damage.
+- [x] Old preset fallback and all four full taunt choices saved without moving existing recipe bits.
+- [ ] Rendered taunt mesh/effect acceptance and broader damage/KO interruption coverage.
+- [ ] Yoshi starter build and four-stock/items-off VS defaults.
 - [ ] Remix results/rematch regression with assigned builds.
 - [ ] Donor trajectory/timing fidelity for Remix-exclusive fighters.
 - [ ] Automatic hosted Remix builds/releases after each push.

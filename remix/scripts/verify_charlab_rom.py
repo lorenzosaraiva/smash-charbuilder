@@ -116,6 +116,16 @@ def linked_object(rom, labels):
             start=sections[actual_index][4]+actual-sections[actual_index][3]
             assert obj[start:start+length]==expected,'Source movement/collision differs: '+name
             geometry+=1
+    info = json.loads((ROOT/'build/char_creator/runtime/special-collision.json').read_text())
+    reference,rs,reference_symbols=read_elf(LAB/'build/testSpecialTiming','<')
+    for record in info['records']:
+        address,length,index=reference_symbols[record['name']]
+        assert length == record['size']
+        start=rs[index][4]+address-rs[index][3]
+        expected=struct.pack('>'+str(length//4)+'I',*struct.unpack_from('<'+str(length//4)+'I',reference,start))
+        start=info['rom_start']+record['offset']
+        assert rom[start:start+length] == expected, record['name']
+        geometry += 1
     assert geometry>=150,geometry
     assert labels['custom_heap'] < 0x80780000, 'Expansion RAM heap headroom too small'
     print(f'PASS: {count} relocations, all allocated runtime bytes, {checked} shared donor tables/poses and {geometry} source special/normal geometry arrays match; expansion heap at {labels["custom_heap"]:08X}.')
@@ -127,6 +137,7 @@ class Runtime:
 
     def __init__(self, rom, labels):
         self.labels = labels
+        self.rom = rom
         self.uc = Uc(UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_BIG_ENDIAN)
         # KSEG0 is translated to physical RAM by Unicorn's MIPS CPU.
         self.uc.mem_map(0, 0x800000)
@@ -168,10 +179,16 @@ class Runtime:
                             (LAB/'symbols/symbols_us.txt').read_text()).group(1), 16)
         bank_info = json.loads((ROOT/'build/char_creator/runtime/animations.json').read_text())
         bank_size = (ROOT/'build/char_creator/runtime/animations.bin').stat().st_size
+        pair_info = json.loads((ROOT/'build/char_creator/runtime/paired-geometry.json').read_text())
+        pair_size = (ROOT/'build/char_creator/runtime/paired-geometry.bin').stat().st_size
         def read_pose_bank():
             source, target, length = (self.reg(r) for r in (UC_MIPS_REG_A0, UC_MIPS_REG_A1, UC_MIPS_REG_A2))
-            assert bank_info['rom_start'] <= source and source + length <= bank_info['rom_start'] + bank_size
-            assert 0 < length <= bank_info['cache_bytes'] and length % 16 == 0
+            pose = bank_info['rom_start'] <= source and source+length <= bank_info['rom_start']+bank_size
+            paired = pair_info['rom_start'] <= source and source+length <= pair_info['rom_start']+pair_size
+            collision = 0x5800000 <= source and source+length <= len(rom)
+            assert pose or paired or collision, (hex(source),length)
+            assert source % 16 == 0
+            assert 0 < length <= (bank_info['cache_bytes'] if pose else 80 if collision else 8*pair_info['frame_bytes']) and length % 16 == 0
             self.write(target, rom[source:source+length])
         self.services[dma] = read_pose_bank
 
@@ -179,6 +196,9 @@ class Runtime:
         return self.labels['CharLabRuntime.'+name]
 
     def read(self, address, length):
+        # Source oracle only: actual MIPS code must DMA ROM tags through cache.
+        if 0x5800000 <= address < 0x5900000:
+            return self.rom[address:address+length]
         return bytes(self.uc.mem_read(address & 0x1FFFFFFF, length))
 
     def write(self, address, value):
@@ -241,11 +261,12 @@ class Runtime:
             for axis in range(3):
                 self.f32(joint+self.layout['scale']+axis*4, 2.0)
         self.f32(self.JOINTS+self.layout['speed'], 1.0)
-        for i in range(21):
+        for i in range(22):
             self.u32(self.ENTRIES+i*4, self.VALUES+i*4)
             self.u32(self.VALUES+i*4, donor if i != 1 else body)
         self.u32(self.VALUES, 1)
         self.u32(self.VALUES+15*4, 0)
+        self.u32(self.VALUES+21*4, body)
         self.call('ccSync', self.FP, self.ENTRIES, self.layout['training'])
 
     def motion(self, body, index):
@@ -263,10 +284,11 @@ class Runtime:
 
     def preset(self, body, donor, neutral=0):
         table = self.u32(self.labels['CharCreator.slot_tables'])
-        for i in range(21):
+        for i in range(22):
             self.u32(self.u32(table+i*4), body if i == 1 else donor)
         self.u32(self.u32(table), 1)
         self.u32(self.u32(table+15*4), neutral)
+        self.u32(self.u32(table+21*4), body)
         self.u32(self.labels['CharCreator.selected_builds'], 1)
         self.write(0x800A4AD0, bytes([self.layout['training']]))
 
@@ -474,10 +496,11 @@ def test_specials_and_return(r):
         r.write(thrown+mapped*16, struct.pack('>4I', 0xFFFFFFFF, r.layout['shouldered'], 0xFFFFFFFF, 187))
         r.calls.clear()
         assert r.call('ccThrow', r.GOBJ, 1) == 1
-        assert r.u32(r.FP+0x24) == (r.layout['dk_throw_ff'] if body == 2 and donor != 2 else r.layout['throw_status'])
+        assert r.u32(r.FP+0x24) == r.layout['throw_status']
         queued = [args[1] for addr, args in r.calls if addr == 0x8014ACB4]
-        assert queued == [r.layout['thrown_common'] if body == 2 and donor != 2 else r.layout['shouldered']], queued
-    print('PASS: 432 body/donor grab and throw numeric selections preserve victim statuses; DK release/cargo selection uses Remix extended-victim mapping.')
+        expected_queue = r.layout['shouldered'] if body==donor==2 else r.layout['thrown_common']
+        assert queued == [expected_queue], queued
+    print('PASS: 432 body/donor grab and throw numeric selections; paired donor release/cargo selection uses Remix extended-victim mapping.')
 
     # Execute the native hooks with rendering services stubbed, including
     # page-two selection so the returned editor shows TEST rather than row 12.
@@ -493,11 +516,11 @@ def test_specials_and_return(r):
         r.call('resume_editor_', namespace='CharLab')
         head = r.labels[f'Toggles.head_char_creator_slot_{preset}']
         first = head
-        for _ in range(12):
+        for _ in range(24):
             first = r.u32(first+0x1C)
         assert r.u32(r.labels['Toggles.info']) == head
         assert r.u32(r.labels['Toggles.info']+0x18) == first
-        assert r.u32(r.labels['Toggles.info']+0xC) == 23
+        assert r.u32(r.labels['Toggles.info']+0xC) == 24
         assert r.read(r.labels['Toggles.menu_index'], 1) == bytes([preset+8])
         assert r.u32(r.labels['CharLab.return_slot']) == 0
         r.u32(r.labels['CharLab.training_slot'], preset)
@@ -836,7 +859,14 @@ def main():
                   0xCF198: 'CharLab.ness_pitch_'})
     import json
     hooks[0x62724]='CharLab.status_changing_'
+    hooks[0x3800000+labels['CharacterSelect.load_additional_characters_']-0x80400000]='CharLab.editor_css_models_'
+    hooks[0x5570]='CharLab.heap_reset_'
+    hooks[0x3800000+labels['CharacterSelect.increase_heap_._return']-0x80400000]='CharLab.heap_cursor_'
+    for name,delta in (('CharacterSelect.load_additional_characters_',0x24),('Render.setup_._mode_select',0x34)):
+        assert struct.unpack_from('>I',rom,0x3800000+labels[name]+delta-0x80400000)[0]==0, 'UI rewinds native heap cursor'
     for entry in json.loads((ROOT/'build/char_creator/runtime/special-hooks.json').read_text()):
+        hooks[entry['offset']]=entry['hook']
+    for entry in json.loads((ROOT/'build/char_creator/runtime/paired-hooks.json').read_text()):
         hooks[entry['offset']]=entry['hook']
     for entry in json.loads((ROOT/'build/char_creator/runtime/normal-hooks.json').read_text()):
         hooks[entry['offset']]=entry['hook']
@@ -861,6 +891,8 @@ def main():
     test_weapons(runtime)
     from test_charlab_visuals import test_visuals
     test_visuals(Runtime(rom, labels))
+    from test_charlab_pairs import test_pairs
+    test_pairs(Runtime(rom, labels), rom)
     from test_charlab_animations import test_animations
     test_animations(runtime, rom)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')

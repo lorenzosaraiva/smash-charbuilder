@@ -27,6 +27,13 @@ parser.add_argument('--neutral',type=int,choices=range(1,12),help='Exercise a Ne
 parser.add_argument('--egg-contact',action='store_true',help='Place the CPU in Egg Lay reach to test capture, egg handoff and damage')
 parser.add_argument('--projectile-contact',action='store_true',help='Place the CPU at a PK Fire spark to test native flame-pillar creation')
 parser.add_argument('--visuals',action='store_true',help='Check real effect/model allocation, finite transforms and recovery cleanup (null renderer)')
+parser.add_argument('--paired-donor',type=int,choices=range(12),help='Real grab/contact and forward/back release with this grab donor')
+parser.add_argument('--throw-donor',type=int,choices=range(12),help='Independent throw donor for paired tests')
+parser.add_argument('--back-throw',action='store_true')
+parser.add_argument('--paired-airborne',action='store_true',help='Raise the captured pair to exercise the fall phase before landing')
+parser.add_argument('--cargo-jump',action='store_true',help='Walk and jump with a DK cargo victim, then toss in the air')
+parser.add_argument('--taunt-donor',type=int,choices=range(12),help='Real L input, source taunt duration and cancellation')
+parser.add_argument('--run-id',help='Isolated emulator workspace for independent CPU checks')
 args=parser.parse_args()
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
 if args.editor_play:assert args.editor_test
@@ -41,7 +48,10 @@ elf,sections,syms=read_elf(ROOT/'build/char_creator/runtime/runtime.o','>')
 layout=constant('ccLayout');special=constant('ccSpecialLayout')
 labels={name:int(address,16) for address,name in re.findall(r'^([0-9a-fA-F]{8})\s+(\S+)',(ROOT/'logfile.log').read_text(),re.M)}
 native={name:int(address,16) for name,address in re.findall(r'^(\w+)\s*=\s*(0x[0-9a-fA-F]+);',(LAB/'symbols/symbols_us.txt').read_text(),re.M)}
-build=ROOT/'build/char_creator/emulator';build.mkdir(parents=True,exist_ok=True)
+report_directory=ROOT/'build/char_creator/emulator'
+if args.run_id:assert re.fullmatch(r'[a-z0-9_-]+',args.run_id)
+build=report_directory/args.run_id if args.run_id else report_directory
+build.mkdir(parents=True,exist_ok=True)
 source='''#include <sc/scene.h>
 #include <ft/fighter.h>
 const unsigned int layout[]={__builtin_offsetof(SCCommonData,training_man_fkind),__builtin_offsetof(SCCommonData,training_com_fkind),__builtin_offsetof(SCCommonData,maps_training_gkind),__builtin_offsetof(SCBattleState,players),sizeof(SCPlayerData),__builtin_offsetof(SCPlayerData,fighter_gobj),__builtin_offsetof(FTStruct,item_gobj),__builtin_offsetof(FTStruct,attack_colls),sizeof(FTAttackColl),__builtin_offsetof(FTAttackColl,pos_curr),__builtin_offsetof(FTStruct,percent_damage),__builtin_offsetof(FTStruct,coll_data),sizeof(MPCollData),__builtin_offsetof(SCCommonData,player),__builtin_offsetof(SCCommonData,training_man_costume),__builtin_offsetof(SCCommonData,training_com_costume)};
@@ -100,10 +110,11 @@ normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_sam
 egg_contact_done=False;egg_observed=set();neutral_samples=[]
 visual_layout=constant('ccVisualLayout')
 visual_objects=set();visual_samples=0;visual_hidden=False;visual_errors=[]
+pair_contact=False;pair_samples=[];taunt_samples=[]
 weapon_kinds=set();item_kinds=set();projectile_contact_done=False
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
-    global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples,egg_contact_done,projectile_contact_done,visual_samples,visual_hidden
+    global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples,egg_contact_done,projectile_contact_done,visual_samples,visual_hidden,pair_contact
     if tracking and u8(scene)==54:
         fp=fighter()
         if not 0x80000000<=fp<0x80800000:return
@@ -132,6 +143,18 @@ def frame_callback(frame):
         top=u32(fp+0x8E8);model=u32(fp+0x8E8+16)
         trace.append((u32(fp+0x24),u32(fp+0x28),tuple(f32(top+layout[12]+j) for j in (0,4,8)),
                       tuple(f32(model+layout[14]+j) for j in (0,4,8)),tuple(f32(fp+special[1]+j) for j in (0,4,8))))
+        if args.paired_donor is not None or args.taunt_donor is not None:
+            clock=labels['CharLabRuntime.sFTCustomMoveClocks']
+            tick=f32(clock+24) if u32(clock)==fp else -1
+            cpu=fighter(1)
+            if cpu:
+                held=u32(fp+layout[17]);capture=u32(cpu+layout[18])
+                pair_samples.append((u32(fp+0x24),u32(cpu+0x24),tick,held,capture,u32(cpu+percent_off)))
+                if args.paired_donor is not None and not held and u32(fp+attack_off)>=2:
+                    center=fp+attack_off+center_off;target=u32(cpu+0x8E8)+layout[12]
+                    for j in (0,4,8):wf32(target+j,f32(center+j)-(200 if j==4 else 0))
+                    w32(cpu+layout[2],layout[29]);pair_contact=True
+            taunt_samples.append((u32(fp+0x24),tick,u32(fp+0x180),tuple(f32(model+layout[14]+j) for j in (0,4,8)),u32(fp+attack_off)))
         if args.neutral is not None:
             state=labels['CharLabRuntime.sFTCharBuilderNeutralStates']
             if u32(state)==fp:neutral_samples.append(tuple(u32(state+j) for j in (12,16,20,24)))
@@ -218,7 +241,9 @@ def diagnostic():
 def wait(predicate,label,seconds=20):
     end=time.monotonic()+seconds
     while not predicate():
-        if time.monotonic()>end:raise AssertionError((label,diagnostic()))
+        if time.monotonic()>end:
+            (build/'timeout-ram.bin').write_bytes(C.string_at(ram,0x800000))
+            raise AssertionError((label,diagnostic()))
         time.sleep(.002)
 def frames(n):
     tick=u32(updates);wait(lambda:u32(updates)>=tick+n,'Frames stopped')
@@ -300,13 +325,17 @@ try:
         raise SystemExit(0)
     # Retain source recipe defaults except the two selected special donors.
     table=u32(labels['CharCreator.slot_tables'])
-    for i in range(21):w32(u32(table+i*4),0)
+    for i in range(22):w32(u32(table+i*4),0)
     if args.normal_animations is not None:
         for i in range(2,15):w32(u32(table+i*4),args.normal_animations)
     w32(u32(table),1);w32(u32(table+4),args.body)
     w32(u32(table+16*4),args.donor if args.donor is not None else 9)
     w32(u32(table+17*4),args.donor if args.donor is not None else 7)
     if args.neutral is not None:w32(u32(table+15*4),args.neutral)
+    if args.paired_donor is not None:
+        w32(u32(table+18*4),args.paired_donor)
+        for field in (19,20):w32(u32(table+field*4),args.throw_donor if args.throw_donor is not None else args.paired_donor)
+    w32(u32(table+21*4),args.taunt_donor if args.taunt_donor is not None else args.body)
     w32(labels['CharCreator.selected_builds'],1)
     w8(scene+man_off,args.body);w8(scene+cpu_off,8);w8(scene+stage_off,6)
     w8(scene+1,u8(scene));w8(scene,54);w32(native['sSYTaskmanStatus'],1)
@@ -320,6 +349,77 @@ try:
     collision_fixture=C.string_at(ram+((fighter()+collision_off)&0x7fffff),collision_size)
     initial_kinetics=u32(fighter()+layout[2])
     print('PASS: Remix Training loads body',args.body,'with donor',args.donor if args.donor is not None else 'Kick/Quick Attack','; no CPU fault.',flush=True)
+    if args.paired_donor is not None:
+        # Idle human victim avoids Training AI jumping out of the short window.
+        w32(fighter(1)+layout[1],0)
+        if args.paired_donor == args.body:
+            # Native short grabs can open/close between frame callbacks. Put
+            # the dummy within standing reach before the real grab input.
+            target=u32(fighter(1)+0x8E8)+layout[12]
+            facing=1 if u32(fighter()+0x44)==1 else -1
+            for j in (0,4,8):wf32(target+j,f32(start_top+layout[12]+j)+(200*facing if j==0 else 0))
+            pair_contact=True
+        tracking=True;pulse(0xA0)
+        wait(lambda:u32(fighter()+layout[17])!=0,'Donor grab contact',seconds=30)
+        frames(12)
+        if args.paired_airborne:
+            wf32(u32(fighter()+0x8E8)+layout[12]+4,4000)
+        facing=1 if u32(fighter()+0x44)==1 else -1
+        if args.back_throw:pulse(((-80*facing)&255)<<16)
+        else:pulse(0x80)
+        donor=args.throw_donor if args.throw_donor is not None else args.paired_donor
+        if donor==2 and not args.back_throw:
+            frames(35);pulse(((35*facing)&255)<<16,5);frames(15)
+            if args.cargo_jump:pulse(0x0800);frames(15)
+            pulse(0x80)
+        frames(180);tracking=False
+        assert not u32(native['__osFaultedThread']),diagnostic()
+        wait(lambda:u32(fighter()+0x24)==10,'Paired throw recovery',seconds=30)
+        assert pair_contact and any(row[3] and row[4] for row in pair_samples),('No paired ownership',pair_samples)
+        assert not u32(fighter()+layout[17]) and not u32(fighter(1)+layout[18]),('Capture survived release',diagnostic())
+        assert u32(fighter(1)+percent_off)>0,('No throw damage',pair_samples[-8:])
+        assert u32(fighter()+8)==args.body and not animation_errors,diagnostic()
+        seen={row[0] for row in pair_samples}
+        if donor==2 and not args.back_throw:
+            assert 235 in seen and any(s in seen for s in (236,237,238)),('DK cargo/walk phases absent',seen)
+            if args.cargo_jump:assert {240,241,245}<=seen,('DK cargo jump/air toss phases absent',seen)
+            else:assert 244 in seen,('DK cargo ground toss absent',seen)
+        if donor==8 and not args.back_throw:
+            assert {228,230}<=seen,('Kirby lift/landing phases absent',seen)
+            if args.paired_airborne:assert 229 in seen,('Kirby airborne fall phase absent',seen)
+        if args.back_throw:assert 170 in seen,('Back throw input did not enter donor backward phase',seen)
+        report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'grab_donor':args.paired_donor,'throw_donor':donor,'back_throw':args.back_throw,'airborne_start':args.paired_airborne,'cargo_jump':args.cargo_jump,'observed_phases':sorted(seen),'checks':['real Z+A grab/contact','native paired ownership','throw input/release/damage','native body identity and recovery'],'rendering':'null'}
+        (report_directory/f'cpu-scenes-paired-{args.body}-{args.paired_donor}-{donor}-{int(args.back_throw)}-{int(args.paired_airborne)}-{int(args.cargo_jump)}.json').write_text(json.dumps(report,indent=2)+'\n')
+        print('PASS: real donor grab/paired throw release',report,flush=True);raise SystemExit(0)
+    if args.taunt_donor is not None:
+        durations=(180,60,60,60,80,60,80,60,60,80,90,60)
+        tracking=True;pulse(0x2000)
+        frames(durations[args.taunt_donor]+12);tracking=False
+        assert not u32(native['__osFaultedThread']),diagnostic()
+        assert any(row[0]==189 for row in taunt_samples),('Taunt not entered',diagnostic())
+        samples=[r for r in taunt_samples if r[0]==189]
+        assert max(r[1] for r in samples)>=durations[args.taunt_donor]-2,('Source taunt duration',samples[-8:])
+        if args.taunt_donor==0:
+            assert max(r[3][0] for r in samples)>2,('Mario growth absent',samples[:8])
+            assert abs(f32(u32(fighter()+0x8E8+16)+layout[14])-1)<.0001,('Mario scale survived recovery',diagnostic())
+        if args.taunt_donor==4:
+            active={int(r[1]) for r in samples if r[4]}
+            assert {47,48,49}<=active,('Luigi damage window',active)
+        assert u32(fighter()+0x24)==10 and not animation_errors,diagnostic()
+        tracking=True;pulse(0x2000);pulse(0x20)
+        assert u32(fighter()+0x24)==189,('Early taunt cancellation',diagnostic())
+        cancel=(128,60,60,60,60,None,60,60,60,60,60,60)[args.taunt_donor]
+        if cancel is not None and cancel<durations[args.taunt_donor]:
+            wait(lambda:u32(fighter()+0x180)!=0,'Donor taunt cancel flag')
+            keys(0x20);wait(lambda:u32(fighter()+0x24)!=189,'Donor taunt guard cancel');keys(0);frames(90)
+        else:frames(durations[args.taunt_donor]+15)
+        tracking=False
+        assert not u32(native['__osFaultedThread']),diagnostic()
+        if args.taunt_donor==0:
+            assert abs(f32(u32(fighter()+0x8E8+16)+layout[14])-1)<.0001,('Mario scale survived cancellation',diagnostic())
+        report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'taunt_donor':args.taunt_donor,'checks':['real L input','source taunt pose clock and natural recovery','early guard rejection and donor cancel policy'],'rendering':'null'}
+        (report_directory/f'cpu-scenes-taunt-{args.body}-{args.taunt_donor}.json').write_text(json.dumps(report,indent=2)+'\n')
+        print('PASS: donor taunt',report,flush=True);raise SystemExit(0)
     if args.neutral is not None:
         trace.clear();tracking=True;pulse(0x40)
         if args.neutral in (8,9):

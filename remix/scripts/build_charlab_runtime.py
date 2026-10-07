@@ -116,9 +116,13 @@ u32 gFTCustomAnimationValidationFailures;''')
     move=move.replace('sFTCustomBodyExtraMotionIDs[fp->fkind]', 'sFTCustomBodyExtraMotionIDs[slot->attacks[nSCCharBuilderAttackJab]]')
     move=move.replace('#include "ftcustomanimation.c.inc"','#include "animation.c.inc"')
     move=re.sub(r'#include "(ft[^"/]+\.inc)"',r'#include "ft/\1"',move)
+    collision = (LAB/'src/ft/ftcustomcollision.c.inc').read_text()
+    collision = collision.replace('return ftCustomCollisionSample(clock->trajectory, (s32)clock->frame);',
+        'return ccCollisionSourceFrame(fp, ftCustomCollisionSample(clock->trajectory, (s32)clock->frame));')
+    collision = re.sub(r'#include "(ft[^"/]+\.inc)"', r'#include "ft/\1"', collision)
+    (OUT/'include/ft/ftcustomcollision.c.inc').write_text(collision)
     (OUT/'move.c.inc').write_text(move,encoding='utf-8')
     throw = (LAB / 'src/ft/ftcommon/ftcommonthrow.c').read_text(encoding='utf-8')
-    throw=re.sub(r'^    if \(ftMainCharBuilderTryPairedThrow\([^\n]+\n','',throw,flags=re.M)
     for direction in (0, 1):
         throw = throw.replace(f'this_fp->attr->thrown_status[catch_fp->fkind].ft_thrown[{direction}]',
                               f'this_fp->attr->thrown_status[ccMappedThrownKind(catch_fp->fkind, {direction})].ft_thrown[{direction}]')
@@ -162,6 +166,8 @@ def object_to_bass(path):
         'wpFoxBlasterMakeWeapon': 'CharCreator.neutral_make_weapon_',
         'ccNeutralMakeWeapon': 'CharCreator.neutral_weapon_factory_',
         'ccVisualMainFile': 'CharCreator.visual_main_file_',
+        'dFTCommonCaptureKnockbackCatch': '0x80188A30',
+        'dFTCommonCaptureKnockbackCapture': '0x80188A40',
         'func_800269C0_275C0': '0x800269C0',
     }
     # Engine symbols come from the decompilation's original US function labels,
@@ -246,7 +252,9 @@ def object_to_bass(path):
                 lines.append(f'dw {relocations[i][offset]}')
         lines.append('pullvar base, origin')
     lines += ['end:', '}', 'pushvar origin, base', 'origin 0x5000000',
-              'insert "animations.bin"', 'pullvar base, origin', '']
+              'insert "animations.bin"', 'origin 0x5400000',
+              'insert "paired-geometry.bin"', 'origin 0x5800000',
+              'insert "special-collision.bin"', 'pullvar base, origin', '']
     (OUT / 'runtime.asm').write_text('\n'.join(lines), encoding='utf-8')
     print(f'Compiled shared Character Lab runtime: {sum(sections[i][5] for i in allocated):,} bytes; {sum(len(r) for r in relocations.values())} relocations.')
 
@@ -270,6 +278,11 @@ def main():
         from generate_charlab_animations import generate as generate_animations
     generate_animations()
     prepare_headers()
+    if __package__:
+        from .generate_charlab_collision_bank import generate as generate_collision_bank
+    else:
+        from generate_charlab_collision_bank import generate as generate_collision_bank
+    generate_collision_bank()
     special_timings()
     if __package__:
         from .generate_charlab_specials import generate
@@ -291,8 +304,13 @@ def main():
     else:
         from generate_charlab_visuals import generate as generate_visuals
     generate_visuals()
+    if __package__:
+        from .generate_charlab_pairs import generate as generate_pairs
+    else:
+        from generate_charlab_pairs import generate as generate_pairs
+    generate_pairs()
     command = ['clang', '-target', 'mips-unknown-none', '-march=mips2', '-mabi=32',
-               '-mno-abicalls', '-fno-pic', '-G0', '-O2', '-ffreestanding', '-fno-builtin',
+               '-mno-abicalls', '-fno-pic', '-G0', '-Oz', '-ffreestanding', '-fno-builtin',
                '-fno-stack-protector', '-DFTCHARBUILDER_NORMAL_MECHANICS', '-DFTCHARBUILDER_NEUTRAL_EXTENDED', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
                '-Ibuild/char_creator/runtime/include', '-I../ssb-decomp-re/include', '-I../ssb-decomp-re/src',
                '-c', 'extra_imports/CharLabRuntime.c', '-o', 'build/char_creator/runtime/runtime.o']

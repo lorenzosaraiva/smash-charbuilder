@@ -1,6 +1,6 @@
 # Remix neutral donors
 
-Preview **0.1.8**, updated **2026-10-06**. Keep **Original 12 Only** enabled.
+Preview **0.1.9**, updated **2026-10-06**. Keep **Original 12 Only** enabled.
 Neutral Special now offers the body's name (native behavior) and Fox, Mario,
 Luigi, Pikachu, Ness, Captain Falcon, Jigglypuff, Donkey Kong, Samus, Link and
 Yoshi. Choosing the same donor as the body keeps its native routines. Kirby's

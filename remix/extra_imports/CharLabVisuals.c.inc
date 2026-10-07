@@ -1,3 +1,54 @@
+extern void gcParseMObjMatAnimJoint(MObj*);
+/* Original material setup for independent EF props. Remix costume hooks
+ * require a fighter GObj and cannot accept these owned effect objects. */
+void ccPropMaterials
+(
+    DObj *dobj,
+    MObjSub **mobjsubs,
+    AObjEvent32 **costume_matanim_joints,
+    AObjEvent32 **main_matanim_joints,
+    f32 anim_frame
+)
+{
+    if (mobjsubs != NULL)
+    {
+        MObjSub *mobjsub = *mobjsubs;
+
+        while (mobjsub != NULL)
+        {
+            MObj *mobj = gcAddMObjForDObj(dobj, mobjsub);
+
+            if (costume_matanim_joints != NULL)
+            {
+                AObjEvent32 *costume_matanim_joint = *costume_matanim_joints;
+
+                if (costume_matanim_joint != NULL)
+                {
+                    gcAddMObjMatAnimJoint(mobj, costume_matanim_joint, anim_frame);
+                    gcParseMObjMatAnimJoint(mobj);
+                    gcPlayMObjMatAnim(mobj);
+                    gcRemoveAObjFromMObj(mobj);
+                }
+                costume_matanim_joints++;
+            }
+            if (main_matanim_joints != NULL)
+            {
+                AObjEvent32 *main_matanim_joint = *main_matanim_joints;
+
+                if (main_matanim_joint != NULL)
+                {
+                    gcAddMObjMatAnimJoint(mobj, main_matanim_joint, 0.0F);
+                    gcParseMObjMatAnimJoint(mobj);
+                    gcPlayMObjMatAnim(mobj);
+                }
+                main_matanim_joints++;
+            }
+            mobjsubs++;
+            mobjsub = *mobjsubs;
+        }
+    }
+}
+
 /* Borrowed visuals own their objects, never the body's model-part tables. */
 typedef struct FTCustomSpecialAttachmentFrame { Vec3f rotate, translate, scale; sb32 active; } FTCustomSpecialAttachmentFrame;
 typedef struct FTCustomSpecialAttachment { const FTCustomSpecialAttachmentFrame *frames; s32 joint, part; sb32 hide_body; } FTCustomSpecialAttachment;
@@ -9,6 +60,7 @@ typedef struct CCVisualDefinition {
     const FTCustomSpecialAttachment *attachment;
     s32 family; /* 1 Up B, 2 Down B, 3 Neutral B */
 } CCVisualDefinition;
+static const CCVisualDefinition* ccPairVisual(FTStruct*);
 #include "../build/char_creator/runtime/visual-data.inc"
 
 typedef struct CCVisualState {
@@ -35,6 +87,7 @@ static const CCVisualDefinition* ccVisualDefinition(FTStruct *fp)
     const FTCustomMoveDefinition *move = clock ? clock->move : NULL;
     s32 i;
     if (fp->player >= 4 || ftCustomMoveGetSlot(fp) == NULL) return NULL;
+    if (sCCPairDonors[fp->player] >= 0) return ccPairVisual(fp);
     if (special != NULL && special->path == NULL)
         for (i = 0; i < ARRAY_COUNT(sFTCharBuilderSpecialTimings); i++)
             if (sFTCharBuilderSpecialTimings[i].donor == special->donor && sFTCharBuilderSpecialTimings[i].motion == special->motion)
@@ -194,6 +247,7 @@ static GObj* ccVisualOwn(GObj *g, GObj *fighter)
 static void ccVisualEffectUpdate(GObj *g)
 {
     s32 i;
+    if (ccPairEffectLive(g)) { efManagerNoEjectProcUpdate(g); return; }
     for (i = 0; i < 4; i++)
     {
         CCVisualState *s = &sCCVisualStates[i];
@@ -305,6 +359,8 @@ static void ccVisualScript(GObj *g, CCVisualState *s, f32 time)
         case nFTMotionEventPlayLoopSFXStoreInfo: case nFTMotionEventPlayLoopVoiceStoreInfo:
             if (!fp->is_muted) { ftParamPlayLoopSFX(fp, value); s->loop = fp->p_loop_sfx; gCCVisualSounds++; } break;
         case nFTMotionEventStopLoopSFX: ftParamStopLoopSFX(fp); s->loop = NULL; break;
+        case nFTMotionEventMakeRumble:
+            ftParamMakeRumble(fp, value & 0x1FFF, value >> 13); break;
         case nFTMotionEventEffect:
             effect = (const FTMotionEventMakeEffect*)s->script;
             offset.x = effect->s2.off_x; offset.y = effect->s2.off_y; offset.z = effect->s3.off_z;
@@ -377,7 +433,7 @@ static void ccVisualTick(GObj *g)
             if (s->model)
             {
                 DObjGetStruct(s->model)->user_data.p = prefix;
-                lbCommonAddMObjForFighterPartsDObj(DObjGetStruct(s->model),
+                ccPropMaterials(DObjGetStruct(s->model),
                     part ? part->mobjsubs : attr->commonparts_container->commonparts[0].p_mobjsubs ? attr->commonparts_container->commonparts[0].p_mobjsubs[prop->joint-4] : NULL,
                     part ? part->costume_matanim_joints : attr->commonparts_container->commonparts[0].p_costume_matanim_joints ? attr->commonparts_container->commonparts[0].p_costume_matanim_joints[prop->joint-4] : NULL,
                     part ? part->main_matanim_joints : NULL, 0);

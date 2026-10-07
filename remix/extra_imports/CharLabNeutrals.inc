@@ -133,6 +133,25 @@ scope ensure_neutral_particles_: {
 // The existing one-bit recipe field remains packed exactly as before. Full
 // choices occupy unused bytes of the existing 16-byte creator-options payload.
 scope export_neutral_choices_: {
+    li t0, slot_tables
+    lli t1, 4
+    li t2, 0x54410000 // TA + four donor nibbles in spare options bytes
+    lli t5, 0
+    _taunt_loop:
+    lw t3, 0(t0)
+    lw t3, FIELD_TAUNT * 4(t3)
+    lw t4, 0(t3)
+    andi t4, t4, 0xF
+    sllv t4, t4, t5
+    or t2, t2, t4
+    sw r0, 0(t3) // append one safe bit without shifting old recipe fields
+    addiu t5, t5, 4
+    addiu t0, t0, 4
+    addiu t1, t1, -1
+    bnez t1, _taunt_loop
+    nop
+    li t0, Toggles.block_char_creator_options + 0x1C
+    sw t2, 0(t0)
     li t0, Toggles.block_char_creator_options + 0x14
     li t1, 0x4E535031 // NSP1
     sw t1, 0(t0)
@@ -185,6 +204,34 @@ scope import_neutral_choices_: {
     bnez t2, _loop
     nop
     _end:
+    li t0, Toggles.block_char_creator_options + 0x1C
+    lw t2, 0(t0)
+    srl t3, t2, 16
+    lli t4, 0x5441
+    li t0, slot_tables
+    lli t1, 4
+    _taunt_loop:
+    lw t5, 0(t0)
+    bne t3, t4, _taunt_body
+    andi t6, t2, 0xF
+    sltiu t7, t6, 12
+    bnez t7, _taunt_valid
+    nop
+    _taunt_body:
+    lw t6, FIELD_BODY * 4(t5)
+    lw t6, 0(t6)
+    sltiu t7, t6, 12
+    bnez t7, _taunt_valid
+    nop
+    lli t6, 0
+    _taunt_valid:
+    lw t5, FIELD_TAUNT * 4(t5)
+    sw t6, 0(t5)
+    srl t2, t2, 4
+    addiu t0, t0, 4
+    addiu t1, t1, -1
+    bnez t1, _taunt_loop
+    nop
     jr ra
     nop
 }

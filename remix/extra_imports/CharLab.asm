@@ -2,6 +2,93 @@
 if !{defined __CHAR_LAB__} {
 define __CHAR_LAB__()
 scope CharLab {
+    // Advance the Expansion Pak cursor with native allocations. Otherwise a
+    // later overflow restarts at custom_heap and overwrites live GC pools.
+    scope heap_reset_: {
+        OS.patch_start(0x5570, 0x80004970)
+        j heap_reset_
+        lw ra, 0x14(sp)
+        OS.patch_end()
+        li t0, CharacterSelect.expansion_expansion_ram
+        sw r0, 0(t0)
+        sw r0, 4(t0)
+        li t0, custom_heap_address
+        li t1, custom_heap
+        sw t1, 0(t0)
+        j CharacterSelect.clear_expansion_expansion_ram_._return
+        nop
+    }
+    scope heap_cursor_: {
+        OS.patch_start(0x3800000 + CharacterSelect.increase_heap_._return - 0x80400000, CharacterSelect.increase_heap_._return)
+        j heap_cursor_
+        sw v0, 0xC(a3)
+        OS.patch_end()
+        addiu sp, sp, -16
+        sw t0, 0(sp)
+        sw t1, 4(sp)
+        li t0, 0x800465E8
+        bne a3, t0, _end
+        nop
+        li t0, custom_heap
+        sltu t1, v0, t0
+        bnez t1, _end
+        nop
+        lui t0, 0x8080
+        sltu t1, v0, t0
+        beqz t1, _end
+        nop
+        li t0, custom_heap_address
+        lw t1, 0(t0)
+        sltu t1, t1, v0
+        beqz t1, _end
+        nop
+        sw v0, 0(t0)
+        _end:
+        lw t0, 0(sp)
+        lw t1, 4(sp)
+        jr ra
+        addiu sp, sp, 16
+    }
+    // Late UI setup must not rewind the cursor past allocated object pools.
+    OS.patch_start(0x3800000 + CharacterSelect.load_additional_characters_ + 0x24 - 0x80400000, CharacterSelect.load_additional_characters_ + 0x24)
+    nop
+    OS.patch_end()
+    OS.patch_start(0x3800000 + Render.setup_._mode_select + 0x34 - 0x80400000, Render.setup_._mode_select + 0x34)
+    nop
+    OS.patch_end()
+    // Original-roster CSS uses original bodies. Loading every large expanded
+    // CSS model before reserving its five heaps can exhaust Expansion Pak RAM
+    // after the creator runtime grows. Keep native on-demand loading; the
+    // experimental expanded creator retains its normal preload path.
+    scope editor_css_models_: {
+        OS.patch_start(0x3800000 + CharacterSelect.load_additional_characters_ - 0x80400000, CharacterSelect.load_additional_characters_)
+        j editor_css_models_
+        nop
+        OS.patch_end()
+        OS.read_byte(Global.current_screen, t0)
+        sltiu t1, t0, Global.screen.VS_CSS
+        bnez t1, _native
+        nop
+        sltiu t1, t0, Global.screen.BONUS_2_CSS + 1
+        beqz t1, _native
+        nop
+        li t0, Toggles.block_char_creator_options + 0x10
+        lw t0, 0(t0)
+        beqz t0, _native
+        nop
+        addiu sp, sp, -8
+        sw ra, 4(sp)
+        li s0, CharacterSelectDebugMenu.debug_control_object
+        sw r0, 0(s0)
+        lli s1, 0
+        j CharacterSelect.load_additional_characters_._end
+        nop
+        _native:
+        addiu sp, sp, -8
+        sw ra, 4(sp)
+        j CharacterSelect.load_additional_characters_ + 8
+        nop
+    }
     scope body_kind_: {
         lbu t0, 0x000D(a0)
         sltiu t1, t0, 4
@@ -422,7 +509,7 @@ scope CharLab {
         lw t3, 0x0018(a0) // Retire the previously drawn Settings page.
         sw t3, 0x0018(sp)
         sw t0, 0x0000(a0)
-        lli t3, 12 // TEST is on page two of the native 12-row menu.
+        lli t3, 24 // Taunt makes TEST the first row of page three.
         _page:
         lw t0, 0x001C(t0)
         addiu t3, t3, -1
@@ -430,7 +517,7 @@ scope CharLab {
         nop
         sw t0, 0x0018(a0)
         sw t0, 0x001C(a0)
-        lli t0, 23
+        lli t0, 24
         sw t0, 0x000C(a0)
         addiu t1, t1, 8
         li t0, Toggles.menu_index
@@ -465,4 +552,5 @@ OS.align(16)
 include "../build/char_creator/runtime/runtime.asm"
 include "../build/char_creator/runtime/special-hooks.asm"
 include "../build/char_creator/runtime/normal-hooks.asm"
+include "../build/char_creator/runtime/paired-hooks.asm"
 }

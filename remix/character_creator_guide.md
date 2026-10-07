@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.8 (2026-10-06)**.
+Character Lab has an original-roster Remix preview, **0.1.9 (2026-10-06)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -64,10 +64,18 @@ donor traction/air attributes, angle availability and landing behavior follow
 the source. See [normal mechanics](docs/normal-mechanics.md) for jab controls and
 the rendered contact checks still pending.
 
-Grab choices borrow donor hitbox events and timing. Throw choices borrow
-numeric damage/knockback while preserving body capture, victim statuses and
-release choreography. DK skips cargo for a foreign forward throw. Tether reach,
-paired animation and complete donor throw choreography remain unfinished.
+Grab choices use donor reach, pull timing and source tether/tongue props.
+Forward/Back Throw choices use donor attacker/victim sockets, facing, release
+flags and numeric damage/knockback. DK Forward Throw enters cargo; use movement,
+jump and throw inputs to carry/toss. Kirby Forward Throw lifts, falls and
+releases on landing. Victims retain native Remix animation rigs and parent
+mapping. Expanded-roster pose fidelity remains pending.
+
+**Taunt** selects any original donor. Press L during play. Donor poses,
+duration/cancel flags, safe effects and sounds follow the source. Mario grows
+and shrinks the selected body; Luigi keeps his one-damage hitbox at frames
+47-49. Interruptions restore growth. Old presets default Taunt to Body.
+See [grab, throw and taunt guide](docs/paired-grabs-and-taunts.md).
 
 All eleven original neutral donors except Kirby copy now use the shared source
 clock and phase poses on foreign original bodies. Projectiles keep their donor

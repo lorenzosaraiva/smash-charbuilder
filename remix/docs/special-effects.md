@@ -1,6 +1,6 @@
 # Remix special effects and attachments
 
-Preview **0.1.8**, updated **2026-10-06**. Keep **Original 12 Only** enabled.
+Preview **0.1.9**, updated **2026-10-06**. Keep **Original 12 Only** enabled.
 
 | Donor move | Borrowed presentation |
 | --- | --- |
@@ -46,7 +46,7 @@ Try Cutter/Stone, Punch/Kick, Laser, Egg Lay and charged storage/release on a
 foreign body with HITBOX/HITBOX+ enabled. Report the body, donor, phase, emulator
 and version, with a clip showing any misplaced or lingering attachment.
 
-The checked 0.1.8 ROM passes real-input CPU scenes on Mario for Cutter/Stone,
+The checked 0.1.9 ROM passes real-input CPU scenes on Mario for Cutter/Stone,
 Punch, Laser, Egg Lay and charge storage/release, plus the Kick/two-zip Quick
 Attack regression. Native props/FX are allocated, their transforms remain finite,
 Stone hides the body while active, and owned handles are cleared on recovery.

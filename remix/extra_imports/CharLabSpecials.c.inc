@@ -199,6 +199,7 @@ void ccStatusChanging(GObj *g, s32 next)
     FTStruct *fp = ftGetStruct(g); CCSpecialClock *clock = ccSpecialClock(fp);
     s32 donor = ccSpecialDonor(fp); CCSpecialState *state;
     ccVisualStatusChanging(g, next);
+    ccPairTransition(g, next);
     if (fp->player >= 4) return;
     state = ccSpecialState(fp);
     state->bomb_throw = donor == nFTKindLink &&

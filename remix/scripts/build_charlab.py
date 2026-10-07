@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.8'
+VERSION = '0.1.9'
 UPDATED = '2026-10-06'
 
 
@@ -99,9 +99,13 @@ production MIPS execution tests. Rendered gameplay acceptance is still pending.
 Neutral source phases/poses, private projectile resources, charging/storage/release,
 Boomerang return/catch and Egg Lay capture are connected.
 Full decomp parity is pending: rendered neutral/special acceptance,
-rendered normal contacts/landing, taunts, special visual acceptance and paired
-grabs/throws. Expanded-roster fidelity and Kirby copy are outside this milestone.
-This neutral expansion preserves existing Character Lab presets and recipe bits.
+rendered normal contacts/landing and taunts, special visual acceptance and paired
+grab/throw alignment. Expanded-roster fidelity and Kirby copy are outside this milestone.
+Tether pulls, paired throws, DK cargo, Kirby lift/fall/landing and customizable
+taunts now use donor clocks, props and source poses. Mario growth/shrink and
+Luigi damage/cancel windows are connected. Existing recipe bits are preserved.
+Existing special collision samples stream through four 80-byte ROM caches,
+preserving source values while freeing about 240 KiB for native menus.
 Full choices use spare creator-options bytes. Cutter sword/trails, Stone replacement,
 Falcon flames, blaster/tongue props and a source-sized charge orb are connected,
 with source audio clocks and owned interruption/death/scene cleanup.
@@ -118,6 +122,7 @@ SHA-256: `{info['rom_sha256']}`
         'docs/decomp-port.md': (ROOT/'docs/decomp-port.md').read_bytes(),
         'docs/animations.md': (ROOT/'docs/animations.md').read_bytes(),
         'docs/special-effects.md': (ROOT/'docs/special-effects.md').read_bytes(),
+        'docs/paired-grabs-and-taunts.md': (ROOT/'docs/paired-grabs-and-taunts.md').read_bytes(),
         'docs/normal-mechanics.md': (ROOT/'docs/normal-mechanics.md').read_bytes(),
         'docs/character-lab-status.md': (ROOT/'docs/character-lab-status.md').read_bytes(),
         'CHANGELOG.md': (PROJECT/'CHANGELOG.md').read_bytes(),
@@ -175,6 +180,7 @@ def main():
     run(linux(['python3','tools/testNormalMechanics.py']), 'Check source normal travel', lab)
     run(linux(['python3','tools/testSpecialTiming.py']), 'Check source special paths', lab)
     run(linux(['python3','tools/testSpecialAnimations.py']), 'Check source special visuals', lab)
+    run(linux(['python3','tools/testPairedMoves.py']), 'Check source paired moves and taunts', lab)
     run([sys.executable, 'scripts/verify_charlab_rom.py'], 'Verify ROM')
     if not args.package_only:
         receipt = {'source_sha256': source_hash(), 'rom_sha256': hashlib.sha256((ROOT/'ssb64asm_extra.z64').read_bytes()).hexdigest()}
