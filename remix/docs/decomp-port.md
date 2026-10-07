@@ -1,6 +1,15 @@
 # Decomp to Remix port
 
-Updated **2026-10-06**. Remix preview **0.1.9**, project **0.1.26**.
+Updated **2026-10-07**. Remix preview **0.1.10**, project **0.1.27**.
+
+The current special-edge-case checks and remaining rendered stage acceptance
+are tracked in [special edge cases](special-edge-cases.md). Mario taunt growth
+uses a planted body pivot; body presets set Neutral B explicitly, and missing
+donor ground/air entries reject input instead of selecting a body fallback.
+Current CPU checks cover two Quick Attack zips, a native Hyrule wall and slope,
+PK Thunder steering/self-launch, Thunder owner contact, reflection/absorption,
+Sing/Rest contacts, repeated DK hit windows, aerial landing and Training reset.
+These targeted fixtures do not establish rendered acceptance across all bodies/stages.
 
 The decomp ROM remains the most complete edition. The Remix preview is a
 partial port for the **original twelve** bodies and donors; exposing Remix's

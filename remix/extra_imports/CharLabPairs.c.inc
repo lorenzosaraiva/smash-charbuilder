@@ -110,6 +110,16 @@ static void ccPairTick(GObj *g)
 {
     FTStruct *fp = ftGetStruct(g);
     ftMainCharBuilderApplyPairScale(fp);
+    struct FTCustomPairState *s = ftCustomPairState(fp);
+    if (s && s->is_taunt_scaled && (u32)ccBodyKind(fp) < 12 && fp->joints[4])
+    {
+        /* Mario's source root lowers toward zero while his donor limb
+         * translations grow. The retargeter keeps body limb lengths, so that
+         * root curve would bury the feet. Scale the body's standing hip height
+         * around TopN instead; the collision/world root stays untouched. */
+        const FTCustomAnimationBone *bone = &sFTCustomAnimationRigs[ccBodyKind(fp)].bones[0];
+        fp->joints[4]->translate.vec.f.y = bone->translate.y * fp->joints[4]->scale.vec.f.y / bone->scale.y;
+    }
     ftMainCharBuilderUpdatePairProps(g);
 }
 

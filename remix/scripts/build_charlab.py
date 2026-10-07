@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.9'
-UPDATED = '2026-10-06'
+VERSION = '0.1.10'
+UPDATED = '2026-10-07'
 
 
 def run(command, stage, cwd=ROOT):
@@ -74,6 +74,10 @@ def package(desktop=None):
 
 Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
+Fixes: planted Mario taunt growth, explicit body Neutral B presets, and unavailable
+aerial donor special rejection. See docs/special-edge-cases.md for automated
+contact/recovery checks and the remaining rendered stage acceptance.
+
 Source commit: `{info['commit']}`; uncommitted changes: {info['source_dirty']}.
 
 Original donor collision paths/timing, normal values, grab/throw choices,
@@ -122,6 +126,7 @@ SHA-256: `{info['rom_sha256']}`
         'docs/decomp-port.md': (ROOT/'docs/decomp-port.md').read_bytes(),
         'docs/animations.md': (ROOT/'docs/animations.md').read_bytes(),
         'docs/special-effects.md': (ROOT/'docs/special-effects.md').read_bytes(),
+        'docs/special-edge-cases.md': (ROOT/'docs/special-edge-cases.md').read_bytes(),
         'docs/paired-grabs-and-taunts.md': (ROOT/'docs/paired-grabs-and-taunts.md').read_bytes(),
         'docs/normal-mechanics.md': (ROOT/'docs/normal-mechanics.md').read_bytes(),
         'docs/character-lab-status.md': (ROOT/'docs/character-lab-status.md').read_bytes(),

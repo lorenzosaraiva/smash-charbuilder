@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.9 (2026-10-06)**.
+Character Lab has an original-roster Remix preview, **0.1.10 (2026-10-07)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -13,11 +13,14 @@ mechanics are implemented and which still need adapters or playtesting.
 2. Open **Settings -> Character Lab** and choose BUILD 1, 2, 3 or 4.
 3. Edit the name, **Body** and attack donors with the native menu controls.
 4. **USE BODY FOR ALL MOVES** gives you a native starting point.
+   It also updates Neutral B to the body's explicit donor, keeping native copy for Kirby.
 5. Change any jab, dash attack, tilt, smash, aerial, grab or throw donor.
 6. Neutral Special offers **your body's fighter name** and all eleven original
    donor choices except Kirby copy. See [neutral controls](docs/neutral-specials.md). Up/Down Special
    remain experimental. Mario with Falcon Kick/Pikachu Up B is the first
    regression target; use native body specials for unverified mechanics.
+   A ground-only donor such as DK Down B does nothing in the air; land to use
+   its grounded attack. It never substitutes the body's original Down B.
 7. Select **TEST IN TRAINING**. The Training CSS opens with your build's Body
    selected and a native Mario dummy; choose a stage and start.
 8. Exit Training, or press Back on its CSS, to reopen the same preset editor.

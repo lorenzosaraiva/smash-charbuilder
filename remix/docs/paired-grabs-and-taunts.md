@@ -1,6 +1,6 @@
 # Paired grabs, throws and taunts
 
-Remix preview **0.1.9**, updated **2026-10-06**. Original twelve bodies/donors.
+Remix preview **0.1.10**, updated **2026-10-07**. Original twelve bodies/donors.
 
 ## Controls and behavior
 
@@ -27,6 +27,9 @@ grows/shrinks the chosen body on his 180-frame track and can guard/grab cancel
 from frame 128. Luigi's 80-frame taunt has its original one-damage hitbox at
 frames 47-49 and cancel flag at frame 60. Other donors retain source flags;
 Link finishes naturally. Interrupted Mario taunts restore model scale.
+Borrowed Mario growth uses the body's scaled rest-height pivot so its feet
+stay planted instead of sliding through the floor. The world/collision root
+remains unchanged; all eleven foreign body pivots have linked-MIPS checks.
 
 Original-roster CSS screens load expanded preview models on demand,
 keeping room for native UI and character heaps.

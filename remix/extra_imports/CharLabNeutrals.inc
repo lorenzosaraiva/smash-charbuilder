@@ -1,5 +1,6 @@
 // Included inside CharCreator. Values 0/1 and all legacy recipe bits stay stable.
 neutral_donors:; dw -1, 1, 0, 4, 9, 11, 7, 10, 2, 3, 5, 6
+neutral_choices_by_body:; dw 2, 1, 8, 9, 3, 10, 11, 6, 0, 4, 7, 5
 neutral_resources:; dw -1, -1, 0, 1, 2, 3, -1, -1, -1, 4, 5, -1
 
 // PikaShared's generic factory hook reads the caller's saved s1 as FTStruct,

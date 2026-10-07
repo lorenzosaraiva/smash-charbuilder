@@ -47,6 +47,15 @@ grab-preserving combo counters, full-roster normal animations and remaining work
 The [Remix guide](../remix/character_creator_guide.md) and
 [port checklist](../remix/docs/character-lab-status.md) cover the separate preview.
 
+Remix preview 0.1.10 adds the following fixes. See
+[special edge-case evidence](../remix/docs/special-edge-cases.md).
+
+- [x] Planted body pivot for borrowed Mario taunt growth.
+- [x] All moves from body sets the explicit original Neutral B donor.
+- [x] Unavailable aerial donor moves reject input without a body fallback.
+- [x] Linked-MIPS checks across original bodies and four player slots.
+- [ ] Full rendered special contact, wall, slope, ledge and interruption acceptance.
+
 ## Character Lab neutral specials
 
 - [x] Body Move and Fox Laser.

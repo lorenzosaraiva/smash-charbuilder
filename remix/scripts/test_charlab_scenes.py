@@ -34,7 +34,11 @@ parser.add_argument('--paired-airborne',action='store_true',help='Raise the capt
 parser.add_argument('--cargo-jump',action='store_true',help='Walk and jump with a DK cargo victim, then toss in the air')
 parser.add_argument('--taunt-donor',type=int,choices=range(12),help='Real L input, source taunt duration and cancellation')
 parser.add_argument('--run-id',help='Isolated emulator workspace for independent CPU checks')
+parser.add_argument('--stage',type=int,choices=range(9),default=6)
+parser.add_argument('--edge',choices=('grounded-only','dk-repeat','ness-launch','thunder-contact','reflect','absorb','sing','rest','air-land','interrupt','quick-wall','quick-ledge','slope'),help='Controlled contact/transition regression')
 args=parser.parse_args()
+if args.edge:
+    args.donor={'grounded-only':2,'dk-repeat':2,'ness-launch':11,'thunder-contact':9,'reflect':1,'absorb':11,'sing':10,'rest':10,'air-land':0,'interrupt':11,'quick-wall':9,'quick-ledge':9,'slope':7}[args.edge]
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
 if args.editor_play:assert args.editor_test
 if args.normal_mechanics:assert args.normal_animations is not None
@@ -54,14 +58,24 @@ build=report_directory/args.run_id if args.run_id else report_directory
 build.mkdir(parents=True,exist_ok=True)
 source='''#include <sc/scene.h>
 #include <ft/fighter.h>
+#include <wp/weapon.h>
 const unsigned int layout[]={__builtin_offsetof(SCCommonData,training_man_fkind),__builtin_offsetof(SCCommonData,training_com_fkind),__builtin_offsetof(SCCommonData,maps_training_gkind),__builtin_offsetof(SCBattleState,players),sizeof(SCPlayerData),__builtin_offsetof(SCPlayerData,fighter_gobj),__builtin_offsetof(FTStruct,item_gobj),__builtin_offsetof(FTStruct,attack_colls),sizeof(FTAttackColl),__builtin_offsetof(FTAttackColl,pos_curr),__builtin_offsetof(FTStruct,percent_damage),__builtin_offsetof(FTStruct,coll_data),sizeof(MPCollData),__builtin_offsetof(SCCommonData,player),__builtin_offsetof(SCCommonData,training_man_costume),__builtin_offsetof(SCCommonData,training_com_costume)};
 const unsigned int egg_statuses[]={nFTCommonStatusCaptureYoshi,nFTCommonStatusYoshiEgg};
+const unsigned int edge_layout[]={__builtin_offsetof(WPStruct,kind),__builtin_offsetof(WPStruct,owner_gobj),__builtin_offsetof(WPStruct,reflect_gobj),__builtin_offsetof(WPStruct,absorb_gobj),__builtin_offsetof(WPStruct,physics.vel_air),__builtin_offsetof(FTStruct,status_vars.ness.specialhi.pkjibaku_delay),__builtin_offsetof(MPCollData,pos_prev),__builtin_offsetof(FTStruct,hitstatus),nFTCommonStatusFuraSleep,nFTNessStatusSpecialHiHold,nFTNessStatusSpecialAirHiHold,nFTNessStatusSpecialHiJibaku,nFTNessStatusSpecialAirHiJibaku,nFTPikachuStatusSpecialLwHit,nFTPikachuStatusSpecialAirLwHit,nFTDonkeyStatusSpecialLwLoop,nFTMarioStatusSpecialLw,nFTMarioStatusSpecialAirLw,__builtin_offsetof(FTStruct,input.controller),sizeof(SYController),__builtin_offsetof(MPCollData,floor_line_id),nGMHitStatusIntangible,nGMHitStatusNormal};
+const unsigned int edge_stage[]={sizeof(MPVertexInfo),sizeof(MPVertexData),__builtin_offsetof(DObj,user_data),__builtin_offsetof(DObj,anim_joint.event32),__builtin_offsetof(MPCollData,mask_curr),__builtin_offsetof(MPCollData,mask_stat),__builtin_offsetof(MPCollData,map_coll.center),__builtin_offsetof(MPCollData,floor_angle),MAP_FLAG_LWALL|MAP_FLAG_RWALL,MAP_FLAG_CLIFF_MASK,nFTCommonStatusCliffCatch,nFTCommonStatusCliffWait,MAP_VERTEX_COLL_CLIFF,__builtin_offsetof(SCCommonData,gkind)};
+FTStruct reflect_bits={.is_reflect=TRUE},absorb_bits={.is_absorb=TRUE};
 '''
 (build/'layout.c').write_text(source)
 subprocess.run(['clang','--target=mips-unknown-none','-c','-EB','-mabi=32','-march=mips2','-ffreestanding','-I'+str(ROOT/'build/char_creator/runtime/include'),'-I'+str(LAB/'include'),'-I'+str(LAB/'src'),'-D__sgi','-D_LANGUAGE_C','-D_MIPS_SZLONG=32','-DREGION_US',str(build/'layout.c'),'-o',str(build/'layout.o')],check=True)
 d,s,y=read_elf(build/'layout.o','>');a,l,i=y['layout'];off=s[i][4]+a-s[i][3]
 man_off,cpu_off,stage_off,players_off,player_size,fighter_off,item_off,attack_off,attack_size,center_off,percent_off,collision_off,collision_size,port_off,man_costume_off,cpu_costume_off=struct.unpack_from('>16I',d,off)
 a,l,i=y['egg_statuses'];egg_statuses=struct.unpack_from('>2I',d,s[i][4]+a-s[i][3])
+a,l,i=y['edge_layout'];edge_layout=struct.unpack_from('>'+str(l//4)+'I',d,s[i][4]+a-s[i][3])
+a,l,i=y['edge_stage'];edge_stage=struct.unpack_from('>'+str(l//4)+'I',d,s[i][4]+a-s[i][3])
+edge_bits={}
+for name in ('reflect','absorb'):
+    a,l,i=y[name+'_bits'];raw=d[s[i][4]+a-s[i][3]:s[i][4]+a-s[i][3]+l]
+    edge_bits[name]=next((j,v) for j,v in enumerate(raw) if v)
 unpacked=LAB/'build/emulator/root/usr';library=unpacked/'lib/x86_64-linux-gnu'
 headers=args.headers or unpacked/'include/mupen64plus'
 input_source=(LAB/'tools/emulator/input.c').read_text().replace('*a=0x20000','*a=0x20100')
@@ -118,6 +132,7 @@ def frame_callback(frame):
     if tracking and u8(scene)==54:
         fp=fighter()
         if not 0x80000000<=fp<0x80800000:return
+        if args.edge and 'edge_tick' in globals():edge_tick()
         if args.visuals:
             vs=labels['CharLabRuntime.sCCVisualStates']
             if u32(vs)==fp:
@@ -154,7 +169,7 @@ def frame_callback(frame):
                     center=fp+attack_off+center_off;target=u32(cpu+0x8E8)+layout[12]
                     for j in (0,4,8):wf32(target+j,f32(center+j)-(200 if j==4 else 0))
                     w32(cpu+layout[2],layout[29]);pair_contact=True
-            taunt_samples.append((u32(fp+0x24),tick,u32(fp+0x180),tuple(f32(model+layout[14]+j) for j in (0,4,8)),u32(fp+attack_off)))
+            taunt_samples.append((u32(fp+0x24),tick,u32(fp+0x180),tuple(f32(model+layout[14]+j) for j in (0,4,8)),u32(fp+attack_off),f32(model+layout[12]+4)))
         if args.neutral is not None:
             state=labels['CharLabRuntime.sFTCharBuilderNeutralStates']
             if u32(state)==fp:neutral_samples.append(tuple(u32(state+j) for j in (12,16,20,24)))
@@ -337,18 +352,24 @@ try:
         for field in (19,20):w32(u32(table+field*4),args.throw_donor if args.throw_donor is not None else args.paired_donor)
     w32(u32(table+21*4),args.taunt_donor if args.taunt_donor is not None else args.body)
     w32(labels['CharCreator.selected_builds'],1)
-    w8(scene+man_off,args.body);w8(scene+cpu_off,8);w8(scene+stage_off,6)
+    w8(scene+man_off,args.body);w8(scene+cpu_off,0 if args.edge else 8);w8(scene+stage_off,args.stage)
+    # Training copies the current scene's stage, not the remembered SSS byte.
+    w8(scene+edge_stage[13],args.stage)
     w8(scene+1,u8(scene));w8(scene,54);w32(native['sSYTaskmanStatus'],1)
     check(core.CoreDoCommand(8,0,None))
     wait(lambda:u8(scene)==54 and fighter() and u32(updates)>240,'Training load',seconds=60)
     check(core.CoreDoCommand(17,4,C.byref(C.c_int(120))))
     check(core.CoreDoCommand(17,5,C.byref(C.c_int(1))))
     frames(180);wait(lambda:u32(fighter()+0x24)==10,'Mario idle')
+    assert u8(u32(native['gSCManagerBattleState'])+1)==args.stage,('Wrong native stage',args.stage,u8(u32(native['gSCManagerBattleState'])+1))
     start_top=u32(fighter()+0x8E8)
     start_position=tuple(f32(start_top+layout[12]+j) for j in (0,4,8))
     collision_fixture=C.string_at(ram+((fighter()+collision_off)&0x7fffff),collision_size)
     initial_kinetics=u32(fighter()+layout[2])
     print('PASS: Remix Training loads body',args.body,'with donor',args.donor if args.donor is not None else 'Kick/Quick Attack','; no CPU fault.',flush=True)
+    if args.edge:
+        from charlab_scene_edges import run
+        run(globals());raise SystemExit(0)
     if args.paired_donor is not None:
         # Idle human victim avoids Training AI jumping out of the short window.
         w32(fighter(1)+layout[1],0)
@@ -394,7 +415,8 @@ try:
     if args.taunt_donor is not None:
         durations=(180,60,60,60,80,60,80,60,60,80,90,60)
         tracking=True;pulse(0x2000)
-        frames(durations[args.taunt_donor]+12);tracking=False
+        frames(durations[args.taunt_donor]+12)
+        tracking=False
         assert not u32(native['__osFaultedThread']),diagnostic()
         assert any(row[0]==189 for row in taunt_samples),('Taunt not entered',diagnostic())
         samples=[r for r in taunt_samples if r[0]==189]
@@ -402,6 +424,8 @@ try:
         if args.taunt_donor==0:
             assert max(r[3][0] for r in samples)>2,('Mario growth absent',samples[:8])
             assert abs(f32(u32(fighter()+0x8E8+16)+layout[14])-1)<.0001,('Mario scale survived recovery',diagnostic())
+            grown=[r for r in samples if r[3][1]>2]
+            assert grown and min(r[5] for r in grown)>100, ('Mario growth sank below its standing pivot',grown[:3])
         if args.taunt_donor==4:
             active={int(r[1]) for r in samples if r[4]}
             assert {47,48,49}<=active,('Luigi damage window',active)
@@ -417,7 +441,7 @@ try:
         assert not u32(native['__osFaultedThread']),diagnostic()
         if args.taunt_donor==0:
             assert abs(f32(u32(fighter()+0x8E8+16)+layout[14])-1)<.0001,('Mario scale survived cancellation',diagnostic())
-        report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'taunt_donor':args.taunt_donor,'checks':['real L input','source taunt pose clock and natural recovery','early guard rejection and donor cancel policy'],'rendering':'null'}
+        report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'taunt_donor':args.taunt_donor,'checks':['real L input','source taunt pose clock and natural recovery','early guard rejection and donor cancel policy','planted scaled pivot' if args.taunt_donor==0 else 'native donor scale'],'rendering':'null'}
         (report_directory/f'cpu-scenes-taunt-{args.body}-{args.taunt_donor}.json').write_text(json.dumps(report,indent=2)+'\n')
         print('PASS: donor taunt',report,flush=True);raise SystemExit(0)
     if args.neutral is not None:

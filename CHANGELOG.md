@@ -1,5 +1,14 @@
 # Changes
 
+## 0.1.27 - 2026-10-07: Remix taunt, presets and special edge cases
+
+- Release Remix preview 0.1.10; preserve decomp 0.1.18 and its download.
+- Anchor borrowed Mario taunt growth to the body's rest-height pivot, keeping feet planted instead of translating the scaled body below the platform.
+- Set explicit original-body Neutral B choices when using All moves from body; retain native fallback for Kirby copy and expanded bodies.
+- Reject unavailable donor ground/air special entries before changing fighter context or allocating resources, preventing aerial DK Down B from becoming the body's Down B.
+- Add production MIPS checks for every original-body preset, four player slots, unavailable aerial DK inputs and all eleven foreign Mario taunt pivots.
+- Add real-input CPU fixtures for special contacts, hitlag-aware DK repeats, recovery/landing and interruption cleanup. Track the evidence and remaining rendered walls/slopes/ledges acceptance in the special edge-case guide.
+
 ## 0.1.26 - 2026-10-06: Remix paired grabs, throws and taunts
 
 - Release Remix preview 0.1.9; preserve decomp 0.1.18 and its download.

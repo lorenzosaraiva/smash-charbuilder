@@ -8,7 +8,10 @@ retargeted poses, human/CPU preset assignments and return from Training to the e
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-**0.1.9 (2026-10-06):** donor tether grabs, paired throws, DK cargo carry/toss,
+**0.1.10 (2026-10-07):** planted Mario taunt growth, complete body Neutral B presets,
+and no body fallback for unavailable aerial donor specials. See
+[special edge-case verification and remaining acceptance](docs/special-edge-cases.md).
+Donor tether grabs, paired throws, DK cargo carry/toss,
 Kirby lift/fall/landing and customizable taunts now use shared source poses,
 clocks and props. Mario grows/shrinks; Luigi keeps his damage and cancel window.
 See [controls and verification](docs/paired-grabs-and-taunts.md).

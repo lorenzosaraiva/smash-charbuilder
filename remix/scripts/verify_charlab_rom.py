@@ -893,6 +893,8 @@ def main():
     test_visuals(Runtime(rom, labels))
     from test_charlab_pairs import test_pairs
     test_pairs(Runtime(rom, labels), rom)
+    from test_charlab_edge_fixes import test_edge_fixes
+    test_edge_fixes(Runtime(rom, labels))
     from test_charlab_animations import test_animations
     test_animations(runtime, rom)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')

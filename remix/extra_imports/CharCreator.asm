@@ -1177,6 +1177,15 @@ scope CharCreator {
         beq     v0, t1, _body              // choosing the body is stock behavior
         sw      v0, 0x0024(sp)
 
+        // A ground-only donor has no air entry. Reject before installing any
+        // donor resources/context; never substitute the body's special.
+        lw      t0, 0x0010(sp)
+        sll     t1, v0, 2
+        addu    t0, t0, t1
+        lw      t0, 0(t0)
+        beqz    t0, _unavailable
+        nop
+
         li      t0, 0x80116E10
         sll     t1, v0, 0x0002
         addu    t0, t0, t1
@@ -1308,13 +1317,12 @@ scope CharCreator {
         lw      t9, 0x0000(t0)
         bnez    t9, _end
         nop
-        // A missing donor table entry is not callable. Revert atomically to
-        // the body's routine and ownership state.
+        // A missing entry must not silently execute another character's move.
         lw      t2, 0x0020(sp)             // saved body Character.id
         lw      t0, 0x0010(sp)
         sll     t1, t2, 0x0002
         addu    t0, t0, t1
-        lw      t9, 0x0000(t0)
+        li      t9, unavailable_special_
         lw      t0, 0x0018(sp)
         li      t1, active_special_donor
         sll     t0, t0, 0x0002
@@ -1358,6 +1366,10 @@ scope CharCreator {
         or      t9, r0, r0
         b _end
         nop
+        _unavailable:
+        li t9, unavailable_special_
+        b _end
+        nop
         _neutral_choice:
         lw t0, FIELD_NSP * 4(t0)
         lw t0, 0x0000(t0)
@@ -1381,6 +1393,11 @@ scope CharCreator {
         addiu   sp, sp, 0x0030
         jr      ra
         nop
+    }
+
+    scope unavailable_special_: {
+        jr ra
+        or v0, r0, r0
     }
 
     // @ Description
@@ -2645,7 +2662,7 @@ scope CharCreator {
         _loop:
         lw      v0, 0x0000(t1)
         lli     t4, FIELD_NSP
-        beq     t3, t4, _set_fox_nsp
+        beq     t3, t4, _set_body_nsp
         nop
         lw      t0, 0x000C(sp)
         sltiu t4, t3, FIELD_GRAB
@@ -2659,8 +2676,18 @@ scope CharCreator {
         b       _update
         sw      t0, 0x0000(v0)
 
-        _set_fox_nsp:
-        sw r0, 0x0000(v0) // Body Move is the baseline.
+        _set_body_nsp:
+        lw t0, 0x000C(sp)
+        sltiu t4, t0, 12
+        beqz t4, _native_nsp
+        sll t0, t0, 2
+        li t4, neutral_choices_by_body
+        addu t4, t4, t0
+        lw t0, 0(t4)
+        b _update
+        sw t0, 0(v0)
+        _native_nsp:
+        sw r0, 0(v0) // Kirby copy and expanded bodies retain native Neutral B.
 
         _update:
         sw      t1, 0x0010(sp)

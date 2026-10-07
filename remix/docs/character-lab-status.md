@@ -1,10 +1,17 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.9 (2026-10-06)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.10 (2026-10-07)** is a partial port into Smash Remix +EXTRA.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
 
 See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundown.
+
+- [x] Mario taunt growth around the native body rest-height pivot.
+- [x] All moves from body selects the explicit original Neutral B donor.
+- [x] Reject unavailable donor aerial specials without executing body fallback.
+- [x] Production MIPS preset, missing-entry and all-body taunt-pivot checks.
+- [x] Real-input special contact, repeated-hitlag and transition/reset fixtures.
+- [ ] Broader rendered special walls/slopes/ledges/interruptions acceptance; see [edge-case evidence](special-edge-cases.md).
 
 - [x] Four named SRAM presets and per-human/CPU slot assignments.
 - [x] Original twelve bodies and donors, all thirteen normal attack families.
