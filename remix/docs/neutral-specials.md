@@ -1,6 +1,6 @@
 # Remix neutral donors
 
-Preview **0.1.17**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
+Preview **0.1.18**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
 Neutral Special now offers the body's name (native behavior) and Fox, Mario,
 Luigi, Pikachu, Ness, Captain Falcon, Jigglypuff, Donkey Kong, Samus, Link and
 Yoshi and Kirby. Choosing the same donor as the body keeps its native routines.
@@ -17,7 +17,7 @@ Yoshi and Kirby. Choosing the same donor as the body keeps its native routines.
 | Samus | Charge ticks/storage, charge-dependent startup speed, shot scaling and recoil |
 | Link | Tilt/smash launch, one outstanding Boomerang, empty/return/catch phases and reflection |
 | Yoshi | Source grab path, capture anchor, swallow/release and native egg damage/escape |
-| Kirby | Ground/air inhale, native capture/held victim, star spit, absorb/copy and use of the victim's selected Neutral B; foreign inhale cosmetics deferred |
+| Kirby | Ground/air inhale, native capture/held victim, star spit, absorb/copy and use of the victim's selected Neutral B; native wind/discard star and animated body-face mouth overlay |
 
 With **Kirby** selected, hold **B** to inhale. Once holding a victim, press
 **A** to spit or **B/down** to absorb and copy its Neutral B. The next B uses
@@ -27,8 +27,10 @@ recipe. Copying a custom fighter uses its selected Neutral B; copying native
 Kirby uses his current ability. Native Kirby keeps Remix's own hats/copy rules.
 
 Borrowed inhale uses the original donor catch sizes/reach and source event
-timing with native body hurtboxes. The body's idle/fall pose is used for now:
-mouth/stretch poses, inhale wind and copied hats are deferred. Native victim
+timing with native body hurtboxes. An animated open-mouth overlay follows the body's actual face, opening through
+startup and closing on release. Native wind follows that face and ends when
+inhale stops; L emits the original discarded-copy star. Full body/stretch poses
+and copied hats remain deferred. Native victim
 shrink/hold/star-release states remain connected.
 
 Start charging with **B**. **B or A** releases; **Z** stores. Ground rolls also
@@ -68,7 +70,7 @@ storage and B release. `--egg-contact` checks controlled Egg Lay capture/egg
 handoff/damage; `--projectile-contact` checks PK Fire spark/flame-pillar contact. These CPU checks do not establish rendered projectile,
 contact, reflection/absorption, wall/ledge or full interruption acceptance.
 
-The 0.1.17 inhale suite checks 88 foreign ground/air entries across four ports,
+The 0.1.18 inhale suite checks 88 foreign ground/air entries across four ports,
 880 source catch placements, 528 copied-choice dispatches and 156 native/custom
 victim choices. It executes source absorb flags at frame eight and copy loss,
 taunt, death and generation cleanup without writing body passive memory.

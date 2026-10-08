@@ -103,6 +103,19 @@ def generate():
     beam=beam.replace('dEFManagerSamusGrappleBeamEffectDesc','sCCSamusGrappleBeamEffectDesc').replace('gFTDataSamusSpecial2','sCCVisualFiles[3]')
     beam=beam.replace('0x4F,','nGCMatrixKindTraRotRpyRSca,')
     source+='\n'+beam+'\n'
+    # Native particle script, private bank/owner/position. It stays independent
+    # of the body's passive Kirby state and arbitrary source joint numbers.
+    wind=constructors['efManagerKirbyInhaleWindMakeEffect']['text']
+    wind=wind.replace('efManagerKirbyInhaleWindMakeEffect','ccfxKirbyInhaleWind')
+    wind=wind.replace('efManagerKirbyInhaleWindProcUpdate','ccInhaleWindPosition')
+    wind=wind.replace('gFTDataKirbyParticleBankID','sCCNeutralParticleBanks[2]')
+    wind=wind.replace('efManagerGetEffectForce()', 'efManagerGetEffectNoForce()')
+    wind=wind.replace('            ep->fighter_gobj = fighter_gobj;',
+        '            ep->fighter_gobj = fighter_gobj;\n            ccInhaleWindBind(fighter_gobj, effect_gobj);')
+    wind=wind.replace('            if (xf->users_num == 0)\n            {\n                return NULL;\n            }',
+        '            if (xf->users_num == 0)\n            {\n                efManagerSetPrevStructAlloc(ep); gcEjectGObj(effect_gobj); return NULL;\n            }')
+    wind=wind.replace('    return pc;\n}', '    if (pc == NULL) { efManagerSetPrevStructAlloc(ep); gcEjectGObj(effect_gobj); }\n    return pc;\n}')
+    source+='\n'+wind+'\n'
     source = source.replace('gFTDataKirbySpecial2', 'sCCVisualFiles[0]')
     source = source.replace('gFTDataCaptainSpecial2', 'sCCVisualFiles[1]')
     source = source.replace('gFTDataCaptainSpecial3', 'sCCVisualFiles[2]')

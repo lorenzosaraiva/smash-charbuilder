@@ -1,5 +1,17 @@
 # Changes
 
+## 0.1.35 - 2026-10-08: Remix Stone lights and inhale cosmetics
+
+- Build local Remix preview 0.1.18; preserve the original Character Lab ROM and published download links.
+- Initialize the complete Stone diffuse and ambient light records with its native white/brown colors before the source mesh. The earlier native light helper initialized direction only; new checks poison the heap first and inspect both records. Rendered color acceptance remains pending.
+- Retain Kirby's resolved particle pointers across native bank reinitialization and bind the spare eighth slot after scene setup, without file loads on B. Check the wind script bytes against the donor ROM; a full native bank table suppresses wind safely.
+- Correct the CPU harness to press actual L rather than Training reset, and wait for taunt recovery before checking aerial input.
+- Add Kirby's native inhale particle script on a preloaded private bank, following the receiving body's face during the source loop. Owned wind and mouth handles clear on release, capture, interrupts, death and scene changes.
+- Emit the native discarded-copy star on L or native heavy-hit copy loss, once per held copy. It keeps the original movement, lifetime and splash.
+- Add a geometric open-mouth overlay attached to each original foreign body's head, with source-phase opening/closing and facing/pose tracking. It does not edit gameplay joints or body hurtboxes. Full body/stretch retargeting and copied hats remain pending.
+- Align the runtime end before subsequent MIPS hooks. The new byte array exposed an unaligned-code startup freeze in the prototype; alignment verification now catches it before packaging.
+- Check the complete inhale/copy/discard/aerial sequence on all eleven foreign original bodies in the CPU emulator, including wind source-byte comparison, one L-discard star and owned visual cleanup. Separate these null-rendering checks from pending rendered mouth placement, wind and Stone acceptance.
+
 ## 0.1.34 - 2026-10-08: Remix Kirby inhale and copy gameplay
 
 - Build local Remix preview 0.1.17; preserve the original Character Lab ROM and existing published download links.

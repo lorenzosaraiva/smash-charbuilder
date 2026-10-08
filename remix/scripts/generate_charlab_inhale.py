@@ -70,7 +70,7 @@ def generate():
     out+=['};']
     (OUT/'inhale-paths.inc').write_text('\n'.join(out)+'\n',encoding='utf-8')
     (OUT/'inhale-paths.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
-    print('Imported sixteen source inhale phases with '+str(sum(c['frames'] for c in manifest))+' collision frames; cosmetics deferred.')
+    print('Imported sixteen source inhale phases with '+str(sum(c['frames'] for c in manifest))+' collision frames; full body poses/hats deferred, cosmetics use the separate visual runtime.')
 
 
 if __name__=='__main__':generate()

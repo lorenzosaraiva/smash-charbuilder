@@ -251,7 +251,9 @@ def object_to_bass(path):
             if offset in relocations.get(i, {}):
                 lines.append(f'dw {relocations[i][offset]}')
         lines.append('pullvar base, origin')
-    lines += ['end:', '}', 'pushvar origin, base', 'origin 0x5000000',
+    # A small final byte array can leave the object at an odd address. The next
+    # included hook is executable MIPS and must never inherit that alignment.
+    lines += ['OS.align(16)', 'end:', '}', 'pushvar origin, base', 'origin 0x5000000',
               'insert "animations.bin"', 'origin 0x5400000',
               'insert "paired-geometry.bin"', 'origin 0x5800000',
               'insert "special-collision.bin"', 'pullvar base, origin', '']

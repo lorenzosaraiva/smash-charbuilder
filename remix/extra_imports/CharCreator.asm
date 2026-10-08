@@ -304,6 +304,12 @@ scope CharCreator {
         addiu t1, r0, -1
         sw t1, 0(t0)
         sw t1, 4(t0)
+        sw t1, 8(t0)
+        li t0, CharLabRuntime.sCCInhaleParticleData
+        sw r0, 0(t0)
+        sw r0, 4(t0)
+        sw r0, 8(t0)
+        sw r0, 12(t0)
         li t0, CharLabRuntime.sCCVisualFiles
         sw r0, 0(t0)
         sw r0, 4(t0)

@@ -1,8 +1,8 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.17 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.18 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
 
-- [x] Borrowed Stone sets the native light count and stage direction before drawing its source material; linked-MIPS light ordering and real-input replacement/recovery checks pass.
+- [x] Borrowed Stone sets the native light count/direction and complete white/brown light records before drawing its source material; poisoned-heap linked-MIPS checks and real-input replacement/recovery checks pass.
 - [ ] Rendered Stone colour acceptance on foreign bodies.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
@@ -15,7 +15,7 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Weapon-count CPU checks on DK, Mario and native Samus, plus all-foreign-body event/timing regressions.
 - [x] Native fighter-pass prop submission with restored one-cycle/TLUT/alpha/render/light state; real material texture branches and post-draw state checked with F3DEX2 commands.
 - [x] Paired beam materials advance once per frame through their native effect update.
-- [ ] Rendered retest of noisy Samus tether textures and white Dream Land layers reported in 0.1.13.
+- [x] User confirmed the fix for noisy Samus tether textures and white Dream Land layers reported in 0.1.13; broader rendered body/stage acceptance remains pending.
 - [x] Samus Bomb's body-colored Morph Ball, source compression/round/recovery meshes (frames 3-48), opaque two-cycle draw setup and interruption cleanup.
 - [x] Borrowed DK Giant Punch full-charge native flash, stored-state/generation guards and consumed-charge cleanup.
 - [ ] Rendered acceptance of stored-charge blink and body-colored Morph Ball during the source hop.
@@ -45,7 +45,9 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Borrowed Kirby source ground/air clocks/catch geometry, native capture/hold/spit/copy, and victim-selected Neutral B.
 - [x] Four-port copy state outside body passive unions, original SRAM widths, native heavy-hit copy loss and taunt/death/scene reset.
 - [x] All-body linked-MIPS entry/copy/geometry checks; real-input capture/spit/copy/copied-projectile and aerial inhale scenes on every foreign original body, plus native Kirby input/recovery.
-- [ ] Foreign inhale poses, wind and copy hats; rendered victim alignment and interruption acceptance.
+- [x] Native inhale wind on a preloaded private particle bank, animated receiving-body mouth overlay and native L-discard star.
+- [x] Mouth/wind phase ownership, finite transforms and recovery cleanup; actual L-discard creates one star; null-rendering CPU inhale sequences and donor wind-byte comparisons pass on every foreign original body.
+- [ ] Full body/stretch poses, copy hats and rendered mouth/wind/victim alignment and interruption acceptance.
 - [x] Borrowed original-roster specials use safe native status setup followed by shared donor poses.
 - [x] Original-roster special phase clocks retain donor recovery/events, speed and frozen phases.
 - [x] Retain recipes by actual body identity during borrowed special phases.

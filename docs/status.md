@@ -5,9 +5,10 @@ Checkboxes mean implemented, not tested in every matchup.
 ## Repository
 
 - [x] Remix Kirby Neutral B on original bodies: inhale/capture, held victim, spit/copy and copied Neutral B, with separate copy ownership and donor reach.
-- [ ] Kirby inhale cosmetics and rendered capture/copy acceptance.
+- [x] Kirby inhale wind, L-discard star and source-phase animated face mouth overlay.
+- [ ] Full body/stretch poses, copy hats and rendered mouth/wind/capture/copy acceptance.
 
-- [x] Borrowed Stone installs the native one-light count and stage direction before its source material draws.
+- [x] Borrowed Stone installs initialized diffuse/ambient color records plus native light count/direction before its source material draws.
 - [ ] Rendered Stone colour acceptance on foreign bodies.
 
 - [x] Remix stored DK full-charge flash and body-colored Samus Morph Ball with native hop timing and opaque prop rendering.

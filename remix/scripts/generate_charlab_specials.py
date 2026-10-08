@@ -78,11 +78,12 @@ def generate():
             records.append(fn); pieces.append(fn['text'])
     source = '\n'.join(pieces)
     # Inhale uses native capture/release and source clocks. Copied abilities
-    # live outside every receiving body's passive union; donor hats/wind are
-    # deferred. Native Kirby callbacks still take their original trampolines.
+    # live outside every receiving body's passive union; borrowed wind uses
+    # owned face tracking, while hats remain deferred. Native Kirby keeps its
+    # original callback trampolines.
     for name, body in {
         'ftKirbySpecialNCopyInitCopyVars': 'ccInhaleCopy(ftGetStruct(fighter_gobj));',
-        'ftKirbySpecialNLoopProcUpdate': 'ftGetStruct(fighter_gobj)->motion_vars.flags.flag0 = 0;',
+        'ftKirbySpecialNLoopProcUpdate': 'ccInhaleWindStart(fighter_gobj);',
         'ftKirbySpecialNLoseCopy': 'ccInhaleLoseCopy(ftGetStruct(fighter_gobj));',
         'ftKirbySpecialNDamageCheckLoseCopy': 'ccInhaleDamageCheck(ftGetStruct(fighter_gobj));',
     }.items():

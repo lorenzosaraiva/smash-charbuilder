@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.17 (2026-10-08)**.
+Character Lab has an original-roster Remix preview, **0.1.18 (2026-10-08)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -18,7 +18,7 @@ mechanics are implemented and which still need adapters or playtesting.
 6. Neutral Special offers **your body's fighter name** and all twelve original
    donor choices, including Kirby inhale/copy. Hold B to inhale, then A to spit
    or B/down to copy the held victim's Neutral B. L discards the copy.
-   Inhale cosmetics are deferred. See [neutral controls](docs/neutral-specials.md). Up/Down Special
+   Inhale includes native wind, a discard star and an animated mouth overlay. Full body/stretch poses and copied hats remain pending. See [neutral controls](docs/neutral-specials.md). Up/Down Special
    remain experimental. Mario with Falcon Kick/Pikachu Up B is the first
    regression target; use native body specials for unverified mechanics.
    A ground-only donor such as DK Down B does nothing in the air; land to use

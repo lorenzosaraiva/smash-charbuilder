@@ -131,6 +131,22 @@ def test_visuals(r):
             assert final[0xE3001001]==0,('Texture palette state leaked',final)
             assert final[0xE2001E01]==0,('Alpha threshold leaked',final)
             assert final[0xE200001C]!=0xC4113078,('Beam render mode leaked',final)
+    # Actual Stone mode has no MObj: its embedded MoveWord colors must not
+    # depend on uninitialized light color/ambient records in another renderer.
+    stone_def=next(definitions+i*layout['def_size'] for i in range(layout['defs'])
+        if r.u32(definitions+i*layout['def_size']+12)==8 and r.u32(definitions+i*layout['def_size']+16))
+    saved_visual=r.read(state,layout['state_size'])
+    r.u32(state+layout['model'],draw_obj);r.u32(state+24,stone_def)
+    r.u32(state+28,r.u32(stone_def+16))
+    r.write(0x8024C000,b'\xA5'*256);r.u32(heap,0x8024C000);r.u32(heads,0x80248808)
+    r.call('ccVisualDrawProp',draw_obj)
+    commands=[struct.unpack('>2I',r.read(i,8)) for i in range(0x80248808,r.u32(heads),8)]
+    mesh=commands.index((0xDE000000,draw_dl))
+    lights=[address for word,address in commands[:mesh] if word>>24==0xDC and word&255==10]
+    assert len(lights)==2,('Stone needs initialized diffuse AND ambient',commands)
+    assert r.read(lights[0],8)==b'\xff\xff\xff\0\xff\xff\xff\0'
+    assert r.read(lights[1],8)==b'\x42\x1b\0\0\x42\x1b\0\0'
+    r.write(state,saved_visual)
     r.write(heads,saved_heads);r.write(stage_color,saved_color);r.u32(heap,saved_heap)
     r.services[r.addr('ccPropMaterials')] = lambda:0
     # Status transitions now refresh the active recipe, as real Training does.
@@ -382,6 +398,84 @@ def test_visuals(r):
                 assert r.read(model+r.layout['scale'],12)==r.read(beam_samples+time*40+24,12)
             r.call('ccStatusChanging',r.GOBJ,18);assert g in stopped
             counter=0
+    # Inhale face overlay and native wind lifetime. Allocation/world-transform
+    # services are fixtures; owner guards, phase clocks, facing, drawing data
+    # and interruption/reset cleanup execute in the linked runtime.
+    il=struct.unpack('>20I',r.read(r.addr('ccInhaleLayout'),80))
+    iv=struct.unpack('>8I',r.read(r.addr('ccInhaleVisualLayout'),32))
+    inhale=r.addr('sCCInhaleStates');special=r.addr('sCCSpecialClocks')
+    faces=r.addr('sCCInhaleFaces');mouth_cases=0
+    gm=native['gmCollisionGetFighterPartsWorldPosition'];old_gm=r.services.get(gm)
+    def world_position():
+        p=r.reg(UC_MIPS_REG_A1);x,y,z=struct.unpack('>3f',r.read(p,12))
+        facing=r.u32(r.FP+0x44);facing=1 if facing==1 else -1
+        r.write(p,struct.pack('>3f',120+z*facing,300+y,40-x*facing))
+    r.services[gm]=world_position
+    wind_create=r.addr('ccfxKirbyInhaleWind');wind_calls=[]
+    def wind_fixture():
+        g=allocate();ep=r.u32(g+0x84)
+        r.u32(ep+4,r.GOBJ);r.u32(ep+iv[3],0x8024E000)
+        r.u32(inhale+iv[1],g);wind_calls.append(g)
+        return 1
+    r.services[wind_create]=wind_fixture
+    for body in range(12):
+        if body==8:continue
+        for facing in (-1,1):
+            r.call('ccReset');counter=0;r.setup(body,8)
+            r.u32(r.FP+layout['fighter'],r.GOBJ);r.u32(links+12,r.GOBJ)
+            r.u32(r.VALUES+15*4,12);r.call('ccSync',r.FP,r.ENTRIES,r.layout['training'])
+            r.u32(r.labels['CharCreator.body_character_data'],native_data)
+            r.u32(r.labels['CharCreator.body_character_id'],body)
+            r.u32(r.labels['CharCreator.active_special_donor'],8)
+            r.u32(r.FP+8,8);r.u32(r.FP+0x44,facing)
+            r.u32(r.FP+0x24,il[5]);r.u32(r.FP+0x28,iv[6])
+            r.write(special,struct.pack('>5If3I',r.FP,il[5],iv[6],8,0x80000018,8,0,0,0))
+            r.call('ccInhaleVisualTick',r.GOBJ)
+            g=r.u32(inhale+iv[0]);assert g,(body,facing,'No open mouth')
+            model=r.u32(g+r.layout['obj'])
+            width,height,y,z=struct.unpack('>4f',r.read(faces+body*16,16))
+            assert struct.unpack('>3f',r.read(model+r.layout['translate'],12))==(120+z*facing,300+y,40)
+            scale=struct.unpack('>3f',r.read(model+r.layout['scale'],12))
+            assert all(math.isfinite(v) and v>0 for v in scale)
+            assert r.call('ccInhaleEffectLive',g)==1
+            # A same-frame visual tick retains the existing object.
+            r.call('ccInhaleVisualTick',r.GOBJ);assert r.u32(inhale+iv[0])==g
+            r.u32(0x800D63C0+8,13);r.u32(0x800D6400+8,0x8024F000)
+            r.u32(0x800D63E0+8,1);r.u32(0x800D6420+8,0x8024F100)
+            r.call('ccInhaleCaptureParticleBank',2)
+            assert r.read(r.addr('sCCInhaleParticleData'),16)==struct.pack('>4I',13,0x8024F000,1,0x8024F100)
+            r.u32(0x80131A18,8);r.u32(r.FP+r.layout['flags'],1)
+            before=len(wind_calls);r.call('ccInhaleWindStart',r.GOBJ)
+            assert not r.u32(inhale+iv[1]) and len(wind_calls)==before
+            r.u32(0x80131A18,3)
+            r.u32(r.FP+r.layout['flags'],1)
+            r.call('ccInhaleWindStart',r.GOBJ);wind=r.u32(inhale+iv[1]);assert wind
+            assert r.u32(r.addr('sCCNeutralParticleBanks')+8)==7
+            assert r.u32(0x800D63C0+28)==13 and r.u32(0x800D6400+28)==0x8024F000
+            r.u32(r.FP+r.layout['flags'],1);before=len(wind_calls)
+            r.call('ccInhaleWindStart',r.GOBJ);assert len(wind_calls)==before
+            r.call('ccInhaleWindPosition',wind)
+            assert struct.unpack('>3f',r.read(0x8024E000+iv[4],12))==(120+(z+640)*facing,300+y,40)
+            # Donor startup/end/throw clocks animate the same head overlay.
+            for loop_motion in iv[6:8]:
+                for motion,time,fraction in ((loop_motion-1,8,.5),
+                                              (loop_motion+1,12,.5),
+                                              (loop_motion+3,13.5,.5)):
+                    r.u32(r.FP+0x28,motion);r.u32(special+8,motion);r.f32(special+20,time)
+                    r.call('ccInhaleVisualTick',r.GOBJ)
+                    assert r.u32(inhale+iv[0])==g
+                    actual=r.f32(model+r.layout['scale']+4)
+                    assert abs(actual-scale[1]*fraction)<.0001,(body,facing,motion,actual,scale)
+                    assert not r.u32(inhale+iv[1])
+            r.u32(r.FP+0x28,iv[6]);r.u32(special+8,iv[6]);r.f32(special+20,8)
+            r.call('ccInhaleStatusChanging',r.FP,18)
+            assert not r.u32(inhale+iv[0]) and not r.u32(inhale+iv[1])
+            assert g in stopped and wind in stopped
+            mouth_cases+=1
+    del r.services[wind_create]
+    if old_gm is None:del r.services[gm]
+    else:r.services[gm]=old_gm
+    print(f'PASS: complete white/brown Stone light records, {mouth_cases} foreign-body/facing inhale mouths, source wind owner/idempotence/face placement and interruption cleanup (allocation/world-transform fixtures; rendered alignment pending).')
     # Orphaned effects may reuse an address: never dereference or eject a GObj
     # outside its native link list/owner tag, and never hide a replacement body.
     index=next(i for i,_,p,_ in props if r.u32(p+12))

@@ -138,6 +138,7 @@ animation_samples=0;animation_records=set();animation_errors=[]
 normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_samples=0
 egg_contact_done=False;egg_observed=set();neutral_samples=[]
 inhale_capture=False;inhale_observed=set();inhale_choices=set();inhale_victims=set()
+inhale_visual_samples={'mouth':0,'wind':0};inhale_visual_errors=[];inhale_wind_diagnostics=set();inhale_source_checks=set()
 visual_layout=constant('ccVisualLayout')
 visual_objects=set();visual_samples=0;visual_hidden=False;visual_errors=[]
 charge_visual_samples=[];ball_samples=[]
@@ -246,6 +247,33 @@ def frame_callback(frame):
                     for j in (0,4,8):wf32(target+j,f32(center+j)-(200 if j==4 else 0))
                     w32(cpu+layout[2],layout[29]);egg_contact_done=True
         if args.inhale_contact:
+            iv=constant('ccInhaleVisualLayout')
+            si=labels['CharLabRuntime.sCCInhaleStates']
+            inhale_wind_diagnostics.add((u32(fp+0x24),u32(fp+layout[3]),u32(labels['CharLabRuntime.sCCNeutralParticleBanks']+8),u32(si+iv[1])))
+            for name,field in (('mouth',iv[0]),('wind',iv[1])):
+                effect=u32(si+field)
+                live=u32(native['gGCCommonLinks']+24)
+                for _ in range(256):
+                    if not live or live==effect:break
+                    live=u32(live+visual_layout[7])
+                if not effect or live!=effect:continue
+                if name=='mouth':
+                    model=u32(effect+layout[10])
+                    values=[f32(model+offset+j) for offset in layout[12:15] for j in (0,4,8)]
+                else:
+                    bank=u32(labels['CharLabRuntime.sCCNeutralParticleBanks']+8)
+                    if bank not in inhale_source_checks:
+                        lo=u32(u32(0x80116E10+8*4)+0x50)
+                        offset=int.from_bytes(rom[lo+4+12*4:lo+8+12*4],'big')
+                        script=u32(u32(0x800D6400+bank*4)+12*4)
+                        actual=bytes(u8(script+j) for j in range(64))
+                        if actual!=rom[lo+offset:lo+offset+64]:
+                            inhale_visual_errors.append(('Wind source bank mismatch',bank,actual.hex()))
+                        inhale_source_checks.add(bank)
+                    ep=u32(effect+0x84);xf=u32(ep+iv[3])
+                    values=[f32(xf+iv[4]+j) for j in (0,4,8)] if xf else [float('nan')]
+                if not all(math.isfinite(v) and abs(v)<50000 for v in values):inhale_visual_errors.append((name,values))
+                inhale_visual_samples[name]+=1
             cpu=fighter(1);il=constant('ccInhaleLayout')
             inhale_observed.add(u32(fp+0x24))
             state=labels['CharLabRuntime.sCCInhaleStates']
@@ -547,8 +575,11 @@ try:
             pulse(0x40);frames(110)
             assert 0 in weapon_kinds,('Copied Mario Fireball missing',weapon_kinds,diagnostic())
             wait(lambda:u32(fighter()+0x24)==10,'Copied Neutral recovery',seconds=30)
-            pulse(0x2);frames(100)
+            stars_before=u32(labels['CharLabRuntime.gCCVisualEffects'])
+            pulse(0x2000);frames(200) # Plugin L trigger; 0x2 is Training reset.
+            wait(lambda:u32(fighter()+0x24)==10,'L-discard taunt recovery',seconds=30)
             assert u32(state+il[1])==12,('Taunt did not discard copy',diagnostic())
+            assert u32(labels['CharLabRuntime.gCCVisualEffects'])==stars_before+1,('Native discarded star was not created once',stars_before,u32(labels['CharLabRuntime.gCCVisualEffects']),diagnostic())
             pulse(0x0800);frames(4);keys(0x40)
             wait(lambda:u32(fighter()+0x24)==il[12],'Aerial inhale loop',seconds=30)
             frames(90);keys(0);frames(130)
@@ -557,11 +588,16 @@ try:
             assert {il[7],il[8],il[9],il[10]}<=inhale_observed,('Missing inhale phases',inhale_observed,il,diagnostic())
             assert {il[14],il[15],il[16],il[17]}<=inhale_victims,('Missing native victim phases',inhale_victims,il,diagnostic())
             assert u32(fighter()+8)==args.body and u32(fighter(1)+8)==0
+            iv=constant('ccInhaleVisualLayout')
+            assert all(inhale_visual_samples.values()),('Missing inhale mouth/wind',inhale_visual_samples,sorted(inhale_wind_diagnostics))
+            assert not inhale_visual_errors,inhale_visual_errors[:8]
+            assert not u32(state+iv[0]) and not u32(state+iv[1]),('Inhale visuals survived recovery',diagnostic())
             assert all(math.isfinite(v) and abs(v)<50000 for row in trace for v in row[2])
             tracking=False
             report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'neutral':12,
                     'checks':['real held B inhale','native capture and held ownership','A star spit and release','repeat inhale and B copy release','copied Mario Fireball input','L discards copied ability','aerial inhale and ground handoff/release','native body identity and recovery'],
                     'fighter_statuses':sorted(inhale_observed),'victim_statuses':sorted(inhale_victims),'copied_choices':sorted(inhale_choices),'rendering':'null'}
+            report['inhale_visual_checks']={'samples':inhale_visual_samples,'checks':['native Kirby wind script matches source ROM','native wind particle allocation','finite mouth/particle transforms','exactly one native L-discard star','mouth/wind recovery cleanup'],'rendering':'null'}
             (report_directory/f'cpu-scenes-inhale-{args.body}.json').write_text(json.dumps(report,indent=2)+'\n')
             print('PASS: inhale, spit, copy and copied Neutral B',report,flush=True);raise SystemExit(0)
         trace.clear();tracking=True;pulse(0x40)

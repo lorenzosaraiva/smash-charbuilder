@@ -5,6 +5,7 @@ typedef struct CCInhaleState {
     FTStruct *owner;
     u32 generation;
     s32 choice;
+    GObj *mouth, *wind, *fighter;
 } CCInhaleState;
 static CCInhaleState sCCInhaleStates[4];
 static const s32 sCCInhaleBodyChoices[12] = {2,1,8,9,3,10,11,6,12,4,7,5};
@@ -23,17 +24,19 @@ s32 ccInhaleChoice(FTStruct *fp, s32 selected)
     if (!fp || fp->player >= 4 || (u32)ccBodyKind(fp) >= 12) return selected;
     s = &sCCInhaleStates[fp->player];
     if (selected != CC_NEUTRAL_INHALE)
-    { s->owner = NULL; return selected; }
+    { ccInhaleVisualClear(fp); s->owner = NULL; return selected; }
     if (ccBodyKind(fp) == nFTKindKirby) return selected;
     if (s->owner != fp || s->generation != fp->player_num)
-    { s->owner = fp; s->generation = fp->player_num; s->choice = CC_NEUTRAL_INHALE; }
+    { s->owner = fp; s->generation = fp->player_num; s->choice = CC_NEUTRAL_INHALE; s->mouth = s->wind = NULL; s->fighter = fp->fighter_gobj; }
+    s->fighter = fp->fighter_gobj;
     return s->choice;
 }
 
 static void ccInhaleReset(void)
 {
     s32 i;
-    for (i=0;i<4;i++) sCCInhaleStates[i].owner = NULL;
+    for (i=0;i<4;i++)
+    { if (sCCInhaleStates[i].owner) ccInhaleVisualClear(sCCInhaleStates[i].owner); sCCInhaleStates[i].owner = NULL; }
 }
 
 static void ccInhaleLoseCopy(FTStruct *fp)
@@ -41,6 +44,7 @@ static void ccInhaleLoseCopy(FTStruct *fp)
     CCInhaleState *s = ccInhaleState(fp);
     if (!s || s->choice == CC_NEUTRAL_INHALE) return;
     s->choice = CC_NEUTRAL_INHALE;
+    if (efManagerLoseKirbyStarMakeEffect(fp->fighter_gobj)) gCCVisualEffects++;
     ftMainCharBuilderResetNeutral(fp);
     func_800269C0_275C0(nSYAudioFGMKirbySpecialNLoseCopy);
 }
@@ -60,12 +64,17 @@ static void ccInhaleDamageCheck(FTStruct *fp)
         syUtilsRandFloat() < FTKIRBY_COPYDAMAGE_LOSECOPY_RANDOM) ccInhaleLoseCopy(fp);
 }
 
-static void ccInhaleStatusChanging(FTStruct *fp, s32 next)
+static __attribute__((noinline)) void ccInhaleStatusChanging(FTStruct *fp, s32 next)
 {
     CCInhaleState *s = ccInhaleState(fp);
     if (!s) return;
+    if (!((next >= nFTKirbyStatusSpecialNStart && next <= nFTKirbyStatusSpecialNCopy) ||
+          (next >= nFTKirbyStatusSpecialAirNStart && next <= nFTKirbyStatusSpecialAirNCopy)))
+        ccInhaleVisualClear(fp);
+    /* Status setup may preserve native attachments between inhale phases.
+     * Our wind/mouth lifetime follows the next actual phase on its visual tick. */
     if (next <= nFTCommonStatusRebirthWait)
-    { s->choice = CC_NEUTRAL_INHALE; s->owner = NULL; }
+    { ccInhaleVisualClear(fp); s->choice = CC_NEUTRAL_INHALE; s->owner = NULL; }
     else if (next == nFTCommonStatusAppeal) ccInhaleLoseCopy(fp);
 }
 

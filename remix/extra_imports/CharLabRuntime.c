@@ -40,6 +40,13 @@ static void ccInhaleCopy(FTStruct*);
 static void ccInhaleLoseCopy(FTStruct*);
 static void ccInhaleDamageCheck(FTStruct*);
 static sb32 ccInhaleUseCallback(FTStruct*);
+static void ccInhaleVisualClear(FTStruct*);
+static void ccInhaleVisualTick(GObj*);
+static sb32 ccInhaleEffectLive(GObj*);
+static void ccInhaleWindStart(GObj*);
+static void ccInhaleWindPosition(GObj*);
+static void ccInhaleWindBind(GObj*, GObj*);
+extern u32 gCCVisualEffects;
 extern s32 sCCPairDonors[4];
 
 /* Settings can enter Training CSS without the ordinary 1P menu setup. */
@@ -406,6 +413,7 @@ static sb32 ccNeutralBoomerangOwner(GObj *owner, GObj *weapon)
 }
 #include "CharLabAnimations.c.inc"
 #include "CharLabVisuals.c.inc"
+#include "CharLabInhaleVisuals.c.inc"
 #include "CharLabPairs.c.inc"
 
 sb32 ccNeutral(GObj *gobj)

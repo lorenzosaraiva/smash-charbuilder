@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.34 (experimental)** | **Last updated: 2026-10-08**
+**Project version: 0.1.35 (experimental)** | **Last updated: 2026-10-08**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -52,14 +52,18 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
 
-The local Remix **0.1.17** build adds Kirby Neutral B to every original body:
+The local Remix **0.1.18** build adds Kirby Neutral B to every original body:
 hold B to inhale, then A to spit or B/down to copy the victim's Neutral B.
-L discards the copied ability. Inhale hats, mouth poses and wind are deferred;
+L discards the copied ability. Native inhale wind, the L-discard star and an
+animated face-attached mouth overlay are connected; copied hats and full
+body/stretch poses remain pending;
 native Kirby retains Remix's own presentation. See [controls and checks](remix/docs/neutral-specials.md).
 
 It retains DK Giant Punch's stored full-charge flash
 and a body-colored Samus Morph Ball throughout compression, hop and recovery.
-Props now select the native opaque two-cycle render mode and stage light before drawing, fixing borrowed Stone's missing light setup.
+Props select the native opaque two-cycle render mode and stage light before
+drawing, including fully initialized Stone diffuse and ambient records.
+Rendered color retesting remains pending.
 Automated checks and rendered acceptance are tracked separately.
 
 Remix 0.1.14 draws borrowed fighter parts in the native fighter pass and

@@ -7,7 +7,7 @@ import json
 import re
 import struct
 from pathlib import Path
-from unicorn.mips_const import UC_MIPS_REG_A1, UC_MIPS_REG_T9, UC_MIPS_REG_F0
+from unicorn.mips_const import UC_MIPS_REG_A0, UC_MIPS_REG_A1, UC_MIPS_REG_T9, UC_MIPS_REG_F0
 
 
 def test_inhale(r):
@@ -27,6 +27,9 @@ def test_inhale(r):
     data, pointer, attr = 0x80230000,0x80231000,0x80232000
     original = dict(r.services)
     installed=[]
+    discarded_stars=[]
+    r.services[0x80103F78]=lambda:discarded_stars.append(r.reg(UC_MIPS_REG_A0)) or 0
+    fighter_field=struct.unpack('>28I',r.read(r.addr('ccVisualLayout'),112))[8]
     def status():
         status=r.reg(UC_MIPS_REG_A1);installed.append(status)
         r.u32(r.FP+0x24,status)
@@ -47,6 +50,7 @@ def test_inhale(r):
     r.services[r.labels['CharCreator.install_joint_fallbacks_']]=lambda:0
     def setup(body,port=0,air=0):
         r.call('ccReset');r.setup(body,8,port);r.preset(body,8,12)
+        r.u32(r.FP+fighter_field,r.GOBJ)
         r.u32(r.labels['CharCreator.selected_builds']+port*4,1)
         r.u32(r.FP+r.layout['ga'],air)
         r.u32(r.FP+0x9C4,0x80228000)
@@ -199,8 +203,12 @@ def test_inhale(r):
         for frame in range(12):
             r.advance();r.events();hook('ftKirbySpecialNCopyInitCopyVars')
             assert r.u32(state+il[1])==(12 if frame<8 else 2),(air,frame)
+        before=len(discarded_stars)
         r.call('ccStatusChanging',r.GOBJ,189) # native Appeal
         assert r.u32(state+il[1])==12
+        assert discarded_stars[before:]==[r.GOBJ], 'Copy discard did not emit exactly one star'
+        r.call('ccStatusChanging',r.GOBJ,189)
+        assert len(discarded_stars)==before+1, 'Empty copy discard emitted another star'
         r.write(r.FP+il[2],struct.pack('>h',9));r.u32(r.FP+r.layout['flags']+4,1)
         hook('ftKirbySpecialNCopyInitCopyVars')
         r.call('ccStatusChanging',r.GOBJ,0)

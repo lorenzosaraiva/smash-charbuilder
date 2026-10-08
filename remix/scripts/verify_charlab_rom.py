@@ -23,6 +23,10 @@ from unicorn.mips_const import *
 
 def linked_object(rom, labels):
     """Independently apply ELF relocations and compare every allocated byte."""
+    assert labels['CharLabRuntime.end']%16==0, 'Runtime data left following code unaligned'
+    for name,address in labels.items():
+        if name.startswith(('CharLabSpecials.hook_', 'CharLabPairs.hook_', 'CharLabNormals.hook_')):
+            assert address%4==0, ('Unaligned MIPS hook',name,hex(address))
     obj, sections, symbols = read_elf(ROOT / 'build/char_creator/runtime/runtime.o', '>')
     runtime = (ROOT / 'build/char_creator/runtime/runtime.asm').read_text()
     externals = {int(i): labels[v] if v in labels else int(v, 0)

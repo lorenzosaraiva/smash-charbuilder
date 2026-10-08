@@ -251,6 +251,7 @@ static GObj* ccVisualOwn(GObj *g, GObj *fighter)
 static void ccVisualEffectUpdate(GObj *g)
 {
     s32 i;
+    if (ccInhaleEffectLive(g)) { efManagerNoEjectProcUpdate(g); return; }
     if (ccPairEffectLive(g)) { efManagerNoEjectProcUpdate(g); return; }
     for (i = 0; i < 4; i++)
     {
@@ -283,6 +284,35 @@ static void ccVisualDrawProp(GObj *g)
      * Effects can leave another light count/direction behind. Install the
      * direction before the mesh's light-color commands, not only on exit. */
     ftDisplayLightsDrawReflect(&gSYTaskmanDLHeads[0], gMPCollisionLightAngleX, gMPCollisionLightAngleY);
+    {
+        s32 port;
+        for (port = 0; port < 4; port++)
+        {
+            CCVisualState *s = &sCCVisualStates[port];
+            if (s->model == g && s->definition && s->definition->donor == nFTKindKirby &&
+                s->definition->family == 2 && s->prop && s->prop->hide_body)
+            {
+                /* The native light loader initializes direction only. Stone's
+                 * MoveWord light-color commands assume both light records exist;
+                 * do not leave the ambient record or color bytes uninitialized.
+                 * These are the original Stone DL's white/brown light colors. */
+                Light *diffuse = (Light*)gSYTaskmanGraphicsHeap.ptr - 1;
+                Light *ambient = gSYTaskmanGraphicsHeap.ptr;
+                s32 channel;
+                static const u8 brown[3] = {66,27,0};
+                diffuse->l.pad1 = diffuse->l.pad2 = diffuse->l.pad3 = 0;
+                memset(ambient, 0, sizeof(*ambient));
+                for (channel = 0; channel < 3; channel++)
+                {
+                    diffuse->l.col[channel] = diffuse->l.colc[channel] = 255;
+                    ambient->l.col[channel] = ambient->l.colc[channel] = brown[channel];
+                }
+                gSPLight(gSYTaskmanDLHeads[0]++, ambient, 2);
+                gSYTaskmanGraphicsHeap.ptr = ambient + 1;
+                break;
+            }
+        }
+    }
     mpCollisionSetLightColorGetAlpha(&gSYTaskmanDLHeads[0]);
     gDPSetFogColor(gSYTaskmanDLHeads[0]++, 0, 0, 0, 0);
     if (prefix) gSPDisplayList(gSYTaskmanDLHeads[0]++, prefix);
@@ -440,6 +470,7 @@ static void ccVisualTick(GObj *g)
     /* SetStatus advances a safe body pose before installing the next donor
      * clock. That bootstrap is not an interruption or a donor visual frame. */
     if (sFTCharBuilderNeutralStartingOwner == fp) return;
+    ccInhaleVisualTick(g);
     CCVisualState *s = ccVisualState(fp);
     const CCVisualDefinition *def = ccVisualDefinition(fp);
     const FTCustomSpecialAttachment *prop;

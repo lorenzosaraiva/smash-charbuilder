@@ -63,7 +63,7 @@ def generate():
         'extern GObj *ccNeutralMakeWeapon(GObj*, WPDesc*, Vec3f*, u32);\n'
         'static sb32 ccNeutralBoomerangOwner(GObj*, GObj*);\n'
         'extern void ftCommonEscapeSetStatus(GObj*, s32, f32);\n'
-        'void *sCCNeutralFiles[8];\ns32 sCCNeutralParticleBanks[2] = {-1,-1};\n'+declarations+'\n'+source, encoding='utf-8')
+        'void *sCCNeutralFiles[8];\ns32 sCCNeutralParticleBanks[3] = {-1,-1,-1};\n'+declarations+'\n'+source, encoding='utf-8')
 
     for file in ('ftcharbuilderprojectiles.c.inc', 'ftcharbuilderneutralactions.c.inc'):
         text = (LAB/'src/ft'/file).read_text(encoding='utf-8')

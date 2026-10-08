@@ -8,10 +8,10 @@ retargeted poses, human/CPU preset assignments and return from Training to the e
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-Local **0.1.17** adds Kirby Neutral B on all original bodies. Hold B to inhale;
+Local **0.1.18** adds Kirby Neutral B on all original bodies. Hold B to inhale;
 with a victim held, A spits and B/down copies its Neutral B. L discards the copy.
 Gameplay uses donor catch reach and native victim states with separate copy
-ownership. Inhale poses, wind, hats and rendered acceptance remain pending.
+ownership. Native inhale wind, the discard star and animated mouth overlays are connected. Full body/stretch poses, hats and rendered alignment remain pending.
 
 It retains the native stored Giant Punch flash and a body-colored
 Samus Morph Ball across compression, hop and recovery. Independent meshes select
@@ -41,7 +41,7 @@ and Samus's charging orb remain available with owned cleanup.
 The eleven other original neutral donors use source
 phases/poses, private projectile resources, charging/storage/release, Boomerang
 return/catch and Egg Lay capture. Kirby adds ground/air inhale, hold, spit and
-copy gameplay; its foreign-body cosmetics are deferred. See
+copy gameplay, native inhale wind, discard stars and animated mouth overlays; full body/stretch poses and copied hats remain pending. See
 [neutral controls and limits](docs/neutral-specials.md). Normals now use donor jab chains, buffering and rapid
 phases; Link down-air bounce/rehit; Ness bat reflection; donor traction/air
 physics; angle availability and aerial landing behavior. Shared animations and

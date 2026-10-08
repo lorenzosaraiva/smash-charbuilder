@@ -1,12 +1,12 @@
 # Remix special effects and attachments
 
-Preview **0.1.17**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
+Preview **0.1.18**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
 
 | Donor move | Borrowed presentation |
 | --- | --- |
 | Kirby Final Cutter | Native sword draw, rising/falling sword and trails on source effect-flag transitions |
 | Kirby Stone | Source model replacement with sampled transforms; hide the native body only while the prop is active |
-| Kirby Inhale | Gameplay connected; borrowed mouth/stretch poses, inhale wind and copied hats deferred; native victim shrink/hold/star states retained |
+| Kirby Inhale | Gameplay connected; native wind and discard-star effects, animated face-attached mouth overlays; full body/stretch poses and copied hats deferred; native victim shrink/hold/star states retained |
 | Falcon Punch / Falcon Kick | Native flames attached to the retargeted hand/foot; original create/remove flags |
 | Fox Laser | Source blaster model and sampled open/close transforms, firing sparkle and sound |
 | Yoshi Egg Lay | Native tongue part and sampled extension/retraction through catch/release phases |
@@ -18,9 +18,12 @@ Preview **0.1.17**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
 Independent fighter meshes now draw on head 0, matching native Samus's fighter
 pass; the native beam glow stays on effects head 1. Props initialize native
 stage environment color, two-cycle shading, explicit opaque two-cycle render mode
-and zero fog alpha. Install the native one-light count and stage direction before
-the mesh sets its diffuse/ambient colors; this fixes borrowed Stone inheriting
-another draw pass's lighting. Then restore
+and zero fog alpha. Install the native one-light count and stage direction.
+Stone also initializes complete white diffuse and brown ambient light records:
+the native light helper supplies direction without initializing colors, and the
+previous build still appeared black. A poisoned-heap regression checks both
+records before the source mesh; rendered Stone colour acceptance remains pending.
+Then restore
 one-cycle shading, palette/alpha/render settings and stage lighting. Previously,
 leaving two-cycle state on effects head 1 corrupted later translucent stage layers.
 The runtime uses the game's F3DEX2 graphics commands. Six linked-MIPS cases execute
@@ -29,8 +32,8 @@ state, checking both submission and the final state seen by subsequent draws.
 Paired materials now advance only through the native EF update, once per frame;
 the imported fighter-owned tick incorrectly doubled Samus texture animation speed.
 The user confirmed a visible tether in 0.1.13 but reported noisy textures and
-white Dream Land layers. Final pixels and rendered acceptance of this fix remain
-pending; command-level checks do not substitute for that retest.
+white Dream Land layers. The user confirmed the subsequent fix worked. Broader
+rendered tether acceptance across bodies and stages remains pending.
 
 The real-input Dream Land regression adds
 `--body 2 --paired-donor 3 --paired-miss --visuals --tether-materials`
@@ -51,6 +54,24 @@ source-sized joint-6 pose and a private CI4 palette tinted for the selected body
 shared donor textures are untouched. Part 1 covers compression/recovery and part
 2 covers the round ball from frame 10 through 42. Earlier checks only covered
 allocation/placement of part 2 and missed the incomplete render-state setup.
+
+Borrowed Inhale retains preloaded Kirby script/texture pointers across native
+particle bank reinitialization and binds the spare eighth slot after scene setup.
+If all eight native slots are occupied, wind is suppressed safely; rendered
+four-player/native-copy bank pressure remains acceptance work. No files load on B.
+The CPU regression compares the live wind script bytes with the source ROM. Its
+funnel follows the receiving body's head during the source loop. An owned
+geometric mouth overlay opens/closes on source phases and follows head rotations;
+it does not deform the native jaw or retarget the full inhale/stretch pose. L or
+native heavy-hit copy loss emits one native discard star per held copy. Wind and
+mouth handles clear on recovery, capture, interruptions, death and scene resets.
+Per-body face offsets and rendered alignment still require in-game acceptance.
+
+The 0.1.18 null-rendering CPU sequence passes on every foreign original body:
+capture, spit, repeat capture, copy, copied Mario Fireball, actual L-discard taunt
+and aerial inhale/landing/release. Each run observes the mouth and wind, compares
+the live wind script with Kirby's source bytes, counts exactly one discard star
+and checks finite transforms and cleared handles after recovery.
 
 The safe common visual stream includes original absolute waits, common effects,
 FGM, voices and tracked loop sounds. Donor part/texture/hurtbox commands remain

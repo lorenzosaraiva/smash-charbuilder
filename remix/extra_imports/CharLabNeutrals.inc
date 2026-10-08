@@ -32,7 +32,7 @@ scope ensure_neutral_files_: {
     addiu sp, sp, -0x30
     sw ra, 0x04(sp)
     sw a0, 0x08(sp)
-    sltiu t0, a0, 12
+    sltiu t0, a0, 13
     beqz t0, _end
     sll t0, a0, 2
     li t1, neutral_donors
@@ -42,6 +42,9 @@ scope ensure_neutral_files_: {
     sll t2, a1, 2
     addu t1, t1, t2
     lw t2, 0(t1)
+    lli t1, 12
+    beq a0, t1, _inhale
+    nop
     lli t1, 11
     beq a0, t1, _egg
     li t1, neutral_resources
@@ -89,6 +92,11 @@ scope ensure_neutral_files_: {
     nop
     jal Render.load_file_
     nop
+    b _end
+    nop
+    _inhale:
+    jal ensure_neutral_particles_
+    nop
     _end:
     lw ra, 0x04(sp)
     addiu sp, sp, 0x30
@@ -100,7 +108,13 @@ scope ensure_neutral_particles_: {
     addiu sp, sp, -0x30
     // Native C may spill all four arguments to the o32 home area 0..0x0F.
     sw ra, 0x10(sp)
+    sw a0, 0x18(sp)
     addiu t0, a0, -4 // choice 4 = Pikachu, 5 = Ness
+    lli t1, 12
+    bne a0, t1, _index
+    nop
+    lli t0, 2 // Inhale's private Kirby bank
+    _index:
     sll t0, t0, 2
     li t1, CharLabRuntime.sCCNeutralParticleBanks
     addu t1, t1, t0
@@ -124,6 +138,14 @@ scope ensure_neutral_particles_: {
     nop
     lw t0, 0x14(sp)
     sw v0, 0(t0)
+    lw t1, 0x18(sp)
+    lli t2, 12
+    bne t1, t2, _end
+    nop
+    jal CharLabRuntime.ccInhaleCaptureParticleBank
+    or a0, v0, r0
+    lw t0, 0x14(sp)
+    lw v0, 0(t0)
     _end:
     lw ra, 0x10(sp)
     addiu sp, sp, 0x30
@@ -256,6 +278,9 @@ scope ensure_inhale_files_: {
     sltiu t0, s6, 12
     bnez t0, _loop
     nop
+    // Load the inhale bank after copied-move dependencies have initialized.
+    jal ensure_neutral_files_
+    lli a0, 12
     lw s6, 0x14(sp)
     lw ra, 0x10(sp)
     addiu sp, sp, 0x30
