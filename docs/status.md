@@ -5,8 +5,9 @@ Checkboxes mean implemented, not tested in every matchup.
 ## Repository
 
 - [x] Remix Kirby Neutral B on original bodies: inhale/capture, held victim, spit/copy and copied Neutral B, with separate copy ownership and donor reach.
-- [x] Kirby inhale wind, L-discard star and source-phase animated face mouth overlay.
-- [ ] Full body/stretch poses, copy hats and rendered mouth/wind/capture/copy acceptance.
+- [x] L with a swallowed opponent follows donor A-spit release on ground/air.
+- [x] Kirby inhale wind and L-discard star; added geometric mouth overlay removed.
+- [ ] Full body/stretch poses, copy hats and rendered wind/capture/copy acceptance.
 
 - [x] Borrowed Stone installs initialized diffuse/ambient color records plus native light count/direction before its source material draws.
 - [ ] Rendered Stone colour acceptance on foreign bodies.

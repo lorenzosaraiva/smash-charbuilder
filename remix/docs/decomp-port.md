@@ -1,13 +1,13 @@
 # Decomp to Remix port
 
-Updated **2026-10-08**. Remix preview **0.1.18**, project **0.1.35**.
+Updated **2026-10-08**. Remix preview **0.1.19**, project **0.1.36**.
 
-Preview 0.1.18 adds Kirby Neutral B to every original body: original ground/air
+Preview 0.1.19 adds Kirby Neutral B to every original body: original ground/air
 catch geometry and phase timing, native held victims, star spit, copy release,
 and copied Neutral B from native/custom victims. Copy ownership is separate
 from body passive unions; L, death, scene reset and native heavy-hit copy loss
-discard it. Native Kirby keeps Remix's own dispatcher. Native wind/discard stars and
-animated face overlays are connected; full body/stretch poses and hats remain
+discard it. Native Kirby keeps Remix's own dispatcher. Native wind/discard stars are connected. A or L spits a held opponent through
+the donor release path; the added mouth overlay is removed; full body/stretch poses and hats remain
 pending. See [neutral controls and evidence](neutral-specials.md).
 
 The current special-edge-case checks and remaining rendered stage acceptance

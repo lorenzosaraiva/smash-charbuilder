@@ -23,6 +23,7 @@ def test_inhale(r):
     phases = json.loads((root/'build/char_creator/runtime/inhale-paths.json').read_text())
     motion = {v['name']:v['motion'] for v in phases}
     state = r.addr('sCCInhaleStates')
+    release = struct.unpack('>4I',r.read(r.addr('ccInhaleReleaseLayout'),16))
     passive = il[3]
     data, pointer, attr = 0x80230000,0x80231000,0x80232000
     original = dict(r.services)
@@ -108,6 +109,30 @@ def test_inhale(r):
                 for _ in range(40):hook('ftKirbySpecialAirNLoopProcInterrupt' if air else 'ftKirbySpecialNLoopProcInterrupt')
                 assert r.u32(r.FP+0x24)==(280 if air else 271)
                 entries+=1
+    # Real source throw selector treats held L exactly like A, without taunting
+    # or copying. Both phases preserve the attacker and invoke one release.
+    apply=r.addr('cc_ftKirbySpecialNApplyCaptureDamage')
+    damage_calls=[]
+    r.services[apply]=lambda:damage_calls.append((r.reg(UC_MIPS_REG_A0),r.reg(UC_MIPS_REG_A1))) or 0
+    held_releases=0
+    for body in range(12):
+        if body==8:continue
+        for port in range(4):
+            for air in (0,1):
+                for button in (0x8000,0x20):
+                    s=setup(body,port,air)
+                    r.call('get_air_nsp_routine_' if air else 'get_ground_nsp_routine_',r.GOBJ,namespace='CharCreator')
+                    r.u32(r.FP+0x24,il[13 if air else 6])
+                    r.u32(r.FP+r.layout['catch'],0x80243000)
+                    r.write(r.FP+il[19],struct.pack('>H',0x8000))
+                    r.write(r.FP+release[1],struct.pack('>H',0x20))
+                    r.write(r.FP+release[0],struct.pack('>H',button))
+                    before=len(damage_calls)
+                    hook('ftKirbySpecialAirNWaitProcInterrupt' if air else 'ftKirbySpecialNWaitProcInterrupt')
+                    assert r.u32(r.FP+0x24)==release[3 if air else 2],(body,port,air,button)
+                    assert len(damage_calls)==before+1 and damage_calls[-1]==(r.GOBJ,0x80243000)
+                    assert r.u32(s+il[1])==12 and r.read(r.FP+passive,32)==b'\xA5'*32
+                    held_releases+=1
     copies=0
     for body in range(12):
         if body==8:continue
@@ -227,4 +252,4 @@ def test_inhale(r):
     for address in list(r.services):
         if address not in original:del r.services[address]
     r.services.update(original)
-    print(f'PASS: {entries} foreign inhale entries/ground-air button transitions, {geometry} donor catch placements, {copies} copy choices across bodies/ports, {victims} captured recipe/native choices, source absorb events, passive isolation, damage/respawn/taunt/death reset and native Kirby dispatch. Status/resource services are fixtures; contact is checked in optional real CPU scenes.')
+    print(f'PASS: {entries} foreign inhale entries/ground-air button transitions, {geometry} donor catch placements, {held_releases} A/L held-victim releases, {copies} copy choices across bodies/ports, {victims} captured recipe/native choices, source absorb events, passive isolation, damage/respawn/taunt/death reset and native Kirby dispatch. Status/resource services are fixtures; contact is checked in optional real CPU scenes.')

@@ -42,7 +42,6 @@ static void ccInhaleDamageCheck(FTStruct*);
 static sb32 ccInhaleUseCallback(FTStruct*);
 static void ccInhaleVisualClear(FTStruct*);
 static void ccInhaleVisualTick(GObj*);
-static sb32 ccInhaleEffectLive(GObj*);
 static void ccInhaleWindStart(GObj*);
 static void ccInhaleWindPosition(GObj*);
 static void ccInhaleWindBind(GObj*, GObj*);

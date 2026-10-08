@@ -1,6 +1,6 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.18 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.19 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
 
 - [x] Borrowed Stone sets the native light count/direction and complete white/brown light records before drawing its source material; poisoned-heap linked-MIPS checks and real-input replacement/recovery checks pass.
 - [ ] Rendered Stone colour acceptance on foreign bodies.
@@ -45,9 +45,10 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Borrowed Kirby source ground/air clocks/catch geometry, native capture/hold/spit/copy, and victim-selected Neutral B.
 - [x] Four-port copy state outside body passive unions, original SRAM widths, native heavy-hit copy loss and taunt/death/scene reset.
 - [x] All-body linked-MIPS entry/copy/geometry checks; real-input capture/spit/copy/copied-projectile and aerial inhale scenes on every foreign original body, plus native Kirby input/recovery.
-- [x] Native inhale wind on a preloaded private particle bank, animated receiving-body mouth overlay and native L-discard star.
+- [x] A/L held-victim spit uses donor damage, timing and native release ownership on ground/air.
+- [x] Native inhale wind on a preloaded private particle bank and native L-discard star; added mouth overlay removed.
 - [x] Mouth/wind phase ownership, finite transforms and recovery cleanup; actual L-discard creates one star; null-rendering CPU inhale sequences and donor wind-byte comparisons pass on every foreign original body.
-- [ ] Full body/stretch poses, copy hats and rendered mouth/wind/victim alignment and interruption acceptance.
+- [ ] Full body/stretch poses, copy hats and rendered wind/victim alignment and interruption acceptance.
 - [ ] Investigate the native Kirby copy-hat material fault observed after absorbing Mario in the null-rendering CPU fixture; compare with in-game behavior. Borrowed-body copy sequences pass.
 - [x] Native Kirby Stone input/recovery after correcting an inhale hook address that overlapped Stone physics.
 - [x] Borrowed original-roster specials use safe native status setup followed by shared donor poses.

@@ -1,6 +1,6 @@
 # Remix neutral donors
 
-Preview **0.1.18**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
+Preview **0.1.19**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
 Neutral Special now offers the body's name (native behavior) and Fox, Mario,
 Luigi, Pikachu, Ness, Captain Falcon, Jigglypuff, Donkey Kong, Samus, Link and
 Yoshi and Kirby. Choosing the same donor as the body keeps its native routines.
@@ -17,20 +17,24 @@ Yoshi and Kirby. Choosing the same donor as the body keeps its native routines.
 | Samus | Charge ticks/storage, charge-dependent startup speed, shot scaling and recoil |
 | Link | Tilt/smash launch, one outstanding Boomerang, empty/return/catch phases and reflection |
 | Yoshi | Source grab path, capture anchor, swallow/release and native egg damage/escape |
-| Kirby | Ground/air inhale, native capture/held victim, star spit, absorb/copy and use of the victim's selected Neutral B; native wind/discard star and animated body-face mouth overlay |
+| Kirby | Ground/air inhale, native capture/held victim, star spit, absorb/copy and use of the victim's selected Neutral B; native wind/discard star; no added mouth overlay |
 
 With **Kirby** selected, hold **B** to inhale. Once holding a victim, press
-**A** to spit or **B/down** to absorb and copy its Neutral B. The next B uses
+**A or L** to spit or **B/down** to absorb and copy its Neutral B. The next B uses
 the copied move; **L** discards it. Heavy hits retain the native chance to lose
 the copy. Death, respawn and a new match clear it without changing your saved
 recipe. Copying a custom fighter uses its selected Neutral B; copying native
 Kirby uses his current ability. Native Kirby keeps Remix's own hats/copy rules.
+The added held-L spit input applies to borrowed bodies; native Kirby retains
+Remix's original A-spit controls.
 
 Borrowed inhale uses the original donor catch sizes/reach and source event
-timing with native body hurtboxes. An animated open-mouth overlay follows the body's actual face, opening through
-startup and closing on release. Native wind follows that face and ends when
-inhale stops; L emits the original discarded-copy star. Full body/stretch poses
-and copied hats remain deferred. Native victim
+timing with native body hurtboxes. Native wind follows the body's face and ends
+when inhale stops. The added geometric mouth overlay has been removed.
+L with a swallowed opponent uses the same donor spit, damage, release timing
+and ownership path as A, on ground and in the air; it does not taunt or discard
+an ability in that phase. L after copying emits the original discarded-copy star.
+Full body/stretch poses and copied hats remain deferred. Native victim
 shrink/hold/star-release states remain connected.
 
 Start charging with **B**. **B or A** releases; **Z** stores. Ground rolls also
@@ -70,12 +74,15 @@ storage and B release. `--egg-contact` checks controlled Egg Lay capture/egg
 handoff/damage; `--projectile-contact` checks PK Fire spark/flame-pillar contact. These CPU checks do not establish rendered projectile,
 contact, reflection/absorption, wall/ledge or full interruption acceptance.
 
-The 0.1.18 inhale suite checks 88 foreign ground/air entries across four ports,
-880 source catch placements, 528 copied-choice dispatches and 156 native/custom
+The 0.1.19 inhale suite checks 88 foreign ground/air entries across four ports,
+880 source catch placements, 176 A/L held-victim release selections, 528 copied-choice dispatches and 156 native/custom
 victim choices. It executes source absorb flags at frame eight and copy loss,
 taunt, death and generation cleanup without writing body passive memory.
-`--neutral 12 --inhale-contact` checks actual capture/held ownership, A spit,
-repeat capture/B copy, copied Fireball, L discard and aerial inhale/landing.
+`--neutral 12 --inhale-contact --inhale-held-l` checks actual capture/held ownership, A spit,
+L held-victim spit, repeat capture/B copy, copied Fireball, L discard and aerial inhale/landing.
+The held-L CPU fixture starts grounded and checks attacker survival/position and
+victim ownership cleanup. Airborne A/L release selection is checked in linked
+MIPS; broader native airborne contact and rendered acceptance remain pending.
 Null-rendering scenes cover all eleven foreign original bodies, including
 copied Mario Fireball and aerial inhale/landing; native Kirby also passes entry
 and recovery. Broader rendered contact and interruption acceptance remain pending.

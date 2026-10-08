@@ -5,7 +5,7 @@ typedef struct CCInhaleState {
     FTStruct *owner;
     u32 generation;
     s32 choice;
-    GObj *mouth, *wind, *fighter;
+    GObj *wind, *fighter;
 } CCInhaleState;
 static CCInhaleState sCCInhaleStates[4];
 static const s32 sCCInhaleBodyChoices[12] = {2,1,8,9,3,10,11,6,12,4,7,5};
@@ -27,7 +27,7 @@ s32 ccInhaleChoice(FTStruct *fp, s32 selected)
     { ccInhaleVisualClear(fp); s->owner = NULL; return selected; }
     if (ccBodyKind(fp) == nFTKindKirby) return selected;
     if (s->owner != fp || s->generation != fp->player_num)
-    { s->owner = fp; s->generation = fp->player_num; s->choice = CC_NEUTRAL_INHALE; s->mouth = s->wind = NULL; s->fighter = fp->fighter_gobj; }
+    { s->owner = fp; s->generation = fp->player_num; s->choice = CC_NEUTRAL_INHALE; s->wind = NULL; s->fighter = fp->fighter_gobj; }
     s->fighter = fp->fighter_gobj;
     return s->choice;
 }
@@ -72,7 +72,7 @@ static __attribute__((noinline)) void ccInhaleStatusChanging(FTStruct *fp, s32 n
           (next >= nFTKirbyStatusSpecialAirNStart && next <= nFTKirbyStatusSpecialAirNCopy)))
         ccInhaleVisualClear(fp);
     /* Status setup may preserve native attachments between inhale phases.
-     * Our wind/mouth lifetime follows the next actual phase on its visual tick. */
+     * Our wind lifetime follows the next actual phase on its visual tick. */
     if (next <= nFTCommonStatusRebirthWait)
     { ccInhaleVisualClear(fp); s->choice = CC_NEUTRAL_INHALE; s->owner = NULL; }
     else if (next == nFTCommonStatusAppeal) ccInhaleLoseCopy(fp);
@@ -117,4 +117,9 @@ const u32 ccInhaleLayout[] = {
     nFTKirbyStatusSpecialAirNStart,nFTKirbyStatusSpecialAirNLoop,nFTKirbyStatusSpecialAirNWait,
     nFTCommonStatusCaptureKirby,nFTCommonStatusCaptureWaitKirby,nFTCommonStatusThrownKirbyStar,nFTCommonStatusThrownCopyStar,
     __builtin_offsetof(FTStruct,input.pl.button_hold),__builtin_offsetof(FTStruct,input.button_mask_a)
+};
+const u32 ccInhaleReleaseLayout[] = {
+    __builtin_offsetof(FTStruct,input.pl.button_tap),
+    __builtin_offsetof(FTStruct,input.button_mask_l),
+    nFTKirbyStatusSpecialNThrow,nFTKirbyStatusSpecialAirNThrow
 };

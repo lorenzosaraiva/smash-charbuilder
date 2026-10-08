@@ -251,7 +251,6 @@ static GObj* ccVisualOwn(GObj *g, GObj *fighter)
 static void ccVisualEffectUpdate(GObj *g)
 {
     s32 i;
-    if (ccInhaleEffectLive(g)) { efManagerNoEjectProcUpdate(g); return; }
     if (ccPairEffectLive(g)) { efManagerNoEjectProcUpdate(g); return; }
     for (i = 0; i < 4; i++)
     {

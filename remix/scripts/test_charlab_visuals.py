@@ -398,13 +398,13 @@ def test_visuals(r):
                 assert r.read(model+r.layout['scale'],12)==r.read(beam_samples+time*40+24,12)
             r.call('ccStatusChanging',r.GOBJ,18);assert g in stopped
             counter=0
-    # Inhale face overlay and native wind lifetime. Allocation/world-transform
+    # Inhale wind lifetime with no face overlay. Allocation/world-transform
     # services are fixtures; owner guards, phase clocks, facing, drawing data
     # and interruption/reset cleanup execute in the linked runtime.
     il=struct.unpack('>20I',r.read(r.addr('ccInhaleLayout'),80))
-    iv=struct.unpack('>8I',r.read(r.addr('ccInhaleVisualLayout'),32))
+    iv=struct.unpack('>7I',r.read(r.addr('ccInhaleVisualLayout'),28))
     inhale=r.addr('sCCInhaleStates');special=r.addr('sCCSpecialClocks')
-    faces=r.addr('sCCInhaleFaces');mouth_cases=0
+    faces=r.addr('sCCInhaleFaces');wind_cases=0
     gm=native['gmCollisionGetFighterPartsWorldPosition'];old_gm=r.services.get(gm)
     def world_position():
         p=r.reg(UC_MIPS_REG_A1);x,y,z=struct.unpack('>3f',r.read(p,12))
@@ -414,8 +414,8 @@ def test_visuals(r):
     wind_create=r.addr('ccfxKirbyInhaleWind');wind_calls=[]
     def wind_fixture():
         g=allocate();ep=r.u32(g+0x84)
-        r.u32(ep+4,r.GOBJ);r.u32(ep+iv[3],0x8024E000)
-        r.u32(inhale+iv[1],g);wind_calls.append(g)
+        r.u32(ep+4,r.GOBJ);r.u32(ep+iv[2],0x8024E000)
+        r.u32(inhale+iv[0],g);wind_calls.append(g)
         return 1
     r.services[wind_create]=wind_fixture
     for body in range(12):
@@ -428,54 +428,46 @@ def test_visuals(r):
             r.u32(r.labels['CharCreator.body_character_id'],body)
             r.u32(r.labels['CharCreator.active_special_donor'],8)
             r.u32(r.FP+8,8);r.u32(r.FP+0x44,facing)
-            r.u32(r.FP+0x24,il[5]);r.u32(r.FP+0x28,iv[6])
-            r.write(special,struct.pack('>5If3I',r.FP,il[5],iv[6],8,0x80000018,8,0,0,0))
+            r.u32(r.FP+0x24,il[5]);r.u32(r.FP+0x28,iv[5])
+            r.write(special,struct.pack('>5If3I',r.FP,il[5],iv[5],8,0x80000018,8,0,0,0))
             r.call('ccInhaleVisualTick',r.GOBJ)
-            g=r.u32(inhale+iv[0]);assert g,(body,facing,'No open mouth')
-            model=r.u32(g+r.layout['obj'])
-            width,height,y,z=struct.unpack('>4f',r.read(faces+body*16,16))
-            assert struct.unpack('>3f',r.read(model+r.layout['translate'],12))==(120+z*facing,300+y,40)
-            scale=struct.unpack('>3f',r.read(model+r.layout['scale'],12))
-            assert all(math.isfinite(v) and v>0 for v in scale)
-            assert r.call('ccInhaleEffectLive',g)==1
-            # A same-frame visual tick retains the existing object.
-            r.call('ccInhaleVisualTick',r.GOBJ);assert r.u32(inhale+iv[0])==g
+            assert counter==0, 'Inhale still allocates an open-mouth prop'
+            y,z=struct.unpack('>2f',r.read(faces+body*8,8))
+            r.call('ccInhaleVisualTick',r.GOBJ)
+            assert counter==0, 'Repeated inhale tick allocates a face prop'
             r.u32(0x800D63C0+8,13);r.u32(0x800D6400+8,0x8024F000)
             r.u32(0x800D63E0+8,1);r.u32(0x800D6420+8,0x8024F100)
             r.call('ccInhaleCaptureParticleBank',2)
             assert r.read(r.addr('sCCInhaleParticleData'),16)==struct.pack('>4I',13,0x8024F000,1,0x8024F100)
             r.u32(0x80131A18,8);r.u32(r.FP+r.layout['flags'],1)
             before=len(wind_calls);r.call('ccInhaleWindStart',r.GOBJ)
-            assert not r.u32(inhale+iv[1]) and len(wind_calls)==before
+            assert not r.u32(inhale+iv[0]) and len(wind_calls)==before
             r.u32(0x80131A18,3)
             r.u32(r.FP+r.layout['flags'],1)
-            r.call('ccInhaleWindStart',r.GOBJ);wind=r.u32(inhale+iv[1]);assert wind
+            r.call('ccInhaleWindStart',r.GOBJ);wind=r.u32(inhale+iv[0]);assert wind
             assert r.u32(r.addr('sCCNeutralParticleBanks')+8)==7
             assert r.u32(0x800D63C0+28)==13 and r.u32(0x800D6400+28)==0x8024F000
             r.u32(r.FP+r.layout['flags'],1);before=len(wind_calls)
             r.call('ccInhaleWindStart',r.GOBJ);assert len(wind_calls)==before
             r.call('ccInhaleWindPosition',wind)
-            assert struct.unpack('>3f',r.read(0x8024E000+iv[4],12))==(120+(z+640)*facing,300+y,40)
-            # Donor startup/end/throw clocks animate the same head overlay.
-            for loop_motion in iv[6:8]:
-                for motion,time,fraction in ((loop_motion-1,8,.5),
-                                              (loop_motion+1,12,.5),
-                                              (loop_motion+3,13.5,.5)):
-                    r.u32(r.FP+0x28,motion);r.u32(special+8,motion);r.f32(special+20,time)
+            assert struct.unpack('>3f',r.read(0x8024E000+iv[3],12))==(120+(z+640)*facing,300+y,40)
+            # Non-loop startup/end/eat/throw phases stop the funnel and never draw a mouth.
+            for loop_motion in iv[5:7]:
+                for motion in (loop_motion-1,loop_motion+1,loop_motion+2,loop_motion+3):
+                    r.u32(r.FP+0x28,motion);r.u32(special+8,motion)
                     r.call('ccInhaleVisualTick',r.GOBJ)
-                    assert r.u32(inhale+iv[0])==g
-                    actual=r.f32(model+r.layout['scale']+4)
-                    assert abs(actual-scale[1]*fraction)<.0001,(body,facing,motion,actual,scale)
-                    assert not r.u32(inhale+iv[1])
-            r.u32(r.FP+0x28,iv[6]);r.u32(special+8,iv[6]);r.f32(special+20,8)
+                    assert not r.u32(inhale+iv[0])
+                    assert counter==1, 'Non-loop inhale allocated a mouth prop'
+            r.u32(r.FP+0x28,iv[5]);r.u32(special+8,iv[5])
+            r.u32(r.FP+r.layout['flags'],1);r.call('ccInhaleWindStart',r.GOBJ)
+            wind=r.u32(inhale+iv[0]);assert wind
             r.call('ccInhaleStatusChanging',r.FP,18)
-            assert not r.u32(inhale+iv[0]) and not r.u32(inhale+iv[1])
-            assert g in stopped and wind in stopped
-            mouth_cases+=1
+            assert not r.u32(inhale+iv[0]) and wind in stopped
+            wind_cases+=1
     del r.services[wind_create]
     if old_gm is None:del r.services[gm]
     else:r.services[gm]=old_gm
-    print(f'PASS: complete white/brown Stone light records, {mouth_cases} foreign-body/facing inhale mouths, source wind owner/idempotence/face placement and interruption cleanup (allocation/world-transform fixtures; rendered alignment pending).')
+    print(f'PASS: complete white/brown Stone light records, {wind_cases} foreign-body/facing wind funnels without mouth props, source wind owner/idempotence/face placement and interruption cleanup (allocation/world-transform fixtures; rendered alignment pending).')
     # Orphaned effects may reuse an address: never dereference or eject a GObj
     # outside its native link list/owner tag, and never hide a replacement body.
     index=next(i for i,_,p,_ in props if r.u32(p+12))

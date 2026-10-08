@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.18'
+VERSION = '0.1.19'
 UPDATED = '2026-10-08'
 
 
@@ -74,10 +74,10 @@ def package(desktop=None):
 
 Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
-New: Kirby Neutral B on all original bodies. Hold B to inhale, A to spit a held
-victim, B/down to copy its selected Neutral B, and L to discard the copy.
+New: Kirby Neutral B on all original bodies. Hold B to inhale, spit a held
+victim with A or L, B/down to copy its selected Neutral B, and L to discard the copy.
 Original catch reach, ground/air phase events and native victim/release states
-are connected with external four-port copy ownership. Native wind, a discard star and animated mouth overlays are connected;
+are connected with external four-port copy ownership. Native wind and a discard star remain; the added mouth overlay is removed;
 full body/stretch poses, hats and rendered acceptance are deferred; native Kirby keeps Remix's own copy system.
 
 New: borrowed Stone initializes complete white diffuse and brown ambient light

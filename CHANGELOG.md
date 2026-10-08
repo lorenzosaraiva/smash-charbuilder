@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.36 - 2026-10-08: Remix inhale wind and safe L spit
+
+- Build local Remix preview 0.1.19; preserve the decomp ROM and published download links.
+- Remove the added geometric mouth overlay, mesh, display list and effect ownership; keep native inhale wind and discarded-copy stars.
+- Treat L with a swallowed victim as the donor A-spit input on ground/air, preserving damage, phase timing and native attacker/victim release ownership. L after copying remains copy discard.
+- Extend linked-MIPS coverage to 176 A/L held-victim release choices across eleven foreign bodies, four ports and ground/air. Add a real-controller held-L regression checking the source spit phase, attacker position/life and victim ownership cleanup.
+- The user confirmed the preceding Stone and other cosmetic fixes in game. Broader rendered wind/capture acceptance and the native Kirby copy-hat CPU fault remain tracked separately.
+
 ## 0.1.35 - 2026-10-08: Remix Stone lights and inhale cosmetics
 
 - Build local Remix preview 0.1.18; preserve the original Character Lab ROM and published download links.

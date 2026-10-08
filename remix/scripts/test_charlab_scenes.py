@@ -27,6 +27,7 @@ parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borro
 parser.add_argument('--down-smash',action='store_true',help='Focus normal regression on a real down-smash input')
 parser.add_argument('--neutral',type=int,choices=range(1,13),help='Exercise a Neutral B choice with real controller input')
 parser.add_argument('--inhale-contact',action='store_true',help='Check live inhale capture, spit, repeat capture, copy and copied Neutral B')
+parser.add_argument('--inhale-held-l',action='store_true',help='Exercise L with a swallowed fighter before the ordinary inhale/copy sequence')
 parser.add_argument('--full-charge',action='store_true',help='Charge borrowed Giant Punch fully and check its native stored blink through movement and release')
 parser.add_argument('--egg-contact',action='store_true',help='Place the CPU in Egg Lay reach to test capture, egg handoff and damage')
 parser.add_argument('--projectile-contact',action='store_true',help='Place the CPU at a PK Fire spark to test native flame-pillar creation')
@@ -56,6 +57,7 @@ if args.egg_contact:assert args.neutral==11
 if args.projectile_contact:assert args.neutral==5
 if args.full_charge:assert args.neutral==8 and args.body!=2
 if args.inhale_contact:assert args.neutral==12
+if args.inhale_held_l:assert args.inhale_contact
 
 def constant(name):
     address,length,index=syms[name];section=sections[index]
@@ -138,7 +140,7 @@ animation_samples=0;animation_records=set();animation_errors=[]
 normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_samples=0
 egg_contact_done=False;egg_observed=set();neutral_samples=[]
 inhale_capture=False;inhale_observed=set();inhale_choices=set();inhale_victims=set()
-inhale_visual_samples={'mouth':0,'wind':0};inhale_visual_errors=[];inhale_wind_diagnostics=set();inhale_source_checks=set()
+inhale_visual_samples={'wind':0};inhale_visual_errors=[];inhale_wind_diagnostics=set();inhale_source_checks=set()
 visual_layout=constant('ccVisualLayout')
 visual_objects=set();visual_samples=0;visual_hidden=False;visual_errors=[]
 charge_visual_samples=[];ball_samples=[]
@@ -249,29 +251,25 @@ def frame_callback(frame):
         if args.inhale_contact:
             iv=constant('ccInhaleVisualLayout')
             si=labels['CharLabRuntime.sCCInhaleStates']
-            inhale_wind_diagnostics.add((u32(fp+0x24),u32(fp+layout[3]),u32(labels['CharLabRuntime.sCCNeutralParticleBanks']+8),u32(si+iv[1])))
-            for name,field in (('mouth',iv[0]),('wind',iv[1])):
+            inhale_wind_diagnostics.add((u32(fp+0x24),u32(fp+layout[3]),u32(labels['CharLabRuntime.sCCNeutralParticleBanks']+8),u32(si+iv[0])))
+            for name,field in (('wind',iv[0]),):
                 effect=u32(si+field)
                 live=u32(native['gGCCommonLinks']+24)
                 for _ in range(256):
                     if not live or live==effect:break
                     live=u32(live+visual_layout[7])
                 if not effect or live!=effect:continue
-                if name=='mouth':
-                    model=u32(effect+layout[10])
-                    values=[f32(model+offset+j) for offset in layout[12:15] for j in (0,4,8)]
-                else:
-                    bank=u32(labels['CharLabRuntime.sCCNeutralParticleBanks']+8)
-                    if bank not in inhale_source_checks:
-                        lo=u32(u32(0x80116E10+8*4)+0x50)
-                        offset=int.from_bytes(rom[lo+4+12*4:lo+8+12*4],'big')
-                        script=u32(u32(0x800D6400+bank*4)+12*4)
-                        actual=bytes(u8(script+j) for j in range(64))
-                        if actual!=rom[lo+offset:lo+offset+64]:
-                            inhale_visual_errors.append(('Wind source bank mismatch',bank,actual.hex()))
-                        inhale_source_checks.add(bank)
-                    ep=u32(effect+0x84);xf=u32(ep+iv[3])
-                    values=[f32(xf+iv[4]+j) for j in (0,4,8)] if xf else [float('nan')]
+                bank=u32(labels['CharLabRuntime.sCCNeutralParticleBanks']+8)
+                if bank not in inhale_source_checks:
+                    lo=u32(u32(0x80116E10+8*4)+0x50)
+                    offset=int.from_bytes(rom[lo+4+12*4:lo+8+12*4],'big')
+                    script=u32(u32(0x800D6400+bank*4)+12*4)
+                    actual=bytes(u8(script+j) for j in range(64))
+                    if actual!=rom[lo+offset:lo+offset+64]:
+                        inhale_visual_errors.append(('Wind source bank mismatch',bank,actual.hex()))
+                    inhale_source_checks.add(bank)
+                ep=u32(effect+0x84);xf=u32(ep+iv[2])
+                values=[f32(xf+iv[3]+j) for j in (0,4,8)] if xf else [float('nan')]
                 if not all(math.isfinite(v) and abs(v)<50000 for v in values):inhale_visual_errors.append((name,values))
                 inhale_visual_samples[name]+=1
             cpu=fighter(1);il=constant('ccInhaleLayout')
@@ -524,7 +522,7 @@ try:
         visual_report(report)
         (report_directory/f'cpu-scenes-paired-{args.body}-{args.paired_donor}-{donor}-{int(args.back_throw)}-{int(args.paired_airborne)}-{int(args.cargo_jump)}.json').write_text(json.dumps(report,indent=2)+'\n')
         print('PASS: real donor grab/paired throw release',report,flush=True);raise SystemExit(0)
-    if args.taunt_donor is not None:
+    if args.taunt_donor is not None and args.neutral is None:
         durations=(180,60,60,60,80,60,80,60,60,80,90,60)
         tracking=True;pulse(0x2000)
         frames(durations[args.taunt_donor]+12)
@@ -561,15 +559,25 @@ try:
             il=constant('ccInhaleLayout');state=labels['CharLabRuntime.sCCInhaleStates']
             w32(fighter(1)+layout[1],0)
             tracking=True
-            for button,label in ((0x80,'spit'),(0x40,'copy')):
+            releases=([(0x2000,'held L')] if args.inhale_held_l else [])+[(0x80,'spit'),(0x40,'copy')]
+            for button,label in releases:
                 inhale_capture=True;keys(0x40)
                 wait(lambda:u32(fighter()+0x24) in (il[6],il[13]),'Inhale held victim: '+label,seconds=30)
                 keys(0);inhale_capture=False;frames(12)
                 assert u32(fighter()+layout[17])==u32(fighter(1)+visual_layout[8]),('Missing native catch owner',diagnostic())
-                pulse(button);frames(100)
+                before_position=tuple(f32(u32(fighter()+0x8E8)+layout[12]+j) for j in (0,4,8))
+                pulse(button)
+                if label=='held L':
+                    assert u32(fighter()+0x24) in (il[9],il[9]+9),('L did not enter donor spit',label,diagnostic())
+                frames(100)
                 wait(lambda:u32(fighter()+0x24)==10,'Inhale '+label+' recovery',seconds=30)
                 assert not u32(native['__osFaultedThread']),diagnostic()
                 assert not u32(fighter()+layout[17]),('Victim survived release',diagnostic())
+                assert not u32(fighter(1)+layout[18]),('Victim retained capture owner',diagnostic())
+                if label=='held L':
+                    after_position=tuple(f32(u32(fighter()+0x8E8)+layout[12]+j) for j in (0,4,8))
+                    assert max(abs(a-b) for a,b in zip(before_position,after_position))<500,('L teleported attacker',before_position,after_position)
+                    assert not any(row[0]<7 for row in trace),('L killed attacker',diagnostic())
                 frames(160)
             copy_choice=u32(fighter()+il[3]) if args.body==8 else u32(state+il[1])
             assert copy_choice==(0 if args.body==8 else 2),('Mario ability was not copied',copy_choice,inhale_choices,diagnostic())
@@ -591,15 +599,15 @@ try:
             assert {il[14],il[15],il[16],il[17]}<=inhale_victims,('Missing native victim phases',inhale_victims,il,diagnostic())
             assert u32(fighter()+8)==args.body and u32(fighter(1)+8)==0
             iv=constant('ccInhaleVisualLayout')
-            assert args.body==8 or all(inhale_visual_samples.values()),('Missing inhale mouth/wind',inhale_visual_samples,sorted(inhale_wind_diagnostics))
+            assert args.body==8 or all(inhale_visual_samples.values()),('Missing inhale wind',inhale_visual_samples,sorted(inhale_wind_diagnostics))
             assert not inhale_visual_errors,inhale_visual_errors[:8]
-            assert not u32(state+iv[0]) and not u32(state+iv[1]),('Inhale visuals survived recovery',diagnostic())
+            assert not u32(state+iv[0]),('Inhale wind survived recovery',diagnostic())
             assert all(math.isfinite(v) and abs(v)<50000 for row in trace for v in row[2])
             tracking=False
             report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'neutral':12,
-                    'checks':['real held B inhale','native capture and held ownership','A star spit and release','repeat inhale and B copy release','copied Mario Fireball input','L discards copied ability','aerial inhale and ground handoff/release','native body identity and recovery'],
+                    'checks':['real held B inhale','native capture and held ownership','A star spit and release','repeat inhale and B copy release','copied Mario Fireball input','L discards copied ability']+(['grounded L with held victim follows donor spit and preserves attacker position/life'] if args.inhale_held_l else [])+['aerial inhale and ground handoff/release','native body identity and recovery'],
                     'fighter_statuses':sorted(inhale_observed),'victim_statuses':sorted(inhale_victims),'copied_choices':sorted(inhale_choices),'rendering':'null'}
-            report['inhale_visual_checks']={'samples':inhale_visual_samples,'native_presentation':args.body==8,'checks':[] if args.body==8 else ['native Kirby wind script matches source ROM','native wind particle allocation','finite mouth/particle transforms','exactly one native L-discard star','mouth/wind recovery cleanup'],'rendering':'null'}
+            report['inhale_visual_checks']={'samples':inhale_visual_samples,'native_presentation':args.body==8,'checks':[] if args.body==8 else ['native Kirby wind script matches source ROM','native wind particle allocation','finite particle transforms','exactly one native L-discard star','wind recovery cleanup; no mouth overlay'],'rendering':'null'}
             (report_directory/f'cpu-scenes-inhale-{args.body}.json').write_text(json.dumps(report,indent=2)+'\n')
             print('PASS: inhale, spit, copy and copied Neutral B',report,flush=True);raise SystemExit(0)
         trace.clear();tracking=True;pulse(0x40)

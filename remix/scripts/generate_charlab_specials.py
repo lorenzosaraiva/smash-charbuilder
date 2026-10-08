@@ -106,6 +106,13 @@ def generate():
         '        victim_fp->status_vars.common.capturekirby.is_kirby = ccBodyKind(victim_fp) == nFTKindKirby;', adapted, flags=re.S)
     assert 'FTKirbyCopy' not in adapted and 'passive_vars' not in adapted
     source = source.replace(fn['text'], adapted)
+    # L while holding a victim means spit, not copy-loss/taunt. Route it through
+    # the same native star release, damage and ownership path as A on ground/air.
+    fn = next(f for f in functions(source) if f['name']=='ftKirbySpecialNThrowCheckGotoThrow')
+    adapted = fn['text'].replace('fp->input.button_mask_a)',
+        '(fp->input.button_mask_a | fp->input.button_mask_l))')
+    assert adapted != fn['text']
+    source = source.replace(fn['text'], adapted)
     source = source.replace('fp->status_vars.kirby.specialn.copy_id = nFTKindKirby;',
                             'fp->status_vars.kirby.specialn.copy_id = 12;')
     # Keep Remix's expanded victim-offset table in the native helper, then

@@ -1,12 +1,12 @@
 # Remix special effects and attachments
 
-Preview **0.1.18**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
+Preview **0.1.19**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
 
 | Donor move | Borrowed presentation |
 | --- | --- |
 | Kirby Final Cutter | Native sword draw, rising/falling sword and trails on source effect-flag transitions |
 | Kirby Stone | Source model replacement with sampled transforms; hide the native body only while the prop is active |
-| Kirby Inhale | Gameplay connected; native wind and discard-star effects, animated face-attached mouth overlays; full body/stretch poses and copied hats deferred; native victim shrink/hold/star states retained |
+| Kirby Inhale | Gameplay connected; native wind and discard-star effects; added mouth overlay removed; full body/stretch poses and copied hats deferred; native victim shrink/hold/star states retained |
 | Falcon Punch / Falcon Kick | Native flames attached to the retargeted hand/foot; original create/remove flags |
 | Fox Laser | Source blaster model and sampled open/close transforms, firing sparkle and sound |
 | Yoshi Egg Lay | Native tongue part and sampled extension/retraction through catch/release phases |
@@ -60,12 +60,11 @@ particle bank reinitialization and binds the spare eighth slot after scene setup
 If all eight native slots are occupied, wind is suppressed safely; rendered
 four-player/native-copy bank pressure remains acceptance work. No files load on B.
 The CPU regression compares the live wind script bytes with the source ROM. Its
-funnel follows the receiving body's head during the source loop. An owned
-geometric mouth overlay opens/closes on source phases and follows head rotations;
-it does not deform the native jaw or retarget the full inhale/stretch pose. L or
-native heavy-hit copy loss emits one native discard star per held copy. Wind and
-mouth handles clear on recovery, capture, interruptions, death and scene resets.
-Per-body face offsets and rendered alignment still require in-game acceptance.
+funnel follows the receiving body's head during the source loop. The added
+geometric mouth overlay is removed; no mouth prop or its display list remains.
+L or native heavy-hit copy loss emits one native discard star per held copy.
+The owned wind clears on recovery, capture, interruptions, death and scene resets.
+Per-body wind offsets and rendered alignment still require broader in-game acceptance.
 
 Native Kirby retains Remix's original presentation. His basic inhale/recovery
 and Stone input/recovery pass CPU checks. The extended native contact sequence
@@ -74,9 +73,9 @@ absorbing Mario in the null-rendering fixture. Disabling foreign preloads and
 callback routing did not resolve it; native copy-hat investigation and rendered
 comparison remain pending. Borrowed-body copy does not use that hat path.
 
-The 0.1.18 null-rendering CPU sequence passes on every foreign original body:
+The 0.1.19 null-rendering CPU sequence passes on every foreign original body:
 capture, spit, repeat capture, copy, copied Mario Fireball, actual L-discard taunt
-and aerial inhale/landing/release. Each run observes the mouth and wind, compares
+and aerial inhale/landing/release. Each run observes the wind, compares
 the live wind script with Kirby's source bytes, counts exactly one discard star
 and checks finite transforms and cleared handles after recovery.
 
