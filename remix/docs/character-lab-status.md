@@ -1,6 +1,6 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.16 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.17 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
 
 - [x] Borrowed Stone sets the native light count and stage direction before drawing its source material; linked-MIPS light ordering and real-input replacement/recovery checks pass.
 - [ ] Rendered Stone colour acceptance on foreign bodies.
@@ -41,7 +41,11 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Grab/forward-throw/back-throw donor selectors; donor numeric throw values.
 - [x] Foreign DK forward throw enters donor cargo carry/toss phases.
 - [x] Remix's extended throw-victim lookup retained.
-- [x] Body-name/native and all eleven original neutral donors; Kirby copy excluded.
+- [x] Body-name/native and all twelve original neutral donors, including Kirby inhale/copy gameplay.
+- [x] Borrowed Kirby source ground/air clocks/catch geometry, native capture/hold/spit/copy, and victim-selected Neutral B.
+- [x] Four-port copy state outside body passive unions, original SRAM widths, native heavy-hit copy loss and taunt/death/scene reset.
+- [x] All-body linked-MIPS entry/copy/geometry checks; real-input capture/spit/copy/copied-projectile and aerial inhale scenes on every foreign original body, plus native Kirby input/recovery.
+- [ ] Foreign inhale poses, wind and copy hats; rendered victim alignment and interruption acceptance.
 - [x] Borrowed original-roster specials use safe native status setup followed by shared donor poses.
 - [x] Original-roster special phase clocks retain donor recovery/events, speed and frozen phases.
 - [x] Retain recipes by actual body identity during borrowed special phases.

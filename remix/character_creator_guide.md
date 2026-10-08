@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.16 (2026-10-08)**.
+Character Lab has an original-roster Remix preview, **0.1.17 (2026-10-08)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -15,8 +15,10 @@ mechanics are implemented and which still need adapters or playtesting.
 4. **USE BODY FOR ALL MOVES** gives you a native starting point.
    It also updates Neutral B to the body's explicit donor, keeping native copy for Kirby.
 5. Change any jab, dash attack, tilt, smash, aerial, grab or throw donor.
-6. Neutral Special offers **your body's fighter name** and all eleven original
-   donor choices except Kirby copy. See [neutral controls](docs/neutral-specials.md). Up/Down Special
+6. Neutral Special offers **your body's fighter name** and all twelve original
+   donor choices, including Kirby inhale/copy. Hold B to inhale, then A to spit
+   or B/down to copy the held victim's Neutral B. L discards the copy.
+   Inhale cosmetics are deferred. See [neutral controls](docs/neutral-specials.md). Up/Down Special
    remain experimental. Mario with Falcon Kick/Pikachu Up B is the first
    regression target; use native body specials for unverified mechanics.
    A ground-only donor such as DK Down B does nothing in the air; land to use
@@ -99,7 +101,7 @@ and shrinks the selected body; Luigi keeps his one-damage hitbox at frames
 47-49. Interruptions restore growth. Old presets default Taunt to Body.
 See [grab, throw and taunt guide](docs/paired-grabs-and-taunts.md).
 
-All eleven original neutral donors except Kirby copy now use the shared source
+The eleven other original neutral donors use the shared source
 clock and phase poses on foreign original bodies. Projectiles keep their donor
 resources and native flight/contact callbacks. Giant Punch and Charge Shot
 support B/A release, Z/roll storage, full charge and interruptions. Boomerang

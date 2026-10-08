@@ -186,6 +186,7 @@ sb32 ccUseSpecialCallback(void *object, FTStruct *third, s32 donor, s32 kind)
         return ccKeepSpecialContext(fp, fp->status_id);
     }
     else fp = ftGetStruct((GObj*)object);
+    if (donor == -3) return ccInhaleUseCallback(fp);
     if (donor == -1) return ccRecoveryDonor(fp) != -1 || (u32)ccSpecialDonor(fp) < 12;
     return ccSpecialDonor(fp) == donor || (donor == nFTKindMario && ccSpecialDonor(fp) == nFTKindLuigi);
 }
@@ -199,6 +200,7 @@ void ccStatusChanging(GObj *g, s32 next)
     FTStruct *fp = ftGetStruct(g); CCSpecialClock *clock = ccSpecialClock(fp);
     s32 donor = ccSpecialDonor(fp); CCSpecialState *state;
     ccVisualStatusChanging(g, next);
+    ccInhaleStatusChanging(fp, next);
     ccPairTransition(g, next);
     if (fp->player >= 4) return;
     state = ccSpecialState(fp);

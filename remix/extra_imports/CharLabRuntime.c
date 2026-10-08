@@ -12,6 +12,7 @@
 /* IDO headers erase attributes; the Remix Clang build needs real alignment
  * for DMA buffers and retained descriptors for the complete ROM catalog. */
 #undef __attribute__
+extern alSoundEffect *func_800269C0_275C0(u16);
 extern s32 ccBodyKind(FTStruct*);
 extern void ccSuspendJoints(FTStruct*);
 extern void ccResumeJoints(FTStruct*);
@@ -31,6 +32,14 @@ static void ccPairReset(void);
 static void ccPairCollisionApply(FTStruct*);
 static sb32 ccPairEffectLive(GObj*);
 static void ccSyncCurrent(FTStruct*);
+s32 ccInhaleChoice(FTStruct*, s32);
+static void ccInhaleReset(void);
+static void ccInhaleStatusChanging(FTStruct*, s32);
+static s32 ccInhaleCaptureChoice(FTStruct*);
+static void ccInhaleCopy(FTStruct*);
+static void ccInhaleLoseCopy(FTStruct*);
+static void ccInhaleDamageCheck(FTStruct*);
+static sb32 ccInhaleUseCallback(FTStruct*);
 extern s32 sCCPairDonors[4];
 
 /* Settings can enter Training CSS without the ordinary 1P menu setup. */
@@ -95,7 +104,7 @@ void ccSync(FTStruct *fp, s32 **entries, s32 scene)
     slot->body = body;
     for (i = 0; i < 13; i++) slot->attacks[i] = (u32)*entries[i + 2] < 12 ? *entries[i + 2] : body;
     for (i = 0; i < 3; i++) slot->attacks[13 + i] = (u32)*entries[18 + i] < 12 ? *entries[18 + i] : body;
-    slot->special_n = *entries[15];
+    slot->special_n = ccInhaleChoice(fp, *entries[15]);
     slot->special_hi = *entries[16]; slot->special_lw = *entries[17];
     slot->taunt = (u32)*entries[21] < 12 ? *entries[21] : body;
     slot->is_enabled = TRUE;
@@ -137,6 +146,7 @@ void ccReset(void)
     s32 i;
     ccVisualReset();
     ccPairReset();
+    ccInhaleReset();
     ftMainCharBuilderResetNeutralAll();
     for (i = 0; i < 4; i++)
     {
@@ -384,6 +394,7 @@ extern alSoundEffect *func_800269C0_275C0(u16);
 static void ftMainCharBuilderClearSpecialDonor(FTStruct *fp) { ccRestoreBody(fp); }
 #include "../build/char_creator/runtime/neutral-weapons.inc"
 #include "../build/char_creator/runtime/neutral.c.inc"
+#include "CharLabInhale.c.inc"
 
 static sb32 ccNeutralBoomerangOwner(GObj *owner, GObj *weapon)
 {

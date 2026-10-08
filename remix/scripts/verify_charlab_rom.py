@@ -892,6 +892,8 @@ def main():
     test_weapons(runtime)
     from test_charlab_visuals import test_visuals
     test_visuals(Runtime(rom, labels))
+    from test_charlab_inhale import test_inhale
+    test_inhale(Runtime(rom, labels))
     from test_charlab_pairs import test_pairs
     test_pairs(Runtime(rom, labels), rom)
     from test_charlab_edge_fixes import test_edge_fixes

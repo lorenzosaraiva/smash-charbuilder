@@ -217,7 +217,7 @@ def test_normals(r):
         for slot in range(4):
             entry=r.labels[f'Toggles.cc_slot_{slot+1}_nsp']
             table=r.u32(entry+0x14)
-            assert table==r.labels['CharCreator.neutral_string_tables']+slot*48
+            assert table==r.labels['CharCreator.neutral_string_tables']+slot*52
             assert (r.u32(table),r.u32(table+4))==(name,fox)
     # Unsupported expanded donors on an original body retain native normal
     # commands instead of disabling collisions without a compiled clock.

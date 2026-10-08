@@ -1,5 +1,14 @@
 # Changes
 
+## 0.1.34 - 2026-10-08: Remix Kirby inhale and copy gameplay
+
+- Build local Remix preview 0.1.17; preserve the original Character Lab ROM and existing published download links.
+- Add Kirby as Neutral B choice 12 without changing old choice values or SRAM recipe widths. Borrowed bodies enter inhale directly, avoiding Kirby's passive-copy dispatcher reading unrelated body memory.
+- Restore the native fighter argument when returning a special entry; Remix's native Kirby magic-hat hook requires it. Cover native and explicit Kirby selections on both ground/air paths.
+- Connect sixteen original ground/air source event phases and donor-sized catch geometry, native capture/held victims, A star spit and B/down copy release. Copied Neutral B uses the victim's selected recipe or native ability; native Kirby retains Remix's own copy system.
+- Store borrowed copy ownership outside body passive unions, with four-port generation guards, taunt/death/scene cleanup and native heavy-hit copy loss. Preload copied projectile dependencies before the match.
+- Check all foreign bodies and four ports on linked MIPS, source absorb timing and native/custom victim selection. Real-input null-rendering scenes check capture, spit, repeat capture, copy, copied projectile use and aerial inhale/landing on all eleven foreign bodies; native Kirby also passes input/recovery. Rendered acceptance, inhale poses, wind and copy hats remain pending.
+
 ## 0.1.33 - 2026-10-08: Remix Stone lighting
 
 - Build local Remix preview 0.1.16 and preserve the original Character Lab ROM.

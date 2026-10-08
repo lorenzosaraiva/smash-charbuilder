@@ -56,7 +56,9 @@ props, native flames/sword effects and safe source visual/audio scripts are now
 ported; see [effects and attachments](special-effects.md). Full rendered
 acceptance and other actor-specific overlays/materials remain pending.
 Native donor part/texture/hurtbox commands remain suppressed on foreign bodies.
-Kirby copy remains excluded.
+Kirby inhale/copy gameplay is available in 0.1.17. Borrowed inhale currently
+uses body Idle/Fall with source gameplay clocks; mouth/stretch poses, wind
+and copy hats remain deferred. Copied moves use the existing donor pose adapters.
 
 For rendered acceptance, try body + donor combinations with HITBOX/HITBOX+ and
 report the phase/input, emulator and ROM version, ideally with a short clip.

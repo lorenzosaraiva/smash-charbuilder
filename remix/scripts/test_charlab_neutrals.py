@@ -88,7 +88,7 @@ def test_neutrals(r, full=True):
         r.u32(r.FP+r.player_num,1)
         assert r.call('ccNeutral',r.GOBJ)==1
         assert r.u32(state+charge_offset)==0
-    # All twelve values survive all four recipe slots without changing legacy
+    # All thirteen values survive all four recipe slots without changing legacy
     # recipe width or overwriting throws/other toggles.
     options=r.labels['Toggles.block_char_creator_options']
     # Upstream Menu.move assembles to N64 DADDU. Unicorn's MIPS32 CPU lacks
@@ -103,8 +103,8 @@ def test_neutrals(r, full=True):
         menu_moves.append((address,word));r.u32(address,(word&~63)|0x21)
     r.u32(options+0x10,1)
     tables=[r.u32(r.labels['CharCreator.slot_tables']+i*4) for i in range(4)]
-    for base in range(12):
-        values=[(base+i)%12 for i in range(4)]
+    for base in range(13):
+        values=[(base+i)%13 for i in range(4)]
         for table,value in zip(tables,values):
             entry=r.u32(table+15*4)
             assert r.u32(entry-4)==1  # compile-time one-bit serialization type
@@ -162,4 +162,4 @@ def test_neutrals(r, full=True):
     for address in list(r.services):
         if address not in saved:del r.services[address]
     r.services.update(saved)
-    print(f'PASS: {checks} neutral body/air/port clocks, native donor passthrough, source projectile firing, charge generation/storage and twelve-choice SRAM supplements execute on MIPS.')
+    print(f'PASS: {checks} neutral body/air/port clocks, native donor passthrough, source projectile firing, charge generation/storage and thirteen-choice SRAM supplements execute on MIPS.')

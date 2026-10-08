@@ -300,6 +300,11 @@ def main():
         from generate_charlab_neutrals import generate as generate_neutrals
     generate_neutrals()
     if __package__:
+        from .generate_charlab_inhale import generate as generate_inhale
+    else:
+        from generate_charlab_inhale import generate as generate_inhale
+    generate_inhale()
+    if __package__:
         from .generate_charlab_visuals import generate as generate_visuals
     else:
         from generate_charlab_visuals import generate as generate_visuals

@@ -25,7 +25,8 @@ parser.add_argument('--editor-play',action='store_true',help='Continue editor Te
 parser.add_argument('--normal-mechanics',action='store_true',help='Exercise donor jab3/rapid phases and controlled live Link down-air contact')
 parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borrow this donor for normals and check real A-input pose streaming')
 parser.add_argument('--down-smash',action='store_true',help='Focus normal regression on a real down-smash input')
-parser.add_argument('--neutral',type=int,choices=range(1,12),help='Exercise a Neutral B choice with real controller input')
+parser.add_argument('--neutral',type=int,choices=range(1,13),help='Exercise a Neutral B choice with real controller input')
+parser.add_argument('--inhale-contact',action='store_true',help='Check live inhale capture, spit, repeat capture, copy and copied Neutral B')
 parser.add_argument('--full-charge',action='store_true',help='Charge borrowed Giant Punch fully and check its native stored blink through movement and release')
 parser.add_argument('--egg-contact',action='store_true',help='Place the CPU in Egg Lay reach to test capture, egg handoff and damage')
 parser.add_argument('--projectile-contact',action='store_true',help='Place the CPU at a PK Fire spark to test native flame-pillar creation')
@@ -54,6 +55,7 @@ if args.tether_materials:assert args.paired_miss and args.paired_donor==3 and ar
 if args.egg_contact:assert args.neutral==11
 if args.projectile_contact:assert args.neutral==5
 if args.full_charge:assert args.neutral==8 and args.body!=2
+if args.inhale_contact:assert args.neutral==12 and args.body!=8
 
 def constant(name):
     address,length,index=syms[name];section=sections[index]
@@ -135,6 +137,7 @@ tether_material_samples=[]
 animation_samples=0;animation_records=set();animation_errors=[]
 normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_samples=0
 egg_contact_done=False;egg_observed=set();neutral_samples=[]
+inhale_capture=False;inhale_observed=set();inhale_choices=set();inhale_victims=set()
 visual_layout=constant('ccVisualLayout')
 visual_objects=set();visual_samples=0;visual_hidden=False;visual_errors=[]
 charge_visual_samples=[];ball_samples=[]
@@ -242,6 +245,17 @@ def frame_callback(frame):
                     target=u32(cpu+0x8E8)+layout[12];center=fp+attack_off+center_off
                     for j in (0,4,8):wf32(target+j,f32(center+j)-(200 if j==4 else 0))
                     w32(cpu+layout[2],layout[29]);egg_contact_done=True
+        if args.inhale_contact:
+            cpu=fighter(1);il=constant('ccInhaleLayout')
+            inhale_observed.add(u32(fp+0x24))
+            state=labels['CharLabRuntime.sCCInhaleStates']
+            if u32(state)==fp:inhale_choices.add(u32(state+il[1]))
+            if cpu:
+                inhale_victims.add(u32(cpu+0x24))
+                if inhale_capture and u32(fp+0x24) in (il[5],il[12]) and u32(fp+attack_off):
+                    target=u32(cpu+0x8E8)+layout[12];center=fp+attack_off+center_off
+                    for j in (0,4,8):wf32(target+j,f32(center+j)-(100 if j==4 else 0))
+                    w32(cpu+layout[2],layout[29])
         record=u32(labels['CharLabRuntime.sCCAnimationLoaded'])
         clock=labels['CharLabRuntime.sFTCustomMoveClocks']
         special_clock=labels['CharLabRuntime.sCCSpecialClocks']
@@ -399,7 +413,7 @@ try:
         for field in (19,20):w32(u32(table+field*4),args.throw_donor if args.throw_donor is not None else args.paired_donor)
     w32(u32(table+21*4),args.taunt_donor if args.taunt_donor is not None else args.body)
     w32(labels['CharCreator.selected_builds'],1)
-    w8(scene+man_off,args.body);w8(scene+cpu_off,0 if args.edge else 8);w8(scene+stage_off,args.stage)
+    w8(scene+man_off,args.body);w8(scene+cpu_off,0 if args.edge or args.inhale_contact else 8);w8(scene+stage_off,args.stage)
     # Training copies the current scene's stage, not the remembered SSS byte.
     w8(scene+edge_stage[13],args.stage)
     w8(scene+1,u8(scene));w8(scene,54);w32(native['sSYTaskmanStatus'],1)
@@ -515,6 +529,41 @@ try:
         (report_directory/f'cpu-scenes-taunt-{args.body}-{args.taunt_donor}.json').write_text(json.dumps(report,indent=2)+'\n')
         print('PASS: donor taunt',report,flush=True);raise SystemExit(0)
     if args.neutral is not None:
+        if args.inhale_contact:
+            il=constant('ccInhaleLayout');state=labels['CharLabRuntime.sCCInhaleStates']
+            w32(fighter(1)+layout[1],0)
+            tracking=True
+            for button,label in ((0x80,'spit'),(0x40,'copy')):
+                inhale_capture=True;keys(0x40)
+                wait(lambda:u32(fighter()+0x24) in (il[6],il[13]),'Inhale held victim: '+label,seconds=30)
+                keys(0);inhale_capture=False;frames(12)
+                assert u32(fighter()+layout[17])==u32(fighter(1)+visual_layout[8]),('Missing native catch owner',diagnostic())
+                pulse(button);frames(100)
+                wait(lambda:u32(fighter()+0x24)==10,'Inhale '+label+' recovery',seconds=30)
+                assert not u32(native['__osFaultedThread']),diagnostic()
+                assert not u32(fighter()+layout[17]),('Victim survived release',diagnostic())
+                frames(160)
+            assert u32(state+il[1])==2,('Mario ability was not copied',inhale_choices,diagnostic())
+            pulse(0x40);frames(110)
+            assert 0 in weapon_kinds,('Copied Mario Fireball missing',weapon_kinds,diagnostic())
+            wait(lambda:u32(fighter()+0x24)==10,'Copied Neutral recovery',seconds=30)
+            pulse(0x2);frames(100)
+            assert u32(state+il[1])==12,('Taunt did not discard copy',diagnostic())
+            pulse(0x0800);frames(4);keys(0x40)
+            wait(lambda:u32(fighter()+0x24)==il[12],'Aerial inhale loop',seconds=30)
+            frames(90);keys(0);frames(130)
+            wait(lambda:u32(fighter()+0x24)==10,'Aerial inhale landing/release',seconds=30)
+            assert il[11] in inhale_observed and il[12] in inhale_observed
+            assert {il[7],il[8],il[9],il[10]}<=inhale_observed,('Missing inhale phases',inhale_observed,il,diagnostic())
+            assert {il[14],il[15],il[16],il[17]}<=inhale_victims,('Missing native victim phases',inhale_victims,il,diagnostic())
+            assert u32(fighter()+8)==args.body and u32(fighter(1)+8)==0
+            assert all(math.isfinite(v) and abs(v)<50000 for row in trace for v in row[2])
+            tracking=False
+            report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'neutral':12,
+                    'checks':['real held B inhale','native capture and held ownership','A star spit and release','repeat inhale and B copy release','copied Mario Fireball input','L discards copied ability','aerial inhale and ground handoff/release','native body identity and recovery'],
+                    'fighter_statuses':sorted(inhale_observed),'victim_statuses':sorted(inhale_victims),'copied_choices':sorted(inhale_choices),'rendering':'null'}
+            (report_directory/f'cpu-scenes-inhale-{args.body}.json').write_text(json.dumps(report,indent=2)+'\n')
+            print('PASS: inhale, spit, copy and copied Neutral B',report,flush=True);raise SystemExit(0)
         trace.clear();tracking=True;pulse(0x40)
         if args.neutral in (8,9):
             if args.full_charge:
@@ -534,6 +583,9 @@ try:
                 pulse(0x40);frames(30);pulse(0x40)
         frames(150);tracking=False
         assert trace and any(row[0]>=220 for row in trace),('Neutral was not entered',args.neutral,diagnostic())
+        if args.neutral==12:
+            il=constant('ccInhaleLayout')
+            assert any(row[0] in (il[4],il[11]) for row in trace),('Inhale entry missing',sorted({row[0] for row in trace}),diagnostic())
         assert not u32(native['__osFaultedThread']),('Neutral CPU fault',args.neutral,diagnostic())
         wait(lambda:u32(fighter()+0x24)==10,'Neutral recovery',seconds=30)
         assert u32(fighter()+8)==args.body

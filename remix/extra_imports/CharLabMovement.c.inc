@@ -9,6 +9,7 @@ struct FTCharBuilderSpecialPath {
 };
 typedef struct FTCharBuilderSpecialTiming { s32 donor, motion; FTCustomMoveDefinition move; } FTCharBuilderSpecialTiming;
 #include "ft/ftspecialtiming.generated.inc"
+#include "../build/char_creator/runtime/inhale-paths.inc"
 typedef struct FTCustomNormalMechanics { const Vec3f *travel, *socket; s32 count; u32 flags; } FTCustomNormalMechanics;
 #include "ft/ftnormalmechanics.generated.inc"
 extern FTData *dFTManagerDataFiles[];
@@ -24,6 +25,9 @@ static const FTCharBuilderSpecialPath* ccFindSpecialPath(s32 donor,s32 motion)
     for(i=0;i<ARRAY_COUNT(sFTCharBuilderSpecialPaths);i++)
         if(sFTCharBuilderSpecialPaths[i].donor==donor && sFTCharBuilderSpecialPaths[i].motion==motion)
             return &sFTCharBuilderSpecialPaths[i];
+    for(i=0;i<ARRAY_COUNT(sCCInhalePaths);i++)
+        if(sCCInhalePaths[i].donor==donor && sCCInhalePaths[i].motion==motion)
+            return &sCCInhalePaths[i];
     return NULL;
 }
 

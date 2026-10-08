@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.16'
+VERSION = '0.1.17'
 UPDATED = '2026-10-08'
 
 
@@ -74,7 +74,13 @@ def package(desktop=None):
 
 Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
-Fixes: borrowed Stone installs the native one-light count and stage direction
+New: Kirby Neutral B on all original bodies. Hold B to inhale, A to spit a held
+victim, B/down to copy its selected Neutral B, and L to discard the copy.
+Original catch reach, ground/air phase events and native victim/release states
+are connected with external four-port copy ownership. Inhale poses/wind/hats
+and rendered acceptance are deferred; native Kirby keeps Remix's own copy system.
+
+Retains: borrowed Stone installs the native one-light count and stage direction
 before its brown material/texture draws. Stored Giant Punch uses the native full-charge blinking color script on
 borrowed bodies. Samus Bomb draws with an explicit opaque two-cycle mode and a
 private body-colored Morph Ball palette throughout source frames 3-48, including
@@ -95,7 +101,7 @@ contact/recovery checks and the remaining rendered stage acceptance.
 Source commit: `{info['commit']}`; uncommitted changes: {info['source_dirty']}.
 
 Original donor collision paths/timing, normal values, grab/throw choices,
-All eleven original neutral donors except Kirby copy, donor normal mechanics, shared pose retargeting and Training editor return.
+All twelve original neutral donors including Kirby inhale/copy gameplay, donor normal mechanics, shared pose retargeting and Training editor return.
 Normals and supported special/recovery poses retarget on twelve original bodies
 through independent 15 KB ROM caches; the three Mario pilots are preserved.
 Donor joint fallbacks are suspended during pose writes to preserve the world
@@ -118,7 +124,7 @@ Neutral source phases/poses, private projectile resources, charging/storage/rele
 Boomerang return/catch and Egg Lay capture are connected.
 Full decomp parity is pending: rendered neutral/special acceptance,
 rendered normal contacts/landing and taunts, special visual acceptance and paired
-grab/throw alignment. Expanded-roster fidelity and Kirby copy are outside this milestone.
+grab/throw alignment. Expanded-roster fidelity and foreign inhale cosmetics remain pending.
 Tether pulls, paired throws, DK cargo, Kirby lift/fall/landing and customizable
 taunts now use donor clocks, props and source poses. Mario growth/shrink and
 Luigi damage/cancel windows are connected. Existing recipe bits are preserved.

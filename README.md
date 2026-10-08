@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.33 (experimental)** | **Last updated: 2026-10-08**
+**Project version: 0.1.34 (experimental)** | **Last updated: 2026-10-08**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -8,7 +8,7 @@ A fun Smash 64 project for friends, with two experiments living in one repositor
 | Edition | Where it lives | What to expect |
 | --- | --- | --- |
 | **Character Lab** | [ssb-decomp-re/](ssb-decomp-re/README.md) | Our current original-roster build: twelve bodies, editable normal attacks, grabs/throws, VS assignments and Training hitbox view. |
-| **Character Lab on Remix** | [remix/](remix/README.md) | Original-roster donor paths/timing, grabs/throws, eleven neutral donors, saved recipes and Training return on Smash Remix +EXTRA. Expanded-roster fidelity remains pending. |
+| **Character Lab on Remix** | [remix/](remix/README.md) | Original-roster donor paths/timing, grabs/throws, twelve neutral donors including Kirby inhale/copy, saved recipes and Training return on Smash Remix +EXTRA. Expanded-roster fidelity remains pending. |
 
 These produce separate ROMs. Combining the source folders does not combine their
 game engines or make features automatically carry between them.
@@ -52,7 +52,12 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
 
-The local Remix **0.1.16** build adds DK Giant Punch's stored full-charge flash
+The local Remix **0.1.17** build adds Kirby Neutral B to every original body:
+hold B to inhale, then A to spit or B/down to copy the victim's Neutral B.
+L discards the copied ability. Inhale hats, mouth poses and wind are deferred;
+native Kirby retains Remix's own presentation. See [controls and checks](remix/docs/neutral-specials.md).
+
+It retains DK Giant Punch's stored full-charge flash
 and a body-colored Samus Morph Ball throughout compression, hop and recovery.
 Props now select the native opaque two-cycle render mode and stage light before drawing, fixing borrowed Stone's missing light setup.
 Automated checks and rendered acceptance are tracked separately.

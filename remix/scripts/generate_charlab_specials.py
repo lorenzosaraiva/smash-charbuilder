@@ -20,6 +20,7 @@ FILES = {
     'ft/ftchar/ftlink/ftlinkspecialhi.c': 5,
     'ft/ftchar/ftkirby/ftkirbyspecialhi.c': 8,
     'ft/ftchar/ftkirby/ftkirbyspeciallw.c': 8,
+    'ft/ftchar/ftkirby/ftkirbyspecialn.c': 8,
     'ft/ftchar/ftpikachu/ftpikachuspeciallw.c': 9,
     'ft/ftchar/ftyoshi/ftyoshispecialhi.c': 6,
     'ft/ftchar/ftness/ftnessspecialhi.c': 11,
@@ -45,8 +46,10 @@ def functions(source):
         start = source.index('{', m.start()); end = start + 1; depth = 1
         while depth:
             depth += (source[end] == '{') - (source[end] == '}'); end += 1
-        result.append(dict(address=int(m[1], 16), name=m[3], signature=m[2]+m[3]+'('+m[4]+')',
-                           args=m[4], text=source[m.start():end]))
+        signature = source[m.start(2):start].split('//', 1)[0].strip()
+        args = signature[signature.index('(')+1:signature.rfind(')')]
+        result.append(dict(address=int(m[1], 16), name=m[3], signature=signature,
+                           args=args, text=source[m.start():end]))
     return result
 
 
@@ -54,9 +57,17 @@ def generate():
     pieces = []; records = []
     for file, donor in FILES.items():
         source = (LAB/'src'/file).read_text(encoding='utf-8')
+        if file.endswith('ftkirbyspecialn.c'):
+            # Historical source comment repeats CatchEat's address. Use the
+            # independently named US catch callback, not the repeated comment.
+            source = source.replace('// 0x801630A0\nvoid ftKirbySpecialNCatchProcCatch',
+                                    '// 0x801631E4\nvoid ftKirbySpecialNCatchProcCatch')
+            native_init = next(f for f in functions(source) if f['name']=='ftKirbySpecialNInitPassiveVars')
+            source = source.replace(native_init['text'], '')
         found = functions(source)
         assert found, file
-        for fn in found: fn.update(donor=donor, file=file)
+        for fn in found:
+            fn.update(donor=-3 if fn['name'] in ('ftKirbySpecialNLoseCopy','ftKirbySpecialNDamageCheckLoseCopy') else donor, file=file)
         records.extend(found); pieces.append(source)
     for file, (wanted, donor) in SELECTED.items():
         # Correct a historical address-comment typo; the US symbol is AEA8.
@@ -66,6 +77,29 @@ def generate():
             fn = found[name]; fn.update(donor=donor, file=file)
             records.append(fn); pieces.append(fn['text'])
     source = '\n'.join(pieces)
+    # Inhale uses native capture/release and source clocks. Copied abilities
+    # live outside every receiving body's passive union; donor hats/wind are
+    # deferred. Native Kirby callbacks still take their original trampolines.
+    for name, body in {
+        'ftKirbySpecialNCopyInitCopyVars': 'ccInhaleCopy(ftGetStruct(fighter_gobj));',
+        'ftKirbySpecialNLoopProcUpdate': 'ftGetStruct(fighter_gobj)->motion_vars.flags.flag0 = 0;',
+        'ftKirbySpecialNLoseCopy': 'ccInhaleLoseCopy(ftGetStruct(fighter_gobj));',
+        'ftKirbySpecialNDamageCheckLoseCopy': 'ccInhaleDamageCheck(ftGetStruct(fighter_gobj));',
+    }.items():
+        fn = next(f for f in functions(source) if f['name']==name)
+        source = source.replace(fn['text'], '// '+hex(fn['address'])+'\n'+fn['signature']+'\n{ '+body+' }')
+    fn = next(f for f in functions(source) if f['name']=='ftKirbySpecialNCatchProcUpdate')
+    adapted = re.sub(r'    FTKirbyCopy \*copy = [^;]+;\n', '', fn['text'])
+    adapted = adapted.replace('    ftKirbySpecialNAddCaptureDistance(kirby_fp,',
+        '    if (kirby_fp->catch_gobj == NULL) { mpCommonSetFighterWaitOrFall(fighter_gobj); return; }\n'
+        '    ftKirbySpecialNAddCaptureDistance(kirby_fp,')
+    adapted = re.sub(r'        if \(\(victim_fp->fkind == nFTKindKirby\).*?else kirby_fp->status_vars.kirby.specialn.copy_id = copy\[victim_fp->fkind\].copy_id;',
+        '        kirby_fp->status_vars.kirby.specialn.copy_id = ccInhaleCaptureChoice(victim_fp);\n'
+        '        victim_fp->status_vars.common.capturekirby.is_kirby = ccBodyKind(victim_fp) == nFTKindKirby;', adapted, flags=re.S)
+    assert 'FTKirbyCopy' not in adapted and 'passive_vars' not in adapted
+    source = source.replace(fn['text'], adapted)
+    source = source.replace('fp->status_vars.kirby.specialn.copy_id = nFTKindKirby;',
+                            'fp->status_vars.kirby.specialn.copy_id = 12;')
     # Keep Remix's expanded victim-offset table in the native helper, then
     # replace only the attacker's body socket with the original donor socket.
     dive = next(fn for fn in functions(source) if fn['name'] == 'ftCommonCaptureCaptainUpdatePositions')

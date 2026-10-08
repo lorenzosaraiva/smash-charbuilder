@@ -1,11 +1,12 @@
 # Remix special effects and attachments
 
-Preview **0.1.16**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
+Preview **0.1.17**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
 
 | Donor move | Borrowed presentation |
 | --- | --- |
 | Kirby Final Cutter | Native sword draw, rising/falling sword and trails on source effect-flag transitions |
 | Kirby Stone | Source model replacement with sampled transforms; hide the native body only while the prop is active |
+| Kirby Inhale | Gameplay connected; borrowed mouth/stretch poses, inhale wind and copied hats deferred; native victim shrink/hold/star states retained |
 | Falcon Punch / Falcon Kick | Native flames attached to the retargeted hand/foot; original create/remove flags |
 | Fox Laser | Source blaster model and sampled open/close transforms, firing sparkle and sound |
 | Yoshi Egg Lay | Native tongue part and sampled extension/retraction through catch/release phases |

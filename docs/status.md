@@ -4,6 +4,9 @@ Checkboxes mean implemented, not tested in every matchup.
 
 ## Repository
 
+- [x] Remix Kirby Neutral B on original bodies: inhale/capture, held victim, spit/copy and copied Neutral B, with separate copy ownership and donor reach.
+- [ ] Kirby inhale cosmetics and rendered capture/copy acceptance.
+
 - [x] Borrowed Stone installs the native one-light count and stage direction before its source material draws.
 - [ ] Rendered Stone colour acceptance on foreign bodies.
 

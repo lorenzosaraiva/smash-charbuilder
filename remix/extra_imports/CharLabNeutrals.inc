@@ -1,7 +1,7 @@
 // Included inside CharCreator. Values 0/1 and all legacy recipe bits stay stable.
-neutral_donors:; dw -1, 1, 0, 4, 9, 11, 7, 10, 2, 3, 5, 6
+neutral_donors:; dw -1, 1, 0, 4, 9, 11, 7, 10, 2, 3, 5, 6, 8
 neutral_choices_by_body:; dw 2, 1, 8, 9, 3, 10, 11, 6, 0, 4, 7, 5
-neutral_resources:; dw -1, -1, 0, 1, 2, 3, -1, -1, -1, 4, 5, -1
+neutral_resources:; dw -1, -1, 0, 1, 2, 3, -1, -1, -1, 4, 5, -1, -1
 
 // PikaShared's generic factory hook reads the caller's saved s1 as FTStruct,
 // and caller stack +0x5C as its Thunder owner. Supply the expected ABI even
@@ -193,7 +193,7 @@ scope import_neutral_choices_: {
     lw t3, 0(t1)
     lw t3, FIELD_NSP * 4(t3)
     lbu t4, 4(t0)
-    sltiu t5, t4, 12
+    sltiu t5, t4, 13
     bnez t5, _valid
     nop
     or t4, r0, r0
@@ -233,6 +233,32 @@ scope import_neutral_choices_: {
     addiu t1, t1, -1
     bnez t1, _taunt_loop
     nop
+    jr ra
+    nop
+}
+
+// Inhale can acquire any original Neutral B. Load private weapon/visual files
+// before the match so absorbing a fighter never enters the active task heap.
+scope ensure_inhale_files_: {
+    addiu sp, sp, -0x30
+    sw ra, 0x10(sp)
+    sw s6, 0x14(sp)
+    lli s6, 1
+    _loop:
+    jal ensure_neutral_files_
+    or a0, s6, r0
+    li t0, neutral_donors
+    sll t1, s6, 2
+    addu t0, t0, t1
+    jal ensure_visual_files_
+    lw a0, 0(t0)
+    addiu s6, s6, 1
+    sltiu t0, s6, 12
+    bnez t0, _loop
+    nop
+    lw s6, 0x14(sp)
+    lw ra, 0x10(sp)
+    addiu sp, sp, 0x30
     jr ra
     nop
 }

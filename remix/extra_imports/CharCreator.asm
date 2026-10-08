@@ -97,10 +97,10 @@ scope CharCreator {
     catalog_mode_last:; dw 0xFFFFFFFF
     // Each recipe owns its native-neutral label; enum values/SRAM stay stable.
     neutral_string_tables:
-    dw CharCreatorCatalog.string_0, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
-    dw CharCreatorCatalog.string_1, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
-    dw CharCreatorCatalog.string_5, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
-    dw CharCreatorCatalog.string_8, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6
+    dw CharCreatorCatalog.string_0, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6, CharCreatorCatalog.string_8
+    dw CharCreatorCatalog.string_1, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6, CharCreatorCatalog.string_8
+    dw CharCreatorCatalog.string_5, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6, CharCreatorCatalog.string_8
+    dw CharCreatorCatalog.string_8, CharCreatorCatalog.string_1, CharCreatorCatalog.string_0, CharCreatorCatalog.string_4, CharCreatorCatalog.string_9, CharCreatorCatalog.string_11, CharCreatorCatalog.string_7, CharCreatorCatalog.string_10, CharCreatorCatalog.string_2, CharCreatorCatalog.string_3, CharCreatorCatalog.string_5, CharCreatorCatalog.string_6, CharCreatorCatalog.string_8
     include "CharLabNeutrals.inc"
     include "CharLabVisuals.inc"
 
@@ -694,6 +694,9 @@ scope CharCreator {
         lw a0, 0(t0)
         beqz a0, _next_field
         nop
+        lli t1, 12
+        beq a0, t1, _inhale_preload
+        nop
         jal ensure_neutral_files_
         nop
         lw t0, FIELD_NSP * 4(s1)
@@ -705,6 +708,11 @@ scope CharCreator {
         lw a0, 0(t1)
         b _next_field
         nop
+
+        _inhale_preload:
+        jal ensure_inhale_files_
+        nop
+        lli s4, 8
 
         _donor_ready:
         beq     s4, s2, _next_field
@@ -1185,6 +1193,7 @@ scope CharCreator {
         beq     v0, t1, _body              // choosing the body is stock behavior
         sw      v0, 0x0024(sp)
 
+        _donor_selected:
         // A ground-only donor has no air entry. Reject before installing any
         // donor resources/context; never substitute the body's special.
         lw      t0, 0x0010(sp)
@@ -1320,6 +1329,24 @@ scope CharCreator {
         lw      t2, 0x0014(sp)             // fighter struct
         lw      t2, 0x0008(t2)             // active Character.id / fkind
         lw      t0, 0x0010(sp)
+        // Kirby's native Neutral B entry dispatches through his passive copy
+        // ID. Foreign bodies use the owned copy choice, so enter inhale itself
+        // after installing its donor context instead of reading that union.
+        lw      t1, 0x000C(sp)
+        lli     t3, FIELD_NSP
+        bne     t1, t3, _lookup_table
+        lli     t3, 8
+        bne     t2, t3, _lookup_table
+        lw      t1, 0x0020(sp)
+        beq     t1, t3, _lookup_table
+        li      t1, Character.air_nsp.table
+        li      t9, CharLabRuntime.cc_ftKirbySpecialAirNStartSetStatus
+        beq     t0, t1, _end
+        nop
+        li      t9, CharLabRuntime.cc_ftKirbySpecialNStartSetStatus
+        b       _end
+        nop
+        _lookup_table:
         sll     t1, t2, 0x0002
         addu    t0, t0, t1
         lw      t9, 0x0000(t0)
@@ -1380,23 +1407,41 @@ scope CharCreator {
         nop
         _neutral_choice:
         lw t0, FIELD_NSP * 4(t0)
-        lw t0, 0x0000(t0)
+        lw a1, 0x0000(t0)
+        lw a0, 0x0014(sp)
+        // o32 callees may spill arguments into their caller's home area.
+        addiu sp, sp, -0x0010
+        jal CharLabRuntime.ccInhaleChoice
+        nop
+        addiu sp, sp, 0x0010
+        or t0, v0, r0
         beqz t0, _body
         lw t1, 0x0020(sp)
         sltiu t2, t1, 12
         beqz t2, _body
-        sltiu t2, t0, 12
+        sltiu t2, t0, 13
         beqz t2, _body
+        sw t0, 0x002C(sp)
         sll t0, t0, 2
         li t2, neutral_donors
         addu t2, t2, t0
         lw t2, 0(t2)
         beq t1, t2, _body
         nop
+        lw t0, 0x002C(sp)
+        lli t3, 12
+        bne t0, t3, _neutral_adapter
+        or v0, t2, r0
+        b _donor_selected
+        sw v0, 0x0024(sp)
+        _neutral_adapter:
         lui t9, CharLabRuntime.ccNeutral >> 16
         ori t9, t9, CharLabRuntime.ccNeutral & 0xFFFF
         _end:
         lw      a0, 0x0008(sp)
+        // Remix's native Kirby copy dispatcher passes this fighter pointer
+        // to its magic-hat hook. Recipe lookup/C helpers clobber a1.
+        lw      a1, 0x0014(sp)
         lw      ra, 0x0004(sp)
         addiu   sp, sp, 0x0030
         jr      ra
@@ -2553,7 +2598,7 @@ scope CharCreator {
         lw      t3, 0x0000(t3)
         sw      t3, 0x0000(t1)
         addiu   t0, t0, 4
-        addiu   t1, t1, 48
+        addiu   t1, t1, 52
         addiu   t2, t2, -1
         bnez    t2, _neutral_labels
         nop
@@ -2617,10 +2662,10 @@ scope CharCreator {
 
         _lock_nsp:
         sw r0, 0x0004(t1)
-        lli t0, 11
+        lli t0, 12
         sw t0, 0x0008(t1)
         lw t0, 0(t1)
-        sltiu at, t0, 12
+        sltiu at, t0, 13
         bnez at, _field_next
         nop
         sw r0, 0(t1)

@@ -1,14 +1,19 @@
 # Character Lab on Remix
 
 An original-roster partial port of Character Lab features inside Smash
-Remix +EXTRA: donor hitbox paths/timing, grabs/throws, all eleven neutral donors except Kirby copy, shared
+Remix +EXTRA: donor hitbox paths/timing, grabs/throws, all twelve neutral donors including Kirby inhale/copy, shared
 retargeted poses, human/CPU preset assignments and return from Training to the editor.
 
 - [Download ROM](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64)
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-Local **0.1.16** adds the native stored Giant Punch flash and a body-colored
+Local **0.1.17** adds Kirby Neutral B on all original bodies. Hold B to inhale;
+with a victim held, A spits and B/down copies its Neutral B. L discards the copy.
+Gameplay uses donor catch reach and native victim states with separate copy
+ownership. Inhale poses, wind, hats and rendered acceptance remain pending.
+
+It retains the native stored Giant Punch flash and a body-colored
 Samus Morph Ball across compression, hop and recovery. Independent meshes select
 the native opaque two-cycle mode and stage light before drawing, including Kirby Stone's required one-light setup. Hop physics and one bomb per
 input stay on the source timeline; rendered appearance needs a playtest.
@@ -33,9 +38,10 @@ clocks and props. Mario grows/shrinks; Luigi keeps his damage and cancel window.
 See [controls and verification](docs/paired-grabs-and-taunts.md).
 Cutter sword/trails, Stone replacement, Falcon flames, blaster/tongue props
 and Samus's charging orb remain available with owned cleanup.
-All original neutral donors except Kirby copy use source
+The eleven other original neutral donors use source
 phases/poses, private projectile resources, charging/storage/release, Boomerang
-return/catch and Egg Lay capture. Kirby copy remains excluded. See
+return/catch and Egg Lay capture. Kirby adds ground/air inhale, hold, spit and
+copy gameplay; its foreign-body cosmetics are deferred. See
 [neutral controls and limits](docs/neutral-specials.md). Normals now use donor jab chains, buffering and rapid
 phases; Link down-air bounce/rehit; Ness bat reflection; donor traction/air
 physics; angle availability and aerial landing behavior. Shared animations and

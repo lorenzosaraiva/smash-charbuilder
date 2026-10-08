@@ -1,6 +1,13 @@
 # Decomp to Remix port
 
-Updated **2026-10-08**. Remix preview **0.1.16**, project **0.1.32**.
+Updated **2026-10-08**. Remix preview **0.1.17**, project **0.1.34**.
+
+Preview 0.1.17 adds Kirby Neutral B to every original body: original ground/air
+catch geometry and phase timing, native held victims, star spit, copy release,
+and copied Neutral B from native/custom victims. Copy ownership is separate
+from body passive unions; L, death, scene reset and native heavy-hit copy loss
+discard it. Native Kirby keeps Remix's own dispatcher. Borrowed inhale poses,
+wind and hats are deferred. See [neutral controls and evidence](neutral-specials.md).
 
 The current special-edge-case checks and remaining rendered stage acceptance
 are tracked in [special edge cases](special-edge-cases.md). Mario taunt growth
@@ -49,7 +56,7 @@ contact and stage interactions still require rendered playtesting.
 | Up/Down B collision paths | All 96 shared phases connected; directional Fire Fox placement and donor Reflector/Magnet volumes added | Rendered contacts and paired Dive acceptance |
 | Up/Down B movement | Source TransN travel, separate Mario/Luigi/Falcon angles, imported callbacks and donor recovery attributes | Rendered steering, slopes, wall/ledge and interruption acceptance |
 | Mario + Falcon Kick / Pikachu Up B | Regression targets: original travel, retained recipe and body scale | Two-dash steering, aerial starts, walls/ledges and interruptions in rendered play |
-| Neutral B | All eleven original neutral donors except Kirby copy, source poses, private weapons, charge/store/release and Egg Lay capture; held orb, blaster/tongue and Falcon flames | Full rendered projectile/contact/reflect/absorb, paired victim alignment and material acceptance |
+| Neutral B | All twelve original donors, private weapons, charge/store/release, Egg Lay and Kirby inhale/copy; source poses for the other eleven donors | Kirby inhale poses/wind/hats; full rendered projectile/contact/reflect/absorb, paired victim alignment and material acceptance |
 | Animations | Shared normal/supported special/recovery curves on twelve bodies through independent ROM caches; Cutter sword/trails and Stone replacement added | Full rendered acceptance, remaining overlays/materials, victim alignment and taunt mesh acceptance |
 | Grab/throw selections | Donor tether/tongue reach and props, pull clocks, paired positioning/facing/release, DK cargo and Kirby lift/fall/landing | Rendered alignment, slopes/edges and interruption acceptance |
 | Custom taunts | Twelve-donor selector, source clocks/poses/effects, Mario growth/shrink and Luigi hitbox/cancel window | Rendered mesh/effects and broader interruption acceptance |
@@ -84,8 +91,8 @@ sockets. Falcon Dive adjusts the attacker socket while retaining Remix's
 native victim-offset lookup. Their rendered contacts and interruptions remain
 acceptance work.
 
-Kirby copy and Remix-exclusive donor fidelity remain outside the original-roster
-milestone. Use body-native specials when testing a mechanic not yet verified.
+Kirby inhale cosmetics and Remix-exclusive donor fidelity remain pending.
+Use body-native specials when testing a mechanic not yet verified.
 
 ## Port order
 
@@ -93,7 +100,7 @@ milestone. Use body-native specials when testing a mechanic not yet verified.
    including Link's held-bomb throws and Falcon Dive paired captures. The
    shared angles, sockets, volumes, independent passives and recovery layer is
    implemented; it does not establish acceptance for every body/stage.
-2. Normal-specific callbacks and all eleven neutral donors (excluding Kirby copy)
+2. Normal-specific callbacks and all twelve neutral donors
    are ported; finish rendered normal/neutral contact and interruption acceptance.
 3. Safe source effects/attachments are ported; check broader rendered acceptance.
    Shared curves now stream from ROM through bounded per-player caches;
