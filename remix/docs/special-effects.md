@@ -1,6 +1,6 @@
 # Remix special effects and attachments
 
-Preview **0.1.13**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
+Preview **0.1.14**, updated **2026-10-08**. Keep **Original 12 Only** enabled.
 
 | Donor move | Borrowed presentation |
 | --- | --- |
@@ -13,14 +13,26 @@ Preview **0.1.13**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
 | Samus tether grab | Six donor beam parts plus native glow tree/materials at sampled source joint 23, independent of body joints |
 | Samus Charge Shot | Cosmetic orb at the donor socket, all eight source sizes and charging sound; retain through release startup until firing |
 
-Independent fighter props now initialize their own draw state on head 1.
-Samus's beam mesh multiplies textures by environment color; inheriting a previous
-particle's transparent multiplier can hide otherwise valid geometry. The pass
-uses native stage environment color, two-cycle shading and zero fog alpha.
-The runtime also compiles graphics macros as F3DEX2, matching the native renderer.
-Six linked-MIPS cases execute the actual prop callback and native mesh submission
-with transparent/partial/opaque incoming state and optional model prefixes.
-These checks cover command submission and state, not final pixels.
+Independent fighter meshes now draw on head 0, matching native Samus's fighter
+pass; the native beam glow stays on effects head 1. Props initialize native
+stage environment color, two-cycle shading and zero fog alpha, then restore
+one-cycle shading, palette/alpha/render settings and stage lighting. Previously,
+leaving two-cycle state on effects head 1 corrupted later translucent stage layers.
+The runtime uses the game's F3DEX2 graphics commands. Six linked-MIPS cases execute
+the actual callback, native material image branches and deliberately dirty mesh
+state, checking both submission and the final state seen by subsequent draws.
+Paired materials now advance only through the native EF update, once per frame;
+the imported fighter-owned tick incorrectly doubled Samus texture animation speed.
+The user confirmed a visible tether in 0.1.13 but reported noisy textures and
+white Dream Land layers. Final pixels and rendered acceptance of this fix remain
+pending; command-level checks do not substitute for that retest.
+
+The real-input Dream Land regression adds
+`--body 2 --paired-donor 3 --paired-miss --visuals --tether-materials`
+to `scripts/test_charlab_scenes.py`. It checks 99 native material samples for
+one update per frame, the original 50-frame image hold and blink sequence.
+Separate contact/release and missed-extension/recovery scenes pass without a
+CPU fault. These scenes use null rendering.
 
 The same source prop samples work on all eleven foreign original bodies. Their
 positions, sizes and lifetimes follow the donor clock, independently of body

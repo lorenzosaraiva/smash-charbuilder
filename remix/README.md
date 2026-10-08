@@ -8,11 +8,13 @@ retargeted poses, human/CPU preset assignments and return from Training to the e
 - [Download play package](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip)
 - [Play guide](character_creator_guide.md) | [Done / not done](docs/character-lab-status.md) | [Build guide](../docs/building.md)
 
-Remix 0.1.13 initializes the tether/fighter-prop render state explicitly and
-uses the native F3DEX2 command format. Display/mesh submission now has regression
-checks alongside allocation/timing; rendered appearance remains a playtest.
+Remix 0.1.14 draws borrowed fighter parts in the native fighter pass and
+restores its one-cycle state afterward, addressing noisy tether textures and
+white stage layers. Beam materials advance once per frame. Native material
+submission and exit state have regression checks; rendered acceptance of this
+fix remains pending.
 
-**0.1.13 (2026-10-07):** one Samus bomb per Down B on foreign bodies, with
+**0.1.14 (2026-10-08):** one Samus bomb per Down B on foreign bodies, with
 source timing and no replay when landing or entering the air. New Down B
 inputs still make new bombs. Also retains DK/Samus down-smash fixes, Samus Bomb
 Morph Ball replacement and native tether glow. DK's single cycle retains both

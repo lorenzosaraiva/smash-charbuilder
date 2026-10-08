@@ -1,6 +1,6 @@
 # Paired grabs, throws and taunts
 
-Remix preview **0.1.13**, updated **2026-10-07**. Original twelve bodies/donors.
+Remix preview **0.1.14**, updated **2026-10-08**. Original twelve bodies/donors.
 
 ## Controls and behavior
 
@@ -13,12 +13,16 @@ Link and Samus keep donor tether reach, source prop samples and pull timing.
 Samus now includes the native beam glow, which was missing from borrowed
 grabs. Paired-resource preloads run before the match; the glow follows sampled
 donor joint 23 independently of the body's joints and clears on exit/interruption.
-The independent beam parts initialize native stage environment color and clear
-fog alpha before drawing, preventing an earlier transparent effect from hiding
-their two-cycle textures. Graphics commands use the game's F3DEX2 format.
-Actual display/native mesh submission is checked separately from allocation.
-DK's full missed extension/retraction and native cleanup pass CPU checks;
-rendered alignment still needs an in-game check.
+The independent beam meshes draw in native fighter head 0; their glow retains
+the effects pass. They set native environment/fog state and restore one-cycle,
+palette/alpha/render settings and stage lighting afterward, preventing corruption
+of later stage layers. Graphics commands use the game's F3DEX2 format. Native
+material image submission and post-draw state are checked separately from allocation.
+Material animation advances once per frame through the native effect update;
+the duplicate fighter-owned tick has been removed. DK's full missed
+extension/retraction and native cleanup pass CPU checks. The user confirmed
+visible geometry in 0.1.13 but reported noisy textures and white Dream Land layers;
+rendered retesting of this fix and alignment remains pending.
 Yoshi uses donor tongue capture. Capture/throw positions use donor socket
 matrices and native victim child offsets/scales. Source facing and release
 flags determine direction and timing. Attacker source poses and movement use

@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.30 (experimental)** | **Last updated: 2026-10-07**
+**Project version: 0.1.31 (experimental)** | **Last updated: 2026-10-08**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -36,7 +36,7 @@ restores match endings and rematches.
 | Build | ROM last updated | ROM download | Play package | Source build |
 | --- | --- | --- | --- | --- |
 | **Character Lab** | 2026-10-05 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
-| **Character Lab on Remix (preview 0.1.13)** | 2026-10-07 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
+| **Character Lab on Remix (preview 0.1.14)** | 2026-10-08 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
 
 Dates use Sao Paulo time and refer to the published ROMs. The project version
 above tracks this repository; each source build identifies the exact ROM.
@@ -52,11 +52,13 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
 
-Remix 0.1.13 initializes the tether/fighter-prop render state explicitly and
-uses the native F3DEX2 command format. Display/mesh submission now has regression
-checks alongside allocation/timing; rendered appearance remains a playtest.
+Remix 0.1.14 draws borrowed fighter parts in the native fighter pass and
+restores its one-cycle state afterward, addressing noisy tether textures and
+white stage layers. Beam materials advance once per frame. Native material
+submission and exit state have regression checks; rendered acceptance of this
+fix remains pending.
 
-Remix **0.1.13** fixes duplicate Samus bombs on DK and other foreign bodies:
+Remix **0.1.14** fixes duplicate Samus bombs on DK and other foreign bodies:
 one Down B creates one bomb, and ground/air transitions cannot replay the spawn.
 Fresh inputs still create new bombs on Samus's source timeline.
 It retains both DK/Samus borrowed down-smash fixes and adds Samus

@@ -52,24 +52,57 @@ def test_visuals(r):
     for path in (root.parent/'ssb-decomp-re/src').rglob('*.c'):
         native.update({name:int(address,16) for address,name in re.findall(
             r'// (0x[0-9A-Fa-f]{8})[^\n]*\n(?:[\w*]+\s+)+(\w+)\(',path.read_text(encoding='utf-8'))})
-    # Execute the actual prop display callback and native mesh submission,
-    # starting with particle-owned transparent ENV state. Allocation/finite
-    # transform checks alone cannot catch a mesh multiplied by zero alpha.
+    # Native fighter pass, real material branches and a deliberately dirty
+    # palettized mesh: test the state seen by subsequent stage/effect draws,
+    # not merely whether the prop emitted a display-list call.
     draw_fields=struct.unpack('>2I',r.read(r.addr('ccVisualDrawLayout'),8))
+    heap_ptr,mobj_field,mobj_size,sub_field,sprites_field,flags_field=struct.unpack('>6I',r.read(r.addr('ccVisualMaterialLayout'),24))
     heads=native['gSYTaskmanDLHeads'];stage_color=native['gMPCollisionLightColor']
     saved_heads=r.read(heads,16);saved_color=r.read(stage_color,4)
+    heap=native['gSYTaskmanGraphicsHeap']+heap_ptr;saved_heap=r.u32(heap)
     draw_obj,draw_model,draw_dl,prefix=0x80248000,0x80248200,0x80248400,0x80248600
+    material,sprites,texture=0x8024A000,0x8024A200,0x8024A240
+    # F3DEX2: dirty two-cycle/TLUT/alpha state, native material call and end.
+    r.write(draw_dl,struct.pack('>12I',0xE3000A01,0x100000,0xE3001001,0x8000,
+        0xE2001E01,1,0xE200001C,0xC4113078,0xDE000000,0x0E000000,0xDF000000,0))
+    r.write(prefix,struct.pack('>2I',0xDF000000,0))
+    def execute(commands):
+        state={};images=[];segments={}
+        def walk(words,depth=0):
+            assert depth<10
+            for w0,w1 in words:
+                op=w0>>24
+                if op==0xDF:return
+                if op==0xDB and (w0>>16)&255==6:segments[(w0&65535)//4]=w1
+                elif op==0xDE:
+                    address=w1
+                    if address>>24<16:address=segments[address>>24]+(address&0xFFFFFF)
+                    block=[]
+                    for offset in range(0,1024,8):
+                        word=struct.unpack('>2I',r.read(address+offset,8));block.append(word)
+                        if word[0]>>24==0xDF:break
+                    walk(block,depth+1)
+                    if (w0>>16)&255==1:return
+                elif op==0xFD:images.append(w1)
+                elif op in (0xE2,0xE3):state[w0]=w1
+        walk(commands)
+        return state,images
     for alpha in (0,64,255):
         for use_prefix in (False,True):
             r.write(draw_obj,bytes(0x200));r.write(draw_model,bytes(0x200))
             r.u32(draw_obj+r.layout['obj'],draw_model)
             r.u32(draw_model+draw_fields[0],draw_dl)
             r.u32(draw_model+draw_fields[1],prefix if use_prefix else 0)
-            r.u32(heads,0x80248700);r.u32(heads+4,0x80248808)
+            r.u32(draw_model+mobj_field,material);r.write(material,bytes(mobj_size))
+            sub=material+sub_field
+            r.write(sub,bytes((0,0,2,2)));r.u32(sub+sprites_field,sprites)
+            r.write(sub+flags_field,bytes((0,1)));r.u32(sprites,texture)
+            r.u32(heap,0x8024C000)
+            r.u32(heads,0x80248808);r.u32(heads+4,0x80248700)
             r.write(0x80248800,struct.pack('>2I',0xFB000000,0xFFFFFF00|alpha))
             r.write(stage_color,bytes((240,224,208,255)))
             r.call('ccVisualDrawProp',draw_obj)
-            end=r.u32(heads+4)
+            end=r.u32(heads)
             commands=[struct.unpack('>2I',r.read(i,8)) for i in range(0x80248808,end,8)]
             assert (0xFB000000,0xF0E0D0FF) in commands,('Missing opaque native stage environment',commands)
             assert (0xF8000000,0) in commands,('Stale fog alpha on attachment',commands)
@@ -78,8 +111,14 @@ def test_visuals(r):
             assert commands.index((0xF8000000,0))<mesh
             assert commands[1]==(0xE3000A01,0x100000),('Missing two-cycle prop pipeline',commands)
             assert ((0xDE000000,prefix) in commands)==use_prefix
-            assert r.u32(heads)==0x80248700,('Prop wrote into fighter head 0',commands)
-    r.write(heads,saved_heads);r.write(stage_color,saved_color)
+            assert r.u32(heads+4)==0x80248700,('Fighter prop wrote into effects head 1',commands)
+            final,images=execute(commands)
+            assert images==[texture],('Native material used wrong image',images)
+            assert final[0xE3000A01]==0,('Two-cycle state leaked into later draws',final)
+            assert final[0xE3001001]==0,('Texture palette state leaked',final)
+            assert final[0xE2001E01]==0,('Alpha threshold leaked',final)
+            assert final[0xE200001C]!=0xC4113078,('Beam render mode leaked',final)
+    r.write(heads,saved_heads);r.write(stage_color,saved_color);r.u32(heap,saved_heap)
     r.services[r.addr('ccPropMaterials')] = lambda:0
     # Status transitions now refresh the active recipe, as real Training does.
     r.services[r.labels['CharCreator.get_slot_']] = lambda:r.ENTRIES
@@ -310,4 +349,4 @@ def test_visuals(r):
         assert all(not r.read(joints+i*0x100+layout['dobj_flags'],1)[0]&layout['hidden_mask'] for i in range(4,37))
     r.FP,r.GOBJ,r.JOINTS=previous;r.u32(links+12,0)
     assert r.u32(r.addr('gFTCustomMoveValidationFailures'))==0
-    print(f'PASS: six real prop display/native mesh submission checks with independent opaque environment/fog/two-cycle state, {len(props)} source prop tables including ground/air Morph Ball windows, {placements} linked-MIPS placements, 88 Samus tether-glow placements, {constructors} attached constructors, Cutter/Falcon flag windows, eight charge sizes/release handoff, source audio clocks and interruption/death/four-port reset/stale-owner cleanup (allocation/audio fixtures; rendered acceptance pending).')
+    print(f'PASS: six native fighter-pass/material texture branch checks with restored one-cycle/TLUT/alpha/render state and untouched effects head, {len(props)} source prop tables including ground/air Morph Ball windows, {placements} linked-MIPS placements, 88 Samus tether-glow placements, {constructors} attached constructors, Cutter/Falcon flag windows, eight charge sizes/release handoff, source audio clocks and interruption/death/four-port reset/stale-owner cleanup (allocation/audio fixtures; rendered acceptance pending).')

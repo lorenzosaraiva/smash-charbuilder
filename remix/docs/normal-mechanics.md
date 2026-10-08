@@ -1,6 +1,6 @@
 # Donor normal mechanics on Remix
 
-Preview **0.1.13**, updated **2026-10-07**. Original twelve bodies/donors only.
+Preview **0.1.14**, updated **2026-10-08**. Original twelve bodies/donors only.
 Implementation and automated checks are separate from rendered acceptance.
 
 Foreign normal effect commands resolve donor bones to valid body joints or

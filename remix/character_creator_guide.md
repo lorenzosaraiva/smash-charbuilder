@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.13 (2026-10-07)**.
+Character Lab has an original-roster Remix preview, **0.1.14 (2026-10-08)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -48,9 +48,11 @@ Changing the compiled roster later can change selector indexes.
 
 ## What the moves inherit
 
-Remix 0.1.13 initializes the tether/fighter-prop render state explicitly and
-uses the native F3DEX2 command format. Display/mesh submission now has regression
-checks alongside allocation/timing; rendered appearance remains a playtest.
+Remix 0.1.14 draws borrowed fighter parts in the native fighter pass and
+restores its one-cycle state afterward, addressing noisy tether textures and
+white stage layers. Beam materials advance once per frame. Native material
+submission and exit state have regression checks; rendered acceptance of this
+fix remains pending.
 
 Samus Bomb creates one bomb per Down B input, even on DK's body. Landing or
 entering the air cannot replay that spawn. A new input creates a new bomb;

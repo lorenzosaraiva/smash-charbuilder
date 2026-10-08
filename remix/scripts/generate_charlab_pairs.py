@@ -77,6 +77,13 @@ def generate():
     source = source.replace('if (s->phase->travel != NULL) travel = s->phase->travel[index];', 'if (s->phase->has_travel) travel = ccPairSample(fp, index)->travel;')
     source = source.replace('prop = &phase->props[i]; sample = &prop->frames[frame];', 'prop = &phase->props[i]; sample = &ccPairSample(fp, frame)->props[i];')
     source = source.replace('lbCommonAddMObjForFighterPartsDObj', 'ccPropMaterials')
+    # Native EF update already plays each prop's joint/material animations.
+    # The imported fighter-owned path's extra material tick would double the
+    # beam texture clock (e.g. its original 50-frame hold becomes 25 frames).
+    material_tick = '''        for (mobj = dobj->mobj; mobj != NULL; mobj = mobj->next)
+        { gcParseMObjMatAnimJoint(mobj); gcPlayMObjMatAnim(mobj); }'''
+    assert source.count(material_tick) == 1
+    source = source.replace(material_tick, '')
     source = source.replace('ftCustomAnimationFindLiveEffect', 'ccVisualLive').replace('ftCustomAnimationStopProp', 'ccPairStopProp').replace('ftCustomAnimationMakeProp', 'ccVisualMakeProp')
     source = source.replace('if ((data->p_file_main == NULL) || (*data->p_file_main == NULL)) return fp->attr;\n    return lbRelocGetFileData(FTAttributes*, *data->p_file_main, data->o_attributes);', 'if (!ccVisualMainFile(s->donor)) return fp->attr;\n    return (FTAttributes*)((uintptr_t)ccVisualMainFile(s->donor)+(uintptr_t)data->o_attributes);')
     source = source.replace('if (!data->p_file_main || !*data->p_file_main) return;\n    attr = lbRelocGetFileData(FTAttributes*, *data->p_file_main, data->o_attributes);', 'if (!ccVisualMainFile(phase->donor)) return;\n    attr = (FTAttributes*)((uintptr_t)ccVisualMainFile(phase->donor)+(uintptr_t)data->o_attributes);')

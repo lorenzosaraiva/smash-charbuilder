@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.31 - 2026-10-08: Remix tether materials and stage state
+
+- Release Remix preview 0.1.14; preserve the decomp ROM and download.
+- Move independent borrowed fighter meshes to the native fighter display-list head, leaving their particle glow in the effects pass. Restore one-cycle shading, texture palette/alpha/render settings and stage lighting after drawing; the previous two-cycle effects-pass state contaminated later stage layers.
+- Remove the extra paired-prop material tick. Independent effect updates already advance these animations; the duplicate shortened Samus beam texture holds and blink timing.
+- Execute native material texture branches and dirty mesh state in linked-MIPS checks, including the post-draw state and an untouched effects display list. Keep donor geometry, reach, collision timing and body hurtboxes unchanged.
+- The user confirmed visible tether geometry in 0.1.13 and reported noisy textures and white Dream Land layers. Automated command/material-clock and real-input CPU checks remain distinct from rendered acceptance of this fix.
+
 ## 0.1.30 - 2026-10-07: Remix tether render state
 
 - Release Remix preview 0.1.13; preserve the decomp ROM and download.

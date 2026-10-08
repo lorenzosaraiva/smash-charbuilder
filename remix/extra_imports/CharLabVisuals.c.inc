@@ -263,16 +263,26 @@ static void ccVisualEffectUpdate(GObj *g)
 static void ccVisualDrawProp(GObj *g)
 {
     Gfx *prefix = DObjGetStruct(g)->user_data.p;
-    /* Fighter part DLs multiply their texture by ENVIRONMENT in cycle 2.
-     * Head 1 has its own state: a particle's transparent environment color
-     * must not hide a tether (or another borrowed fighter attachment). */
-    gDPPipeSync(gSYTaskmanDLHeads[1]++);
-    gDPSetCycleType(gSYTaskmanDLHeads[1]++, G_CYC_2CYCLE);
-    gSPSetGeometryMode(gSYTaskmanDLHeads[1]++, G_ZBUFFER | G_SHADE | G_LIGHTING | G_SHADING_SMOOTH);
-    mpCollisionSetLightColorGetAlpha(&gSYTaskmanDLHeads[1]);
-    gDPSetFogColor(gSYTaskmanDLHeads[1]++, 0, 0, 0, 0);
-    if (prefix) gSPDisplayList(gSYTaskmanDLHeads[1]++, prefix);
-    gcDrawDObjDLHead1(g);
+    /* These are fighter part DLs, not particle DLs. Native Samus draws the
+     * palettized beam on head 0 inside a two-cycle fighter pass. Sharing head
+     * 1 with its glow/particles changes their texture combiner and subsequent
+     * translucent stage layers. Match the native pass AND its exit state. */
+    gDPPipeSync(gSYTaskmanDLHeads[0]++);
+    gDPSetCycleType(gSYTaskmanDLHeads[0]++, G_CYC_2CYCLE);
+    gDPSetTextureLUT(gSYTaskmanDLHeads[0]++, G_TT_NONE);
+    gDPSetAlphaCompare(gSYTaskmanDLHeads[0]++, G_AC_NONE);
+    gSPGeometryMode(gSYTaskmanDLHeads[0]++, G_CULL_BOTH | G_FOG | G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_LOD,
+        G_ZBUFFER | G_SHADE | G_CULL_BACK | G_LIGHTING | G_SHADING_SMOOTH);
+    mpCollisionSetLightColorGetAlpha(&gSYTaskmanDLHeads[0]);
+    gDPSetFogColor(gSYTaskmanDLHeads[0]++, 0, 0, 0, 0);
+    if (prefix) gSPDisplayList(gSYTaskmanDLHeads[0]++, prefix);
+    gcDrawDObjDLHead0(g);
+    gDPPipeSync(gSYTaskmanDLHeads[0]++);
+    gDPSetCycleType(gSYTaskmanDLHeads[0]++, G_CYC_1CYCLE);
+    gDPSetTextureLUT(gSYTaskmanDLHeads[0]++, G_TT_NONE);
+    gDPSetAlphaCompare(gSYTaskmanDLHeads[0]++, G_AC_NONE);
+    gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
+    ftDisplayLightsDrawReflect(&gSYTaskmanDLHeads[0], gMPCollisionLightAngleX, gMPCollisionLightAngleY);
 }
 static void *sCCPropBase;
 static EFDesc sCCPropDesc = { EFFECT_FLAG_USERDATA, 15, &sCCPropBase,
@@ -529,6 +539,10 @@ static void ccVisualTick(GObj *g)
 
 /* Exposed ABI facts let linked-MIPS checks avoid guessed private offsets. */
 const u32 ccVisualDrawLayout[] = { __builtin_offsetof(DObj,dl), __builtin_offsetof(DObj,user_data) };
+const u32 ccVisualMaterialLayout[] = {
+    __builtin_offsetof(SYMallocRegion,ptr), __builtin_offsetof(DObj,mobj), sizeof(MObj),
+    __builtin_offsetof(MObj,sub), __builtin_offsetof(MObjSub,sprites), __builtin_offsetof(MObjSub,flags)
+};
 const u32 ccVisualLayout[] = {
     sizeof(CCVisualState), __builtin_offsetof(CCVisualState,model), __builtin_offsetof(CCVisualState,charge),
     __builtin_offsetof(CCVisualState,effect), __builtin_offsetof(CCVisualState,hidden),

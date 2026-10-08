@@ -31,6 +31,7 @@ parser.add_argument('--projectile-contact',action='store_true',help='Place the C
 parser.add_argument('--visuals',action='store_true',help='Check real effect/model allocation, finite transforms and recovery cleanup (null renderer)')
 parser.add_argument('--paired-donor',type=int,choices=range(12),help='Real grab/contact and forward/back release with this grab donor')
 parser.add_argument('--paired-miss',action='store_true',help='Exercise full missed tether extension/retraction and cleanup')
+parser.add_argument('--tether-materials',action='store_true',help='Check native Samus beam texture clock during a missed borrowed grab (null renderer)')
 parser.add_argument('--throw-donor',type=int,choices=range(12),help='Independent throw donor for paired tests')
 parser.add_argument('--back-throw',action='store_true')
 parser.add_argument('--paired-airborne',action='store_true',help='Raise the captured pair to exercise the fall phase before landing')
@@ -48,6 +49,7 @@ if args.editor_play:assert args.editor_test
 if args.normal_mechanics:assert args.normal_animations is not None
 if args.down_smash:assert args.normal_animations is not None
 if args.paired_miss:assert args.paired_donor is not None
+if args.tether_materials:assert args.paired_miss and args.paired_donor==3 and args.body!=3
 if args.egg_contact:assert args.neutral==11
 if args.projectile_contact:assert args.neutral==5
 
@@ -67,6 +69,7 @@ source='''#include <sc/scene.h>
 #include <wp/weapon.h>
 const unsigned int layout[]={__builtin_offsetof(SCCommonData,training_man_fkind),__builtin_offsetof(SCCommonData,training_com_fkind),__builtin_offsetof(SCCommonData,maps_training_gkind),__builtin_offsetof(SCBattleState,players),sizeof(SCPlayerData),__builtin_offsetof(SCPlayerData,fighter_gobj),__builtin_offsetof(FTStruct,item_gobj),__builtin_offsetof(FTStruct,attack_colls),sizeof(FTAttackColl),__builtin_offsetof(FTAttackColl,pos_curr),__builtin_offsetof(FTStruct,percent_damage),__builtin_offsetof(FTStruct,coll_data),sizeof(MPCollData),__builtin_offsetof(SCCommonData,player),__builtin_offsetof(SCCommonData,training_man_costume),__builtin_offsetof(SCCommonData,training_com_costume)};
 const unsigned int egg_statuses[]={nFTCommonStatusCaptureYoshi,nFTCommonStatusYoshiEgg};
+const unsigned int material_layout[]={__builtin_offsetof(DObj,mobj),__builtin_offsetof(MObj,anim_frame),__builtin_offsetof(MObj,texture_id_curr)};
 const unsigned int edge_layout[]={__builtin_offsetof(WPStruct,kind),__builtin_offsetof(WPStruct,owner_gobj),__builtin_offsetof(WPStruct,reflect_gobj),__builtin_offsetof(WPStruct,absorb_gobj),__builtin_offsetof(WPStruct,physics.vel_air),__builtin_offsetof(FTStruct,status_vars.ness.specialhi.pkjibaku_delay),__builtin_offsetof(MPCollData,pos_prev),__builtin_offsetof(FTStruct,hitstatus),nFTCommonStatusFuraSleep,nFTNessStatusSpecialHiHold,nFTNessStatusSpecialAirHiHold,nFTNessStatusSpecialHiJibaku,nFTNessStatusSpecialAirHiJibaku,nFTPikachuStatusSpecialLwHit,nFTPikachuStatusSpecialAirLwHit,nFTDonkeyStatusSpecialLwLoop,nFTMarioStatusSpecialLw,nFTMarioStatusSpecialAirLw,__builtin_offsetof(FTStruct,input.controller),sizeof(SYController),__builtin_offsetof(MPCollData,floor_line_id),nGMHitStatusIntangible,nGMHitStatusNormal};
 const unsigned int edge_stage[]={sizeof(MPVertexInfo),sizeof(MPVertexData),__builtin_offsetof(DObj,user_data),__builtin_offsetof(DObj,anim_joint.event32),__builtin_offsetof(MPCollData,mask_curr),__builtin_offsetof(MPCollData,mask_stat),__builtin_offsetof(MPCollData,map_coll.center),__builtin_offsetof(MPCollData,floor_angle),MAP_FLAG_LWALL|MAP_FLAG_RWALL,MAP_FLAG_CLIFF_MASK,nFTCommonStatusCliffCatch,nFTCommonStatusCliffWait,MAP_VERTEX_COLL_CLIFF,__builtin_offsetof(SCCommonData,gkind)};
 FTStruct reflect_bits={.is_reflect=TRUE},absorb_bits={.is_absorb=TRUE};
@@ -76,6 +79,7 @@ subprocess.run(['clang','--target=mips-unknown-none','-c','-EB','-mabi=32','-mar
 d,s,y=read_elf(build/'layout.o','>');a,l,i=y['layout'];off=s[i][4]+a-s[i][3]
 man_off,cpu_off,stage_off,players_off,player_size,fighter_off,item_off,attack_off,attack_size,center_off,percent_off,collision_off,collision_size,port_off,man_costume_off,cpu_costume_off=struct.unpack_from('>16I',d,off)
 a,l,i=y['egg_statuses'];egg_statuses=struct.unpack_from('>2I',d,s[i][4]+a-s[i][3])
+a,l,i=y['material_layout'];material_layout=struct.unpack_from('>3I',d,s[i][4]+a-s[i][3])
 a,l,i=y['edge_layout'];edge_layout=struct.unpack_from('>'+str(l//4)+'I',d,s[i][4]+a-s[i][3])
 a,l,i=y['edge_stage'];edge_stage=struct.unpack_from('>'+str(l//4)+'I',d,s[i][4]+a-s[i][3])
 edge_bits={}
@@ -125,6 +129,7 @@ def fighter(player=0):
     gobj=u32(battle+players_off+player_size*player+fighter_off)
     return u32(gobj+0x84) if 0x80000000<=gobj<0x80800000 else 0
 trace=[];tracking=False;travel_errors=[];travel_samples=0;falcon_contact_done=False
+tether_material_samples=[]
 animation_samples=0;animation_records=set();animation_errors=[]
 normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_samples=0
 egg_contact_done=False;egg_observed=set();neutral_samples=[]
@@ -182,6 +187,13 @@ def frame_callback(frame):
         if args.paired_donor is not None or args.taunt_donor is not None:
             clock=labels['CharLabRuntime.sFTCustomMoveClocks']
             tick=f32(clock+24) if u32(clock)==fp else -1
+            if args.tether_materials and u32(fp+0x24)==166:
+                g=u32(labels['CharLabRuntime.sFTCustomPairProps']+8)
+                if g:
+                    m=u32(u32(g+layout[10])+material_layout[0])
+                    if m:
+                        index=u8(m+material_layout[2])*256+u8(m+material_layout[2]+1)
+                        tether_material_samples.append((tick,f32(m+material_layout[1]),index))
             cpu=fighter(1)
             if cpu:
                 held=u32(fp+layout[17]);capture=u32(cpu+layout[18])
@@ -410,6 +422,19 @@ try:
             assert not u32(native['__osFaultedThread']),diagnostic()
             assert not any(row[3] and row[4] for row in pair_samples),('Missed tether fixture captured opponent',pair_samples)
             report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'grab_donor':args.paired_donor,'checks':['real missed tether input','full extension/retraction','recovery cleanup'],'rendering':'null'}
+            if args.tether_materials:
+                # Native Samus reference: image 0 holds through material frame
+                # 50, then 1/1/2/2/0/1/2/2/0. EF creation starts its clock
+                # at zero; check progression as well as the actual images.
+                rows={int(t): (age,image) for t,age,image in tether_material_samples}
+                assert len(rows)>=65,('Too few material samples',rows)
+                for t,(age,image) in rows.items():
+                    assert abs(age-(t-1))<.01,('Beam material advanced twice or stalled',t,age)
+                    frame=int(age)
+                    if frame<=50:assert image==0,('Native 50-frame texture hold shortened',t,age,image)
+                    elif frame<=59:
+                        assert image==(1,1,2,2,0,1,2,2,0)[frame-51],('Wrong native beam texture sequence',t,age,image)
+                report['tether_material_checks']={'samples':len(rows),'checks':['one material update per frame','native 50-frame image hold','native blink sequence'],'rendering':'null'}
             visual_report(report)
             (report_directory/f'cpu-scenes-tether-miss-{args.body}-{args.paired_donor}.json').write_text(json.dumps(report,indent=2)+'\n')
             print('PASS: missed tether',report,flush=True);raise SystemExit(0)
