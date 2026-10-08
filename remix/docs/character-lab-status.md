@@ -1,6 +1,9 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.14 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.16 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
+
+- [x] Borrowed Stone sets the native light count and stage direction before drawing its source material; linked-MIPS light ordering and real-input replacement/recovery checks pass.
+- [ ] Rendered Stone colour acceptance on foreign bodies.
 Checkboxes mean implemented and automatically checked, not playtested in every
 matchup. Keep **Original 12 Only** enabled for the shared donor system.
 
@@ -13,7 +16,9 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Native fighter-pass prop submission with restored one-cycle/TLUT/alpha/render/light state; real material texture branches and post-draw state checked with F3DEX2 commands.
 - [x] Paired beam materials advance once per frame through their native effect update.
 - [ ] Rendered retest of noisy Samus tether textures and white Dream Land layers reported in 0.1.13.
-- [x] Samus Bomb's donor Morph Ball replacement, source window and interruption cleanup.
+- [x] Samus Bomb's body-colored Morph Ball, source compression/round/recovery meshes (frames 3-48), opaque two-cycle draw setup and interruption cleanup.
+- [x] Borrowed DK Giant Punch full-charge native flash, stored-state/generation guards and consumed-charge cleanup.
+- [ ] Rendered acceptance of stored-charge blink and body-colored Morph Ball during the source hop.
 - [x] Samus tether's native glow at donor joint 23; paired visual resource preloads and cleanup.
 - [x] Single-tap DK cycle checks; original two-slap cycle and explicitly requested repeats.
 - [ ] Rendered Morph Ball and DK/Samus tether appearance, including four-player interruptions.

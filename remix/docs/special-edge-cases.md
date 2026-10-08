@@ -1,10 +1,16 @@
 # Special edge cases
 
-Updated **2026-10-08**, Remix preview **0.1.14**, project **0.1.31**.
+Updated **2026-10-08**, Remix preview **0.1.16**, project **0.1.32**.
 This milestone covers the original twelve bodies and donors. Body hurtboxes
 remain native; donor attack values, paths and clocks stay independent of poses.
 
 ## Fixes
+
+- Stored DK Giant Punch runs the native full-charge blink on borrowed bodies,
+  survives ordinary status resets and clears when charge is consumed.
+- Borrowed meshes explicitly select opaque two-cycle rendering before drawing.
+  Samus Bomb switches between source compression/round/recovery meshes and a
+  private body-colored CI4 palette, retaining its native hop and source size.
 
 - Samus Bomb creates one weapon per input, including DK's body. Resuming the
   source script on landing or entering the air skips consumed one-shot flags
@@ -17,8 +23,8 @@ remain native; donor attack values, paths and clocks stay independent of poses.
 - DK/Samus borrowed down smashes no longer send donor effect bone IDs to
   absent body joints. Cosmetic effects map to valid body roles or TopN;
   donor mesh and part-hurtbox commands leave the foreign body intact.
-- Samus Bomb uses a separate donor Morph Ball on frames 10-42, restoring
-  native body visibility at frame 43 or interruption. Native body hurtboxes
+- Samus Bomb uses a separate body-colored donor Morph Ball on frames 3-48, restoring
+  native body visibility at frame 49 or interruption. Native body hurtboxes
   stay unchanged; bomb creation, movement and recovery retain source timing.
 - Samus tether's glow tree/materials are preloaded for paired actions and
   follow source joint 23 rather than the selected body's joint 23. The six
@@ -41,6 +47,12 @@ remain native; donor attack values, paths and clocks stay independent of poses.
   no longer executes the body's unrelated Down B.
 
 ## Automated evidence
+
+The local 0.1.16 checks add 44 stored-charge color/priority/cleanup cases, twelve
+private palette conversions and source Morph Ball phase switches. Real-input
+CPU checks on Mario cover full-charge blink progression through walking/release;
+DK Bomb covers meshes/private palettes throughout the original hop, plus two
+grounded and two aerial inputs with exactly one bomb each. Rendering is null.
 
 The standard build executes the actual linked MIPS preset/dispatch/pose code:
 twelve bodies and four slots for body presets, eleven foreign bodies and four

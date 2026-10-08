@@ -26,6 +26,7 @@ parser.add_argument('--normal-mechanics',action='store_true',help='Exercise dono
 parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borrow this donor for normals and check real A-input pose streaming')
 parser.add_argument('--down-smash',action='store_true',help='Focus normal regression on a real down-smash input')
 parser.add_argument('--neutral',type=int,choices=range(1,12),help='Exercise a Neutral B choice with real controller input')
+parser.add_argument('--full-charge',action='store_true',help='Charge borrowed Giant Punch fully and check its native stored blink through movement and release')
 parser.add_argument('--egg-contact',action='store_true',help='Place the CPU in Egg Lay reach to test capture, egg handoff and damage')
 parser.add_argument('--projectile-contact',action='store_true',help='Place the CPU at a PK Fire spark to test native flame-pillar creation')
 parser.add_argument('--visuals',action='store_true',help='Check real effect/model allocation, finite transforms and recovery cleanup (null renderer)')
@@ -52,6 +53,7 @@ if args.paired_miss:assert args.paired_donor is not None
 if args.tether_materials:assert args.paired_miss and args.paired_donor==3 and args.body!=3
 if args.egg_contact:assert args.neutral==11
 if args.projectile_contact:assert args.neutral==5
+if args.full_charge:assert args.neutral==8 and args.body!=2
 
 def constant(name):
     address,length,index=syms[name];section=sections[index]
@@ -135,6 +137,7 @@ normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_sam
 egg_contact_done=False;egg_observed=set();neutral_samples=[]
 visual_layout=constant('ccVisualLayout')
 visual_objects=set();visual_samples=0;visual_hidden=False;visual_errors=[]
+charge_visual_samples=[];ball_samples=[]
 pair_contact=False;pair_samples=[];taunt_samples=[]
 weapon_kinds=set();item_kinds=set();projectile_contact_done=False
 bomb_live=set();bomb_births=[];bomb_casts=[]
@@ -167,6 +170,15 @@ def frame_callback(frame):
                         values=tuple(f32(dobj+offset+j) for j in (0,4,8))
                         if not all(math.isfinite(v) and abs(v)<50000 for v in values):visual_errors.append(('transform',hex(obj),values))
                     visual_objects.add(obj);visual_samples+=1
+                if args.donor==3:
+                    obj=u32(vs+visual_layout[1]);clock=labels['CharLabRuntime.sCCSpecialClocks']
+                    if obj and u32(vs+visual_layout[4]) and u32(clock)==fp:
+                        dobj=u32(obj+layout[10]);draw=constant('ccVisualDrawLayout');mat=constant('ccVisualMaterialLayout')
+                        m=u32(dobj+mat[1]);ci=constant('ccChargeVisualLayout')
+                        ball_samples.append((f32(clock+20),f32(dobj+layout[12]+4),u32(dobj+draw[0]),u8(dobj+visual_layout[5]),u32(m+ci[7]) if m else 0))
+        if args.full_charge:
+            ci=constant('ccChargeVisualLayout');col=fp+ci[0]
+            charge_visual_samples.append((u32(fp+0x24),u32(col),u32(col+4),u32(labels['CharLabRuntime.sFTCharBuilderNeutralStates']+16)))
         top=u32(fp+0x8E8);model=u32(fp+0x8E8+16)
         trace.append((u32(fp+0x24),u32(fp+0x28),tuple(f32(top+layout[12]+j) for j in (0,4,8)),
                       tuple(f32(model+layout[14]+j) for j in (0,4,8)),tuple(f32(fp+special[1]+j) for j in (0,4,8))))
@@ -303,7 +315,7 @@ def visual_report(report):
     assert not any(u32(vs+field) for field in visual_layout[1:5]),('Visual survived recovery',diagnostic())
     counters={name:u32(labels['CharLabRuntime.gCCVisual'+name]) for name in ('Models','Effects','Sounds','Stops')}
     if args.neutral in (1,9,11) or args.donor==8 or (args.donor==3 and args.special_side!='up'):assert counters['Models']>0,('No donor prop/orb',counters)
-    if args.neutral==6 or args.donor in (7,8) or (args.neutral is None and args.donor is None and args.paired_donor is None and args.taunt_donor is None):assert counters['Effects']>0,('No donor attached FX',counters)
+    if args.neutral==6 or args.donor==7 or (args.donor==8 and args.special_side!='down') or (args.neutral is None and args.donor is None and args.paired_donor is None and args.taunt_donor is None):assert counters['Effects']>0,('No donor attached FX',counters)
     if args.donor==8 and args.special_side!='up':assert visual_hidden,('Stone did not replace body',counters)
     if args.donor==3 and args.special_side!='up':assert visual_hidden,('Bomb did not replace body',counters)
     if args.paired_donor==3:assert counters['Effects']>0,('Missing Samus beam glow',counters,[hex(u32(labels['CharLabRuntime.sCCVisualFiles']+i*4)) for i in range(4)])
@@ -505,11 +517,21 @@ try:
     if args.neutral is not None:
         trace.clear();tracking=True;pulse(0x40)
         if args.neutral in (8,9):
-            frames(100)
-            # Store with Z, start charging again, then release with B.
-            pulse(0x20);frames(35)
-            wait(lambda:u32(fighter()+0x24)==10,'Charge store recovery',seconds=30)
-            pulse(0x40);frames(30);pulse(0x40)
+            if args.full_charge:
+                state=labels['CharLabRuntime.sFTCharBuilderNeutralStates'];ci=constant('ccChargeVisualLayout')
+                wait(lambda:u32(state+16)==ci[2] and u32(fighter()+0x24)==10,'Full Giant Punch storage',seconds=30)
+                frames(40);assert u32(fighter()+ci[0])==ci[1],('Stored full-charge flash missing',diagnostic())
+                keys(64<<16);frames(12);keys(0);frames(30)
+                assert u32(fighter()+ci[0])==ci[1],('Movement lost full-charge flash',diagnostic())
+                pulse(0x40);frames(100)
+                assert u32(state+16)==0 and u32(fighter()+ci[0])!=ci[1],('Spent Giant Punch still flashes',diagnostic())
+                assert len({row[2] for row in charge_visual_samples if row[1]==ci[1]})>1,('Blink script did not advance',charge_visual_samples[-20:])
+            else:
+                frames(100)
+                # Store with Z, start charging again, then release with B.
+                pulse(0x20);frames(35)
+                wait(lambda:u32(fighter()+0x24)==10,'Charge store recovery',seconds=30)
+                pulse(0x40);frames(30);pulse(0x40)
         frames(150);tracking=False
         assert trace and any(row[0]>=220 for row in trace),('Neutral was not entered',args.neutral,diagnostic())
         assert not u32(native['__osFaultedThread']),('Neutral CPU fault',args.neutral,diagnostic())
@@ -533,10 +555,11 @@ try:
             assert u32(fighter(1)+percent_off)>0,('PK Fire contact damage missing',diagnostic())
         report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'neutral':args.neutral,
                 'checks':['Training resource load','real Neutral B input','native projectile/callback execution','finite joints','neutral recovery']+
-                         (['charge Z store and B release'] if args.neutral in (8,9) else []),
+                         (['charge Z store and B release'] if args.neutral in (8,9) and not args.full_charge else []),
                 'animation_samples':animation_samples,'animation_clips':len(animation_records),'rendering':'null'}
         if args.egg_contact:report['checks'].append('controlled native Egg Lay capture, handoff and damage')
         if args.projectile_contact:report['checks'].append('controlled PK Fire contact and native flame-pillar item/damage')
+        if args.full_charge:report['checks'].append('full Giant Punch native color script advances while stored/moving and clears on release')
         report['weapon_kinds']=sorted(weapon_kinds);report['item_kinds']=sorted(item_kinds)
         visual_report(report)
         suffix='-contact' if args.egg_contact or args.projectile_contact else ''
@@ -619,7 +642,7 @@ try:
             assert u32(fighter()+layout[2])!=initial_kinetics,('Bomb fixture did not jump',diagnostic())
         initial_scale=tuple(f32(model+layout[14]+j) for j in (0,4,8))
         cast_position=tuple(f32(top+layout[12]+j) for j in (0,4,8))
-        birth_start=len(bomb_births)
+        birth_start=len(bomb_births);ball_start=len(ball_samples)
         trace.clear();tracking=True;pulse(button)
         if name=='Quick Attack':
             wait(lambda:u32(fighter()+0x24) in (special[5],special[7]),'First Quick Attack endpoint')
@@ -642,6 +665,16 @@ try:
             entered=next(row[0] for row in trace if row[0] in (229,230))
             assert entered==(230 if name.startswith('Air') else 229),('Wrong bomb entry phase',name,entered)
             if args.body!=3:assert births[0]['source_frame']==10,('Bomb source timing changed',name,births)
+            if args.visuals and args.body!=3:
+                samples=ball_samples[ball_start:]
+                assert samples and {3,10,43,48} <= {int(row[0]) for row in samples},('Incomplete Morph Ball source phases',name,samples)
+                assert all(row[2] and row[3]==0 and row[4] for row in samples),('Undrawable Morph Ball mesh/material',name,samples)
+                bomb_casts[-1]['morph_ball']={'samples':len(samples),'phases':[3,10,43,48],
+                    'mesh_and_private_palette':'present','hidden_prop_flags':False}
+                if name.startswith('Ground'):
+                    rise=max(row[1] for row in samples)-samples[0][1]
+                    assert rise>300,('Morph Ball did not follow native hop',name,rise)
+                    bomb_casts[-1]['morph_ball']['rise']=rise
         if args.donor==5 and name=='Donor Down B':
             assert u32(fighter()+item_off),('Link did not create a held bomb',diagnostic())
             trace.clear();tracking=True;pulse(button)
@@ -688,6 +721,7 @@ try:
     if args.bomb_count:
         report['bomb_casts']=bomb_casts
         report['checks'].append('one actual bomb per grounded/aerial input, including new casts and ground/air handoff')
+        if args.visuals and args.body!=3:report['checks'].append('all Morph Ball phases have drawable meshes/private palettes and follow the original grounded hop')
     if args.falcon_contact:report['controlled_dive_contact']='native capture, release and throw damage passed'
     report_name='cpu-scenes.json' if args.donor is None else f'cpu-scenes-{args.body}-{args.donor}-{args.special_side}.json'
     if args.falcon_contact:report_name=report_name.replace('.json','-contact.json')

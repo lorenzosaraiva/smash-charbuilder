@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.31 (experimental)** | **Last updated: 2026-10-08**
+**Project version: 0.1.33 (experimental)** | **Last updated: 2026-10-08**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -51,6 +51,11 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [Remix play guide](remix/character_creator_guide.md) and
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
+
+The local Remix **0.1.16** build adds DK Giant Punch's stored full-charge flash
+and a body-colored Samus Morph Ball throughout compression, hop and recovery.
+Props now select the native opaque two-cycle render mode and stage light before drawing, fixing borrowed Stone's missing light setup.
+Automated checks and rendered acceptance are tracked separately.
 
 Remix 0.1.14 draws borrowed fighter parts in the native fighter pass and
 restores its one-cycle state afterward, addressing noisy tether textures and

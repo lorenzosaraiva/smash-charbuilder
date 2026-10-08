@@ -69,7 +69,7 @@ def generate():
                 matrix,point=world(bones,pose)[6]
                 unit,_=world(bones,{j:(*v[:7],1,1,1) for j,v in pose.items()})[6]
                 scale=tuple(sum(matrix[r][a]**2 for r in range(3))**.5*size for a in range(3))
-                samples.append('    { '+vec(euler(unit))+', '+vec(tuple(v*size for v in point))+', '+vec(scale)+', '+str(int(10<=frame<43))+' },')
+                samples.append('    { '+vec(euler(unit))+', '+vec(tuple(v*size for v in point))+', '+vec(scale)+', '+str(int(3<=frame<49))+' },')
             symbol='sCCSamusBomb'+str(i)
             text='const FTCustomSpecialAttachmentFrame '+symbol+'Frames[] = {\n'+'\n'.join(samples)+'\n};\nconst FTCustomSpecialAttachment '+symbol+' = { '+symbol+'Frames, 6, 2, TRUE };\n'+text
             text,count=re.subn(r'(sFTCustomSpecialVisual'+str(i)+r', \d+, )NULL(, \d+ \})',r'\1&'+symbol+r'\2',text)

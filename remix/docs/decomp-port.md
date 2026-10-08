@@ -1,6 +1,6 @@
 # Decomp to Remix port
 
-Updated **2026-10-08**. Remix preview **0.1.14**, project **0.1.31**.
+Updated **2026-10-08**. Remix preview **0.1.16**, project **0.1.32**.
 
 The current special-edge-case checks and remaining rendered stage acceptance
 are tracked in [special edge cases](special-edge-cases.md). Mario taunt growth
@@ -11,13 +11,18 @@ PK Thunder steering/self-launch, Thunder owner contact, reflection/absorption,
 Sing/Rest contacts, repeated DK hit windows, aerial landing and Training reset.
 These targeted fixtures do not establish rendered acceptance across all bodies/stages.
 
-Remix 0.1.14 draws borrowed fighter parts in the native fighter pass and
+The local 0.1.16 build adds the native stored Giant Punch flash, explicit opaque
+two-cycle prop rendering and body-colored Samus compression/round/recovery meshes.
+Real-input CPU checks cover full charge through movement/release and the ball
+following the source hop; rendered acceptance remains pending.
+
+Remix 0.1.16 draws borrowed fighter parts in the native fighter pass and
 restores its one-cycle state afterward, addressing noisy tether textures and
 white stage layers. Beam materials advance once per frame. Native material
 submission and exit state have regression checks; rendered acceptance of this
 fix remains pending.
 
-Preview 0.1.14 prevents duplicate Samus bombs when borrowed phases land or
+Preview 0.1.16 prevents duplicate Samus bombs when borrowed phases land or
 enter the air, and allows donor aerial Down B on DK's body. Each input creates
 one bomb; fresh inputs retain source timing. Actual weapon counts are checked
 on DK, Mario and native Samus, alongside all-foreign-body MIPS event checks.

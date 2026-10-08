@@ -14,13 +14,16 @@ copy system remains excluded.
 | Ness | PK Fire at 20; 72 ground / 60 air; spark and flame-pillar item |
 | Captain Falcon | Punch contact at 42-46; 90 recovery; source ground travel and air boost |
 | Jigglypuff | Pound contact at 12-27; 55 recovery; source ground travel and air boost |
-| Donkey Kong | Startup, charge cycles, stored level, partial/full punch and source collisions |
+| Donkey Kong | Startup, charge cycles, stored level with native full-charge flash, partial/full punch and source collisions |
 | Samus | Charge ticks/storage, charge-dependent startup speed, shot scaling and recoil |
 | Link | Tilt/smash launch, one outstanding Boomerang, empty/return/catch phases and reflection |
 | Yoshi | Source grab path, capture anchor, swallow/release and native egg damage/escape |
 
 Start charging with **B**. **B or A** releases; **Z** stores. Ground rolls also
-store charge. Giant Punch applies queued input at the source cycle boundary.
+store charge. Fully charged Giant Punch blinks using the original color script,
+including while walking or performing other moves. Releasing consumes the stored
+charge and removes its flash; higher-priority native color effects remain in control.
+Giant Punch applies queued input at the source cycle boundary.
 Full charging stops and the next B releases. Charge Shot releases in the air,
 including when leaving the floor during charging. Damage while charging clears
 charge; a new fighter generation/match clears stored state.
@@ -62,3 +65,8 @@ These runs use null rendering; inspect the actual meshes and attached effects
 in the emulator before marking visual acceptance complete.
 
 See [port checklist](decomp-port.md) and [animation limits](animations.md).
+
+The local 0.1.16 CPU regression `--body 0 --neutral 8 --full-charge` holds
+Giant Punch through full charge, observes advancing native blink colors while
+idle and moving, then confirms release consumes the charge and clears its flash.
+This uses null rendering; rendered flash acceptance remains pending.

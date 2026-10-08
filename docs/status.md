@@ -4,6 +4,12 @@ Checkboxes mean implemented, not tested in every matchup.
 
 ## Repository
 
+- [x] Borrowed Stone installs the native one-light count and stage direction before its source material draws.
+- [ ] Rendered Stone colour acceptance on foreign bodies.
+
+- [x] Remix stored DK full-charge flash and body-colored Samus Morph Ball with native hop timing and opaque prop rendering.
+- [ ] Rendered acceptance of these Remix visual fixes.
+
 - [x] Custom taunt donors on every original body: poses, duration/cancel flags, safe effects and Luigi's original hitbox.
 - [x] Mario taunt original growth/shrink track on foreign bodies, with interruption cleanup.
 - [ ] Rendered taunt acceptance and facial/mesh variants.

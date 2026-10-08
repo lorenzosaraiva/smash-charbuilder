@@ -75,6 +75,10 @@ typedef struct CCVisualState {
     u8 flags[FTPARTS_JOINT_NUM_MAX];
     alSoundEffect *loop, *voice;
     sb32 held_charge;
+    sb32 charge_flash;
+    s32 model_part;
+    u16 ball_palette[16] __attribute__((aligned(8)));
+    void *ball_palettes[1];
 } CCVisualState;
 static CCVisualState sCCVisualStates[4];
 static FTStruct *sCCVisualContinuingOwner;
@@ -271,8 +275,14 @@ static void ccVisualDrawProp(GObj *g)
     gDPSetCycleType(gSYTaskmanDLHeads[0]++, G_CYC_2CYCLE);
     gDPSetTextureLUT(gSYTaskmanDLHeads[0]++, G_TT_NONE);
     gDPSetAlphaCompare(gSYTaskmanDLHeads[0]++, G_AC_NONE);
+    gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_PASS, G_RM_AA_ZB_OPA_SURF2);
     gSPGeometryMode(gSYTaskmanDLHeads[0]++, G_CULL_BOTH | G_FOG | G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_LOD,
         G_ZBUFFER | G_SHADE | G_CULL_BACK | G_LIGHTING | G_SHADING_SMOOTH);
+    /* Stone supplies its own diffuse/ambient colors, but assumes the native
+     * fighter pass has selected one light and installed the stage direction.
+     * Effects can leave another light count/direction behind. Install the
+     * direction before the mesh's light-color commands, not only on exit. */
+    ftDisplayLightsDrawReflect(&gSYTaskmanDLHeads[0], gMPCollisionLightAngleX, gMPCollisionLightAngleY);
     mpCollisionSetLightColorGetAlpha(&gSYTaskmanDLHeads[0]);
     gDPSetFogColor(gSYTaskmanDLHeads[0]++, 0, 0, 0, 0);
     if (prefix) gSPDisplayList(gSYTaskmanDLHeads[0]++, prefix);
@@ -297,6 +307,32 @@ static GObj* ccVisualMakeProp(GObj *fighter, Gfx *dl)
     g = ccVisualOwn(efManagerMakeEffectNoForce(&sCCPropDesc), fighter);
     if (g) gCCVisualModels++;
     return g;
+}
+
+/* Private CI4 palette: preserve the source ball's shading and silhouette,
+ * with the receiving body's color. Never edit shared donor texture data. */
+void ccVisualBallColor(CCVisualState *s, DObj *dobj, s32 body)
+{
+    static const u8 colors[12][3] = {
+        {255,64,48}, {224,160,96}, {144,88,48}, {240,160,48},
+        {64,192,64}, {64,176,72}, {64,200,80}, {96,112,224},
+        {255,144,192}, {255,224,48}, {255,176,208}, {224,64,64}
+    };
+    MObj *m = dobj->mobj;
+    const u16 *source;
+    s32 i, r, g, b, shade;
+    if ((u32)body >= 12 || !m || !m->sub.palettes) return;
+    source = m->sub.palettes[(s32)m->palette_id];
+    if (!source) return;
+    for (i = 0; i < 16; i++)
+    {
+        r = (source[i] >> 11) & 31; g = (source[i] >> 6) & 31; b = (source[i] >> 1) & 31;
+        shade = r > g ? r : g; if (b > shade) shade = b;
+        s->ball_palette[i] = ((shade*colors[body][0]/255) << 11) |
+            ((shade*colors[body][1]/255) << 6) | ((shade*colors[body][2]/255) << 1) | (source[i] & 1);
+    }
+    s->ball_palettes[0] = s->ball_palette;
+    m->sub.palettes = s->ball_palettes; m->palette_id = 0;
 }
 
 static void ccVisualFalconEffect(GObj *g, sb32 kick)
@@ -414,9 +450,33 @@ static void ccVisualTick(GObj *g)
     FTAttributes *attr; FTData *data; FTModelPart *part = NULL;
     DObj *dobj; Gfx *dl, *prefix = NULL;
     f32 time = special ? special->frame : clock ? clock->frame : 0;
-    s32 frame, i, level;
+    s32 frame, i, level, model_part;
+    sb32 ball;
     Vec3f pos;
     if (!s) return;
+    /* Stored Giant Punch belongs to the neutral sidecar, including while
+     * walking/attacking. Native color reset only reads the body's union.
+     * Keep the source script running; restarting it each tick prevents blink. */
+    {
+        SCCharBuilderSlot *slot = ftCustomMoveGetSlot(fp);
+        FTCharBuilderNeutralState *stored = &sFTCharBuilderNeutralStates[fp->player];
+        sb32 full = slot && slot->special_n == nSCCharBuilderNeutralGiantPunch &&
+            ccBodyKind(fp) != nFTKindDonkey && stored->owner == fp &&
+            stored->generation == fp->player_num && stored->body == ccBodyKind(fp) &&
+            stored->dk_charge == FTDONKEY_GIANTPUNCH_CHARGE_MAX;
+        if (full)
+        {
+            if (fp->colanim.colanim_id != nGMColAnimFighterCommonSpecialNCharge)
+                ftParamCheckSetFighterColAnimID(g, nGMColAnimFighterCommonSpecialNCharge, 0);
+            s->charge_flash = TRUE;
+        }
+        else if (s->charge_flash)
+        {
+            s->charge_flash = FALSE;
+            if (fp->colanim.colanim_id == nGMColAnimFighterCommonSpecialNCharge)
+                ftParamResetStatUpdateColAnim(g);
+        }
+    }
     if (!def) { ccVisualClear(s); return; }
     if (s->definition != def || time < s->frame) ccVisualStart(fp, time);
     s->frame = time;
@@ -428,6 +488,9 @@ static void ccVisualTick(GObj *g)
     prop = def->attachment;
     frame = ccVisualFrame(def->clip, time);
     sample = prop ? &prop->frames[frame] : NULL;
+    ball = def->donor == nFTKindSamus && def->family == 2 && prop && prop->hide_body;
+    model_part = prop ? prop->part : -1;
+    if (ball && (frame < 10 || frame >= 43)) model_part = 1;
     if (def->donor == nFTKindSamus && def->family == 4 && fp->status_id == nFTCommonStatusCatch && sCCVisualFiles[3])
     {
         /* Preserve the native glow tree/materials with a source joint-23
@@ -453,14 +516,15 @@ static void ccVisualTick(GObj *g)
         }
     }
     if (sample && !sample->active) prop = NULL;
-    if (s->prop != prop) { ccVisualEject(s, &s->model); s->prop = prop; }
+    if (s->prop != prop || (prop && s->model_part != model_part))
+    { ccVisualEject(s, &s->model); s->prop = prop; s->model_part = model_part; }
     if (prop && ccVisualMainFile(def->donor))
     {
         data = dFTManagerDataFiles[def->donor];
         attr = (FTAttributes*)((uintptr_t)ccVisualMainFile(def->donor)+(uintptr_t)data->o_attributes);
         if (prop->part >= 0)
         {
-            part = &attr->modelparts_container->modelparts_desc[prop->joint-4]->modelparts[prop->part][0];
+            part = &attr->modelparts_container->modelparts_desc[prop->joint-4]->modelparts[model_part][0];
             dl = (part->flags & 15) == 1 ? ((Gfx**)part->dl)[1] : part->dl;
             if ((part->flags & 15) == 1) prefix = ((Gfx**)part->dl)[0];
         }
@@ -479,6 +543,7 @@ static void ccVisualTick(GObj *g)
                     part ? part->mobjsubs : attr->commonparts_container->commonparts[0].p_mobjsubs ? attr->commonparts_container->commonparts[0].p_mobjsubs[prop->joint-4] : NULL,
                     part ? part->costume_matanim_joints : attr->commonparts_container->commonparts[0].p_costume_matanim_joints ? attr->commonparts_container->commonparts[0].p_costume_matanim_joints[prop->joint-4] : NULL,
                     part ? part->main_matanim_joints : NULL, 0);
+                if (ball) ccVisualBallColor(s, DObjGetStruct(s->model), ccBodyKind(fp));
             }
         }
         if (s->model)
@@ -538,7 +603,13 @@ static void ccVisualTick(GObj *g)
 }
 
 /* Exposed ABI facts let linked-MIPS checks avoid guessed private offsets. */
-const u32 ccVisualDrawLayout[] = { __builtin_offsetof(DObj,dl), __builtin_offsetof(DObj,user_data) };
+const u32 ccVisualDrawLayout[] = { __builtin_offsetof(DObj,dl), __builtin_offsetof(DObj,user_data), G_RM_PASS | G_RM_AA_ZB_OPA_SURF2 };
+const u32 ccChargeVisualLayout[] = {
+    __builtin_offsetof(FTStruct,colanim.colanim_id), nGMColAnimFighterCommonSpecialNCharge,
+    FTDONKEY_GIANTPUNCH_CHARGE_MAX, __builtin_offsetof(CCVisualState,charge_flash),
+    __builtin_offsetof(CCVisualState,ball_palette), __builtin_offsetof(CCVisualState,ball_palettes),
+    __builtin_offsetof(MObj,palette_id), __builtin_offsetof(MObj,sub.palettes), sizeof(FTCharBuilderNeutralState)
+};
 const u32 ccVisualMaterialLayout[] = {
     __builtin_offsetof(SYMallocRegion,ptr), __builtin_offsetof(DObj,mobj), sizeof(MObj),
     __builtin_offsetof(MObj,sub), __builtin_offsetof(MObjSub,sprites), __builtin_offsetof(MObjSub,flags)

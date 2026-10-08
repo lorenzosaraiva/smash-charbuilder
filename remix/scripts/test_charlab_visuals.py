@@ -13,6 +13,9 @@ from elfData import read_elf
 
 def test_visuals(r):
     root = Path(__file__).resolve().parents[1]
+    # Stage lighting executes lbCommonSin/Cos from ovl0, including its real
+    # lookup table. Other runtime suites only needed main code and ovl2/3.
+    r.write(0x800C7840,r.rom[0x43220:0x51C90])
     names = ('state_size','model','charge','effect','hidden','dobj_flags','hidden_mask',
              'next','fighter','parts','common','part_size','desc_size','desc_dl','shot_dl','shot_mats',
              'loop','voice','wait_op','end_op','loop_op','stop_op','voice_op','fgm_op',
@@ -33,6 +36,10 @@ def test_visuals(r):
         assert counter<200
         r.write(g,bytes(0x400));r.u32(g+0x84,g+0x100)
         r.u32(g+r.layout['obj'],g+0x200)
+        # Emulate the native descriptor's single-mesh constructor. Previously
+        # the allocation fixture left dl=0 and only checked transforms.
+        if r.reg(UC_MIPS_REG_A0)==r.addr('sCCPropDesc'):
+            r.u32(g+0x200+draw_fields[0],r.u32(r.reg(UC_MIPS_REG_A0)+0x18))
         r.u32(g+layout['next'],r.u32(links+24));r.u32(links+24,g)
         allocated.append((g,r.reg(UC_MIPS_REG_A0)))
         return g
@@ -55,7 +62,7 @@ def test_visuals(r):
     # Native fighter pass, real material branches and a deliberately dirty
     # palettized mesh: test the state seen by subsequent stage/effect draws,
     # not merely whether the prop emitted a display-list call.
-    draw_fields=struct.unpack('>2I',r.read(r.addr('ccVisualDrawLayout'),8))
+    draw_fields=struct.unpack('>3I',r.read(r.addr('ccVisualDrawLayout'),12))
     heap_ptr,mobj_field,mobj_size,sub_field,sprites_field,flags_field=struct.unpack('>6I',r.read(r.addr('ccVisualMaterialLayout'),24))
     heads=native['gSYTaskmanDLHeads'];stage_color=native['gMPCollisionLightColor']
     saved_heads=r.read(heads,16);saved_color=r.read(stage_color,4)
@@ -109,6 +116,12 @@ def test_visuals(r):
             mesh=commands.index((0xDE000000,draw_dl))
             assert commands.index((0xFB000000,0xF0E0D0FF))<mesh
             assert commands.index((0xF8000000,0))<mesh
+            assert (0xE200001C,draw_fields[2]) in commands[:mesh],('Missing native opaque two-cycle mode',commands)
+            assert (0xDB020000,24) in commands[:mesh],('Stone inherited another pass\'s light count',commands)
+            lights=[address for word,address in commands[:mesh] if word>>24==0xDC and word&255==10]
+            assert len(lights)==1,('Missing stage light before fighter mesh',commands)
+            direction=struct.unpack('>3b',r.read(lights[0]+8,3))
+            assert 95<=math.sqrt(sum(v*v for v in direction))<=101,('Uninitialized Stone light direction',direction)
             assert commands[1]==(0xE3000A01,0x100000),('Missing two-cycle prop pipeline',commands)
             assert ((0xDE000000,prefix) in commands)==use_prefix
             assert r.u32(heads+4)==0x80248700,('Fighter prop wrote into effects head 1',commands)
@@ -154,6 +167,54 @@ def test_visuals(r):
         return d,c,state+port*layout['state_size']
     def tick(c,time):
         r.f32(c+r.clock_frame,time);r.call('ccVisualTick',r.GOBJ)
+    charge_id,charge_anim,charge_max,flash,palette,palettes,palette_id,palette_ptr,neutral_size=struct.unpack('>9I',r.read(r.addr('ccChargeVisualLayout'),36))
+    set_color=native['ftParamCheckSetFighterColAnimID'];reset_color=native['ftParamResetStatUpdateColAnim']
+    saved_colors={a:r.services.get(a) for a in (set_color,reset_color)}
+    color_calls=[]
+    def color():
+        if r.u32(r.FP+charge_id)==0x123:return 0 # Higher-priority native effect.
+        color_calls.append(r.reg(UC_MIPS_REG_A1));r.u32(r.FP+charge_id,r.reg(UC_MIPS_REG_A1));return 1
+    r.services[set_color]=color
+    r.services[reset_color]=lambda:r.u32(r.FP+charge_id,0)
+    # Full charge must remain visible outside the charge phase and must not
+    # restart the native color script each frame. No passive union writes.
+    for body in range(12):
+        if body==2:continue
+        for port in range(4):
+            _,c,s=context(0,body,port)
+            r.u32(r.VALUES+15*4,8);r.call('ccSync',r.FP,r.ENTRIES,r.layout['training'])
+            stored=r.addr('sFTCharBuilderNeutralStates')+port*neutral_size
+            r.write(stored,struct.pack('>6I',r.FP,r.u32(r.FP+r.player_num),body,-1&0xFFFFFFFF,charge_max,0))
+            r.u32(r.FP+0x24,10);r.u32(r.FP+charge_id,0)
+            before=len(color_calls);r.call('ccVisualTick',r.GOBJ)
+            assert r.u32(r.FP+charge_id)==charge_anim and r.u32(s+flash)
+            r.call('ccVisualTick',r.GOBJ);assert len(color_calls)==before+1
+            r.u32(r.FP+charge_id,0);r.call('ccVisualTick',r.GOBJ)
+            assert r.u32(r.FP+charge_id)==charge_anim,('Status reset lost stored flash',body,port)
+            r.u32(stored+16,charge_max-1);r.call('ccVisualTick',r.GOBJ)
+            assert r.u32(r.FP+charge_id)==0 and not r.u32(s+flash)
+            r.u32(stored+16,charge_max);r.u32(r.FP+charge_id,0x123);r.call('ccVisualTick',r.GOBJ)
+            assert r.u32(r.FP+charge_id)==0x123
+            r.u32(stored+16,0);r.call('ccVisualTick',r.GOBJ)
+            assert r.u32(r.FP+charge_id)==0x123,('Borrowed cleanup removed a native color effect',body,port)
+    for a,service in saved_colors.items():
+        if service is None:del r.services[a]
+        else:r.services[a]=service
+    # Execute private color conversion against a CI4 palette, preserving alpha,
+    # source bytes and independent per-player buffers.
+    _,c,s=context(0)
+    m=0x8024A000;original_palette=0x8024A300;table=0x8024A340
+    source_colors=[0xFFFF,0x0840,0x0001,0xF801]*4
+    raw=struct.pack('>16H',*source_colors);r.write(original_palette,raw);r.u32(table,original_palette)
+    for body in range(12):
+        r.write(m,bytes(mobj_size));r.u32(draw_model+mobj_field,m)
+        r.u32(m+palette_ptr,table);r.f32(m+palette_id,0)
+        r.call('ccVisualBallColor',s,draw_model,body)
+        output=struct.unpack('>16H',r.read(s+palette,32))
+        assert [v&1 for v in output]==[v&1 for v in source_colors]
+        assert output[0]!=0 and output[0]!=0xFFFF
+        assert r.u32(m+palette_ptr)==s+palettes and r.u32(s+palettes)==s+palette
+        assert r.read(original_palette,32)==raw
     # Independent original ELF prop samples (the visual/audio scripts extend
     # its earlier safe catalog, so those are checked as executed clocks below).
     oracle,sections,symbols=read_elf(root.parent/'ssb-decomp-re/build/testSpecialAnimations','<')
@@ -167,9 +228,9 @@ def test_visuals(r):
             sample=r.u32(p);name='sFTCustomSpecialAttachment'+str(index)
             if r.u32(d+12)==3:
                 # Remix-only Morph Ball: source mesh and explicit native
-                # model-change boundaries (part 2 at 10, part 1 at 43).
+                # model-change boundaries (part 1 at 3/43, part 2 at 10).
                 count=r.u32(r.u32(d+4)+20)
-                assert [i for i in range(count) if r.u32(sample+i*40+36)]==list(range(10,43))
+                assert [i for i in range(count) if r.u32(sample+i*40+36)]==list(range(3,49))
                 assert r.u32(p+4)==6 and r.u32(p+8)==2 and r.u32(p+12)==1
             else:
                 raw=original(name)
@@ -204,11 +265,15 @@ def test_visuals(r):
                     placements+=1
             hidden=bool(r.u32(prop+12));assert bool(r.u32(s+layout['hidden']))==hidden
             if donor==3:
-                for time in (9,10,42,43,49):
+                for time in (2,3,9,10,42,43,48,49):
                     tick(c,time)
-                    active=10<=time<43
+                    active=3<=time<49
                     assert bool(r.u32(s+layout['hidden']))==active
                     assert bool(r.u32(s+layout['model']))==active
+                    if active:
+                        model=r.u32(r.u32(s+layout['model'])+r.layout['obj'])
+                        part_id=1 if time<10 or time>=43 else 2
+                        assert r.u32(model+draw_fields[0])==r.u32(parts+part_id*2*layout['part_size']),(index,body,time,part_id,hex(r.u32(model+draw_fields[0])),hex(r.u32(parts+part_id*2*layout['part_size'])))
             r.call('ccStatusChanging',r.GOBJ,18) # native damage/common interrupt
             assert not any(r.u32(s+layout[f]) for f in ('model','charge','effect','hidden'))
             for i in range(4,37):assert not r.read(r.JOINTS+i*0x100+layout['dobj_flags'],1)[0]&layout['hidden_mask']
@@ -349,4 +414,4 @@ def test_visuals(r):
         assert all(not r.read(joints+i*0x100+layout['dobj_flags'],1)[0]&layout['hidden_mask'] for i in range(4,37))
     r.FP,r.GOBJ,r.JOINTS=previous;r.u32(links+12,0)
     assert r.u32(r.addr('gFTCustomMoveValidationFailures'))==0
-    print(f'PASS: six native fighter-pass/material texture branch checks with restored one-cycle/TLUT/alpha/render state and untouched effects head, {len(props)} source prop tables including ground/air Morph Ball windows, {placements} linked-MIPS placements, 88 Samus tether-glow placements, {constructors} attached constructors, Cutter/Falcon flag windows, eight charge sizes/release handoff, source audio clocks and interruption/death/four-port reset/stale-owner cleanup (allocation/audio fixtures; rendered acceptance pending).')
+    print(f'PASS: six opaque fighter-pass/material checks with restored one-cycle/TLUT/alpha/render state, 44 stored-charge blink/priority/cleanup checks, twelve private body palettes, {len(props)} source prop tables including all Morph Ball phases, {placements} linked-MIPS placements, 88 Samus tether-glow placements, {constructors} attached constructors, Cutter/Falcon flag windows, eight charge sizes/release handoff, source audio clocks and interruption/death/four-port reset/stale-owner cleanup (allocation/audio fixtures; rendered acceptance pending).')

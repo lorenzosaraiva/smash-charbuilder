@@ -1,5 +1,20 @@
 # Changes
 
+## 0.1.33 - 2026-10-08: Remix Stone lighting
+
+- Build local Remix preview 0.1.16 and preserve the original Character Lab ROM.
+- Install the native one-light count and stage direction before borrowed fighter meshes. Kirby Stone already supplies its brown diffuse/ambient material and texture; it no longer relies on another draw pass's light setup.
+- Check light setup ordering and initialized direction in linked MIPS; exercise Stone input, replacement and recovery in the native CPU scene. Rendered colour acceptance remains pending.
+- Include the stored Giant Punch flash and visible, body-coloured Morph Ball fixes from 0.1.32 in this checkpoint.
+
+## 0.1.32 - 2026-10-08: Remix charge flash and visible Morph Ball
+
+- Build local Remix preview 0.1.15; preserve the decomp ROM and existing published download links.
+- Reapply the native Giant Punch full-charge color script from stored sidecar state, without resetting its blink every frame. Consume/clear the borrowed flash when charge is spent, respect native color priority and guard player generations.
+- Initialize borrowed fighter meshes with the native opaque two-cycle render mode before submission. Earlier prop checks missed the incoming blend state.
+- Show Samus Bomb's source compression/round/recovery meshes throughout frames 3-48 and tint a private CI4 ball palette for the body. Restore native visibility at frame 49 or interruption. Preserve source-sized geometry, native body hurtboxes, the original hop and one bomb per input.
+- Add linked-MIPS color/phase/render-state regressions and real-input stored-charge and Morph Ball hop checks. Automatic checks are distinct from pending rendered acceptance.
+
 ## 0.1.31 - 2026-10-08: Remix tether materials and stage state
 
 - Release Remix preview 0.1.14; preserve the decomp ROM and download.

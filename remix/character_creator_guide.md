@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.14 (2026-10-08)**.
+Character Lab has an original-roster Remix preview, **0.1.16 (2026-10-08)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -34,6 +34,10 @@ In Training, press **D-pad Down** to cycle Model Display through **HITBOX**,
 **HITBOX+**, ECB and normal rendering. Its **Improved Combo Meter** is enabled by default and includes grabs
 and wall bounces. The four unlockable fighters and Item Switch remain unlocked.
 
+Fully charged **DK Neutral B** blinks while the punch is stored. **Samus Down B**
+turns your body into a body-colored Morph Ball, including the small original hop;
+one input still creates one bomb. Visual acceptance of the local 0.1.16 fix is pending.
+
 ## Saved presets
 
 Four presets start enabled with mixed normals; their bodies are Mario, Fox,
@@ -48,7 +52,7 @@ Changing the compiled roster later can change selector indexes.
 
 ## What the moves inherit
 
-Remix 0.1.14 draws borrowed fighter parts in the native fighter pass and
+Remix 0.1.16 draws borrowed fighter parts in the native fighter pass and
 restores its one-cycle state afterward, addressing noisy tether textures and
 white stage layers. Beam materials advance once per frame. Native material
 submission and exit state have regression checks; rendered acceptance of this
@@ -58,8 +62,8 @@ Samus Bomb creates one bomb per Down B input, even on DK's body. Landing or
 entering the air cannot replay that spawn. A new input creates a new bomb;
 aerial availability follows the selected donor, so DK can use Samus Bomb in
 the air. DK Down B has two slaps in one native cycle; tap B again during the move to
-request another cycle. Samus Bomb becomes the donor Morph Ball on frames
-10-42 and restores the selected body on exit. Samus tether includes its native
+request another cycle. Samus Bomb becomes a body-colored donor Morph Ball on
+frames 3-48, follows the original hop and restores the selected body on exit. Samus tether includes its native
 glow alongside the donor beam parts. These changes pass CPU checks; visible
 alignment and broader interruption acceptance remain pending.
 

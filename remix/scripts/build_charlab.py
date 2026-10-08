@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.14'
+VERSION = '0.1.16'
 UPDATED = '2026-10-08'
 
 
@@ -74,7 +74,14 @@ def package(desktop=None):
 
 Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
-Fixes: native fighter-pass tether meshes with restored one-cycle/palette/alpha/
+Fixes: borrowed Stone installs the native one-light count and stage direction
+before its brown material/texture draws. Stored Giant Punch uses the native full-charge blinking color script on
+borrowed bodies. Samus Bomb draws with an explicit opaque two-cycle mode and a
+private body-colored Morph Ball palette throughout source frames 3-48, including
+compression and recovery. Source hop physics and one bomb per input are preserved.
+Rendered visual acceptance remains pending.
+
+Retains: native fighter-pass tether meshes with restored one-cycle/palette/alpha/
 render/light state, once-per-frame beam material animations, correct F3DEX2
 graphics commands, and one Samus bomb per Down B, including DK's body and ground/air
 transitions. Consumed spawn flags cannot replay; fresh inputs retain source timing.
