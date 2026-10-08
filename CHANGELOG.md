@@ -9,6 +9,8 @@
 - Add Kirby's native inhale particle script on a preloaded private bank, following the receiving body's face during the source loop. Owned wind and mouth handles clear on release, capture, interrupts, death and scene changes.
 - Emit the native discarded-copy star on L or native heavy-hit copy loss, once per held copy. It keeps the original movement, lifetime and splash.
 - Add a geometric open-mouth overlay attached to each original foreign body's head, with source-phase opening/closing and facing/pose tracking. It does not edit gameplay joints or body hurtboxes. Full body/stretch retargeting and copied hats remain pending.
+- Resolve native callback patch addresses from the authoritative symbol map. An incorrect inhale map comment previously placed a hook inside native Stone physics; leave the vector-distance helper native to preserve its ABI. Add independent address regression checks.
+- Check native Kirby Stone recovery after the address correction. Track the separately observed native copy-hat material fault in the CPU contact fixture; borrowed-body copy sequences pass.
 - Align the runtime end before subsequent MIPS hooks. The new byte array exposed an unaligned-code startup freeze in the prototype; alignment verification now catches it before packaging.
 - Check the complete inhale/copy/discard/aerial sequence on all eleven foreign original bodies in the CPU emulator, including wind source-byte comparison, one L-discard star and owned visual cleanup. Separate these null-rendering checks from pending rendered mouth placement, wind and Stone acceptance.
 

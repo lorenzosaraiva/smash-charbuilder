@@ -55,7 +55,7 @@ if args.tether_materials:assert args.paired_miss and args.paired_donor==3 and ar
 if args.egg_contact:assert args.neutral==11
 if args.projectile_contact:assert args.neutral==5
 if args.full_charge:assert args.neutral==8 and args.body!=2
-if args.inhale_contact:assert args.neutral==12 and args.body!=8
+if args.inhale_contact:assert args.neutral==12
 
 def constant(name):
     address,length,index=syms[name];section=sections[index]
@@ -571,15 +571,17 @@ try:
                 assert not u32(native['__osFaultedThread']),diagnostic()
                 assert not u32(fighter()+layout[17]),('Victim survived release',diagnostic())
                 frames(160)
-            assert u32(state+il[1])==2,('Mario ability was not copied',inhale_choices,diagnostic())
+            copy_choice=u32(fighter()+il[3]) if args.body==8 else u32(state+il[1])
+            assert copy_choice==(0 if args.body==8 else 2),('Mario ability was not copied',copy_choice,inhale_choices,diagnostic())
             pulse(0x40);frames(110)
             assert 0 in weapon_kinds,('Copied Mario Fireball missing',weapon_kinds,diagnostic())
             wait(lambda:u32(fighter()+0x24)==10,'Copied Neutral recovery',seconds=30)
             stars_before=u32(labels['CharLabRuntime.gCCVisualEffects'])
             pulse(0x2000);frames(200) # Plugin L trigger; 0x2 is Training reset.
             wait(lambda:u32(fighter()+0x24)==10,'L-discard taunt recovery',seconds=30)
-            assert u32(state+il[1])==12,('Taunt did not discard copy',diagnostic())
-            assert u32(labels['CharLabRuntime.gCCVisualEffects'])==stars_before+1,('Native discarded star was not created once',stars_before,u32(labels['CharLabRuntime.gCCVisualEffects']),diagnostic())
+            copy_choice=u32(fighter()+il[3]) if args.body==8 else u32(state+il[1])
+            assert copy_choice==(8 if args.body==8 else 12),('Taunt did not discard copy',copy_choice,diagnostic())
+            assert args.body==8 or u32(labels['CharLabRuntime.gCCVisualEffects'])==stars_before+1,('Native discarded star was not created once',stars_before,u32(labels['CharLabRuntime.gCCVisualEffects']),diagnostic())
             pulse(0x0800);frames(4);keys(0x40)
             wait(lambda:u32(fighter()+0x24)==il[12],'Aerial inhale loop',seconds=30)
             frames(90);keys(0);frames(130)
@@ -589,7 +591,7 @@ try:
             assert {il[14],il[15],il[16],il[17]}<=inhale_victims,('Missing native victim phases',inhale_victims,il,diagnostic())
             assert u32(fighter()+8)==args.body and u32(fighter(1)+8)==0
             iv=constant('ccInhaleVisualLayout')
-            assert all(inhale_visual_samples.values()),('Missing inhale mouth/wind',inhale_visual_samples,sorted(inhale_wind_diagnostics))
+            assert args.body==8 or all(inhale_visual_samples.values()),('Missing inhale mouth/wind',inhale_visual_samples,sorted(inhale_wind_diagnostics))
             assert not inhale_visual_errors,inhale_visual_errors[:8]
             assert not u32(state+iv[0]) and not u32(state+iv[1]),('Inhale visuals survived recovery',diagnostic())
             assert all(math.isfinite(v) and abs(v)<50000 for row in trace for v in row[2])
@@ -597,7 +599,7 @@ try:
             report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':args.body,'neutral':12,
                     'checks':['real held B inhale','native capture and held ownership','A star spit and release','repeat inhale and B copy release','copied Mario Fireball input','L discards copied ability','aerial inhale and ground handoff/release','native body identity and recovery'],
                     'fighter_statuses':sorted(inhale_observed),'victim_statuses':sorted(inhale_victims),'copied_choices':sorted(inhale_choices),'rendering':'null'}
-            report['inhale_visual_checks']={'samples':inhale_visual_samples,'checks':['native Kirby wind script matches source ROM','native wind particle allocation','finite mouth/particle transforms','exactly one native L-discard star','mouth/wind recovery cleanup'],'rendering':'null'}
+            report['inhale_visual_checks']={'samples':inhale_visual_samples,'native_presentation':args.body==8,'checks':[] if args.body==8 else ['native Kirby wind script matches source ROM','native wind particle allocation','finite mouth/particle transforms','exactly one native L-discard star','mouth/wind recovery cleanup'],'rendering':'null'}
             (report_directory/f'cpu-scenes-inhale-{args.body}.json').write_text(json.dumps(report,indent=2)+'\n')
             print('PASS: inhale, spit, copy and copied Neutral B',report,flush=True);raise SystemExit(0)
         trace.clear();tracking=True;pulse(0x40)

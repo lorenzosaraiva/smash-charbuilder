@@ -76,6 +76,13 @@ def generate():
         for name in wanted:
             fn = found[name]; fn.update(donor=donor, file=file)
             records.append(fn); pieces.append(fn['text'])
+    # Comments can contain stale addresses: an inhale map comment pointed
+    # into Stone's physics routine. The authoritative map owns native patches.
+    native_addresses = {name:int(address,16) for name,address in re.findall(
+        r'^(\w+)\s*=\s*(0x[0-9a-fA-F]+);',
+        (LAB/'symbols/symbols_us.txt').read_text(), re.M)}
+    for record in records:
+        record['address'] = native_addresses.get(record['name'],record['address'])
     source = '\n'.join(pieces)
     # Inhale uses native capture/release and source clocks. Copied abilities
     # live outside every receiving body's passive union; borrowed wind uses
@@ -153,6 +160,9 @@ void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gob
         # Remix's Dark Samus initializer owns the latter entry patch. Borrowed
         # Samus entry routines call our renamed initializer directly instead.
         if fn['address'] in (0x80154758, 0x8015E218): continue
+        # Vector/scalar helpers are called directly by imported callbacks; they
+        # cannot be routed through a fighter-owner discriminator.
+        if fn['file'].endswith('ftkirbyspecialn.c') and not fn['args'].lstrip().startswith(('FTStruct', 'GObj')): continue
         address = fn['address']
         offset = address - (0x800D6490-0x51C90) if address < 0x80131B00 else address - (0x80131B00-0xAC540)
         kind = 1 if fn['args'].lstrip().startswith('FTStruct') else 0

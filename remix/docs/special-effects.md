@@ -67,6 +67,13 @@ native heavy-hit copy loss emits one native discard star per held copy. Wind and
 mouth handles clear on recovery, capture, interruptions, death and scene resets.
 Per-body face offsets and rendered alignment still require in-game acceptance.
 
+Native Kirby retains Remix's original presentation. His basic inhale/recovery
+and Stone input/recovery pass CPU checks. The extended native contact sequence
+(`--body 8 --neutral 12 --inhale-contact`) faults in copy-hat material setup after
+absorbing Mario in the null-rendering fixture. Disabling foreign preloads and
+callback routing did not resolve it; native copy-hat investigation and rendered
+comparison remain pending. Borrowed-body copy does not use that hat path.
+
 The 0.1.18 null-rendering CPU sequence passes on every foreign original body:
 capture, spit, repeat capture, copy, copied Mario Fireball, actual L-discard taunt
 and aerial inhale/landing/release. Each run observes the mouth and wind, compares

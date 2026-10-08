@@ -24,6 +24,13 @@ from unicorn.mips_const import *
 def linked_object(rom, labels):
     """Independently apply ELF relocations and compare every allocated byte."""
     assert labels['CharLabRuntime.end']%16==0, 'Runtime data left following code unaligned'
+    native_addresses={name:int(address,16) for name,address in re.findall(
+        r'^(\w+)\s*=\s*(0x[0-9a-fA-F]+);',
+        (ROOT.parent/'ssb-decomp-re/symbols/symbols_us.txt').read_text(),re.M)}
+    for hook in json.loads((ROOT/'build/char_creator/runtime/special-hooks.json').read_text()):
+        if hook['name'] in native_addresses:
+            assert hook['address']==native_addresses[hook['name']],('Wrong native hook address',hook['name'])
+        assert hook['name']!='ftKirbySpecialNGetCaptureDistance','Vector helper must retain native ABI'
     for name,address in labels.items():
         if name.startswith(('CharLabSpecials.hook_', 'CharLabPairs.hook_', 'CharLabNormals.hook_')):
             assert address%4==0, ('Unaligned MIPS hook',name,hex(address))

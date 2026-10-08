@@ -48,6 +48,8 @@ See the [decomp-to-Remix matrix](decomp-port.md) for a full move/mechanics rundo
 - [x] Native inhale wind on a preloaded private particle bank, animated receiving-body mouth overlay and native L-discard star.
 - [x] Mouth/wind phase ownership, finite transforms and recovery cleanup; actual L-discard creates one star; null-rendering CPU inhale sequences and donor wind-byte comparisons pass on every foreign original body.
 - [ ] Full body/stretch poses, copy hats and rendered mouth/wind/victim alignment and interruption acceptance.
+- [ ] Investigate the native Kirby copy-hat material fault observed after absorbing Mario in the null-rendering CPU fixture; compare with in-game behavior. Borrowed-body copy sequences pass.
+- [x] Native Kirby Stone input/recovery after correcting an inhale hook address that overlapped Stone physics.
 - [x] Borrowed original-roster specials use safe native status setup followed by shared donor poses.
 - [x] Original-roster special phase clocks retain donor recovery/events, speed and frozen phases.
 - [x] Retain recipes by actual body identity during borrowed special phases.
