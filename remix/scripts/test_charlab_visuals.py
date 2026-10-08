@@ -52,6 +52,34 @@ def test_visuals(r):
     for path in (root.parent/'ssb-decomp-re/src').rglob('*.c'):
         native.update({name:int(address,16) for address,name in re.findall(
             r'// (0x[0-9A-Fa-f]{8})[^\n]*\n(?:[\w*]+\s+)+(\w+)\(',path.read_text(encoding='utf-8'))})
+    # Execute the actual prop display callback and native mesh submission,
+    # starting with particle-owned transparent ENV state. Allocation/finite
+    # transform checks alone cannot catch a mesh multiplied by zero alpha.
+    draw_fields=struct.unpack('>2I',r.read(r.addr('ccVisualDrawLayout'),8))
+    heads=native['gSYTaskmanDLHeads'];stage_color=native['gMPCollisionLightColor']
+    saved_heads=r.read(heads,16);saved_color=r.read(stage_color,4)
+    draw_obj,draw_model,draw_dl,prefix=0x80248000,0x80248200,0x80248400,0x80248600
+    for alpha in (0,64,255):
+        for use_prefix in (False,True):
+            r.write(draw_obj,bytes(0x200));r.write(draw_model,bytes(0x200))
+            r.u32(draw_obj+r.layout['obj'],draw_model)
+            r.u32(draw_model+draw_fields[0],draw_dl)
+            r.u32(draw_model+draw_fields[1],prefix if use_prefix else 0)
+            r.u32(heads,0x80248700);r.u32(heads+4,0x80248808)
+            r.write(0x80248800,struct.pack('>2I',0xFB000000,0xFFFFFF00|alpha))
+            r.write(stage_color,bytes((240,224,208,255)))
+            r.call('ccVisualDrawProp',draw_obj)
+            end=r.u32(heads+4)
+            commands=[struct.unpack('>2I',r.read(i,8)) for i in range(0x80248808,end,8)]
+            assert (0xFB000000,0xF0E0D0FF) in commands,('Missing opaque native stage environment',commands)
+            assert (0xF8000000,0) in commands,('Stale fog alpha on attachment',commands)
+            mesh=commands.index((0xDE000000,draw_dl))
+            assert commands.index((0xFB000000,0xF0E0D0FF))<mesh
+            assert commands.index((0xF8000000,0))<mesh
+            assert commands[1]==(0xE3000A01,0x100000),('Missing two-cycle prop pipeline',commands)
+            assert ((0xDE000000,prefix) in commands)==use_prefix
+            assert r.u32(heads)==0x80248700,('Prop wrote into fighter head 0',commands)
+    r.write(heads,saved_heads);r.write(stage_color,saved_color)
     r.services[r.addr('ccPropMaterials')] = lambda:0
     # Status transitions now refresh the active recipe, as real Training does.
     r.services[r.labels['CharCreator.get_slot_']] = lambda:r.ENTRIES
@@ -282,4 +310,4 @@ def test_visuals(r):
         assert all(not r.read(joints+i*0x100+layout['dobj_flags'],1)[0]&layout['hidden_mask'] for i in range(4,37))
     r.FP,r.GOBJ,r.JOINTS=previous;r.u32(links+12,0)
     assert r.u32(r.addr('gFTCustomMoveValidationFailures'))==0
-    print(f'PASS: {len(props)} source prop tables including ground/air Morph Ball windows, {placements} linked-MIPS placements, 88 Samus tether-glow placements, {constructors} attached constructors, Cutter/Falcon flag windows, eight charge sizes/release handoff, source audio clocks and interruption/death/four-port reset/stale-owner cleanup (allocation/audio fixtures).')
+    print(f'PASS: six real prop display/native mesh submission checks with independent opaque environment/fog/two-cycle state, {len(props)} source prop tables including ground/air Morph Ball windows, {placements} linked-MIPS placements, 88 Samus tether-glow placements, {constructors} attached constructors, Cutter/Falcon flag windows, eight charge sizes/release handoff, source audio clocks and interruption/death/four-port reset/stale-owner cleanup (allocation/audio fixtures; rendered acceptance pending).')

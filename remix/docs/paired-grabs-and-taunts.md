@@ -1,6 +1,6 @@
 # Paired grabs, throws and taunts
 
-Remix preview **0.1.12**, updated **2026-10-07**. Original twelve bodies/donors.
+Remix preview **0.1.13**, updated **2026-10-07**. Original twelve bodies/donors.
 
 ## Controls and behavior
 
@@ -13,6 +13,10 @@ Link and Samus keep donor tether reach, source prop samples and pull timing.
 Samus now includes the native beam glow, which was missing from borrowed
 grabs. Paired-resource preloads run before the match; the glow follows sampled
 donor joint 23 independently of the body's joints and clears on exit/interruption.
+The independent beam parts initialize native stage environment color and clear
+fog alpha before drawing, preventing an earlier transparent effect from hiding
+their two-cycle textures. Graphics commands use the game's F3DEX2 format.
+Actual display/native mesh submission is checked separately from allocation.
 DK's full missed extension/retraction and native cleanup pass CPU checks;
 rendered alignment still needs an in-game check.
 Yoshi uses donor tongue capture. Capture/throw positions use donor socket

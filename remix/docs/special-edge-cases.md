@@ -1,6 +1,6 @@
 # Special edge cases
 
-Updated **2026-10-07**, Remix preview **0.1.12**, project **0.1.29**.
+Updated **2026-10-07**, Remix preview **0.1.13**, project **0.1.30**.
 This milestone covers the original twelve bodies and donors. Body hurtboxes
 remain native; donor attack values, paths and clocks stay independent of poses.
 

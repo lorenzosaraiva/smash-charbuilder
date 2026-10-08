@@ -47,13 +47,14 @@ grab-preserving combo counters, full-roster normal animations and remaining work
 The [Remix guide](../remix/character_creator_guide.md) and
 [port checklist](../remix/docs/character-lab-status.md) cover the separate preview.
 
-Remix preview 0.1.12 includes the following fixes. See
+Remix preview 0.1.13 includes the following fixes. See
 [special edge-case evidence](../remix/docs/special-edge-cases.md).
 
 - [x] Both DK/Samus borrowed down-smash freezes fixed; missing effect joints resolve safely.
 - [x] One Samus bomb per Down B on foreign bodies; phase resumes cannot replay the spawn; fresh inputs retain source timing.
 - [x] Selected donor aerial Down B works on DK's body; unavailable aerial DK donor input still rejects.
 - [x] Actual bomb-count CPU checks, all-foreign-body source event tests and four-port aerial availability checks.
+- [x] Independent fighter-prop render state: native stage environment color, two-cycle shading, clear fog alpha and correct F3DEX2 commands; actual display/native mesh submission regression checks.
 - [x] Samus Bomb Morph Ball and source-positioned tether glow with owned cleanup.
 - [x] Single-tap DK retains one original two-slap cycle; second cycles need another tap.
 - [ ] Rendered acceptance for these Samus models/effects across bodies and interruptions.

@@ -263,6 +263,14 @@ static void ccVisualEffectUpdate(GObj *g)
 static void ccVisualDrawProp(GObj *g)
 {
     Gfx *prefix = DObjGetStruct(g)->user_data.p;
+    /* Fighter part DLs multiply their texture by ENVIRONMENT in cycle 2.
+     * Head 1 has its own state: a particle's transparent environment color
+     * must not hide a tether (or another borrowed fighter attachment). */
+    gDPPipeSync(gSYTaskmanDLHeads[1]++);
+    gDPSetCycleType(gSYTaskmanDLHeads[1]++, G_CYC_2CYCLE);
+    gSPSetGeometryMode(gSYTaskmanDLHeads[1]++, G_ZBUFFER | G_SHADE | G_LIGHTING | G_SHADING_SMOOTH);
+    mpCollisionSetLightColorGetAlpha(&gSYTaskmanDLHeads[1]);
+    gDPSetFogColor(gSYTaskmanDLHeads[1]++, 0, 0, 0, 0);
     if (prefix) gSPDisplayList(gSYTaskmanDLHeads[1]++, prefix);
     gcDrawDObjDLHead1(g);
 }
@@ -520,6 +528,7 @@ static void ccVisualTick(GObj *g)
 }
 
 /* Exposed ABI facts let linked-MIPS checks avoid guessed private offsets. */
+const u32 ccVisualDrawLayout[] = { __builtin_offsetof(DObj,dl), __builtin_offsetof(DObj,user_data) };
 const u32 ccVisualLayout[] = {
     sizeof(CCVisualState), __builtin_offsetof(CCVisualState,model), __builtin_offsetof(CCVisualState,charge),
     __builtin_offsetof(CCVisualState,effect), __builtin_offsetof(CCVisualState,hidden),

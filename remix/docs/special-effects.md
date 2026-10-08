@@ -1,6 +1,6 @@
 # Remix special effects and attachments
 
-Preview **0.1.12**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
+Preview **0.1.13**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
 
 | Donor move | Borrowed presentation |
 | --- | --- |
@@ -12,6 +12,15 @@ Preview **0.1.12**, updated **2026-10-07**. Keep **Original 12 Only** enabled.
 | Samus Bomb | Donor Morph Ball replaces the foreign body on frames 10-42; native body flags return at frame 43 or interruption; one damaging bomb per input, independent of the visual prop |
 | Samus tether grab | Six donor beam parts plus native glow tree/materials at sampled source joint 23, independent of body joints |
 | Samus Charge Shot | Cosmetic orb at the donor socket, all eight source sizes and charging sound; retain through release startup until firing |
+
+Independent fighter props now initialize their own draw state on head 1.
+Samus's beam mesh multiplies textures by environment color; inheriting a previous
+particle's transparent multiplier can hide otherwise valid geometry. The pass
+uses native stage environment color, two-cycle shading and zero fog alpha.
+The runtime also compiles graphics macros as F3DEX2, matching the native renderer.
+Six linked-MIPS cases execute the actual prop callback and native mesh submission
+with transparent/partial/opaque incoming state and optional model prefixes.
+These checks cover command submission and state, not final pixels.
 
 The same source prop samples work on all eleven foreign original bodies. Their
 positions, sizes and lifetimes follow the donor clock, independently of body

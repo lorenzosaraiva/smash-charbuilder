@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.30 - 2026-10-07: Remix tether render state
+
+- Release Remix preview 0.1.13; preserve the decomp ROM and download.
+- Initialize the independent fighter-prop draw pass with native stage environment color, two-cycle shading and zero fog alpha. Samus beam parts and other borrowed fighter meshes cannot inherit a previous effect's transparent environment multiplier.
+- Compile the shared Remix runtime with the same F3DEX2 graphics command format as the game. Prefix display-list calls and render-state macros now use the correct opcodes.
+- Execute the real prop display callback and native mesh submission in linked-MIPS checks, including transparent incoming state and optional model prefixes. Earlier allocation/transform checks did not establish visible geometry.
+- Retain donor beam placement, reach and extension/retraction timing, native body hurtboxes and effect ownership/cleanup. Targeted DK miss/contact/recovery CPU checks remain distinct from rendered acceptance; the local Rice harness did not establish a valid rendered result.
+
 ## 0.1.29 - 2026-10-07: One Samus bomb per Down B
 
 - Release Remix preview 0.1.12; preserve the decomp ROM and download.

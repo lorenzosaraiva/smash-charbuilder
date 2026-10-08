@@ -311,7 +311,7 @@ def main():
     generate_pairs()
     command = ['clang', '-target', 'mips-unknown-none', '-march=mips2', '-mabi=32',
                '-mno-abicalls', '-fno-pic', '-G0', '-Oz', '-ffreestanding', '-fno-builtin',
-               '-fno-stack-protector', '-DFTCHARBUILDER_NORMAL_MECHANICS', '-DFTCHARBUILDER_NEUTRAL_EXTENDED', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
+               '-fno-stack-protector', '-DF3DEX_GBI_2', '-DFTCHARBUILDER_NORMAL_MECHANICS', '-DFTCHARBUILDER_NEUTRAL_EXTENDED', '-D__sgi', '-D_LANGUAGE_C', '-D_MIPS_SZLONG=32', '-DREGION_US',
                '-Ibuild/char_creator/runtime/include', '-I../ssb-decomp-re/include', '-I../ssb-decomp-re/src',
                '-c', 'extra_imports/CharLabRuntime.c', '-o', 'build/char_creator/runtime/runtime.o']
     if os.name == 'nt':
