@@ -36,7 +36,7 @@ restores match endings and rematches.
 | Build | ROM last updated | ROM download | Play package | Source build |
 | --- | --- | --- | --- | --- |
 | **Character Lab** | 2026-10-05 | [character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.z64) | [character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/latest/download/build-info.json) |
-| **Character Lab on Remix (preview 0.1.14)** | 2026-10-08 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
+| **Character Lab on Remix (preview 0.1.21)** | 2026-10-09 | [remix-character-lab.z64](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.z64) | [remix-character-lab.zip](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-character-lab.zip) | [Exact build metadata](https://github.com/lorenzosaraiva/smash-charbuilder/releases/download/remix-preview/remix-build-info.json) |
 
 Dates use Sao Paulo time and refer to the published ROMs. The project version
 above tracks this repository; each source build identifies the exact ROM.
@@ -52,7 +52,7 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
 
-The local Remix **0.1.21** build fixes quitting from pause during borrowed
+The published Remix **0.1.21** build fixes quitting from pause during borrowed
 specials by clearing donor ownership before loading results. CPU checks cover
 quit, return to VS selection and the next match; rendered exit acceptance remains
 pending. This preview also adds **Randomize 4 Builds** in
