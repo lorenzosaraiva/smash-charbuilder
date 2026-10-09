@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.36 (experimental)** | **Last updated: 2026-10-08**
+**Project version: 0.1.38 (experimental)** | **Last updated: 2026-10-09**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -52,7 +52,18 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
 
-The local Remix **0.1.19** build adds Kirby Neutral B to every original body:
+The local Remix **0.1.21** build fixes quitting from pause during borrowed
+specials by clearing donor ownership before loading results. CPU checks cover
+quit, return to VS selection and the next match; rendered exit acceptance remains
+pending. This preview also adds **Randomize 4 Builds** in
+**Settings -> Character Lab**. One press replaces and saves all four recipes,
+randomizes each body and every move from the original twelve, enables them, and
+opens VS selection with Builds 1-4 assigned to P1-P4. Connected ports are humans;
+unused ports become level-5 CPUs. Four stocks, items off, free-for-all.
+Press Start and choose a stage to play. Rendered four-controller acceptance
+remains pending; automated checks are listed in the [port checklist](remix/docs/character-lab-status.md).
+
+It retains Kirby Neutral B on every original body:
 hold B to inhale, then **A or L** to spit a held opponent, or B/down to copy the victim's Neutral B.
 L after copying discards that ability. Native inhale wind and the L-discard star
 remain; the added mouth overlay has been removed. Copied hats and full

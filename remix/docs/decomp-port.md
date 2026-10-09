@@ -1,6 +1,16 @@
 # Decomp to Remix port
 
-Updated **2026-10-08**. Remix preview **0.1.19**, project **0.1.36**.
+Updated **2026-10-09**. Remix preview **0.1.21**, project **0.1.38**.
+
+Preview 0.1.21 clears interrupted donor ownership at scene heap initialization
+before results/CSS reuse fighter memory. Native pause-quit/return/second-match
+checks cover the crash; rendered acceptance remains pending.
+
+Preview 0.1.20 adds **Randomize 4 Builds** to the creator hub. It saves/enables
+four independently randomized original-roster recipes and opens VS with one
+assigned to each ready player slot. Connected ports are humans, unused ports
+level-5 CPUs; rules reset to four stocks, items off, free-for-all. This hub action
+is currently Remix-specific. See [controls](../character_creator_guide.md).
 
 Preview 0.1.19 adds Kirby Neutral B to every original body: original ground/air
 catch geometry and phase timing, native held victims, star spit, copy release,

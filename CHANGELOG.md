@@ -1,5 +1,28 @@
 # Changes
 
+## 0.1.38 - 2026-10-09: Remix pause-quit scene ownership
+
+- Build local Remix preview 0.1.21; preserve the decomp ROM and published links.
+- Clear match-owned donor caches, animation heaps, effects, paired states and copy ownership at native scene heap initialization, after native object teardown and before results/CSS reuse fighter memory. Quitting during a borrowed Fox Up B previously left donor ownership live and crashed results initialization.
+- Extend linked-MIPS scene-reset checks and the real-input randomizer regression to pause/quit during a borrowed special, results, character select and a second match. Null rendering does not establish rendered acceptance of the fix.
+- The user confirmed the randomizer works in game; broad four-controller/matchup acceptance remains pending.
+
+## 0.1.37 - 2026-10-09: Remix four-build VS randomizer
+
+- Build local Remix preview 0.1.20; preserve the decomp ROM and published download links.
+- Add Randomize 4 Builds to the Character Lab hub. Replace/save all four recipes with independent original-roster body and move donors, including explicit Neutral B, grabs, throws and taunts; preserve names.
+- Enable all four presets, assign them to P1-P4 and open VS selection with four selected bodies. Connected controller ports are humans; unused ports are level-5 CPUs. Use distinct native palettes for repeated bodies.
+- Prepare free-for-all, four-stock, items-off rules; clear stale training return, team, Remix mode and per-port stock override state. Start and stage confirmation retain their normal controls.
+- Reserve expanded-model CSS heaps only when used in Original 12 Only mode. Reclaiming five unused reservations fixes the four-ready-player selector overflow; expanded selection still allocates a full heap on demand.
+- Complete native participant files before cross-preset donor preloads in ordinary VS. A model published by another recipe previously made the native loader skip its moveset, crashing Entry. Correct the dependency loader's MIPS pointer argument as well.
+- Use the common effect bank for Pikachu's absent private particle range; a zero-byte ROM bank could otherwise parse stale heap data and hang randomized match setup.
+- Move retargeted pose quaternion scratch arrays into independent per-port storage. The compiled pose function previously overflowed native 0x600-byte fighter thread stacks and corrupted adjacent HUD sprites during four-player Entry/countdown; native CPU checks inspect the thread stack guards.
+- Reuse current-match native main files and share immutable donor movesets across player caches; four independent recipes no longer allocate repeated copies of those same resources.
+- Allow 128 on-demand VS objects instead of 65 so four bodies, borrowed effects and the opening music HUD do not exhaust the native object cap. Preserve higher/unlimited limits.
+- Size fixed donor animation buffers for the original roster and size native body animation heaps accordingly when all VS participants are originals. Expanded donors still reserve larger buffers before play; expanded participants retain their normal native capacity. This recovers enough RAM for four-build resource combinations and the late-loading music font.
+- Add linked-MIPS checks for 144 randomizations, every controller-presence mask, donor coverage, duplicate-body costumes, save order and launch state. Add an optional real-input CPU scene check for the hub button, ready CSS slots and four-fighter VS launch. Null-rendering checks do not establish rendered four-controller acceptance.
+- Native CPU scenes pass the real hub/CSS/stage/match path with four human slots and with P1/P3 humans plus P2/P4 CPUs, including 600 match updates and live thread-stack guards. Editor Test/CSS/stage confirmation still loads Training. Reports are tied to the ROM hash; rendered arbitrary-matchup acceptance remains pending.
+
 ## 0.1.36 - 2026-10-08: Remix inhale wind and safe L spit
 
 - Build local Remix preview 0.1.19; preserve the decomp ROM and published download links.

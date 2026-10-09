@@ -9,6 +9,13 @@ scope CharLab {
         j heap_reset_
         lw ra, 0x14(sp)
         OS.patch_end()
+        // Native scene teardown has ejected its objects before this heap
+        // reset. Forget donor ownership now, before results/CSS can reuse
+        // fighter slots and animation memory from an interrupted special.
+        OS.save_registers()
+        jal CharCreator.reset_cache_
+        nop
+        OS.restore_registers()
         li t0, CharacterSelect.expansion_expansion_ram
         sw r0, 0(t0)
         sw r0, 4(t0)
@@ -87,6 +94,54 @@ scope CharLab {
         addiu sp, sp, -8
         sw ra, 4(sp)
         j CharacterSelect.load_additional_characters_ + 8
+        nop
+    }
+    // Original-roster CSS already loads its twelve native model files. Five
+    // expanded-model heaps reserved up front consume almost 600 KB and leave
+    // too little room for four ready panels. Initialize empty heaps in this
+    // mode, then reserve one only if an expanded CSS model actually uses it.
+    scope css_heap_init_: {
+        OS.patch_start(0x3800000 + CharacterSelect.initialize_dynamic_css_._loop + 0x1C - 0x80400000, CharacterSelect.initialize_dynamic_css_._loop + 0x1C)
+        jal css_heap_init_
+        sw t0, 0xC(at)
+        OS.patch_end()
+        li t0, Toggles.cc_original_12_only
+        lw t0, 4(t0)
+        beqz t0, _native
+        nop
+        li t0, 0x800465E8
+        sw a2, 0xC(t0)
+        or a3, r0, r0
+        _native:
+        j 0x80006D54
+        nop
+    }
+    scope css_heap_alloc_: {
+        OS.patch_start(0x3800000 + CharacterSelect.dynamically_load_character_._use_alt_heap - 0x80400000, CharacterSelect.dynamically_load_character_._use_alt_heap)
+        jal css_heap_alloc_
+        nop
+        OS.patch_end()
+        OS.save_registers()
+        lw t1, 4(t0)
+        lw t2, 8(t0)
+        bne t1, t2, _restore
+        nop
+        // Native C may spill four arguments into the o32 home area.
+        addiu sp, sp, -0x0010
+        li a0, CharacterSelect.dynamic_css.HEAP_SIZE
+        jal 0x80004980
+        lli a1, 16
+        or a2, v0, r0
+        lw a0, 0x30(sp) // saved t0 = destination heap
+        lw a1, 0(a0)
+        li a3, CharacterSelect.dynamic_css.HEAP_SIZE
+        jal 0x80006D54
+        nop
+        addiu sp, sp, 0x0010
+        _restore:
+        OS.restore_registers()
+        li t7, CharacterSelect.dynamic_css.alt_heap_pointer
+        jr ra
         nop
     }
     scope body_kind_: {

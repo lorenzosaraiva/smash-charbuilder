@@ -96,6 +96,20 @@ def prepare_headers():
 
 '''+animation[end:]
     animation=animation.replace('sFTCustomAnimationRigs[fp->fkind]', 'sFTCustomAnimationRigs[ccBodyKind(fp)]')
+    # Native fighter threads have only 0x600 stack bytes. Clang inlines the
+    # retargeter's large quaternion arrays into even the Entry/no-clip path,
+    # overwriting adjacent HUD sprites when four fighters use borrowed moves.
+    # Keep scratch storage independent per port and outside those stacks.
+    pose_arrays = '    FTCustomAnimationQuat source[FTPARTS_JOINT_NUM_MAX], target[FTPARTS_JOINT_NUM_MAX], delta[24], local, desired;'
+    assert animation.count(pose_arrays) == 1
+    animation=animation.replace(pose_arrays, '''    static struct {
+        FTCustomAnimationQuat source[FTPARTS_JOINT_NUM_MAX];
+        FTCustomAnimationQuat target[FTPARTS_JOINT_NUM_MAX], delta[24];
+    } scratch[4];
+    FTCustomAnimationQuat *source = scratch[fp->player & 3].source;
+    FTCustomAnimationQuat *target = scratch[fp->player & 3].target;
+    FTCustomAnimationQuat *delta = scratch[fp->player & 3].delta;
+    FTCustomAnimationQuat local, desired;''')
     # Rigs/descriptors are needed before the shared pose function, while the
     # selector is defined after the special/recovery clock types in runtime C.
     animation=animation.replace('u32 gFTCustomAnimationValidationFailures;', '''typedef struct CCAnimationRecord
@@ -149,6 +163,7 @@ def object_to_bass(path):
         name, value, size, info, other, index = struct.unpack_from('>IIIBBH', data, offset)
         symbols.append((string(symstrings, name), value, size, info, index))
     bindings = {
+        'ccRandomInt': 'Global.get_random_int_safe_',
         'ccOriginalParse': 'CharLab.original_parse_',
         'ccGetEntries': 'CharCreator.get_slot_',
         'ccRestoreBody': 'CharLab.restore_body_',

@@ -2,7 +2,8 @@
 // Included inside scope Toggles by character_appender.py.
 
 head_char_creator:
-cc_original_12_only:; Menu.entry("Original 12 Only", Menu.type.BOOL, OS.TRUE, 0, 1, OS.NULL, OS.NULL, Menu.bool_string_table, OS.NULL, cc_hub_slot_1)
+cc_original_12_only:; Menu.entry("Original 12 Only", Menu.type.BOOL, OS.TRUE, 0, 1, OS.NULL, OS.NULL, Menu.bool_string_table, OS.NULL, cc_randomize_all)
+cc_randomize_all:; Menu.entry_title("Randomize 4 Builds", CharCreator.randomize_all_, cc_hub_slot_1)
 cc_hub_slot_1:; Menu.entry_title("BUILD 1", show_char_creator_slot_1_, cc_hub_slot_2)
 cc_hub_slot_2:; Menu.entry_title("BUILD 2", show_char_creator_slot_2_, cc_hub_slot_3)
 cc_hub_slot_3:; Menu.entry_title("BUILD 3", show_char_creator_slot_3_, cc_hub_slot_4)

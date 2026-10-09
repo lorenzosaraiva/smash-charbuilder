@@ -131,11 +131,21 @@ scope ensure_neutral_particles_: {
     addu t1, t1, t0
     lw t0, 0(t1)
     lw a0, 0x50(t0)
+    // Pikachu has no private particle ROM bank. Loading a zero range reads
+    // unrelated heap contents as a script descriptor and hangs match setup.
+    beqz a0, _common_bank
+    nop
     lw a1, 0x54(t0)
     lw a2, 0x58(t0)
     lw a3, 0x5C(t0)
     jal 0x801159F8 // native bank lookup/load, pre-match only
     nop
+    b _publish_bank
+    nop
+    _common_bank:
+    li t0, 0x801313C4 // gEFManagerParticleBankID
+    lw v0, 0(t0)
+    _publish_bank:
     lw t0, 0x14(sp)
     sw v0, 0(t0)
     lw t1, 0x18(sp)

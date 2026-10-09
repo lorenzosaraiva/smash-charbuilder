@@ -1,11 +1,34 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.19 (2026-10-08)**.
+Character Lab has an original-roster Remix preview, **0.1.21 (2026-10-09)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
 This is a partial port. The [full port matrix](docs/decomp-port.md) lists which
 mechanics are implemented and which still need adapters or playtesting.
+
+## Randomize a four-player match
+
+Open **Settings -> Character Lab -> Randomize 4 Builds** and press A.
+This replaces and saves **all four builds** while keeping their names. Each
+body, normal, special (including Kirby inhale), grab, throw and taunt gets an
+independent donor from the original twelve. Repeated bodies/moves are allowed;
+Original 12 Only is switched on automatically.
+
+All four builds are enabled and assigned to P1-P4. VS selection opens with
+all four bodies ready: connected ports are human players, unused ports are
+level-5 CPUs. Rules are **4 stocks, items off, free-for-all**. Press Start and
+choose a stage. You can edit the VS player settings before starting.
+Use the button again for another roll; the last four recipes persist in SRAM.
+
+Quit a paused match with A+B+R+Z. Version 0.1.21 clears donor state before
+loading results, including when a borrowed special was still active. CPU checks
+cover quitting, returning to VS selection and starting the next match; rendered
+acceptance of this exit fix remains pending.
+
+The user confirmed the randomizer works in game. Automated tests cover the
+selection/setup path; broader rendered four-controller
+acceptance and arbitrary randomized matchups remain pending.
 
 ## Make a build and fight with it
 

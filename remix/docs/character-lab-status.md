@@ -1,6 +1,23 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.19 (2026-10-08)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.21 (2026-10-09)** is a partial port into Smash Remix +EXTRA.
+
+- [x] Randomize 4 Builds hub action: original-twelve bodies and every donor, including grabs/throws, taunts and explicit Neutral B; four saved/enabled builds assigned to P1-P4.
+- [x] Ready VS selections, connected-port humans/unused-port level-5 CPUs, duplicate-body palettes and free-for-all four-stock/items-off rules; stale Training/Remix/stock overrides cleared.
+- [x] Linked-MIPS checks: 144 actual hub handlers, all 16 controller masks and full donor coverage in every randomized field. RNG, palette lookup and SRAM I/O use explicit fixtures.
+- [x] Twelve four-recipe SRAM packing roundtrips include Neutral B/taunt supplements and the new hub title. Original-roster CSS initializes unused expanded-model heaps without reservations and allocates a full heap only on demand; register/ownership guards checked on MIPS.
+- [x] Ordinary VS loads each native participant's complete file set before donor recipes can publish its model; Entry cannot be skipped because another build uses that body as a donor. Separate Training/Tag Team paths retained.
+- [x] A neutral donor without a private particle ROM range uses the common effect bank; zero-byte bank loads cannot hang setup.
+- [x] Retargeted pose scratch arrays use independent per-port storage to fit native fighter thread stacks and protect adjacent match HUD sprites.
+- [x] Native current-match main-file reuse and shared immutable donor scripts avoid duplicate allocations across four recipes; command cursors remain per fighter.
+- [x] Ordinary VS permits 128 on-demand objects for four fighters, borrowed effects and the opening music HUD; existing higher/unlimited caps remain intact.
+- [x] Original-only VS uses original-roster animation-buffer sizes; fixed donor buffers cover Kirby's 0x2EC0 maximum, and expanded participants/donors retain native capacity or pre-match larger allocations.
+- [x] Native CPU scenes with four connected controllers and with P1/P3 humans plus P2/P4 CPUs: actual hub button, ready CSS, Start/stage confirmation, four-fighter load and 600 match updates with intact live Entry/effect thread stack guards. Null renderer; reports must match the packaged ROM hash.
+- [x] Editor Test, Training CSS Start and stage confirmation still reach a running Training match after the VS loader/buffer changes; native CPU regression checked.
+- [x] User confirmed the randomizer works in game.
+- [x] Scene heap resets clear interrupted donor ownership before results/CSS reuse fighter memory; pause/quit, return and second-match CPU regression.
+- [ ] Rendered pause-quit fix acceptance.
+- [ ] Broader rendered randomizer presentation, four-controller play and broad arbitrary-matchup acceptance. Optional --randomizer CPU scenes exercise the real menu/CSS/stage/match route with null rendering.
 
 - [x] Borrowed Stone sets the native light count/direction and complete white/brown light records before drawing its source material; poisoned-heap linked-MIPS checks and real-input replacement/recovery checks pass.
 - [ ] Rendered Stone colour acceptance on foreign bodies.

@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.19'
-UPDATED = '2026-10-08'
+VERSION = '0.1.21'
+UPDATED = '2026-10-09'
 
 
 def run(command, stage, cwd=ROOT):
@@ -74,7 +74,19 @@ def package(desktop=None):
 
 Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
-New: Kirby Neutral B on all original bodies. Hold B to inhale, spit a held
+Fix: quitting from pause during a borrowed special clears donor ownership
+before results/CSS reuse fighter and animation memory. CPU regressions cover
+pause quit, results, return to VS selection and a second match; rendered exit
+acceptance remains pending.
+
+New: Settings -> Character Lab -> Randomize 4 Builds replaces/saves all four
+recipes with independent original-twelve bodies and every move donor, enables
+them and assigns Builds 1-4 to P1-P4. VS opens with four selected bodies:
+connected ports are humans; unused ports are level-5 CPUs. Four stocks, items
+off, free-for-all. Press Start and choose a stage. Names are preserved; the last
+four recipes persist in SRAM. Rendered four-controller acceptance is pending.
+
+Retains: Kirby Neutral B on all original bodies. Hold B to inhale, spit a held
 victim with A or L, B/down to copy its selected Neutral B, and L to discard the copy.
 Original catch reach, ground/air phase events and native victim/release states
 are connected with external four-port copy ownership. Native wind and a discard star remain; the added mouth overlay is removed;

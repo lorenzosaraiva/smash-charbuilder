@@ -4,6 +4,13 @@ Checkboxes mean implemented, not tested in every matchup.
 
 ## Repository
 
+- [x] Remix creator hub Randomize 4 Builds: independently random body/all move donors, four saved/enabled presets and P1-P4 assignments; four-stock items-off VS setup with connected humans and unused-port CPUs.
+- [x] Linked hub/SRAM checks and native four-fighter CPU scene checks for four humans and two humans/two CPUs; null rendering, with thread stack guards checked during Entry and play.
+- [x] User confirmed the randomizer works in game.
+- [x] Scene heap resets clear interrupted donor ownership before results/CSS reuse fighter memory; pause/quit, return and second-match CPU regression.
+- [ ] Rendered pause-quit fix acceptance.
+- [ ] Broader rendered randomizer menu and four-controller VS acceptance.
+
 - [x] Remix Kirby Neutral B on original bodies: inhale/capture, held victim, spit/copy and copied Neutral B, with separate copy ownership and donor reach.
 - [x] L with a swallowed opponent follows donor A-spit release on ground/air.
 - [x] Kirby inhale wind and L-discard star; added geometric mouth overlay removed.

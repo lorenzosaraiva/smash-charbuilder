@@ -3,6 +3,7 @@
 #include <ft/ftcustommove.h>
 #include <sc/scdef.h>
 #include <sc/sctypes.h>
+#include <sys/controller.h>
 #include <sc/sccharbuilder.h>
 #include <ft/ftmain.h>
 #include <ft/ftparam.h>
@@ -14,6 +15,9 @@
 #undef __attribute__
 extern alSoundEffect *func_800269C0_275C0(u16);
 extern s32 ccBodyKind(FTStruct*);
+extern s32 ccRandomInt(s32);
+extern SCBattleState gSCManagerTransferBattleState;
+extern SCBattleState *gSCManagerBattleState;
 extern void ccSuspendJoints(FTStruct*);
 extern void ccResumeJoints(FTStruct*);
 static void ccApplySpecialPose(FTStruct*);
@@ -57,6 +61,85 @@ void ccSetupTraining(s32 body)
     scene->training_man_costume = ftParamGetCostumeCommonID(body, 0);
     scene->training_com_fkind = nFTKindMario;
     scene->training_com_costume = ftParamGetCostumeCommonID(nFTKindMario, body == nFTKindMario ? 1 : 0);
+}
+
+/* Original catalog entries 0..11 share the native fighter ID order. Neutral B
+ * uses explicit choices 1..12; zero means BODY and would bias the draw. */
+void ccRandomizeVS(s32 ***tables, u32 *selected)
+{
+    SCBattleState *battle = &gSCManagerTransferBattleState;
+    s32 port, field, i, costume;
+    battle->game_type = nSCBattleGameTypeRoyal;
+    battle->is_team_battle = FALSE;
+    battle->game_rules = SCBATTLE_GAMERULE_STOCK;
+    battle->stocks = 3;
+    battle->time_limit = 100;
+    battle->handicap = 0;
+    battle->damage_ratio = 100;
+    battle->is_stage_select = TRUE;
+    battle->is_team_attack = FALSE;
+    battle->item_toggles = 0;
+    battle->item_appearance_rate = nSCBattleItemSwitchNone;
+    battle->is_reset_players = FALSE;
+    battle->pl_count = battle->cp_count = 0;
+    for (port = 0; port < 4; port++)
+    {
+        SCPlayerData *player = &battle->players[port];
+        s32 **entries = tables[port];
+        *entries[0] = TRUE;
+        for (field = 1; field < 22; field++)
+            *entries[field] = ccRandomInt(12) + (field == 15);
+        selected[port] = port + 1;
+        player->fkind = *entries[1];
+        player->pkind = nFTPlayerKindCom;
+        /* DeviceStatuses is a packed list of connected port IDs, with -1
+         * entries for unused devices, rather than a per-port presence flag. */
+        for (i = 0; i < 4; i++)
+            if (gSYControllerDeviceStatuses[i] == port)
+                player->pkind = nFTPlayerKindMan;
+        if (player->pkind == nFTPlayerKindMan) battle->pl_count++;
+        else battle->cp_count++;
+        costume = 0;
+        for (i = 0; i < port; i++)
+            if (battle->players[i].fkind == player->fkind) costume++;
+        player->costume = ftParamGetCostumeCommonID(player->fkind, costume);
+        player->shade = 0;
+        player->level = 5;
+        player->handicap = 9;
+        player->team = port % 3;
+        player->player = player->color = port;
+        player->stock_count = 3;
+    }
+}
+
+/* The native all-files loader skips a fighter once its main model is present.
+ * Finish every participant's native files before any other recipe publishes
+ * that body as a main-only donor, or Entry can read a null moveset base. */
+void ccPreloadVSBodyFiles(void)
+{
+    s32 port, original = TRUE, largest = 0;
+    if (*(u8*)0x800A4AD0 != 0x16 || gSCManagerBattleState == NULL) return;
+    /* Four native bodies plus borrowed attachments/HUD can hit the original
+     * 65-object limit before GO. Objects still allocate on demand; preserve
+     * a higher or unlimited cap rather than making UI creation return NULL. */
+    if (*(s16*)0x80046A12 >= 0 && *(s16*)0x80046A12 < 128)
+        *(s16*)0x80046A12 = 128;
+    for (port = 0; port < 4; port++)
+    {
+        SCPlayerData *player = &gSCManagerBattleState->players[port];
+        if (player->pkind == nFTPlayerKindNot) continue;
+        if (player->fkind < 12) ftManagerSetupFilesAllKind(player->fkind);
+        else original = FALSE;
+    }
+    /* Remix sizes native body buffers for its entire expanded roster. An
+     * original-only match needs none of those oversized animation banks. */
+    if (original)
+    {
+        for (port = 0; port < 12; port++)
+            if (largest < dFTManagerDataFiles[port]->file_anim_size)
+                largest = dFTManagerDataFiles[port]->file_anim_size;
+        gFTManagerFigatreeHeapSize = largest;
+    }
 }
 
 SCCharBuilderSlot gSCManagerCharBuilderSlots[4];
@@ -512,6 +595,16 @@ const u32 ccTrainingSetupLayout[] = {
     OFF(SCCommonData, player), OFF(SCCommonData, training_man_fkind),
     OFF(SCCommonData, training_man_costume), OFF(SCCommonData, training_com_fkind),
     OFF(SCCommonData, training_com_costume)
+};
+const u32 ccRandomizerLayout[] = {
+    sizeof(SCBattleState), OFF(SCBattleState, players), sizeof(SCPlayerData),
+    OFF(SCPlayerData, fkind), OFF(SCPlayerData, pkind), OFF(SCPlayerData, costume),
+    OFF(SCPlayerData, shade), OFF(SCPlayerData, level), OFF(SCPlayerData, handicap),
+    OFF(SCPlayerData, stock_count), OFF(SCBattleState, stocks),
+    OFF(SCBattleState, game_rules), OFF(SCBattleState, is_team_battle),
+    OFF(SCBattleState, item_toggles), OFF(SCBattleState, item_appearance_rate),
+    OFF(SCBattleState, is_reset_players), OFF(SCBattleState, pl_count),
+    OFF(SCBattleState, cp_count), OFF(SCBattleState, is_stage_select)
 };
 
 const u32 ccNormalLayout[] = {

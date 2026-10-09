@@ -22,6 +22,9 @@ parser.add_argument('--falcon-contact',action='store_true',help='Place the CPU i
 parser.add_argument('--editor-test',action='store_true',help='Enter the editor, activate Test in Training with A, then return with B')
 parser.add_argument('--editor-slot',type=int,choices=range(1,5),default=1)
 parser.add_argument('--editor-play',action='store_true',help='Continue editor Test through CSS Start and stage confirmation into Training')
+parser.add_argument('--randomizer',action='store_true',help='Activate the real creator hub button, check four ready VS slots and start a four-fighter match')
+parser.add_argument('--randomizer-quit',action='store_true',help='Also pause and quit the randomized match using A+B+R+Z')
+parser.add_argument('--randomizer-controllers',type=int,choices=range(1,16),default=5,help='Connected controller port bitmask for randomizer checks (default P1/P3)')
 parser.add_argument('--normal-mechanics',action='store_true',help='Exercise donor jab3/rapid phases and controlled live Link down-air contact')
 parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borrow this donor for normals and check real A-input pose streaming')
 parser.add_argument('--down-smash',action='store_true',help='Focus normal regression on a real down-smash input')
@@ -49,6 +52,7 @@ if args.edge:
 if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up')
 if args.bomb_count:assert args.donor==3 and args.special_side=='down'
 if args.editor_play:assert args.editor_test
+if args.randomizer_quit:assert args.randomizer
 if args.normal_mechanics:assert args.normal_animations is not None
 if args.down_smash:assert args.normal_animations is not None
 if args.paired_miss:assert args.paired_donor is not None
@@ -73,6 +77,9 @@ build.mkdir(parents=True,exist_ok=True)
 source='''#include <sc/scene.h>
 #include <ft/fighter.h>
 #include <wp/weapon.h>
+#include <mn/menu.h>
+const unsigned int randomizer_css[]={sizeof(MNPlayersSlotVS),__builtin_offsetof(MNPlayersSlotVS,fkind),__builtin_offsetof(MNPlayersSlotVS,pkind),__builtin_offsetof(MNPlayersSlotVS,is_selected),__builtin_offsetof(MNPlayersSlotVS,is_fighter_selected)};
+const unsigned int thread_layout[]={__builtin_offsetof(GObj,gobjproc_head),__builtin_offsetof(GObjProcess,link_next),__builtin_offsetof(GObjProcess,kind),__builtin_offsetof(GObjProcess,exec),__builtin_offsetof(GObjThread,stack),nGCProcessKindThread};
 const unsigned int layout[]={__builtin_offsetof(SCCommonData,training_man_fkind),__builtin_offsetof(SCCommonData,training_com_fkind),__builtin_offsetof(SCCommonData,maps_training_gkind),__builtin_offsetof(SCBattleState,players),sizeof(SCPlayerData),__builtin_offsetof(SCPlayerData,fighter_gobj),__builtin_offsetof(FTStruct,item_gobj),__builtin_offsetof(FTStruct,attack_colls),sizeof(FTAttackColl),__builtin_offsetof(FTAttackColl,pos_curr),__builtin_offsetof(FTStruct,percent_damage),__builtin_offsetof(FTStruct,coll_data),sizeof(MPCollData),__builtin_offsetof(SCCommonData,player),__builtin_offsetof(SCCommonData,training_man_costume),__builtin_offsetof(SCCommonData,training_com_costume)};
 const unsigned int egg_statuses[]={nFTCommonStatusCaptureYoshi,nFTCommonStatusYoshiEgg};
 const unsigned int material_layout[]={__builtin_offsetof(DObj,mobj),__builtin_offsetof(MObj,anim_frame),__builtin_offsetof(MObj,texture_id_curr)};
@@ -88,6 +95,8 @@ a,l,i=y['egg_statuses'];egg_statuses=struct.unpack_from('>2I',d,s[i][4]+a-s[i][3
 a,l,i=y['material_layout'];material_layout=struct.unpack_from('>3I',d,s[i][4]+a-s[i][3])
 a,l,i=y['edge_layout'];edge_layout=struct.unpack_from('>'+str(l//4)+'I',d,s[i][4]+a-s[i][3])
 a,l,i=y['edge_stage'];edge_stage=struct.unpack_from('>'+str(l//4)+'I',d,s[i][4]+a-s[i][3])
+a,l,i=y['randomizer_css'];randomizer_css=struct.unpack_from('>5I',d,s[i][4]+a-s[i][3])
+a,l,i=y['thread_layout'];thread_layout=struct.unpack_from('>6I',d,s[i][4]+a-s[i][3])
 edge_bits={}
 for name in ('reflect','absorb'):
     a,l,i=y[name+'_bits'];raw=d[s[i][4]+a-s[i][3]:s[i][4]+a-s[i][3]+l]
@@ -95,6 +104,8 @@ for name in ('reflect','absorb'):
 unpacked=LAB/'build/emulator/root/usr';library=unpacked/'lib/x86_64-linux-gnu'
 headers=args.headers or unpacked/'include/mupen64plus'
 input_source=(LAB/'tools/emulator/input.c').read_text().replace('*a=0x20000','*a=0x20100')
+if args.randomizer:
+    input_source=input_source.replace('i.Controls[c].Present=1;',f'i.Controls[c].Present=({args.randomizer_controllers}>>c)&1;')
 (build/'input.c').write_text(input_source)
 for name,source in (('input',build/'input.c'),('video',LAB/'tools/emulator/video.c')):
     subprocess.run(['gcc','-shared','-fPIC','-O2','-I'+str(headers),str(source),'-o',str(build/(name+'.so'))],check=True)
@@ -147,9 +158,29 @@ charge_visual_samples=[];ball_samples=[]
 pair_contact=False;pair_samples=[];taunt_samples=[]
 weapon_kinds=set();item_kinds=set();projectile_contact_done=False
 bomb_live=set();bomb_births=[];bomb_casts=[]
+randomizer_stacks=set();randomizer_stack_errors=[]
 @C.CFUNCTYPE(None,C.c_uint)
 def frame_callback(frame):
     global travel_samples,falcon_contact_done,animation_samples,link_contact_done,link_bounce_samples,egg_contact_done,projectile_contact_done,visual_samples,visual_hidden,pair_contact
+    if args.randomizer and u8(scene)==22:
+        # Entry runs borrowed pose/physics calls on temporary native threads.
+        # Those threads are gone after countdown, so inspect live guards on
+        # every frame, including all effect/entry objects rather than only
+        # the final fighters' function processes.
+        for link in range(32):
+            obj=u32(native['gGCCommonLinks']+link*4)
+            for _ in range(512):
+                if not 0x80000000<=obj<0x80800000:break
+                proc=u32(obj+thread_layout[0])
+                for _ in range(64):
+                    if not 0x80000000<=proc<0x80800000:break
+                    if u8(proc+thread_layout[2])==thread_layout[5]:
+                        thread=u32(proc+thread_layout[3]);stack=u32(thread+thread_layout[4])
+                        randomizer_stacks.add(stack)
+                        if u32(stack+60)!=0xFEDCBA98 and len(randomizer_stack_errors)<8:
+                            randomizer_stack_errors.append((hex(obj),hex(stack),hex(u32(stack+60))))
+                    proc=u32(proc+thread_layout[1])
+                obj=u32(obj+4)
     if tracking and u8(scene)==54:
         fp=fighter()
         if not 0x80000000<=fp<0x80800000:return
@@ -337,6 +368,7 @@ def diagnostic():
         stack=u32(fault+0xF4)
         if 0x80000000<=stack<0x807FFE00:
             data['stack']=[hex(u32(stack+j)) for j in range(0,128,4)]
+    if args.randomizer:data['thread_stack_guards']={'observed':len(randomizer_stacks),'errors':randomizer_stack_errors}
     return data
 def wait(predicate,label,seconds=20):
     end=time.monotonic()+seconds
@@ -384,6 +416,101 @@ try:
     def paused():
         check(core.CoreDoCommand(9,1,C.byref(state)));return state.value==3
     wait(paused,'Pause before Training fixture')
+    if args.randomizer:
+        # Only the destination fixture is written: B, Down, A, Start and stage
+        # confirmation are real controller inputs through the production UI.
+        w8(labels['Toggles.normal_options'],0)
+        w32(labels['CharLab.return_slot'],1)
+        w8(scene+1,u8(scene));w8(scene,57);w32(native['sSYTaskmanStatus'],1)
+        check(core.CoreDoCommand(8,0,None))
+        wait(lambda:u8(scene)==57 and u8(labels['Toggles.menu_index'])==9,'Editor initialization',seconds=40)
+        frames(30);pulse(0x40)
+        wait(lambda:u8(labels['Toggles.menu_index'])==8,'Creator hub Back',seconds=40)
+        frames(20);pulse(0x04)
+        assert u32(labels['Toggles.info']+0xC)==1,('Randomizer row selection',diagnostic())
+        keys(0x80)
+        wait(lambda:u8(scene)==16,'Randomizer VS CSS',seconds=60)
+        keys(0)
+        wait(lambda:u32(updates)>20,'Randomizer VS CSS initialization',seconds=60)
+        frames(150)
+        assert not u32(native['__osFaultedThread']),('VS CSS fault',diagnostic())
+        css_stride,kind_off,type_off,selected_off,ready_off=randomizer_css
+        recipes=[]
+        for port in range(4):
+            table=u32(labels['CharCreator.slot_tables']+port*4)
+            row=[u32(u32(table+field*4)) for field in range(22)]
+            assert row[0]==1 and all(0<=row[i]<12 for i in range(1,22) if i!=15) and 1<=row[15]<=12,row
+            assert u32(labels['CharCreator.selected_builds']+port*4)==port+1
+            slot=native['sMNPlayersVSSlots']+port*css_stride
+            assert u32(slot+kind_off)==row[1],('Wrong CSS body',port,row,u32(slot+kind_off))
+            assert u32(slot+type_off)==(0 if args.randomizer_controllers&(1<<port) else 1),('Wrong CSS player type',port)
+            assert u32(slot+selected_off) and u32(slot+ready_off),('Unready CSS slot',port)
+            recipes.append(row)
+        print('PASS: real Randomize 4 Builds input prepares four selected VS slots:',recipes,flush=True)
+        if args.randomizer_quit:
+            # A pre-match fixture ensures that quitting interrupts an owned
+            # donor phase, rather than waiting until every fighter is idle.
+            table=u32(labels['CharCreator.slot_tables'])
+            recipes[0][16]=1 if recipes[0][1]!=1 else 3
+            w32(u32(table+16*4),recipes[0][16])
+        keys(0x10);wait(lambda:u8(scene)==21,'VS stage select',seconds=40);keys(0)
+        wait(lambda:u32(updates)>20,'VS stage initialization',seconds=40)
+        print('VS: real Start reaches running stage selection.',flush=True)
+        frames(100);keys(0x80)
+        wait(lambda:u8(scene)==22 and all(fighter(port) for port in range(4)),'Randomized four-fighter VS load',seconds=90)
+        keys(0)
+        wait(lambda:u32(updates)>20,'Randomized VS initialization',seconds=90)
+        print('VS: four randomized fighters loaded and updating.',flush=True)
+        native_animation_size=max(u32(u32(0x80116E10+kind*4)+0x74) for kind in range(12))
+        assert u32(native['gFTManagerFigatreeHeapSize'])==native_animation_size<=0x3000,('Native original animation-buffer capacity',native_animation_size)
+        frames(180)
+        battle=u32(native['gSCManagerBattleState'])
+        for port,row in enumerate(recipes):
+            assert u32(fighter(port)+8)==row[1],('Wrong match body',port,row,diagnostic())
+        bl=constant('ccRandomizerLayout')
+        assert u8(battle+bl[10])==3 and u8(battle+bl[11])==2 and u8(battle+bl[12])==0
+        assert u32(battle+bl[13])==0 and u8(battle+bl[14])==0
+        frames(600)
+        assert not u32(native['__osFaultedThread']),('Randomized VS runtime fault',diagnostic())
+        if args.randomizer_quit:
+            # Leave borrowed special ownership live across the scene exit.
+            keys(0x40|(80<<24));frames(5);keys(0)
+            print('QUIT: active donor',hex(u32(labels['CharCreator.body_character_data'])),flush=True)
+            assert u32(labels['CharCreator.body_character_data']),('Special did not establish donor ownership',diagnostic())
+            pulse(0x10);frames(40)
+            print('QUIT: paused match',diagnostic(),flush=True)
+            keys(0x10E0)
+            wait(lambda:u8(scene)!=22,'Pause quit scene transition',seconds=60)
+            keys(0)
+            print('QUIT: destination',diagnostic(),flush=True)
+            wait(lambda:u32(updates)>20,'Quit destination initialization',seconds=60)
+            frames(900)
+            assert not u32(native['__osFaultedThread']),('Quit destination fault',diagnostic())
+            assert all(u32(labels['CharCreator.body_character_data']+p*4)==0 and
+                       u32(labels['CharCreator.active_special_donor']+p*4)==0xFFFFFFFF
+                       for p in range(4)),('Donor ownership survived scene exit',diagnostic())
+            print('PASS: quit destination runs',diagnostic(),flush=True)
+            keys(0x10)
+            wait(lambda:u8(scene)==16,'Results Start returns to VS CSS',seconds=60)
+            keys(0)
+            frames(600)
+            assert not u32(native['__osFaultedThread']),('Returned CSS fault',diagnostic())
+            print('QUIT: returned CSS',diagnostic(),flush=True)
+            keys(0x10);wait(lambda:u8(scene)==21,'Second VS stage select',seconds=40);keys(0)
+            wait(lambda:u32(updates)>20,'Second VS stage initialization',seconds=40)
+            frames(100);keys(0x80)
+            wait(lambda:u8(scene)==22 and all(fighter(port) for port in range(4)),'Second randomized VS load',seconds=90)
+            keys(0);wait(lambda:u32(updates)>20,'Second VS initialization',seconds=90)
+            frames(600)
+            assert not u32(native['__osFaultedThread']),('Second VS fault',diagnostic())
+            print('PASS: same randomized recipes start a second match',diagnostic(),flush=True)
+        assert randomizer_stacks and not randomizer_stack_errors,('Native thread stack guards',randomizer_stack_errors)
+        report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'controller_mask':args.randomizer_controllers,'recipes':recipes,'checks':['creator B to hub','Down/A randomizer button','four enabled assigned recipes','four ready CSS bodies/types','CSS Start','stage A','four-fighter VS load','four stocks items off','600 native match updates','native fighter thread stack guards'],'rendering':'null'}
+        if args.randomizer_quit:
+            report['checks']+=['quit during live borrowed special','pause Start and A+B+R+Z','results initialization and donor ownership cleared','results Start returns to VS CSS','same recipes start a second match']
+        (report_directory/f'cpu-scenes-randomizer-{args.randomizer_controllers}.json').write_text(json.dumps(report,indent=2)+'\n')
+        print('PASS: randomized four-player VS loads and runs with correct recipes and rules.',flush=True)
+        raise SystemExit(0)
     if args.editor_test:
         # Recreate stale 1P selections; production launch must replace them.
         w8(scene+man_off,255);w8(scene+man_costume_off,255)

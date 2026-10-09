@@ -873,6 +873,10 @@ def main():
     hooks[0x62724]='CharLab.status_changing_'
     hooks[0x3800000+labels['CharacterSelect.load_additional_characters_']-0x80400000]='CharLab.editor_css_models_'
     hooks[0x5570]='CharLab.heap_reset_'
+    for name,delta,target in (
+        ('CharacterSelect.initialize_dynamic_css_._loop',0x1C,'CharLab.css_heap_init_'),
+        ('CharacterSelect.dynamically_load_character_._use_alt_heap',0,'CharLab.css_heap_alloc_')):
+        hooks[0x3800000+labels[name]+delta-0x80400000]=target
     hooks[0x3800000+labels['CharacterSelect.increase_heap_._return']-0x80400000]='CharLab.heap_cursor_'
     for name,delta in (('CharacterSelect.load_additional_characters_',0x24),('Render.setup_._mode_select',0x34)):
         assert struct.unpack_from('>I',rom,0x3800000+labels[name]+delta-0x80400000)[0]==0, 'UI rewinds native heap cursor'
@@ -909,6 +913,8 @@ def main():
     test_pairs(Runtime(rom, labels), rom)
     from test_charlab_edge_fixes import test_edge_fixes
     test_edge_fixes(Runtime(rom, labels))
+    from test_charlab_randomizer import test_randomizer
+    test_randomizer(Runtime(rom, labels))
     from test_charlab_animations import test_animations
     test_animations(runtime, rom)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')

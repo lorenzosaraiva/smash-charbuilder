@@ -8,10 +8,10 @@ scope CharCreator {
     constant SLOT_COUNT(4)
     constant CACHE_SLOTS(8)
     constant NO_DONOR(0xFFFFFFFF)
-    // Largest current catalog FTData.file_anim_size is 0xCB10. Keep one
-    // aligned buffer per port outside the match task heap, whose late-stage
-    // allocator cannot reliably satisfy these reservations in Training.
-    constant SPECIAL_ANIMATION_CAPACITY(0xCC00)
+    // Original-roster FTData.file_anim_size peaks at Kirby's 0x2EC0. Keep one
+    // aligned original-sized buffer per port outside the match task heap;
+    // expanded donors reserve any larger buffer during pre-match setup.
+    constant SPECIAL_ANIMATION_CAPACITY(0x3000)
 
     // Per-port CSS selection. 0 = off, 1-4 = saved build.
     selected_builds:
@@ -562,6 +562,27 @@ scope CharCreator {
         li      a1, cache_pointers
         addu    a1, a1, t0
         sw      a1, 0x0018(sp)
+        // Donor scripts are immutable; only the fighter's command cursor is
+        // private. Share an already loaded script across other player caches
+        // instead of paying for another full moveset in a four-build match.
+        li      t1, cache_ids
+        li      t3, cache_pointers
+        lw      t5, 0x000C(sp)
+        lli     t4, SLOT_COUNT * CACHE_SLOTS
+        _share_loop:
+        lbu     t6, 0x0000(t1)
+        bne     t6, t5, _share_next
+        lw      v0, 0x0000(t3)
+        beqz    v0, _share_next
+        nop
+        b       _publish
+        sw      v0, 0x0000(a1)
+        _share_next:
+        addiu   t1, t1, 1
+        addiu   t3, t3, 4
+        addiu   t4, t4, -1
+        bnez    t4, _share_loop
+        nop
         lw      t0, 0x0010(sp)
         lw      a0, 0x0004(t0)             // donor file 2 ID
         beqz    a0, _fail
@@ -632,6 +653,13 @@ scope CharCreator {
 
         jal     reset_cache_
         nop
+        li      t0, VsRemixMenu.vs_mode_flag
+        lw      t0, 0(t0)
+        bnez    t0, _body_files_ready
+        nop
+        jal     CharLabRuntime.ccPreloadVSBodyFiles
+        nop
+        _body_files_ready:
         or      s0, r0, r0                 // port
 
         _port_loop:
@@ -1015,8 +1043,9 @@ scope CharCreator {
         lhu     a0, 0x0000(t0)
         beqz    a0, _end
         sw      t0, 0x000C(sp)
-        jal     Render.load_file_
         li      a1, preload_pointer
+        jal     Render.load_file_
+        nop
         lw      t0, 0x000C(sp)
         b       _load_loop
         addiu   t0, t0, 0x0002
@@ -1060,6 +1089,12 @@ scope CharCreator {
         sw      t0, 0x0018(sp)
         bnez    t5, _publish_cached
         nop
+        // ftManagerAllocFighter clears these pointers for every new match.
+        // Reuse a participant's native file loaded during this match rather
+        // than allocating a second full model for its use as another donor.
+        lw      v0, 0x0000(t0)
+        bnez    v0, _record_main
+        nop
         lw      a0, 0x0000(a1)
         beqz    a0, _fail
         or      a1, t0, r0
@@ -1068,6 +1103,8 @@ scope CharCreator {
         lw      t0, 0x0018(sp)
         lw      v0, 0x0000(t0)
         beqz    v0, _fail
+        nop
+        _record_main:
         lw      t6, 0x0008(sp)
         sll     t6, t6, 0x0002
         li      t7, main_file_pointers
@@ -2780,6 +2817,62 @@ scope CharCreator {
         nop
         lw      ra, 0x0004(sp)
         addiu   sp, sp, 0x0010
+        jr      ra
+        nop
+    }
+
+    // One hub action replaces/enables all recipes and prepares four ready VS
+    // slots. Connected ports are humans, unused ports CPUs. Titles do not add
+    // persisted bits to the existing creator options SRAM layout.
+    scope randomize_all_: {
+        addiu   sp, sp, -0x0020
+        sw      ra, 0x0004(sp)
+        li      t0, Toggles.cc_original_12_only
+        lli     t1, OS.TRUE
+        sw      t1, 0x0004(t0)
+        jal     sync_catalog_mode_
+        nop
+        li      a0, slot_tables
+        li      a1, selected_builds
+        jal     CharLabRuntime.ccRandomizeVS
+        nop
+        // Refresh BODY labels after the body values have been randomized.
+        jal     sync_catalog_mode_
+        nop
+        li      t0, CharLab.training_slot
+        sw      r0, 0x0000(t0)
+        li      t0, CharLab.return_slot
+        sw      r0, 0x0000(t0)
+        li      t0, VsRemixMenu.vs_mode_flag
+        sw      r0, 0x0000(t0)
+        li      t0, VsRemixMenu.global_game_mode
+        lli     t1, 2
+        sw      t1, 0x0000(t0)
+        li      t0, VsRemixMenu.global_stage_select
+        lli     t1, OS.TRUE
+        sw      t1, 0x0000(t0)
+        li      t0, VsRemixMenu.global_teams
+        sw      r0, 0x0000(t0)
+        li      t0, TwelveCharBattle.twelve_cb_flag
+        sw      r0, 0x0000(t0)
+        li      t0, StockMode.stockmode_table
+        sw      r0, 0x0000(t0)
+        sw      r0, 0x0004(t0)
+        sw      r0, 0x0008(t0)
+        sw      r0, 0x000C(t0)
+        li      t0, VsRemixMenu.global_stockmode_table
+        sw      r0, 0x0000(t0)
+        sw      r0, 0x0004(t0)
+        sw      r0, 0x0008(t0)
+        sw      r0, 0x000C(t0)
+        jal     Toggles.save_
+        nop
+        jal     reset_cache_
+        nop
+        jal     Menu.change_screen_
+        lli     a0, Global.screen.VS_CSS
+        lw      ra, 0x0004(sp)
+        addiu   sp, sp, 0x0020
         jr      ra
         nop
     }
