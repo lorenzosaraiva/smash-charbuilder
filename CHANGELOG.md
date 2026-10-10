@@ -1,5 +1,21 @@
 # Changes
 
+## 0.1.40 - 2026-10-09: Remix jab phase ownership
+
+- Build local Remix preview 0.1.23, retaining the bomb/pause fixes and published 0.1.21 download.
+- Reproduce Ness with Captain's jab stuck in its native entrance after the full VS countdown: a donor rapid-loop motion number incorrectly installed a looping attack clock.
+- Require an explicit, generation-checked jab transition before selecting a unique jab clock. Clear retained normal action-array/parameter ownership on other transitions, including entrances, native specials and interruptions.
+- Captain's rapid eligibility check compares its native Jab3 status without requesting a Jab3 transition.
+- Linked-MIPS checks pass for 720 native entrance/special cases and 880 requested jab phases, including identical-number interruptions and recycled fighters. Native VS checks pass for four entrances, two rapid-jab/release cycles on each port (Samus/Fox, Ness/Captain, Captain/Kirby and Yoshi/Link), and native Neutral B afterward. These use null rendering; rendered acceptance remains pending.
+
+## 0.1.39 - 2026-10-09: Remix borrowed bomb body models and pause
+
+- Build local Remix preview 0.1.22; preserve the published 0.1.21 preview and decomp ROM until a new publication.
+- Link bomb pickup no longer applies Link shield model defaults to a foreign body. The Yoshi regression previously changed native model bases at joints 19 and 21.
+- Model detail switches for pause/unpause use the actual body and remove missing-joint callback aliases while native mesh/texture code runs; restore donor gameplay identity and callback joints afterward.
+- Static/withheld-part setup, animation loading, cleanup and shield poses select the actual body table during borrowed specials, preserving body animation track alignment.
+- Add linked-MIPS checks across twelve bodies/four ports, native Link eligibility, model holes, donor context preservation and static-table fallback. Native VS checks pause before bomb creation, during the pull and after recovery (updates 8/40/90), then unpause and throw with body mesh defaults preserved. Recheck pause-quit, results, VS selection and a second match. These use null rendering; rendered acceptance remains pending.
+
 ## 0.1.38 - 2026-10-09: Remix pause-quit scene ownership
 
 - Build local Remix preview 0.1.21; preserve the decomp ROM and published links.

@@ -11,6 +11,43 @@ include "../src/OS.asm"
 include "../src/Global.asm"
 
 scope StaticPart {
+    // Static/withheld parts belong to the visible body, including while a
+    // borrowed special temporarily executes under another fighter identity.
+    macro body_kind(player) {
+        addiu sp, sp, -0x0010
+        sw ra, 0(sp)
+        jal body_kind_
+        or at, {player}, r0
+        lw ra, 0(sp)
+        addiu sp, sp, 0x0010
+    }
+    scope body_kind_: {
+        addiu sp, sp, -0x0010
+        sw t0, 0(sp)
+        sw t1, 4(sp)
+        or t0, at, r0
+        lw at, 8(t0)
+        lbu t0, 0xD(t0)
+        sltiu t1, t0, 4
+        beqz t1, _end
+        sll t0, t0, 2
+        li t1, CharCreator.body_character_data
+        addu t1, t1, t0
+        lw t1, 0(t1)
+        beqz t1, _end
+        nop
+        li t1, CharCreator.body_character_id
+        addu t1, t1, t0
+        lw t1, 0(t1)
+        bltz t1, _end
+        nop
+        or at, t1, r0
+        _end:
+        lw t0, 0(sp)
+        lw t1, 4(sp)
+        jr ra
+        addiu sp, sp, 0x0010
+    }
     // @ Description
     // Exits function ftMainUpdateHiddenPartID early when running with a static part. Prevents withheld part from overriding the existing static part.
     scope prevent_update_static_part_: {
@@ -24,7 +61,7 @@ scope StaticPart {
         // a0 = player struct
         lw      a2, 0x0000(t0)              // a2 = part id (original line 2)
         li      t8, Character.static_part.table
-        lw      at, 0x0008(a0)              // at = character id
+        body_kind(a0)                      // at = visible body id
         sll     at, at, 0x3                 // at = offset (id * 8)
         addu    t8, t8, at                  // t8 = static part bitfield address
         addiu   t9, a2, -4                  // t9 = part id, adjusted for upper bitfield
@@ -65,7 +102,7 @@ scope StaticPart {
         // a0 = player struct
         lw      t0, 0x0000(a3)              // t0 = part id (original line 2)
         li      t8, Character.static_part.table
-        lw      at, 0x0008(a0)              // at = character id
+        body_kind(a0)                      // at = visible body id
         sll     at, at, 0x3                 // at = offset (id * 8)
         addu    t8, t8, at                  // t8 = static part bitfield address
         addiu   t9, t0, -4                  // t9 = part id, adjusted for upper bitfield
@@ -106,7 +143,7 @@ scope StaticPart {
         or      t0, s5, r0                  // t0 = player struct
         lw      s5, 0x0000(s0)              // s5 = withheld parts bitfield upper (original line 2)
         li      t1, Character.static_part.table
-        lw      at, 0x0008(t0)              // at = character id
+        body_kind(t0)                      // at = visible body id
         sll     at, at, 0x3                 // at = offset (id * 8)
         addu    t1, t1, at                  // ~
         lw      at, 0x0000(t1)              // at = static part bitfield (upper)
@@ -179,7 +216,7 @@ scope StaticPart {
         lw      t1, 0x0084(s0)              // ~
         lbu     t2, 0x000D(t1)              // t2 = part id
         li      t8, Character.static_part.table
-        lw      at, 0x0008(s5)              // at = character id
+        body_kind(s5)                      // at = visible body id
         sll     at, at, 0x3                 // at = offset (id * 8)
         addu    t8, t8, at                  // t8 = static part bitfield address
         addiu   t9, t2, -4                  // t9 = part id, adjusted for upper bitfield
@@ -265,7 +302,7 @@ scope StaticPart {
         // v0 = part id
         // s0 = player struct
         li      t8, Character.static_part.table
-        lw      at, 0x0008(s0)              // at = character id
+        body_kind(s0)                      // at = visible body id
         sll     at, at, 0x3                 // at = offset (id * 8)
         addu    t8, t8, at                  // t8 = static part bitfield address
         addiu   t9, v0, -4                  // t9 = part id, adjusted for upper bitfield
@@ -323,7 +360,7 @@ scope StaticPart {
         // s6 = player struct
 
         li      t8, Character.static_part.table
-        lw      at, 0x0008(s6)              // at = character id
+        body_kind(s6)                      // at = visible body id
         sll     at, at, 0x3                 // at = offset (id * 8)
         addu    t8, t8, at                  // t8 = static part bitfield address
         addiu   t9, s1, -4                  // t9 = part id, adjusted for upper bitfield
@@ -387,7 +424,7 @@ scope StaticPart {
         lw      t1, 0x0084(s0)              // ~
         lbu     t2, 0x000D(t1)              // t2 = part id
         li      t8, Character.static_part.table
-        lw      at, 0x0008(s3)              // at = character id
+        body_kind(s3)                      // at = visible body id
         sll     at, at, 0x3                 // at = offset (id * 8)
         addu    t8, t8, at                  // t8 = static part bitfield address
         addiu   t9, t2, -4                  // t9 = part id, adjusted for upper bitfield

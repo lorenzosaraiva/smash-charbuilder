@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 DIST = PROJECT / 'dist'
 BASE_SHA1 = 'e2929e10fccc0aa84e5776227e798abc07cedabf'
-VERSION = '0.1.21'
+VERSION = '0.1.23'
 UPDATED = '2026-10-09'
 
 
@@ -74,7 +74,17 @@ def package(desktop=None):
 
 Updated: {UPDATED}. This is a partial port; see STATUS.md and PLAY.md.
 
-Fix: quitting from pause during a borrowed special clears donor ownership
+Fix: borrowed jab follow-ups require explicit, generation-checked transitions.
+Native entrances and specials cannot inherit rapid-jab clocks or action arrays.
+Captain's rapid eligibility query no longer arms a Jab3 transition. Linked-MIPS
+and native four-port entrance/jab release checks cover the regression;
+rendered acceptance remains pending.
+
+Retains: Link bomb pickup preserves foreign-body mesh defaults; pause detail and
+static/withheld animation parts use the actual body skeleton. Native Yoshi bomb
+pause/model checks cover the regression; rendered acceptance remains pending.
+
+Retains: quitting from pause during a borrowed special clears donor ownership
 before results/CSS reuse fighter and animation memory. CPU regressions cover
 pause quit, results, return to VS selection and a second match; rendered exit
 acceptance remains pending.

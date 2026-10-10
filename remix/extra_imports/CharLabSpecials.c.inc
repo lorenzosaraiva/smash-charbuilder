@@ -199,6 +199,7 @@ void ccStatusChanging(GObj *g, s32 next)
 {
     FTStruct *fp = ftGetStruct(g); CCSpecialClock *clock = ccSpecialClock(fp);
     s32 donor = ccSpecialDonor(fp); CCSpecialState *state;
+    ccJabStatusChanging(fp, next);
     ccVisualStatusChanging(g, next);
     ccInhaleStatusChanging(fp, next);
     ccPairTransition(g, next);

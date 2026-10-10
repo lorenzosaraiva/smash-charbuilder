@@ -307,6 +307,17 @@ class Runtime:
 def test_runtime(rom, labels):
     r = Runtime(rom, labels)
     r.call('ccReset')
+    def start_normal(body, donor, index, motion):
+        status = 100+index
+        if index >= 29:
+            motion_start = r.u32(r.addr('ccJabOwnershipLayout'))
+            status = 0xDC+motion-motion_start
+            if body != donor:
+                r.call('ftMainCharBuilderGetJabStatus', r.FP, status, index-29)
+        r.call('ccJabStatusChanging', r.FP, status)
+        r.u32(r.FP+0x24, status)
+        r.u32(r.FP+0x28, motion)
+        r.call('ccStart', r.FP, 0)
     clocks, script = r.addr('sFTCustomMoveClocks'), r.addr('sCCMotionScripts')+4
     cases = 0
     for body in range(12):
@@ -316,9 +327,7 @@ def test_runtime(rom, labels):
                 motion = r.motion(donor if index >= 29 else body, index)
                 if motion == 0xFFFFFFFF:
                     continue
-                r.u32(r.FP+0x24, 100+index)
-                r.u32(r.FP+0x28, motion)
-                r.call('ccStart', r.FP, 0)
+                start_normal(body, donor, index, motion)
                 assert r.u32(r.addr('gFTCustomMoveValidationFailures')) == 0, ('build', body, donor, index)
                 if body == donor:
                     assert r.u32(clocks) == 0 and r.u32(script) == 0, (body, donor, index, hex(r.u32(clocks)), hex(r.u32(script)))
@@ -356,9 +365,7 @@ def test_runtime(rom, labels):
             if motion == 0xFFFFFFFF:
                 continue
             r.setup(body, donor)
-            r.u32(r.FP+0x24, 100+index)
-            r.u32(r.FP+0x28, motion)
-            r.call('ccStart', r.FP, 0)
+            start_normal(body, donor, index, motion)
             move = r.addr('sFTCustomMoves')+(donor*33+index)*16
             duration, flags = struct.unpack('>2I', r.read(move+8, 8))
             if not duration:
@@ -873,6 +880,8 @@ def main():
     hooks[0x62724]='CharLab.status_changing_'
     hooks[0x3800000+labels['CharacterSelect.load_additional_characters_']-0x80400000]='CharLab.editor_css_models_'
     hooks[0x5570]='CharLab.heap_reset_'
+    hooks[0x63EF0]='CharLabRuntime.ccLinkShield'
+    hooks[0x64998]='CharLabRuntime.ccModelDetail'
     for name,delta,target in (
         ('CharacterSelect.initialize_dynamic_css_._loop',0x1C,'CharLab.css_heap_init_'),
         ('CharacterSelect.dynamically_load_character_._use_alt_heap',0,'CharLab.css_heap_alloc_')):
@@ -901,6 +910,8 @@ def main():
     test_adapters(runtime)
     from test_charlab_normals import test_normals
     test_normals(runtime)
+    from test_charlab_jab_ownership import test_jab_ownership
+    test_jab_ownership(Runtime(rom, labels))
     from test_charlab_neutrals import test_neutrals
     test_neutrals(runtime)
     from test_charlab_neutral_weapons import test_weapons
@@ -915,6 +926,8 @@ def main():
     test_edge_fixes(Runtime(rom, labels))
     from test_charlab_randomizer import test_randomizer
     test_randomizer(Runtime(rom, labels))
+    from test_charlab_body_models import test_body_models
+    test_body_models(Runtime(rom, labels))
     from test_charlab_animations import test_animations
     test_animations(runtime, rom)
     print(f'ROM: {len(rom):,} bytes; SHA-256 {hashlib.sha256(rom).hexdigest()}')

@@ -128,6 +128,13 @@ u32 gFTCustomAnimationValidationFailures;''')
     move=move.replace('&fp->motion_scripts[1][2]', '&sCCMotionScripts[fp->player]')
     # Unique jab motion IDs belong to the donor selected by action_array_hook_.
     move=move.replace('sFTCustomBodyExtraMotionIDs[fp->fkind]', 'sFTCustomBodyExtraMotionIDs[slot->attacks[nSCCharBuilderAttackJab]]')
+    # An entrance/native special can use the same number as a donor rapid
+    # loop. The request made by GetJabStatus, rather than that number alone,
+    # establishes ownership of a unique normal phase.
+    extra='''        else if ((sFTCustomBodyExtraMotionIDs[slot->attacks[nSCCharBuilderAttackJab]][i - 29] < 0) ||'''
+    assert move.count(extra)==1
+    move=move.replace(extra, '''        else if (ccJabPhase(fp) != i - 29) continue;
+'''+extra)
     move=move.replace('#include "ftcustomanimation.c.inc"','#include "animation.c.inc"')
     move=re.sub(r'#include "(ft[^"/]+\.inc)"',r'#include "ft/\1"',move)
     collision = (LAB/'src/ft/ftcustomcollision.c.inc').read_text()
@@ -170,7 +177,11 @@ def object_to_bass(path):
         'ccMappedThrownKind': 'CharLab.mapped_thrown_kind_',
         'ccSpecialDonor': 'CharLab.special_donor_',
         'ccBodyKind': 'CharLab.body_kind_',
+        'ccOriginalLinkShield': 'CharLab.original_link_shield_',
+        'ccOriginalModelDetail': 'CharLab.original_model_detail_',
+        'ccJointsAliased': 'CharLab.joints_aliased_',
         'ccSelectJabDonor': 'CharLab.select_jab_donor_',
+        'sCCNormalDonors': 'CharCreator.active_normal_donor',
         'ccOriginalKirbyJabEffect': '0x8014F1BC',
         'ccSuspendJoints': 'CharLab.suspend_joints_',
         'ccResumeJoints': 'CharLab.resume_joints_',

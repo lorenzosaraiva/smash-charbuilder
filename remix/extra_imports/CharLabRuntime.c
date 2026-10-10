@@ -15,6 +15,7 @@
 #undef __attribute__
 extern alSoundEffect *func_800269C0_275C0(u16);
 extern s32 ccBodyKind(FTStruct*);
+static s32 ccJabPhase(FTStruct*);
 extern s32 ccRandomInt(s32);
 extern SCBattleState gSCManagerTransferBattleState;
 extern SCBattleState *gSCManagerBattleState;
@@ -51,6 +52,42 @@ static void ccInhaleWindPosition(GObj*);
 static void ccInhaleWindBind(GObj*, GObj*);
 extern u32 gCCVisualEffects;
 extern s32 sCCPairDonors[4];
+
+/* Item pickup and pause are body presentation operations. Donor execution
+ * identity and null-joint callback aliases must not enter their mesh walkers. */
+extern void ccOriginalLinkShield(GObj*);
+extern void ccOriginalModelDetail(GObj*, u8);
+extern sb32 ccJointsAliased(FTStruct*);
+
+void ccLinkShield(GObj *gobj)
+{
+    FTStruct *fp = ftGetStruct(gobj);
+    s32 donor = fp->fkind;
+    sb32 resume = ccJointsAliased(fp);
+    fp->fkind = ccBodyKind(fp);
+    if (resume) ccSuspendJoints(fp);
+    ccOriginalLinkShield(gobj);
+    if (resume) ccResumeJoints(fp);
+    fp->fkind = donor;
+}
+
+void ccModelDetail(GObj *gobj, u8 detail)
+{
+    FTStruct *fp = ftGetStruct(gobj);
+    s32 donor = fp->fkind;
+    sb32 resume = ccJointsAliased(fp);
+    fp->fkind = ccBodyKind(fp);
+    if (resume) ccSuspendJoints(fp);
+    ccOriginalModelDetail(gobj, detail);
+    if (resume) ccResumeJoints(fp);
+    fp->fkind = donor;
+}
+
+const u32 ccBodyModelLayout[] = {
+    __builtin_offsetof(FTStruct, modelpart_status), sizeof(FTModelPartStatus),
+    __builtin_offsetof(FTModelPartStatus, modelpart_id_base),
+    __builtin_offsetof(FTModelPartStatus, modelpart_id_curr)
+};
 
 /* Settings can enter Training CSS without the ordinary 1P menu setup. */
 void ccSetupTraining(s32 body)
@@ -239,6 +276,7 @@ void ccReset(void)
     ftMainCharBuilderResetNeutralAll();
     for (i = 0; i < 4; i++)
     {
+        sCCJabs[i].owner = NULL;
         sFTCustomMoveClocks[i].owner = NULL;
         sFTCustomLastAirAttack[i] = -1;
         gSCManagerCharBuilderSlots[i].is_enabled = FALSE;

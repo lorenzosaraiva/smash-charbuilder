@@ -1,7 +1,11 @@
 # Character Lab on Remix checklist
 
-Preview **0.1.21 (2026-10-09)** is a partial port into Smash Remix +EXTRA.
+Preview **0.1.23 (2026-10-09)** is a partial port into Smash Remix +EXTRA.
 
+- [x] Unique jab phases require an explicit, generation-checked transition; native entrances/specials keep their clocks and interruptions clear retained normal action-array ownership. Linked-MIPS: 720 native entrance/special cases and 880 requested jab phases. Native VS: four entrances, two rapid-jab/release cycles on every port (Samus/Fox, Ness/Captain, Captain/Kirby, Yoshi/Link), then native Neutral B (null rendering).
+- [ ] Rendered randomized Samus/Ness/Captain entrance and rapid-jab recovery acceptance.
+- [x] Borrowed Link bomb pickup preserves body model defaults; pause detail and static/withheld animation parts use the actual body skeleton. Linked-MIPS checks cover twelve bodies/four ports and nested model guards; native Yoshi tests pause before bomb creation, during the pull and after recovery, then unpause and throw (null rendering).
+- [ ] Rendered Yoshi bomb-pull/pause fix acceptance.
 - [x] Randomize 4 Builds hub action: original-twelve bodies and every donor, including grabs/throws, taunts and explicit Neutral B; four saved/enabled builds assigned to P1-P4.
 - [x] Ready VS selections, connected-port humans/unused-port level-5 CPUs, duplicate-body palettes and free-for-all four-stock/items-off rules; stale Training/Remix/stock overrides cleared.
 - [x] Linked-MIPS checks: 144 actual hub handlers, all 16 controller masks and full donor coverage in every randomized field. RNG, palette lookup and SRAM I/O use explicit fixtures.

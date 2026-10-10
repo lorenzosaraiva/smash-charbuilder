@@ -1,6 +1,17 @@
 # Decomp to Remix port
 
-Updated **2026-10-09**. Remix preview **0.1.21**, project **0.1.38**.
+Updated **2026-10-09**. Remix preview **0.1.23**, project **0.1.40**.
+
+Preview 0.1.23 requires requested jab phases before borrowing unique clocks and
+clears normal donor ownership on unrelated status changes. Native entrances
+and specials can share numeric IDs with a donor rapid jab and remain body-owned.
+Automatic ownership/timing and real-input VS regressions accompany the fix;
+rendered acceptance remains pending.
+
+Preview 0.1.22 isolates body model work from donor identity and callback-joint
+aliases during bomb pickup, pause detail switches and static-part animation.
+Linked-MIPS and native Yoshi bomb-pause checks accompany the fix; rendered
+acceptance remains pending.
 
 Preview 0.1.21 clears interrupted donor ownership at scene heap initialization
 before results/CSS reuse fighter memory. Native pause-quit/return/second-match

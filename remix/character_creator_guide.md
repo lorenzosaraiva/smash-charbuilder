@@ -1,6 +1,6 @@
 # Character Lab on Smash Remix
 
-Character Lab has an original-roster Remix preview, **0.1.21 (2026-10-09)**.
+Character Lab has an original-roster Remix preview, **0.1.23 (2026-10-09)**.
 It is a separate ROM built on Smash Remix +EXTRA. Keep **Original 12 Only** on
 for shared donor timing, collision paths and retargeted normal/special poses.
 The [checklist](docs/character-lab-status.md) tracks the remaining mechanics and props.
@@ -20,6 +20,14 @@ all four bodies ready: connected ports are human players, unused ports are
 level-5 CPUs. Rules are **4 stocks, items off, free-for-all**. Press Start and
 choose a stage. You can edit the VS player settings before starting.
 Use the button again for another roll; the last four recipes persist in SRAM.
+
+Version 0.1.23 protects entrances and native specials from borrowed rapid-jab
+clocks. Jab follow-ups retain their donor timing and clear ownership on
+interruptions. Rendered randomized entrance/jab recovery acceptance is pending.
+
+Version 0.1.22 protects the actual body model during Link bomb pickup and
+pause/unpause, keeping donor timing and bomb ownership. Rendered acceptance
+of the reported Yoshi distortion/freeze remains pending.
 
 Quit a paused match with A+B+R+Z. Version 0.1.21 clears donor state before
 loading results, including when a borrowed special was still active. CPU checks

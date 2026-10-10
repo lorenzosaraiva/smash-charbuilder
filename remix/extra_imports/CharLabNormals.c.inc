@@ -2,6 +2,55 @@
 #include "../build/char_creator/runtime/normal-data.inc"
 extern s32 ccSelectJabDonor(FTStruct*, s32);
 extern void ccOriginalKirbyJabEffect(FTStruct*);
+extern s32 sCCNormalDonors[4];
+
+/* Unique motion/status numbers are local to each fighter. Appear, charge
+ * loops and jabs can share them; only an explicit jab transition owns a phase. */
+typedef struct CCJabState {
+    FTStruct *owner;
+    u32 generation;
+    s32 status, phase;
+    sb32 pending;
+} CCJabState;
+static CCJabState sCCJabs[4];
+const u32 ccJabNativeCases[][2] = {
+    { nFTKindSamus, nFTSamusStatusAppearR }, { nFTKindSamus, nFTSamusStatusAppearL },
+    { nFTKindSamus, nFTSamusStatusSpecialNLoop },
+    { nFTKindNess, nFTNessStatusAppearRStart }, { nFTKindNess, nFTNessStatusAppearLStart },
+    { nFTKindNess, nFTNessStatusAppearWait }, { nFTKindNess, nFTNessStatusAppearREnd },
+    { nFTKindNess, nFTNessStatusAppearLEnd }, { nFTKindNess, nFTNessStatusSpecialN },
+    { nFTKindCaptain, nFTCaptainStatusAppearRStart }, { nFTKindCaptain, nFTCaptainStatusAppearLStart },
+    { nFTKindCaptain, nFTCaptainStatusAppearREnd }, { nFTKindCaptain, nFTCaptainStatusAppearLEnd },
+    { nFTKindCaptain, nFTCaptainStatusSpecialN }, { nFTKindCaptain, nFTCaptainStatusSpecialLw }
+};
+const u32 ccJabOwnershipLayout[] = { nFTCommonMotionSpecialStart, ARRAY_COUNT(ccJabNativeCases) };
+
+static s32 ccJabPhase(FTStruct *fp)
+{
+    CCJabState *state;
+    if (fp->player >= 4) return -1;
+    state = &sCCJabs[fp->player];
+    return state->owner == fp && state->generation == fp->player_num &&
+        state->status == fp->status_id ? state->phase : -1;
+}
+
+void ccJabStatusChanging(FTStruct *fp, s32 next)
+{
+    CCJabState *state;
+    /* Expanded bodies use Remix's legacy/native normal callbacks. */
+    if (fp->player >= 4 || (u32)ccBodyKind(fp) >= 12) return;
+    state = &sCCJabs[fp->player];
+    if (state->owner == fp && state->generation == fp->player_num &&
+        state->pending && state->status == next)
+    {
+        state->pending = FALSE;
+        return;
+    }
+    state->owner = NULL;
+    /* Shared normal setup selects its own donor later. Native unique actions
+     * must not inherit an unrelated jab/tilt/aerial action array or FTData. */
+    sCCNormalDonors[fp->player] = -1;
+}
 
 s32 ftMainCharBuilderGetNormalKind(FTStruct *fp, s32 attack)
 {
@@ -17,7 +66,13 @@ FTAttributes* ftMainCharBuilderGetAttackAttributes(FTStruct *fp,s32 attack)
 s32 ftMainCharBuilderGetJabStatus(FTStruct *fp,s32 native_status,s32 phase)
 {
     s32 donor=ftMainCharBuilderGetNormalKind(fp,nSCCharBuilderAttackJab);
-    if (donor!=ccBodyKind(fp)) ccSelectJabDonor(fp,donor);
+    if (donor!=ccBodyKind(fp) && fp->player < 4)
+    {
+        CCJabState *state = &sCCJabs[fp->player];
+        state->owner = fp; state->generation = fp->player_num;
+        state->status = native_status; state->phase = phase; state->pending = TRUE;
+        ccSelectJabDonor(fp,donor);
+    }
     return native_status;
 }
 sb32 ftMainCharBuilderHasNormalMotion(FTStruct *fp,s32 attack,s32 motion)

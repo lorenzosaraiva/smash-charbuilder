@@ -144,6 +144,63 @@ scope CharLab {
         jr ra
         nop
     }
+    // Gameplay keeps donor identity, while model work resolves the real body.
+    OS.patch_start(0x63EF0, 0x800E86F0)
+    j CharLabRuntime.ccLinkShield
+    nop
+    OS.patch_end()
+    original_link_shield_:
+    OS.copy_segment(0x63EF0, 8)
+    j 0x800E86F8
+    nop
+    OS.patch_start(0x64998, 0x800E9198)
+    j CharLabRuntime.ccModelDetail
+    nop
+    OS.patch_end()
+    original_model_detail_:
+    OS.copy_segment(0x64998, 8)
+    j 0x800E91A0
+    nop
+
+    // Model guards can nest inside SetStatus, which already suspends aliases.
+    // Report the entry state so they only reinstall aliases they removed.
+    scope joints_aliased_: {
+        lbu t0, 0xD(a0)
+        sltiu t1, t0, 4
+        beqz t1, _none
+        sll t0, t0, 2
+        li t1, CharCreator.body_character_data
+        addu t1, t1, t0
+        lw t1, 0(t1)
+        beqz t1, _none
+        nop
+        sll t1, t0, 5
+        sll t2, t0, 2
+        addu t1, t1, t2
+        addu t1, t1, t0
+        li t2, CharCreator.special_joint_backups
+        addu t1, t1, t2
+        addiu t2, a0, 0x8E8
+        lli t3, 37
+        _loop:
+        lw t4, 0(t1)
+        bnez t4, _next
+        lw t5, 0(t2)
+        beqz t5, _next
+        nop
+        jr ra
+        lli v0, 1
+        _next:
+        addiu t1, t1, 4
+        addiu t2, t2, 4
+        addiu t3, t3, -1
+        bnez t3, _loop
+        nop
+        _none:
+        jr ra
+        or v0, r0, r0
+    }
+
     scope body_kind_: {
         lbu t0, 0x000D(a0)
         sltiu t1, t0, 4

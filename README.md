@@ -1,6 +1,6 @@
 # Smash Character Builder
 
-**Project version: 0.1.38 (experimental)** | **Last updated: 2026-10-09**
+**Project version: 0.1.40 (experimental)** | **Last updated: 2026-10-09**
 
 Pick a fighter's body, borrow moves from other characters, and see what happens.
 A fun Smash 64 project for friends, with two experiments living in one repository.
@@ -51,6 +51,18 @@ Open **Settings -> Character Lab** and keep **Original 12 Only** on. See the
 [Remix play guide](remix/character_creator_guide.md) and
 [port checklist](remix/docs/character-lab-status.md). The preview is published
 locally; automatic hosted Remix builds remain pending.
+
+The local Remix **0.1.23** build separates borrowed jab phases from native
+entrances and specials, preventing motion-number collisions from installing
+rapid-jab loops at match start. Explicit jab transitions keep donor timing;
+interruptions clear ownership. Automatic checks and pending rendered acceptance
+are recorded in the [port checklist](remix/docs/character-lab-status.md).
+
+Remix **0.1.22** protects body model parts during Link bomb
+pickup and pause. Link shield defaults and static/withheld animation parts use
+the actual body; pause detail changes exclude missing-joint callback aliases.
+CPU/model checks and pending rendered acceptance are tracked in the
+[port checklist](remix/docs/character-lab-status.md).
 
 The published Remix **0.1.21** build fixes quitting from pause during borrowed
 specials by clearing donor ownership before loading results. CPU checks cover

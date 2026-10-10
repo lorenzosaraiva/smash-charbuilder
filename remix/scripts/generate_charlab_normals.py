@@ -65,6 +65,11 @@ def generate():
     for name in PHYSICS:
         fn=found[name];fn['file']='physics';records.append(fn);pieces.append(fn['text'])
     source='\n'.join(pieces).replace('#include <sc/scene.h>','')
+    # Captain's rapid eligibility compares Jab3; it does not request a status.
+    # Remix uses native unique IDs, so this query must not arm donor ownership.
+    query='status_id = ftMainCharBuilderGetJabStatus(fp, nFTCaptainStatusAttack13, 0);'
+    assert source.count(query)==1
+    source=source.replace(query,'status_id = nFTCaptainStatusAttack13;')
     # Kirby's attached Vulcan effects belong to the later safe-props milestone.
     fn=next(fn for fn in functions(source) if fn['name']=='ftCommonAttack100LoopKirbyUpdateEffect')
     source=source.replace(fn['text'],'// '+hex(fn['address'])+'\n'+fn['signature']+'\n{ if (ccBodyKind(fp)==nFTKindKirby && ftMainCharBuilderGetNormalKind(fp,nSCCharBuilderAttackJab)==nFTKindKirby) ccOriginalKirbyJabEffect(fp); }')

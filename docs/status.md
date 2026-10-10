@@ -4,6 +4,10 @@ Checkboxes mean implemented, not tested in every matchup.
 
 ## Repository
 
+- [x] Remix unique jab phases require an explicit transition; native entrances/specials keep their clocks and interruptions clear normal donor ownership. Automatic body/donor/port and real-input jab regressions.
+- [ ] Rendered randomized Samus/Ness/Captain entrance and rapid-jab recovery acceptance.
+- [x] Borrowed Link bomb pickup preserves body model defaults; pause detail and static/withheld animation parts use the actual body skeleton. Linked-MIPS body/port checks and native Yoshi tests cover pause before bomb creation, during the pull and after recovery, then unpause/throw (null rendering).
+- [ ] Rendered Yoshi bomb-pull/pause fix acceptance.
 - [x] Remix creator hub Randomize 4 Builds: independently random body/all move donors, four saved/enabled presets and P1-P4 assignments; four-stock items-off VS setup with connected humans and unused-port CPUs.
 - [x] Linked hub/SRAM checks and native four-fighter CPU scene checks for four humans and two humans/two CPUs; null rendering, with thread stack guards checked during Entry and play.
 - [x] User confirmed the randomizer works in game.

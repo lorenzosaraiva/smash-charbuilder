@@ -24,6 +24,9 @@ parser.add_argument('--editor-slot',type=int,choices=range(1,5),default=1)
 parser.add_argument('--editor-play',action='store_true',help='Continue editor Test through CSS Start and stage confirmation into Training')
 parser.add_argument('--randomizer',action='store_true',help='Activate the real creator hub button, check four ready VS slots and start a four-fighter match')
 parser.add_argument('--randomizer-quit',action='store_true',help='Also pause and quit the randomized match using A+B+R+Z')
+parser.add_argument('--randomizer-pause-bomb',action='store_true',help='Fixture Yoshi with Link Down B in VS and pause during the bomb pull')
+parser.add_argument('--randomizer-jabs',action='store_true',help='Check native VS entrances and rapid-jab recovery on Samus, Ness and Captain')
+parser.add_argument('--pause-bomb-frame',type=int,default=8,help='Match updates after Down B before pausing')
 parser.add_argument('--randomizer-controllers',type=int,choices=range(1,16),default=5,help='Connected controller port bitmask for randomizer checks (default P1/P3)')
 parser.add_argument('--normal-mechanics',action='store_true',help='Exercise donor jab3/rapid phases and controlled live Link down-air contact')
 parser.add_argument('--normal-animations',type=int,choices=range(12),help='Borrow this donor for normals and check real A-input pose streaming')
@@ -53,6 +56,8 @@ if args.falcon_contact:assert args.donor==7 and args.special_side in ('both','up
 if args.bomb_count:assert args.donor==3 and args.special_side=='down'
 if args.editor_play:assert args.editor_test
 if args.randomizer_quit:assert args.randomizer
+if args.randomizer_pause_bomb:assert args.randomizer and args.randomizer_controllers&1
+if args.randomizer_jabs:assert args.randomizer and args.randomizer_controllers==15
 if args.normal_mechanics:assert args.normal_animations is not None
 if args.down_smash:assert args.normal_animations is not None
 if args.paired_miss:assert args.paired_donor is not None
@@ -80,6 +85,7 @@ source='''#include <sc/scene.h>
 #include <mn/menu.h>
 const unsigned int randomizer_css[]={sizeof(MNPlayersSlotVS),__builtin_offsetof(MNPlayersSlotVS,fkind),__builtin_offsetof(MNPlayersSlotVS,pkind),__builtin_offsetof(MNPlayersSlotVS,is_selected),__builtin_offsetof(MNPlayersSlotVS,is_fighter_selected)};
 const unsigned int thread_layout[]={__builtin_offsetof(GObj,gobjproc_head),__builtin_offsetof(GObjProcess,link_next),__builtin_offsetof(GObjProcess,kind),__builtin_offsetof(GObjProcess,exec),__builtin_offsetof(GObjThread,stack),nGCProcessKindThread};
+const unsigned int pause_layout[]={__builtin_offsetof(SCBattleState,game_status),__builtin_offsetof(FTStruct,detail_curr),__builtin_offsetof(FTStruct,detail_base),__builtin_offsetof(MNPlayersSlotVS,costume),__builtin_offsetof(DObj,dl),__builtin_offsetof(DObj,user_data),__builtin_offsetof(FTStruct,modelpart_status),sizeof(FTModelPartStatus)};
 const unsigned int layout[]={__builtin_offsetof(SCCommonData,training_man_fkind),__builtin_offsetof(SCCommonData,training_com_fkind),__builtin_offsetof(SCCommonData,maps_training_gkind),__builtin_offsetof(SCBattleState,players),sizeof(SCPlayerData),__builtin_offsetof(SCPlayerData,fighter_gobj),__builtin_offsetof(FTStruct,item_gobj),__builtin_offsetof(FTStruct,attack_colls),sizeof(FTAttackColl),__builtin_offsetof(FTAttackColl,pos_curr),__builtin_offsetof(FTStruct,percent_damage),__builtin_offsetof(FTStruct,coll_data),sizeof(MPCollData),__builtin_offsetof(SCCommonData,player),__builtin_offsetof(SCCommonData,training_man_costume),__builtin_offsetof(SCCommonData,training_com_costume)};
 const unsigned int egg_statuses[]={nFTCommonStatusCaptureYoshi,nFTCommonStatusYoshiEgg};
 const unsigned int material_layout[]={__builtin_offsetof(DObj,mobj),__builtin_offsetof(MObj,anim_frame),__builtin_offsetof(MObj,texture_id_curr)};
@@ -97,6 +103,7 @@ a,l,i=y['edge_layout'];edge_layout=struct.unpack_from('>'+str(l//4)+'I',d,s[i][4
 a,l,i=y['edge_stage'];edge_stage=struct.unpack_from('>'+str(l//4)+'I',d,s[i][4]+a-s[i][3])
 a,l,i=y['randomizer_css'];randomizer_css=struct.unpack_from('>5I',d,s[i][4]+a-s[i][3])
 a,l,i=y['thread_layout'];thread_layout=struct.unpack_from('>6I',d,s[i][4]+a-s[i][3])
+a,l,i=y['pause_layout'];pause_layout=struct.unpack_from('>8I',d,s[i][4]+a-s[i][3])
 edge_bits={}
 for name in ('reflect','absorb'):
     a,l,i=y[name+'_bits'];raw=d[s[i][4]+a-s[i][3]:s[i][4]+a-s[i][3]+l]
@@ -133,6 +140,7 @@ for typ,path in ((2,build/'video.so'),(3,None),(4,build/'input.so'),(1,library/'
     plugin=C.CDLL(str(path));plugin.PluginStartup.argtypes=[C.c_void_p,C.c_void_p,C.c_void_p]
     check(plugin.PluginStartup(core._handle,None,log));check(core.CoreAttachPlugin(typ,plugin._handle));plugins.append(plugin)
 keys=plugins[1].LabKeys;ram=core.DebugMemGetPointer(1)
+keys_port=plugins[1].LabKeysPort
 def u8(a):return C.c_uint8.from_address(ram+((a&0x7fffff)^3)).value
 def u32(a):return C.c_uint32.from_address(ram+(a&0x7fffff)).value
 def f32(a):return C.c_float.from_address(ram+(a&0x7fffff)).value
@@ -145,7 +153,7 @@ def fighter(player=0):
     if not 0x80000000<=battle<0x80800000:return 0
     gobj=u32(battle+players_off+player_size*player+fighter_off)
     return u32(gobj+0x84) if 0x80000000<=gobj<0x80800000 else 0
-trace=[];tracking=False;travel_errors=[];travel_samples=0;falcon_contact_done=False
+trace=[];tracking=False;tracking_port=0;travel_errors=[];travel_samples=0;falcon_contact_done=False
 tether_material_samples=[]
 animation_samples=0;animation_records=set();animation_errors=[]
 normal_fields=constant('ccNormalLayout');link_contact_done=False;link_bounce_samples=0
@@ -181,8 +189,8 @@ def frame_callback(frame):
                             randomizer_stack_errors.append((hex(obj),hex(stack),hex(u32(stack+60))))
                     proc=u32(proc+thread_layout[1])
                 obj=u32(obj+4)
-    if tracking and u8(scene)==54:
-        fp=fighter()
+    if tracking and (u8(scene)==54 or args.randomizer_jabs and u8(scene)==22):
+        fp=fighter(tracking_port)
         if not 0x80000000<=fp<0x80800000:return
         if args.edge and 'edge_tick' in globals():edge_tick()
         if args.visuals:
@@ -357,6 +365,9 @@ def diagnostic():
     fault=u32(native['__osFaultedThread'])
     pc_pointer=core.DebugGetCPUDataPtr(1)
     data=dict(scene=u8(scene),updates=u32(updates),pc=hex(C.c_uint32.from_address(pc_pointer).value) if pc_pointer else 'unavailable',fault=hex(fault),context=[hex(u32(fault+j)) for j in (0x118,0x11c,0x120,0x124,0x128)] if fault else [],fighter=hex(fighter()),trace=trace[-8:])
+    if fighter():
+        fp=fighter()
+        data['fighter_state']={'kind':u32(fp+8),'status':u32(fp+0x24),'motion':u32(fp+0x28),'item':hex(u32(fp+item_off)),'detail':u8(fp+pause_layout[1])}
     if fault:
         (build/'fault-ram.bin').write_bytes(C.string_at(ram,0x800000))
         data['registers']={name:hex(u32(fault+offset)) for name,offset in [('v0',0x2C),('a0',0x3C),('a1',0x44),('a2',0x4C),('s0',0x9C),('s1',0xA4),('sp',0xF4),('ra',0x104)]}
@@ -453,6 +464,20 @@ try:
             table=u32(labels['CharCreator.slot_tables'])
             recipes[0][16]=1 if recipes[0][1]!=1 else 3
             w32(u32(table+16*4),recipes[0][16])
+        if args.randomizer_pause_bomb:
+            table=u32(labels['CharCreator.slot_tables'])
+            recipes[0][1]=6;recipes[0][17]=5
+            w32(u32(table+4),6);w32(u32(table+17*4),5)
+            w32(native['sMNPlayersVSSlots']+kind_off,6)
+            w32(native['sMNPlayersVSSlots']+pause_layout[3],0)
+        if args.randomizer_jabs:
+            for port,(body,jab) in enumerate(((3,1),(11,7),(7,8),(6,5))):
+                table=u32(labels['CharCreator.slot_tables']+port*4)
+                for field in range(1,22):
+                    value=jab if field==2 else 0 if field==15 else body
+                    w32(u32(table+field*4),value);recipes[port][field]=value
+                w32(native['sMNPlayersVSSlots']+port*css_stride+kind_off,body)
+                w32(native['sMNPlayersVSSlots']+port*css_stride+pause_layout[3],0)
         keys(0x10);wait(lambda:u8(scene)==21,'VS stage select',seconds=40);keys(0)
         wait(lambda:u32(updates)>20,'VS stage initialization',seconds=40)
         print('VS: real Start reaches running stage selection.',flush=True)
@@ -472,6 +497,62 @@ try:
         assert u32(battle+bl[13])==0 and u8(battle+bl[14])==0
         frames(600)
         assert not u32(native['__osFaultedThread']),('Randomized VS runtime fault',diagnostic())
+        if args.randomizer_jabs:
+            states=[(u32(fighter(p)+0x24),u32(fighter(p)+0x28)) for p in range(4)]
+            print('JABS: native entrances after countdown',states,flush=True)
+            assert all(status==10 for status,motion in states),('Entrance did not reach Wait',states,diagnostic())
+            for port,row in enumerate(recipes):
+                tracking_port=port;donor=row[2]
+                for attempt in range(2):
+                    trace.clear();tracking=True
+                    for _ in range(36):
+                        keys_port(port,0x80);frames(1);keys_port(port,0);frames(3)
+                    frames(240);tracking=False
+                    observed={t[1] for t in trace}
+                    extra=labels['CharLabRuntime.sFTCustomBodyExtraMotionIDs']+donor*16
+                    assert {u32(extra+8),u32(extra+12)}<=observed,('Rapid loop/end missing',port,donor,attempt,sorted(observed),diagnostic())
+                    assert u32(fighter(port)+0x24)==10,('Rapid release did not recover',port,attempt,diagnostic())
+                    assert u32(labels['CharCreator.active_normal_donor']+port*4)==0xFFFFFFFF
+                # An actual neutral-special interruption must use its own
+                # body callbacks and clock, even after repeated rapid jabs.
+                keys_port(port,0x40);frames(1);keys_port(port,0)
+                clock=labels['CharLabRuntime.sFTCustomMoveClocks']+port*constant('ccClockLayout')[0]
+                assert u32(clock)==0,('Native Neutral B inherited a normal clock',port,diagnostic())
+                frames(180)
+                assert not u32(native['__osFaultedThread']),diagnostic()
+                assert u32(labels['CharCreator.active_normal_donor']+port*4)==0xFFFFFFFF
+                print('PASS: VS entrance, two rapid-jab/release cycles and native Neutral B on port',port+1,'body',row[1],'jab donor',donor,flush=True)
+            report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'checks':['four native VS entrances recover','Samus/Fox, Ness/Captain, Captain/Kirby, Yoshi/Link jab fixtures','real A tapping through rapid loop/end twice on every port','release recovers to Wait and clears donor ownership','real native Neutral B after rapid jabs'],'rendering':'null'}
+            (report_directory/'cpu-scenes-jab-ownership.json').write_text(json.dumps(report,indent=2)+'\n')
+            print('PASS: real four-port VS entrance/rapid-jab ownership regression.',flush=True)
+            raise SystemExit(0)
+        if args.randomizer_pause_bomb:
+            fp=fighter();top=u32(fp+0x8E8)
+            initial_position=tuple(f32(top+layout[12]+j) for j in (0,4,8))
+            model_bases=tuple(u8(fp+pause_layout[6]+i*pause_layout[7]) for i in range(33))
+            keys(0x40|(176<<24));frames(args.pause_bomb_frame);keys(0)
+            print('BOMB: before pause',diagnostic(),'position',tuple(f32(top+layout[12]+j) for j in (0,4,8)),flush=True)
+            current_bases=tuple(u8(fp+pause_layout[6]+i*pause_layout[7]) for i in range(33))
+            assert current_bases==model_bases,('Bomb pickup changed foreign body model defaults',[(i+4,a,b) for i,(a,b) in enumerate(zip(model_bases,current_bases)) if a!=b],diagnostic())
+            pulse(0x10);frames(60)
+            assert not u32(native['__osFaultedThread']),('Bomb pause fault',diagnostic())
+            assert u8(battle+pause_layout[0])==2,('Pause not entered',diagnostic())
+            print('PASS: pause during Yoshi bomb pull',diagnostic(),flush=True)
+            pulse(0x10);frames(180)
+            assert not u32(native['__osFaultedThread']),('Bomb unpause fault',diagnostic())
+            assert u8(battle+pause_layout[0])==1
+            assert u32(fighter()+8)==6
+            assert math.dist(initial_position,tuple(f32(top+layout[12]+j) for j in (0,4,8)))<2000
+            assert u32(fighter()+item_off),('Bomb not retained through pause/recovery',diagnostic())
+            pulse(0x40|(176<<24));frames(120)
+            assert not u32(native['__osFaultedThread']) and not u32(fighter()+item_off),('Bomb throw/release fault',diagnostic())
+            assert u32(fighter()+8)==6
+            assert tuple(u8(fp+pause_layout[6]+i*pause_layout[7]) for i in range(33))==model_bases
+            report={'rom_sha256':hashlib.sha256(rom).hexdigest(),'body':6,'donor':5,'pause_frame':args.pause_bomb_frame,
+                    'checks':['Yoshi/Link Down B pre-match fixture','real Down B','body model defaults preserved','real Start pause','unpause and native Yoshi recovery','second Down B throws held bomb and preserves body defaults'],'rendering':'null'}
+            (report_directory/f'cpu-scenes-bomb-pause-{args.pause_bomb_frame}.json').write_text(json.dumps(report,indent=2)+'\n')
+            print('PASS: Yoshi bomb pull, pause/unpause and throw preserve body model defaults and recover.',flush=True)
+            raise SystemExit(0)
         if args.randomizer_quit:
             # Leave borrowed special ownership live across the scene exit.
             keys(0x40|(80<<24));frames(5);keys(0)
