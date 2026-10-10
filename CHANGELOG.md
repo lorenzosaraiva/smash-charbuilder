@@ -2,7 +2,7 @@
 
 ## 0.1.40 - 2026-10-09: Remix jab phase ownership
 
-- Build local Remix preview 0.1.23, retaining the bomb/pause fixes and published 0.1.21 download.
+- Build and publish Remix preview 0.1.23 at the existing preview download links, retaining the bomb/pause fixes and separate Character Lab release.
 - Reproduce Ness with Captain's jab stuck in its native entrance after the full VS countdown: a donor rapid-loop motion number incorrectly installed a looping attack clock.
 - Require an explicit, generation-checked jab transition before selecting a unique jab clock. Clear retained normal action-array/parameter ownership on other transitions, including entrances, native specials and interruptions.
 - Captain's rapid eligibility check compares its native Jab3 status without requesting a Jab3 transition.
